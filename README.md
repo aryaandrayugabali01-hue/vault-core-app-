@@ -62,7 +62,7 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 
 ## Current implementation status
 
-Source is published in the existing GitHub repository; the current verified main commit is `89f6d7912070712b07d370acaba9a266ffba1c0e` (40 project source files; original v1.3 ZIP retained). GitHub Actions run `44833016477` completed successfully: dependency install, backend/core tests, and Next.js production build all passed.
+Source is published in the existing GitHub repository; the last verified code commit is `89f6d7912070712b07d370acaba9a266ffba1c0e` (40 project source files; original v1.3 ZIP retained). GitHub Actions run `44833016477` completed successfully: dependency install, backend/core tests, and Next.js production build all passed.
 
 Implemented in the source tree: Telegram `initData` authentication, catalog API, order reservation, Stars invoice generation, webhook payment verification, encrypted inventory writes, automated delivery with retry tracking, `/paysupport`, owner-triggered Stars refunds, owner product/inventory/order routes, expense and profit reporting, customer Mini App, and Owner Console.
 

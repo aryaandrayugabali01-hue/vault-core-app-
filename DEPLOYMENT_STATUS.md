@@ -14,8 +14,8 @@
 ## Repository state
 
 - Default branch: `main`.
-- Current verified `main` head: `89f6d7912070712b07d370acaba9a266ffba1c0e`.
-- Source extraction commit: `15780b23e816cd4c4d8b3647d6359f949b53c4b2ea`.
+- Last verified code commit: `89f6d7912070712b07d370acaba9a266ffba1c0e`.
+- Source extraction commit: `15780b23e816cd4c8b3647d6359f949b53c4b2ea`.
 - 40 project source files are now present at repository root; original `vault-core-app-v1.3-github-ready.zip` retained as an archive.
 - Main source areas: `backend/`, `frontend/`, `bot/`, `database/migrations/`, `tests/`, and `.github/workflows/`.
 
