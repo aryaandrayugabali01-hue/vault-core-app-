@@ -10,7 +10,7 @@
 | Status | Draft revisi untuk persetujuan pemilik; fondasi teknis dapat dimulai dalam ruang lingkup yang disetujui |
 | Model usaha | Single-Vendor Store |
 | Kanal utama | Telegram Bot dan Telegram Mini App |
-| Domain rencana | `vaultcore.web.id` (belum dikonfirmasi kepemilikannya dan konfigurasi DNS-nya) |
+| Domain rencana | `vaultcore.biz.id` (belum dikonfirmasi kepemilikannya dan konfigurasi DNS-nya) |
 
 > **Kedudukan dokumen.** Dokumen ini menjadi acuan ruang lingkup, arsitektur, perilaku sistem, dan kriteria penerimaan VAULT CORE. Dokumen ini bukan pendapat hukum atau pengganti kontrak jasa profesional yang ditandatangani para pihak. Perubahan terhadap ruang lingkup atau perilaku yang telah disetujui harus dicatat sebagai revisi dokumen atau change request.
 >
@@ -772,7 +772,7 @@ Setiap perubahan harus memiliki catatan: kebutuhan, alasan, dampak ke database/A
 Hal berikut belum ditetapkan oleh informasi proyek saat dokumen ini dibuat:
 
 1. Username bot Telegram dan kepemilikan token BotFather.
-2. Konfirmasi domain `vaultcore.web.id`, registrar, dan akses DNS.
+2. Konfirmasi domain `vaultcore.biz.id`, registrar, dan akses DNS.
 3. Provider hosting produksi dan lokasi database.
 4. Apakah PostgreSQL dikelola sendiri atau menggunakan layanan terkelola.
 5. Daftar final SKU yang telah lolos pemeriksaan hak penjualan.
