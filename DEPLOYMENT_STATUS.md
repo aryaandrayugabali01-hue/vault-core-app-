@@ -14,20 +14,21 @@
 ## Repository state
 
 - Default branch: `main`.
-- Source extraction commit: `15780b23e816cd4c8b3647d6359f949b53c4b2ea`.
-- 38 project files extracted at repository root; original `vault-core-app-v1.3-github-ready.zip` retained as an archive.
+- Current verified `main` head: `89f6d7912070712b07d370acaba9a266ffba1c0e`.
+- Source extraction commit: `15780b23e816cd4c4d8b3647d6359f949b53c4b2ea`.
+- 40 project source files are now present at repository root; original `vault-core-app-v1.3-github-ready.zip` retained as an archive.
 - Main source areas: `backend/`, `frontend/`, `bot/`, `database/migrations/`, `tests/`, and `.github/workflows/`.
 
 ## CI validation
 
-GitHub Actions workflow `VAULT CORE CI`, run ID `44832481718`:
+GitHub Actions workflow `VAULT CORE CI`, latest verified run ID `44833016477`:
 
 - Workspace dependency installation: **PASS**
 - Backend/core automated tests: **PASS**
 - Next.js production build: **PASS**
 - Overall workflow conclusion: **SUCCESS**
 
-A second CI run is expected after the security hardening commit containing rate limiting and payment-audit sanitization.
+Latest run completed after rate-limit routing was adjusted so Telegram's payment webhook is not throttled by customer API limits.
 
 ## Database verification
 
@@ -45,8 +46,9 @@ Connected Neon database `vault_core` was inspected read-only:
 - Stock reservation uses database row locks and `SKIP LOCKED`.
 - Digital inventory payloads are encrypted; unsupported account credentials/authentication material are rejected.
 - Public display stock cannot exceed actual sellable inventory.
-- API rate limiting has been added to the source; its default in-memory store is suitable for a single instance. A shared store or edge-level rate limits are required before multi-instance scaling.
-- Payment audit snapshots are being restricted to payment/order fields rather than retaining the complete Telegram message.
+- API rate limiting is active on catalog, order, and owner APIs; Telegram's authenticated webhook route is kept separate. Its default in-memory store is suitable for a single instance. A shared store or edge-level rate limits are required before multi-instance scaling.
+- Payment audit snapshots now retain required payment/order identifiers only, excluding buyer profile and chat fields.
+- Duplicate Telegram charge IDs are checked against the order they were first linked to.
 - IDOR, backup/restore, production rate-limit behavior, and live payment/delivery checks remain pending.
 
 ## Deployment blockers
