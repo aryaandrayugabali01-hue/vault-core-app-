@@ -8,7 +8,7 @@
 |---|---|---|
 | Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; 10 application tables and 3 migration registry records confirmed |
 | GitHub | `aryaandrayugabali01-hue/vault-core-app-` / `main` | Source published; repository read/write operations verified |
-| Cloudflare | Primary account | Account access verified; only `nexustrade.web.id` is visible as an active zone; no VAULT CORE Worker is deployed |
+| Cloudflare | Primary account | `vault-core-gateway` deployed; `workers.dev` enabled; `vaultcore.web.id` is not present as a zone; app upstreams and custom domain remain unconfigured |
 | Telegram | Bot API | No production bot identity/token or webhook configuration has been supplied to the deployment environment |
 
 ## Repository state
@@ -52,11 +52,23 @@ Connected Neon database `vault_core` was inspected read-only:
 - Duplicate Telegram charge IDs are checked against the order they were first linked to.
 - IDOR, backup/restore, production rate-limit behavior, and live payment/delivery checks remain pending.
 
+## Cloudflare gateway
+
+- Worker: `vault-core-gateway`.
+- Deployment ID: `2b5db563f86e4f77a73b3b0482fcbd48`.
+- Account Workers subdomain: `premiumdigital-id.workers.dev`.
+- Worker URL: `https://vault-core-gateway.premiumdigital-id.workers.dev`.
+- `workers.dev` was enabled and Worker settings were read back successfully; observability logs and traces are enabled.
+- Gateway routes `/api/*` to `API_ORIGIN` and other paths to `WEB_ORIGIN`.
+- `API_ORIGIN` and `WEB_ORIGIN` are intentionally unset. `/_gateway/health` reports gateway readiness only, not application readiness. Unconfigured upstream requests return HTTP 503.
+- No custom domain is attached because `vaultcore.web.id` is not present as an active zone in the connected Cloudflare account.
+- The gateway source is stored at `cloudflare/vault-core-gateway.js` in this repository.
+
 ## Deployment blockers
 
-1. `vaultcore.web.id` is not present among the zones visible in the connected Cloudflare account. The only visible active zone is `nexustrade.web.id`, which belongs to another project and will not be reused.
-2. A separate VAULT CORE Worker and frontend/API routing have not been provisioned.
-3. Production secrets are not set: database connection secret for the runtime, Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
+1. `vaultcore.web.id` is not present among the zones visible in the connected Cloudflare account. The only visible active zone is `nexustrade.web.id`, which belongs to another project and will not be reused. Domain registration/ownership remains unverified.
+2. The Next.js frontend and Express API have not yet been adapted and deployed as Cloudflare-compatible application origins. The gateway Worker exists, but does not replace those application runtimes.
+3. Production secrets and bindings are not set: Neon runtime connection/Hyperdrive, Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
 4. Telegram bot username/ownership and production webhook target are not known.
 5. Live XTR payment, refund, and fulfillment tests have not been completed.
 6. Contract v1.2 (CR-02) still has unsigned owner approval fields in Section 26.6.
