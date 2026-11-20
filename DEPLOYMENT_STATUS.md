@@ -8,13 +8,14 @@
 |---|---|---|
 | Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; 10 application tables and 3 migration registry records confirmed |
 | GitHub | `aryaandrayugabali01-hue/vault-core-app-` / `main` | Source published; repository read/write operations verified |
-| Cloudflare | Primary account | `vault-core-gateway` deployed; `workers.dev` enabled; `vaultcore.web.id` is not present as a zone; app upstreams and custom domain remain unconfigured |
+| Cloudflare | Primary account | `vault-core-gateway` deployed; zone `vaultcore.web.id` created with status `pending`; assigned nameservers are recorded below; app upstreams and custom domains remain unconfigured |
 | Telegram | Bot API | No production bot identity/token or webhook configuration has been supplied to the deployment environment |
 
 ## Repository state
 
 - Default branch: `main`.
-- Last verified code commit: `89f6d7912070712b07d370acaba9a266ffba1c0e`.
+- Last verified application code commit: `89f6d7912070712b07d370acaba9a266ffba1c0e`.
+- Cloudflare gateway source commit: `e88739e82119f287db4215a570b3ab0f64eede23`.
 - Source extraction commit: `15780b23e816cd4c8b3647d6359f949b53c4b2ea`.
 - 40 project source files are now present at repository root; original `vault-core-app-v1.3-github-ready.zip` retained as an archive.
 - Main source areas: `backend/`, `frontend/`, `bot/`, `database/migrations/`, `tests/`, and `.github/workflows/`.
@@ -59,14 +60,16 @@ Connected Neon database `vault_core` was inspected read-only:
 - Account Workers subdomain: `premiumdigital-id.workers.dev`.
 - Worker URL: `https://vault-core-gateway.premiumdigital-id.workers.dev`.
 - `workers.dev` was enabled and Worker settings were read back successfully; observability logs and traces are enabled.
-- Gateway routes `/api/*` to `API_ORIGIN` and other paths to `WEB_ORIGIN`.
+- Gateway routes `/api/*` and `api.*` host traffic to `API_ORIGIN`; other paths route to `WEB_ORIGIN`.
 - `API_ORIGIN` and `WEB_ORIGIN` are intentionally unset. `/_gateway/health` reports gateway readiness only, not application readiness. Unconfigured upstream requests return HTTP 503.
-- No custom domain is attached because `vaultcore.web.id` is not present as an active zone in the connected Cloudflare account.
+- Cloudflare zone `vaultcore.web.id` has been created as a full zone, currently `pending` activation.
+- Assigned nameservers: `marty.ns.cloudflare.com` and `sharon.ns.cloudflare.com`. They must be configured at the domain registrar before the zone can become active.
+- Worker Custom Domains are not attached yet. Once the zone is active and the application origins are deployed, attach `vaultcore.web.id`, `www.vaultcore.web.id`, and `api.vaultcore.web.id` to this Worker; Cloudflare will provision their DNS records and TLS certificates.
 - The gateway source is stored at `cloudflare/vault-core-gateway.js` in this repository.
 
 ## Deployment blockers
 
-1. `vaultcore.web.id` is not present among the zones visible in the connected Cloudflare account. The only visible active zone is `nexustrade.web.id`, which belongs to another project and will not be reused. Domain registration/ownership remains unverified.
+1. Zone `vaultcore.web.id` is pending. Its assigned Cloudflare nameservers must be installed at the registrar. Domain registration/ownership remains unverified until confirmed in PANDI/registrar records.
 2. The Next.js frontend and Express API have not yet been adapted and deployed as Cloudflare-compatible application origins. The gateway Worker exists, but does not replace those application runtimes.
 3. Production secrets and bindings are not set: Neon runtime connection/Hyperdrive, Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
 4. Telegram bot username/ownership and production webhook target are not known.
