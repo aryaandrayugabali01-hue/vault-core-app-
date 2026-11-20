@@ -4,47 +4,60 @@
 
 ## Connected infrastructure
 
-| Service | Resource | Status |
+| Service | Resource | Verified status |
 |---|---|---|
-| Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Created; 10 public tables and 3 migration registry entries verified |
-| GitHub | `aryaandrayugabali01-hue/vault-core-app-` / `main` | Repository confirmed public; owner account has Admin and Push permissions. Source upload is blocked because the connected GitHub integration returns HTTP 403 `Resource not accessible by integration` for write APIs. |
-| Cloudflare | Primary connected account | Account was accessible in prior inspection; `vaultcore.web.id` was not present among visible zones. No deployment or DNS changes made. |
+| Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; 10 application tables and 3 migration registry records confirmed |
+| GitHub | `aryaandrayugabali01-hue/vault-core-app-` / `main` | Source published; repository read/write operations verified |
+| Cloudflare | Primary account | Account access verified; only `nexustrade.web.id` is visible as an active zone; no VAULT CORE Worker is deployed |
+| Telegram | Bot API | No production bot identity/token or webhook configuration has been supplied to the deployment environment |
 
-## Repository state at last check
+## Repository state
 
 - Default branch: `main`.
-- Current head: `c7a40dade94190e383aab29e028a231c84e00661`.
-- The branch contains only the initial `README.md` file.
-- The local source package is prepared in this archive but has not been published to GitHub.
+- Source extraction commit: `15780b23e816cd4c8b3647d6359f949b53c4b2ea`.
+- 38 project files extracted at repository root; original `vault-core-app-v1.3-github-ready.zip` retained as an archive.
+- Main source areas: `backend/`, `frontend/`, `bot/`, `database/migrations/`, `tests/`, and `.github/workflows/`.
 
-## Local implementation included in this package
+## CI validation
 
-- Node.js / Express API with health, catalog, customer orders, admin products, inventory and finance endpoints.
-- HMAC validation of Telegram Mini App `initData` with an age limit.
-- AES-256-GCM encryption for digital inventory payloads.
-- Telegram Stars invoice generation, pre-checkout validation, successful-payment verification, delivery tracking and Telegram DM delivery.
-- `/paysupport` support command and owner-triggered Stars refund route.
-- Next.js customer Mini App and Owner Console.
-- SQL migrations and migration runner.
-- Delivery retry tracking, operating expense recording, transaction snapshots, and owner profit reporting.
-- Automated tests and GitHub Actions CI workflow.
+GitHub Actions workflow `VAULT CORE CI`, run ID `44832481718`:
 
-## Validation performed
+- Workspace dependency installation: **PASS**
+- Backend/core automated tests: **PASS**
+- Next.js production build: **PASS**
+- Overall workflow conclusion: **SUCCESS**
 
-- Core unit tests: **9/9 PASS**.
-- Backend, bot and test JavaScript syntax checks: **PASS**.
-- Package JSON parsing: **PASS**.
-- SQL migration files present: **3**.
-- Environment template reviewed: no live credentials are included.
-- Archive integrity: verified after packaging.
-- Full Next.js production build: **not verified** because package installation/build was not completed in the earlier environment (`EAI_AGAIN` resolving the npm registry).
+A second CI run is expected after the security hardening commit containing rate limiting and payment-audit sanitization.
 
-## Remaining execution steps
+## Database verification
 
-1. Publish the contents of this package to the existing `main` branch after GitHub integration write access is enabled.
-2. Recheck Cloudflare zone ownership and configure hosting/secrets only after the target domain/account is confirmed.
-3. Register the production Telegram webhook, then run end-to-end XTR payment, refund, stock reservation and delivery tests before enabling sales.
+Connected Neon database `vault_core` was inspected read-only:
+
+- Tables present: `admin_audit_logs`, `customers`, `deliveries`, `inventory_items`, `operating_expenses`, `order_items`, `orders`, `products`, `schema_migrations`, `transactions`.
+- Migration registry has records for `001_initial_schema.sql`, `002_finance_and_order_snapshots.sql`, and `003_delivery_recovery.sql`.
+- No schema change was required during this verification.
+
+## Security and code review notes
+
+- Telegram Mini App `initData` HMAC and age validation are implemented.
+- Owner authorization uses the server-side Telegram ID allowlist.
+- Telegram webhook validates its secret token using a timing-safe comparison.
+- Stock reservation uses database row locks and `SKIP LOCKED`.
+- Digital inventory payloads are encrypted; unsupported account credentials/authentication material are rejected.
+- Public display stock cannot exceed actual sellable inventory.
+- API rate limiting has been added to the source; its default in-memory store is suitable for a single instance. A shared store or edge-level rate limits are required before multi-instance scaling.
+- Payment audit snapshots are being restricted to payment/order fields rather than retaining the complete Telegram message.
+- IDOR, backup/restore, production rate-limit behavior, and live payment/delivery checks remain pending.
+
+## Deployment blockers
+
+1. `vaultcore.web.id` is not present among the zones visible in the connected Cloudflare account. The only visible active zone is `nexustrade.web.id`, which belongs to another project and will not be reused.
+2. A separate VAULT CORE Worker and frontend/API routing have not been provisioned.
+3. Production secrets are not set: database connection secret for the runtime, Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
+4. Telegram bot username/ownership and production webhook target are not known.
+5. Live XTR payment, refund, and fulfillment tests have not been completed.
+6. Contract v1.2 (CR-02) still has unsigned owner approval fields in Section 26.6.
 
 ## Production readiness
 
-**Not production-ready yet.** The database schema exists and the source package passes the tests listed above, but the source has not been published, the frontend build is unverified, production secrets/webhook are not configured, and no live payment/delivery test has been completed.
+**NOT READY FOR PRODUCTION.** Source is published and CI passes, and the database schema is verified. Hosting, runtime secrets, domain routing, Telegram webhook, production owner allowlist, end-to-end payment/delivery tests, and critical acceptance testing remain incomplete.

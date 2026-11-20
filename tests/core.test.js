@@ -5,6 +5,7 @@ import { validateTelegramInitData } from '../backend/utils/telegram.js';
 import { encryptPayload, decryptPayload, assertAllowedDigitalPayload } from '../backend/utils/encryption.js';
 import { resolveDisplayStock } from '../backend/services/catalogService.js';
 import { sendStarsInvoice, refundStarPayment } from '../backend/services/telegramApi.js';
+import { sanitizeSuccessfulPaymentUpdate } from '../backend/utils/paymentAudit.js';
 
 function signedInitData(user, token, authDate = Math.floor(Date.now() / 1000)) {
   const params = new URLSearchParams({ auth_date: String(authDate), query_id: 'AAE-test', user: JSON.stringify(user) });
@@ -58,7 +59,6 @@ test('display stock modes support count, boolean availability, and hidden count'
   assert.equal(resolveDisplayStock({ actualStock: 5, mode: 'HIDE_COUNT' }), null);
 });
 
-
 test('Stars invoice uses XTR and a single price component', async () => {
   const originalFetch = globalThis.fetch;
   const originalToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -102,4 +102,25 @@ test('Stars refund calls refundStarPayment with the original charge ID', async (
     if (originalToken === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
     else process.env.TELEGRAM_BOT_TOKEN = originalToken;
   }
+});
+
+test('payment audit snapshot excludes buyer profile and chat data', () => {
+  const safe = sanitizeSuccessfulPaymentUpdate({
+    message_id: 42,
+    date: 1760000000,
+    from: { id: 12345, first_name: 'Private Name', username: 'private_user' },
+    chat: { id: 12345, title: 'Private Chat' },
+    successful_payment: {
+      currency: 'XTR',
+      total_amount: 50,
+      invoice_payload: 'VC-ORDER-001',
+      telegram_payment_charge_id: 'charge-001',
+      provider_payment_charge_id: 'provider-001'
+    }
+  });
+  assert.equal(safe.telegram_user_id, '12345');
+  assert.equal(safe.successful_payment.invoice_payload, 'VC-ORDER-001');
+  assert.equal(JSON.stringify(safe).includes('Private Name'), false);
+  assert.equal(JSON.stringify(safe).includes('Private Chat'), false);
+  assert.equal(JSON.stringify(safe).includes('private_user'), false);
 });

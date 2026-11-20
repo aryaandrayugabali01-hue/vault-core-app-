@@ -4,7 +4,7 @@ Single-vendor Telegram Mini App store for transferable digital products, voucher
 
 ## Source of truth
 
-Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current contract draft: **v1.2 (CR-02)**.
+Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current contract draft: **v1.2 (CR-02)**. The approval fields in Section 26.6 are still unsigned in the repository copy.
 
 ## Technology
 
@@ -17,8 +17,6 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 
 ## Connected database
 
-A dedicated PostgreSQL project was created for VAULT CORE:
-
 - Provider: Neon
 - Project: `VAULT CORE`
 - Project ID: `soft-morning-26299268`
@@ -27,7 +25,7 @@ A dedicated PostgreSQL project was created for VAULT CORE:
 - Database: `vault_core`
 - Default branch: `main`
 
-The schema and migration registry were applied and verified. The database contains: `customers`, `products`, `inventory_items`, `orders`, `order_items`, `transactions`, `deliveries`, `admin_audit_logs`, `operating_expenses`, and `schema_migrations`.
+The connected schema was checked: 10 tables are present and all 3 migration records are registered.
 
 ## Local setup
 
@@ -46,7 +44,7 @@ Set `TELEGRAM_WEBHOOK_URL` to the public API route, then run `npm run setup:webh
 
 ## Owner access
 
-Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permitted to use `/admin`. Customer and owner API requests must include the Telegram Mini App `initData`; the backend validates its HMAC and timestamp.
+Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permitted to use the owner console. Customer and owner API requests must include Telegram Mini App `initData`; the backend validates its HMAC and timestamp.
 
 ## Operational rules
 
@@ -57,15 +55,25 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 - Telegram digital goods/services are paid through official Telegram Stars invoices. No manual XTR wallet-address payment flow is implemented.
 - `successful_payment` is the only event that marks an order paid. Screenshot claims or client-side callbacks never mark an order paid.
 - `/paysupport` provides a buyer-facing support path. Owner refund requests use Telegram's `refundStarPayment` method and are recorded in the transaction/order status.
+- Payment audit snapshots retain payment identifiers and required order metadata only; buyer profile/chat fields are excluded.
+- API endpoints have IP-based rate limits. The built-in store is process-local; use a shared store or edge-level controls before scaling to multiple API instances.
 - Delivery claims record attempt count/time and failure reason; stale `READY` claims can be retried after the recovery interval. Telegram send operations are externally processed, so an ambiguous network failure may require owner reconciliation before retry.
 - Price and cost are snapshotted at order creation. Reports show gross sales, cost, operating expenses, gross profit, and net profit in IDR, alongside received XTR.
 
 ## Current implementation status
 
-Implemented in the source tree: Telegram `initData` authentication, catalog API, order reservation, Stars invoice link generation, webhook payment verification, encrypted inventory writes, automated delivery with retry tracking, `/paysupport`, owner-triggered Stars refunds, owner product/inventory/order routes, profit dashboard, customer Mini App, and Owner Console.
+Source is published in the existing GitHub repository at commit `15780b23e816cd4c8b3647d6359f949b53c4b2ea` (38 extracted project files; original v1.3 ZIP retained). GitHub Actions run `44832481718` completed successfully: dependency install, backend/core tests, and Next.js production build all passed.
 
-Not yet deployed: public frontend/API hosting, GitHub repository publication, Cloudflare domain/Worker routing, Telegram webhook registration with the production bot token, admin allowlist, production environment secrets, and end-to-end live payment/refund tests. Package installation and a full Next.js production build remain unverified because this execution environment could not resolve `registry.npmjs.org`.
+Implemented in the source tree: Telegram `initData` authentication, catalog API, order reservation, Stars invoice generation, webhook payment verification, encrypted inventory writes, automated delivery with retry tracking, `/paysupport`, owner-triggered Stars refunds, owner product/inventory/order routes, expense and profit reporting, customer Mini App, and Owner Console.
+
+## Not yet deployed
+
+- No VAULT CORE Cloudflare Worker or production frontend/API route has been deployed.
+- The connected Cloudflare account currently exposes `nexustrade.web.id`; `vaultcore.web.id` is not present in its visible zones. Existing workers belong to other projects and are not used for VAULT CORE.
+- Production environment secrets, Telegram bot identity/token, webhook registration, and owner Telegram ID allowlist are not configured in the connected deployment.
+- No live XTR payment, refund, and fulfillment test has been run.
+- Backup/restore, IDOR, and live rate-limit behavior still require staging validation before launch.
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs workspace installation, the automated tests, and the Next.js production build on pushes to `main`/`develop` and pull requests to `main`.
+`.github/workflows/ci.yml` runs workspace installation, automated tests, and the Next.js production build on pushes to `main`/`develop` and pull requests to `main`.

@@ -1,5 +1,6 @@
 import { pool } from '../db/pool.js';
 import { deliverPaidOrder } from '../services/deliveryService.js';
+import { sanitizeSuccessfulPaymentUpdate } from '../utils/paymentAudit.js';
 
 export async function answerPreCheckout(query) {
   const { rows } = await pool.query(
@@ -38,18 +39,23 @@ export async function recordSuccessfulPayment(message) {
       throw new Error('Successful payment does not match a valid order.');
     }
     const { rows: existing } = await client.query(
-      `SELECT id FROM transactions WHERE telegram_payment_charge_id=$1`, [payment.telegram_payment_charge_id]
+      `SELECT id, order_id FROM transactions WHERE telegram_payment_charge_id=$1 FOR UPDATE`,
+      [payment.telegram_payment_charge_id]
     );
     if (existing.length) {
+      if (String(existing[0].order_id) !== String(order.id)) {
+        throw new Error('Telegram payment charge ID is already linked to another order.');
+      }
       alreadyProcessed = true;
     } else {
       if (order.status !== 'PENDING_PAYMENT') throw new Error('Order is not awaiting payment.');
+      const auditUpdate = sanitizeSuccessfulPaymentUpdate(message);
       await client.query(
         `INSERT INTO transactions (order_id, provider, currency, amount_xtr, telegram_payment_charge_id,
           provider_payment_charge_id, status, raw_update, paid_at)
          VALUES ($1,'TELEGRAM_STARS','XTR',$2,$3,$4,'PAID',$5,NOW())`,
         [order.id, payment.total_amount, payment.telegram_payment_charge_id,
-         payment.provider_payment_charge_id ?? null, JSON.stringify(message)]
+         payment.provider_payment_charge_id ?? null, JSON.stringify(auditUpdate)]
       );
       await client.query(`UPDATE orders SET status='PAID', paid_at=NOW() WHERE id=$1`, [order.id]);
     }
