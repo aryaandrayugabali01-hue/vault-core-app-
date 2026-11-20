@@ -21,12 +21,13 @@
 
 ## CI validation
 
-GitHub Actions workflow `VAULT CORE CI`, latest verified run ID `44833016477`:
+GitHub Actions workflow `VAULT CORE CI`, code hardening run ID `44833016477`:
 
 - Workspace dependency installation: **PASS**
 - Backend/core automated tests: **PASS**
 - Next.js production build: **PASS**
 - Overall workflow conclusion: **SUCCESS**
+- Documentation-sync workflows `44833158677` and `44833203368`: **SUCCESS**
 
 Latest run completed after rate-limit routing was adjusted so Telegram's payment webhook is not throttled by customer API limits.
 
