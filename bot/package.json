@@ -1,0 +1,7 @@
+{
+  "name": "@vault-core/bot",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "setup-webhook": "node bot.js" }
+}

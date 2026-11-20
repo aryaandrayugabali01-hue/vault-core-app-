@@ -1,0 +1,31 @@
+name: VAULT CORE CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install workspace dependencies
+        run: npm install --workspaces --include-workspace-root --no-audit --no-fund
+
+      - name: Run backend and core tests
+        run: npm test
+
+      - name: Build Mini App
+        env:
+          NEXT_PUBLIC_API_BASE_URL: https://api.example.invalid
+        run: npm run build:frontend
