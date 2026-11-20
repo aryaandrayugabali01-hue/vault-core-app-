@@ -8,7 +8,7 @@
 |---|---|---|
 | Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; 10 application tables and 3 migration registry records confirmed |
 | GitHub | `aryaandrayugabali01-hue/vault-core-app-` / `main` | Source published; repository read/write operations verified |
-| Cloudflare | Primary account | `vault-core-gateway` deployed; zone `vaultcore.web.id` created with status `pending`; assigned nameservers are recorded below; app upstreams and custom domains remain unconfigured |
+| Cloudflare | Primary account | `vault-core-gateway` deployed; zone `vaultcore.biz.id` active; assigned nameservers are recorded below; app upstreams and custom domains remain unconfigured |
 | Telegram | Bot API | No production bot identity/token or webhook configuration has been supplied to the deployment environment |
 
 ## Repository state
@@ -62,14 +62,14 @@ Connected Neon database `vault_core` was inspected read-only:
 - `workers.dev` was enabled and Worker settings were read back successfully; observability logs and traces are enabled.
 - Gateway routes `/api/*` and `api.*` host traffic to `API_ORIGIN`; other paths route to `WEB_ORIGIN`.
 - `API_ORIGIN` and `WEB_ORIGIN` are intentionally unset. `/_gateway/health` reports gateway readiness only, not application readiness. Unconfigured upstream requests return HTTP 503.
-- Cloudflare zone `vaultcore.web.id` has been created as a full zone, currently `pending` activation.
-- Assigned nameservers: `marty.ns.cloudflare.com` and `sharon.ns.cloudflare.com`. They must be configured at the domain registrar before the zone can become active.
-- Worker Custom Domains are not attached yet. Once the zone is active and the application origins are deployed, attach `vaultcore.web.id`, `www.vaultcore.web.id`, and `api.vaultcore.web.id` to this Worker; Cloudflare will provision their DNS records and TLS certificates.
+- Cloudflare zone `vaultcore.biz.id` has been created as a full zone, active.
+- Assigned nameservers: `marty.ns.cloudflare.com` and `sharon.ns.cloudflare.com`. They are already active at the registrar.
+- Worker Custom Domains are not attached yet. Once the application origins are deployed, attach `vaultcore.biz.id`, `www.vaultcore.web.id`, and `api.vaultcore.web.id` to this Worker; Cloudflare will provision their DNS records and TLS certificates.
 - The gateway source is stored at `cloudflare/vault-core-gateway.js` in this repository.
 
 ## Deployment blockers
 
-1. Zone `vaultcore.web.id` is pending. Its assigned Cloudflare nameservers must be installed at the registrar. Domain registration/ownership remains unverified until confirmed in PANDI/registrar records.
+1. Zone `vaultcore.biz.id` is pending. Its assigned Cloudflare nameservers must be installed at the registrar. Domain registration/ownership remains unverified until confirmed in PANDI/registrar records.
 2. The Next.js frontend and Express API have not yet been adapted and deployed as Cloudflare-compatible application origins. The gateway Worker exists, but does not replace those application runtimes.
 3. Production secrets and bindings are not set: Neon runtime connection/Hyperdrive, Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
 4. Telegram bot username/ownership and production webhook target are not known.
