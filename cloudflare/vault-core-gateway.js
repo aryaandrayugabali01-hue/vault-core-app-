@@ -56,7 +56,7 @@ export default {
       });
     }
 
-    const isApi = incoming.pathname === "/api" || incoming.pathname.startsWith("/api/");
+    const isApi = incoming.hostname.startsWith("api.") || incoming.pathname === "/api" || incoming.pathname.startsWith("/api/");
     const configuredOrigin = originOnly(isApi ? env.API_ORIGIN : env.WEB_ORIGIN);
 
     if (!configuredOrigin) {
