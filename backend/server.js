@@ -16,7 +16,6 @@ app.disable('x-powered-by');
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: process.env.FRONTEND_ORIGIN?.split(',').map((v) => v.trim()) ?? false }));
 app.use(express.json({ limit: '32kb' }));
-app.use('/api', apiRateLimit);
 
 app.get('/health', async (_req, res) => {
   try {
@@ -26,9 +25,9 @@ app.get('/health', async (_req, res) => {
     res.status(503).json({ status: 'degraded', service: 'vault-core-api', database: 'unavailable' });
   }
 });
-app.use('/api/catalog', catalogRoutes);
-app.use('/api/orders', checkoutRateLimit, requireTelegramUser, ordersRoutes);
-app.use('/api/admin', ownerRateLimit, requireTelegramUser, requireOwner, adminRoutes);
+app.use('/api/catalog', apiRateLimit, catalogRoutes);
+app.use('/api/orders', apiRateLimit, checkoutRateLimit, requireTelegramUser, ordersRoutes);
+app.use('/api/admin', apiRateLimit, ownerRateLimit, requireTelegramUser, requireOwner, adminRoutes);
 app.use('/api/telegram/webhook', telegramWebhookRoutes);
 app.use((error, _req, res, _next) => {
   console.error('[api-error]', error.message);
