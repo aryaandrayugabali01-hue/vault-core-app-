@@ -68,8 +68,8 @@ Implemented in the source tree: Telegram `initData` authentication, catalog API,
 
 ## Not yet deployed
 
-- No VAULT CORE Cloudflare Worker or production frontend/API route has been deployed.
-- The connected Cloudflare account currently exposes `nexustrade.web.id`; `vaultcore.web.id` is not present in its visible zones. Existing workers belong to other projects and are not used for VAULT CORE.
+- VAULT CORE gateway Worker `vault-core-gateway` is deployed; production frontend and API application origins are not yet deployed or configured.
+- Cloudflare zone `vaultcore.biz.id` is active in the connected account. Worker `vault-core-gateway` is deployed; frontend/API origins and custom-domain bindings remain to be configured.
 - Production environment secrets, Telegram bot identity/token, webhook registration, and owner Telegram ID allowlist are not configured in the connected deployment.
 - No live XTR payment, refund, and fulfillment test has been run.
 - Backup/restore, IDOR, and live rate-limit behavior still require staging validation before launch.
