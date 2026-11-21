@@ -4,12 +4,12 @@ Single-vendor Telegram Mini App store for transferable digital products, voucher
 
 ## Source of truth
 
-Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current approved contract baseline: **v1.2 (CR-02)**. Owner approval was recorded in writing through the project conversation on 21 November 2026; see Section 26.6. Formal legal name/e-signature certificate details are not recorded.
+Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current approved contract baseline: **v1.3 (CR-03)**. Owner approval was recorded in writing through the project conversation on 21 November 2026; see Section 26.6. Formal legal name/e-signature certificate details are not recorded.
 
 ## Project documents
 
 - [Blueprint and Master Operation (MO)](docs/VAULT_CORE_BLUEPRINT_MASTER_OPERATION.md) — complete execution blueprint, operating procedures, QA, deployment, risk register, and go-live gates.
-- [Project Contract](PROJECT_CONTRACT.md) — approved product and technical baseline v1.2 CR-02; see Section 26.6 for the owner approval record.
+- [Project Contract](PROJECT_CONTRACT.md) — approved product and technical baseline v1.3 CR-03; see Sections 26.6 and 27 for the approval record and XTR-only model.
 - [Deployment Status](DEPLOYMENT_STATUS.md) — infrastructure and production readiness record.
 - [Production Deployment Runbook](PRODUCTION_DEPLOYMENT_RUNBOOK.md) — secrets, workflow, routing, and Telegram webhook procedure.
 
@@ -70,7 +70,7 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 - Stars refunds use a two-phase `REFUND_PENDING` state. If Telegram reports an already-refunded charge, the service checks the Stars transaction ledger before finalizing the internal status.
 - Sale price, cost, expenses, order snapshots, reports, refunds, and profit are recorded and displayed in XTR only.
 
-## Current implementation status
+- Owner Console includes an owner-only action to create four DRAFT TEST-only products with encrypted dummy delivery payloads. They remain hidden from the customer catalog until explicitly activated.\n\n## Current implementation status
 
 Latest deployed source on `main`: `1a415717e3155a4ca026c5a7f4fe6108cc53f9e8`. GitHub Actions production deployment run `44891173631`, attempt 2, completed **SUCCESS**. It passed secret and Cloudflare preflight, backend/core tests, frontend build, both Worker deployments, API health with Neon database connection, gateway upstream configuration, custom-domain/DNS/TLS checks for root/www/api, and Telegram webhook read-back.
 
