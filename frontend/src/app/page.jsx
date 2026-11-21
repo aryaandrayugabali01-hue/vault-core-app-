@@ -5,17 +5,17 @@ import { getInitData, getTelegramWebApp, openInvoice } from '../lib/telegram';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const CATEGORIES = [
-  { id: 'ALL', label: 'Semua game', mark: '✦' },
-  { id: 'MLBB', label: 'MLBB', mark: 'ML' },
+  { id: 'ALL', label: 'Semua produk', mark: '✦' },
+  { id: 'MLBB', label: 'MLBB', mark: '⚔' },
   { id: 'ROBLOX', label: 'Roblox', mark: 'R' },
-  { id: 'FREE_FIRE', label: 'Free Fire', mark: 'FF' },
-  { id: 'GENSHIN', label: 'Genshin Impact', mark: 'GI' }
+  { id: 'FREE_FIRE', label: 'Free Fire', mark: '◎' },
+  { id: 'GENSHIN', label: 'Genshin Impact', mark: '✧' }
 ];
 const TIERS = [
   { id: 'ALL', label: 'Semua tingkat' },
-  { id: 'SILVER', label: 'Silver' },
-  { id: 'GOLD', label: 'Gold' },
-  { id: 'PLATINUM', label: 'Platinum' },
+  { id: 'SILVER', label: 'Tier Silver' },
+  { id: 'GOLD', label: 'Tier Gold' },
+  { id: 'PLATINUM', label: 'Tier Platinum' },
   { id: 'SERVICE', label: 'Layanan' }
 ];
 
@@ -38,14 +38,17 @@ function AppIcon({ name }) {
   if (name === 'home') return <svg {...common}><path d="m3.5 10 8.5-7 8.5 7" /><path d="M5.5 9v11h13V9M9.5 20v-6h5v6" /></svg>;
   if (name === 'categories') return <svg {...common}><rect x="3.5" y="3.5" width="7" height="7" rx="1.7" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.7" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.7" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.7" /></svg>;
   if (name === 'orders') return <svg {...common}><path d="M6 3.5h9l3 3V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20z" /><path d="M14.5 3.5V7h3.5M9 11h6M9 15h6" /></svg>;
+  if (name === 'search') return <svg {...common}><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></svg>;
   return <svg {...common}><circle cx="12" cy="8" r="3.4" /><path d="M4.5 20c.7-3.3 3.4-5.2 7.5-5.2s6.8 1.9 7.5 5.2" /></svg>;
 }
 
 function ProductSkeleton({ index }) {
   return <article className="product-card skeleton-card" aria-hidden="true" key={index}>
-    <div className="product-art skeleton-block" />
+    <div className="product-card-head">
+      <div className="product-art skeleton-block" />
+      <div className="product-card-meta"><span className="skeleton-line skeleton-short" /><span className="skeleton-line skeleton-title" /><span className="skeleton-line skeleton-order-date" /></div>
+    </div>
     <div className="product-content">
-      <div className="skeleton-line skeleton-short" />
       <div className="skeleton-line skeleton-title" />
       <div className="skeleton-line skeleton-description" />
       <div className="skeleton-bottom"><div className="skeleton-line skeleton-price" /><div className="skeleton-button" /></div>
@@ -270,32 +273,46 @@ export default function HomePage() {
   return <>
     <main className="shell">
       <header className="topbar">
-        <a className="brand" href="#home" aria-label="Beranda VAULT CORE" onClick={() => setActiveTab('home')}>
+        <a className="brand" href="#home" aria-label="Beranda VAULT CORE" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}>
           <span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span>
         </a>
-        <span className="topbar-status"><span className="status-dot" /> TELEGRAM STARS <strong>XTR</strong></span>
+        <label className="top-searchbox" aria-label="Cari katalog">
+          <AppIcon name="search" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari game, SKU, atau produk…" aria-label="Cari game, SKU, atau produk" />
+        </label>
+        <button className="top-profile-button" type="button" onClick={openProfile} aria-label="Buka profil"><AppIcon name="profile" /></button>
       </header>
+
+      <nav className="store-tabs" aria-label="Filter kategori katalog">
+        {CATEGORIES.map((item) => <button
+          key={item.id}
+          type="button"
+          className={'store-tab ' + (category === item.id ? 'active' : '')}
+          aria-pressed={category === item.id}
+          onClick={() => setCategory(item.id)}
+        >{item.label}</button>)}
+      </nav>
 
       <section className="hero" id="home">
         <div className="hero-glow" />
-        <div className="eyebrow"><span className="pulse" /> DIGITAL GAMING STORE</div>
-        <h1>Semua kebutuhan<br /><span>gaming, satu tempat.</span></h1>
-        <p>Jelajahi kode digital, voucher, lisensi, dan layanan gaming yang tersedia di VAULT CORE.</p>
-        <a className="hero-cta" href="#catalog">Telusuri katalog <span>↗</span></a>
+        <div className="eyebrow"><span className="pulse" /> VAULT CORE DIGITAL STORE</div>
+        <h1>Temukan produk<br /><span>gaming favorit Anda.</span></h1>
+        <p>Katalog kode digital, voucher, lisensi, dan layanan gaming. Pilih produk, periksa ketersediaan, lalu bayar melalui Telegram Stars.</p>
+        <a className="hero-cta" href="#products">Jelajahi katalog <span>↗</span></a>
         <div className="hero-stats">
           <div><strong>04</strong><small>Kategori game</small></div>
           <div><strong>03</strong><small>Tingkat produk</small></div>
-          <div><strong>XTR</strong><small>Pembayaran Telegram Stars</small></div>
+          <div><strong>XTR</strong><small>Telegram Stars</small></div>
         </div>
       </section>
 
       <section className="section category-section" id="catalog">
         <div className="section-heading">
-          <div><span className="eyebrow muted">JELAJAHI STORE</span><h2 id="categories">Categories</h2></div>
-          <span className="section-count">04 GAME</span>
+          <div><span className="eyebrow muted">JELAJAHI KATALOG</span><h2 id="categories">Kategori game populer</h2></div>
+          <span className="section-count">04 KATEGORI</span>
         </div>
-        <div className="category-grid" role="group" aria-label="Filter kategori game">
-          {CATEGORIES.map((item) => <button
+        <div className="category-grid" role="group" aria-label="Pilih kategori game">
+          {CATEGORIES.slice(1).map((item) => <button
             key={item.id}
             type="button"
             className={'category-card ' + (category === item.id ? 'selected' : '') + ' cat-' + item.id.toLowerCase()}
@@ -303,7 +320,7 @@ export default function HomePage() {
             onClick={() => setCategory(item.id)}
           >
             <span className="cat-icon">{item.mark}</span>
-            <span className="cat-name">{item.label}</span>
+            <span className="category-copy"><strong>{item.label}</strong><small>Lihat katalog</small></span>
             <span className="cat-arrow">↗</span>
           </button>)}
         </div>
@@ -311,44 +328,51 @@ export default function HomePage() {
 
       <section className="section product-section" id="products">
         <div className="section-heading">
-          <div><span className="eyebrow muted">PILIH PRODUK</span><h2>Produk pilihan</h2></div>
+          <div><span className="eyebrow muted">PILIHAN UNTUK ANDA</span><h2>Katalog produk game</h2></div>
           <span className="section-count">{loading ? '—' : String(filtered.length).padStart(2, '0') + ' PRODUK'}</span>
         </div>
         <div className="filters" aria-label="Filter tingkat produk">
           {TIERS.map((item) => <button key={item.id} type="button" className={'filter-chip ' + (tier === item.id ? 'active' : '')} aria-pressed={tier === item.id} onClick={() => setTier(item.id)}>{item.label}</button>)}
         </div>
-        <label className="searchbox"><span aria-hidden="true">⌕</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari produk atau layanan…" aria-label="Cari produk atau layanan" /></label>
 
         {loading ? <div className="product-grid" aria-label="Memuat katalog" aria-busy="true">
           {[0, 1, 2, 3].map((item) => <ProductSkeleton index={item} key={item} />)}
         </div> : error ? <div className="empty-state error" role="alert"><span className="empty-icon">!</span><strong>Katalog belum tersedia</strong><p>{error}</p></div> : filtered.length === 0 ? <div className="empty-state">
-          <span className="empty-icon">◇</span>
-          <strong>Belum ada produk tersedia</strong>
-          <p>Produk akan muncul setelah pemilik toko mengaktifkan produk dan menambahkan stok yang siap dijual.</p>
+          <span className="empty-icon">⌕</span>
+          <strong>Produk tidak ditemukan</strong>
+          <p>Coba kata kunci lain atau pilih filter kategori dan tier yang berbeda.</p>
+          <button className="reset-filters" type="button" onClick={() => { setQuery(''); setCategory('ALL'); setTier('ALL'); }}>Reset filter</button>
         </div> : <div className="product-grid">
           {filtered.map((product) => {
             const game = product.game_category || 'OTHER';
             const promoBadge = product.badge === 'BEST_SELLER' ? 'BEST SELLER' : product.badge === 'HOT' ? 'HOT' : '';
+            const stockText = typeof product.display_stock === 'number'
+              ? 'Stok ' + product.display_stock
+              : product.display_stock === 'IN_STOCK' ? 'Tersedia' : 'Tersedia';
             return <article className="product-card" key={product.id}>
-              <div className={'product-art art-' + game.toLowerCase()}>
-                <span className="art-ring" />
-                <span className="art-orbit" />
-                <span className="art-monogram">{GAME_MARKS[game] || 'VC'}</span>
-                <span className="art-caption">{GAME_LABELS[game] || game.replaceAll('_', ' ')}</span>
+              <div className="product-card-head">
+                <div className={'product-art art-' + game.toLowerCase()}>
+                  <span className="art-ring" />
+                  <span className="art-orbit" />
+                  <span className="art-monogram">{GAME_MARKS[game] || 'VC'}</span>
+                </div>
+                <div className="product-card-meta">
+                  <span className={'tier-label ' + String(product.tier || '').toLowerCase()}>{TIER_LABELS[product.tier] || product.tier} Tier</span>
+                  <span className="product-sku">{product.sku}</span>
+                  <span className="stock-label"><span className="stock-dot" />{stockText}</span>
+                </div>
                 {promoBadge && <span className="product-badge">{promoBadge}</span>}
-                {product.is_test && <span className="product-badge badge-test">PRODUK UJI</span>}
+                {product.is_test && <span className="product-test-badge">PRODUK UJI</span>}
               </div>
               <div className="product-content">
-                <div className="product-top">
-                  <span className={'tier-label ' + String(product.tier || '').toLowerCase()}>{TIER_LABELS[product.tier] || product.tier}</span>
-                  <span className="stock-label">{typeof product.display_stock === 'number' ? 'Stok ' + product.display_stock : product.display_stock === 'IN_STOCK' ? 'Tersedia' : 'Tersedia'}</span>
-                </div>
                 <div className="product-category">{GAME_LABELS[game] || game.replaceAll('_', ' ')}</div>
                 <h3>{product.name}</h3>
                 <p>{product.description}</p>
                 <div className="product-bottom">
-                  <div><small>HARGA</small><strong>{product.sale_price_xtr} XTR</strong></div>
-                  <button className="buy-button" type="button" disabled={buyingId === product.id} onClick={() => buy(product)}>{buyingId === product.id ? 'Menyiapkan…' : 'Beli Sekarang'}</button>
+                  <div className="product-price"><small>HARGA</small><strong>{Number(product.sale_price_xtr).toLocaleString('en-US')} XTR</strong></div>
+                  <button className="buy-button" type="button" disabled={buyingId === product.id} onClick={() => buy(product)}>
+                    {buyingId === product.id ? 'Menyiapkan…' : 'Beli Sekarang'}
+                  </button>
                 </div>
               </div>
             </article>;
@@ -356,8 +380,12 @@ export default function HomePage() {
         </div>}
       </section>
 
-      <section className="trust-strip"><span>✦</span><div><strong>Pembayaran melalui Telegram Stars</strong><small>Pembayaran diproses melalui invoice resmi Telegram dalam XTR.</small></div></section>
-      <footer className="footer"><a className="brand" href="#home" onClick={() => setActiveTab('home')}><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a><small>© {new Date().getFullYear()} VAULT CORE. Katalog produk digital dan layanan gaming.</small></footer>
+      <section className="trust-strip">
+        <div className="trust-item"><span className="trust-icon">✦</span><div><strong>Telegram Stars</strong><small>Pembayaran invoice dalam XTR</small></div></div>
+        <div className="trust-item"><span className="trust-icon">✓</span><div><strong>Harga transparan</strong><small>Harga produk tampil dalam XTR</small></div></div>
+        <div className="trust-item"><span className="trust-icon">▤</span><div><strong>Riwayat pesanan</strong><small>Pantau pesanan dari menu akun</small></div></div>
+      </section>
+      <footer className="footer"><a className="brand" href="#home" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a><small>© {new Date().getFullYear()} VAULT CORE. Katalog produk digital dan layanan gaming.</small></footer>
 
       <nav className="bottom-nav" aria-label="Navigasi utama">
         <button type="button" className={'nav-item ' + (activeTab === 'home' ? 'active' : '')} aria-current={activeTab === 'home' ? 'page' : undefined} onClick={() => navigate('home')}><AppIcon name="home" /><span>Home</span></button>
