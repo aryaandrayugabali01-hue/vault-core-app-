@@ -103,6 +103,7 @@ export default function HomePage() {
   const [ownerCheck, setOwnerCheck] = useState('checking');
   const [setupBusy, setSetupBusy] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
+  const [telegramContext, setTelegramContext] = useState(null);
 
   async function loadCatalog() {
     setLoading(true);
@@ -121,6 +122,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const tg = getTelegramWebApp();
+    setTelegramContext(Boolean(getInitData()));
     tg?.ready();
     tg?.expand();
     loadCatalog();
@@ -349,6 +351,11 @@ export default function HomePage() {
         <button className="top-profile-button" type="button" onClick={openProfile} aria-label="Buka profil"><AppIcon name="profile" /></button>
       </header>
 
+      {telegramContext === false && <aside className="browser-access-notice" role="status">
+        <strong>Akses akun melalui Telegram</strong>
+        <span>Halaman ini menampilkan katalog publik. Login akun, riwayat pesanan, checkout XTR, dan Dashboard Owner tersedia setelah VAULT CORE dibuka melalui Telegram Mini App.</span>
+      </aside>}
+
       <nav className="store-tabs" aria-label="Filter kategori katalog">
         {CATEGORIES.map((item) => <button
           key={item.id}
@@ -531,7 +538,9 @@ export default function HomePage() {
           <button className="profile-orders-button" type="button" onClick={() => { setProfileOpen(false); showOrders(); }}>Lihat riwayat pesanan <span>↗</span></button>
           {ownerAccess && <div className="owner-test-access">
             <strong>Akses Owner aktif</strong>
-            <small>Produk contoh uji berada di ruang terpisah dan tidak tampil pada katalog publik.</small>
+            <small>Dashboard Owner digunakan untuk mengelola katalog, stok, transaksi, dan laporan usaha.</small>
+            <button className="profile-orders-button" type="button" onClick={() => window.location.assign('/admin')}>Buka Dashboard Owner <span>↗</span></button>
+            <small>Ruang uji berisi produk contoh terpisah dari katalog pelanggan.</small>
             <button className="profile-orders-button" type="button" disabled={setupBusy} onClick={prepareTestProducts}>{setupBusy ? 'Menyiapkan produk uji…' : 'Buka ruang uji · 4 produk'} <span>↗</span></button>
           </div>}
         </section>
