@@ -87,10 +87,11 @@ router.post('/test-fixtures', async (req, res) => {
   ];
   const client = await pool.connect();
   const result = [];
+  let changed = false;
   try {
     await client.query('BEGIN');
     for (const fixture of fixtures) {
-      const existing = await client.query('SELECT id,is_test FROM products WHERE sku=$1 FOR UPDATE', [fixture.sku]);
+      const existing = await client.query('SELECT id,is_test,status FROM products WHERE sku=$1 FOR UPDATE', [fixture.sku]);
       let product = existing.rows[0];
       if (product && product.is_test !== true) throw new Error('TEST_FIXTURE_SKU_CONFLICT:' + fixture.sku);
       if (!product) {
@@ -101,6 +102,7 @@ router.post('/test-fixtures', async (req, res) => {
            'PRODUK CONTOH UJI INTERNAL. Bukan produk komersial. Kode dummy ini tidak dapat ditukarkan. Harga 1 XTR hanya untuk menguji alur invoice dan transaksi.']
         );
         product = inserted.rows[0];
+        changed = true;
       }
       const stock = await client.query("SELECT id FROM inventory_items WHERE product_id=$1 AND status IN ('AVAILABLE','RESERVED') LIMIT 1", [product.id]);
       if (!stock.rowCount) {
@@ -109,15 +111,21 @@ router.post('/test-fixtures', async (req, res) => {
           'INSERT INTO inventory_items (product_id,payload_ciphertext,payload_nonce,payload_tag) VALUES ($1,$2,$3,$4)',
           [product.id,encrypted.payload_ciphertext,encrypted.payload_nonce,encrypted.payload_tag]
         );
+        changed = true;
       }
-      await client.query("UPDATE products SET status='ACTIVE', updated_at=NOW() WHERE id=$1 AND is_test=TRUE", [product.id]);
+      if (product.status !== 'ACTIVE') {
+        await client.query("UPDATE products SET status='ACTIVE', updated_at=NOW() WHERE id=$1 AND is_test=TRUE", [product.id]);
+        changed = true;
+      }
       result.push({ sku:fixture.sku, productId:product.id, status:'ACTIVE', isTest:true });
     }
+    if (changed) {
     await client.query(
       `INSERT INTO admin_audit_logs (actor_telegram_user_id,action,entity_type,entity_id,metadata)
        VALUES ($1,'TEST_FIXTURES_CREATED','PRODUCT','BATCH',$2)`,
       [String(req.telegramUser.id), JSON.stringify({ skus:fixtures.map((item) => item.sku), count:fixtures.length })]
     );
+    }
     await client.query('COMMIT');
     res.status(201).json({ createdOrVerified:result.length, fixtures:result, message:'Empat produk uji diaktifkan dengan stok dummy terenkripsi. Produk tampil di katalog; invoice pembelian bernilai 1 XTR dan hanya ditagihkan jika pengguna menyelesaikan pembayaran.' });
   } catch (error) {
