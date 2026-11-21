@@ -172,6 +172,7 @@ export default function AdminPage() {
 
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">KATALOG</span><h2>Buat produk</h2></div></div>
       <div className="admin-section-head"><button type="button" className="admin-primary" disabled={busy} onClick={seedTestFixtures}>Buat 4 produk contoh uji + stok dummy</button></div>
+      <p className="admin-footnote">Produk contoh berstatus Draf dan tersembunyi dari katalog. Setelah diaktifkan, pembelian memakai invoice Telegram Stars nyata sebesar 1 XTR; payload yang dikirim hanyalah kode dummy, bukan kode redeem.</p>
       <form className="admin-form" onSubmit={createProduct}>
         <label>SKU<input required value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} placeholder="MLBB-GOLD-001" /></label>
         <label>Kategori game<select value={form.gameCategory} onChange={e=>setForm({...form,gameCategory:e.target.value})}><option value="MLBB">MLBB</option><option value="ROBLOX">Roblox</option><option value="FREE_FIRE">Free Fire</option><option value="GENSHIN">Genshin Impact</option><option value="OTHER">Lainnya</option></select></label>
