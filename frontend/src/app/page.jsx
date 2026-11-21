@@ -93,6 +93,35 @@ export default function HomePage() {
         if (!response.ok) throw new Error('Katalog tidak dapat dimuat.');
         const data = await response.json();
         setProducts(data.products || []);
+
+        // Owner-only test setup runs automatically once the Mini App is opened in Telegram.
+        const initData = getInitData();
+        if (initData) {
+          try {
+            const sessionResponse = await fetch(API + '/api/session', {
+              headers: { 'x-telegram-init-data': initData }, cache: 'no-store'
+            });
+            if (sessionResponse.ok) {
+              const session = await sessionResponse.json();
+              if (session.isOwner === true) {
+                const setupResponse = await fetch(API + '/api/admin/test-fixtures', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json', 'x-telegram-init-data': initData },
+                  body: JSON.stringify({})
+                });
+                const setupData = await setupResponse.json();
+                if (!setupResponse.ok) throw new Error(setupData.message || 'Persiapan produk uji gagal.');
+                const refreshed = await fetch(API + '/api/catalog', { cache: 'no-store' });
+                const refreshedData = await refreshed.json();
+                if (!refreshed.ok) throw new Error('Produk uji tersimpan, tetapi katalog belum dapat dimuat ulang.');
+                setProducts(refreshedData.products || []);
+                setNotice('Empat produk uji dan stok dummy siap. Katalog sudah diperbarui.');
+              }
+            }
+          } catch (setupError) {
+            setNotice(setupError.message || 'Persiapan produk uji gagal. Buka Profile untuk mencoba kembali.');
+          }
+        }
       } catch (e) {
         setError(e.message || 'Katalog tidak dapat dimuat. Coba kembali.');
       } finally {
