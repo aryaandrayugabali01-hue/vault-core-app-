@@ -8,7 +8,7 @@
 |---|---|---|
 | Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; 10 application tables and 3 migration registry records confirmed |
 | GitHub | `aryaandrayugabali01-hue/vault-core-app-` / `main` | Source published; repository read/write operations verified |
-| Cloudflare | Primary account | `vault-core-gateway` deployed; zone `vaultcore.biz.id` active; assigned nameservers are recorded below; app upstreams and custom domains remain unconfigured |
+| Cloudflare | Primary account | `vault-core-gateway` deployed; zone `vaultcore.biz.id` active; assigned nameservers are recorded below; a separate `vaultcore.web.id` zone is pending and is not the selected production domain |
 | Telegram | Bot API | No production bot identity/token or webhook configuration has been supplied to the deployment environment |
 
 ## Repository state
@@ -71,7 +71,7 @@ Connected Neon database `vault_core` was inspected read-only:
 - `workers.dev` was enabled and Worker settings were read back successfully; observability logs and traces are enabled.
 - Gateway routes `/api/*` and `api.*` host traffic to `API_ORIGIN`; other paths route to `WEB_ORIGIN`.
 - `API_ORIGIN` and `WEB_ORIGIN` are intentionally unset until `vault-core-api` and `vault-core-web` are deployed. `/_gateway/health` reports gateway readiness only, not application readiness. Unconfigured upstream requests return HTTP 503.
-- Cloudflare zone `vaultcore.biz.id` has been created as a full zone, active.
+- Cloudflare zone `vaultcore.biz.id` is active. Verified zone ID: `74092a358232c7bf501da8d822fabb47`.
 - Assigned nameservers: `marty.ns.cloudflare.com` and `sharon.ns.cloudflare.com`. They are already active at the registrar.
 - Worker Custom Domains are not attached yet. Once the application origins are deployed, attach `vaultcore.biz.id`, `www.vaultcore.biz.id`, and `api.vaultcore.biz.id` to this Worker; Cloudflare will provision their DNS records and TLS certificates.
 - The gateway source is stored at `cloudflare/vault-core-gateway.js` in this repository.
@@ -80,7 +80,7 @@ Connected Neon database `vault_core` was inspected read-only:
 
 1. Cloudflare application Workers `vault-core-web` and `vault-core-api` still need builds and deployments; `wrangler.api.jsonc` now configures `vault-core-api` and its Hyperdrive binding. The existing gateway alone does not host either runtime.
 2. Neon runtime role `vault_core_runtime` has been created and verified with CONNECT, schema USAGE, and table DML privileges. Cloudflare Hyperdrive `vault-core-neon` is created and verified; SQL response caching is disabled. Hyperdrive ID: `97e2993f7733422abd08bfbf699ce4e4`.
-3. Zone `vaultcore.biz.id` is active. Cloudflare reports IDWebHost as the original registrar and the assigned nameservers are active.
+3. Zone `vaultcore.biz.id` is active. Cloudflare zone ID `74092a358232c7bf501da8d822fabb47` for `vaultcore.biz.id` is active; IDWebHost is the registrar and assigned nameservers are active. A separate `vaultcore.web.id` zone (ID `14098744832c82ae7b61bc46f695e186`) is pending and is not used by this deployment.
 4. Express API Worker source adapter and `wrangler.api.jsonc` are present; the config now declares the `HYPERDRIVE` binding. Worker build and deployment remain pending. Next.js frontend vinext setup and Cloudflare build remain pending.
 5. The Hyperdrive binding ID is declared in `wrangler.api.jsonc` but becomes active only after the API Worker is deployed. Production application secrets remain unset: Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
 6. Telegram bot username/ownership and production webhook target are not known.
