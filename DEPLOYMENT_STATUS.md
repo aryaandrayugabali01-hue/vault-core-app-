@@ -1,12 +1,12 @@
 # VAULT CORE — Deployment Status
 
-**Updated:** 2026-11-21 (XTR-only production deployment, migration 006, and test fixture setup)
+**Updated:** 2026-11-21 (owner access audit, migration 007, and one-tap test setup)
 
 ## Connected infrastructure
 
 | Service | Resource | Verified status |
 |---|---|---|
-| Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; 10 application tables and 6 migration records verified, including XTR-only migration 006 |
+| Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; 11 application tables and 7 migration records verified, including XTR-only migration 006 and owner allowlist migration 007 |
 | GitHub | `aryaandrayugabali01-hue/vault-core-app-` / `main` | Source published; repository read/write operations verified |
 | Cloudflare | Primary account | `vault-core-gateway`, `vault-core-api`, and `vault-core-web` deployed; gateway origins installed; root/www/api custom domains attached and public DNS/TLS checks passed in production run `44902626165` attempt 1 |
 | Telegram | Bot API | Production bot identity passed `getMe`; webhook was set to `https://api.vaultcore.biz.id/api/telegram/webhook` and read-back passed in production run `44902626165` attempt 1 |
@@ -39,15 +39,18 @@ Latest run completed after rate-limit routing was adjusted so Telegram's payment
 Connected Neon database `vault_core` was inspected read-only:
 
 - Tables present: `admin_audit_logs`, `customers`, `deliveries`, `inventory_items`, `operating_expenses`, `order_items`, `orders`, `products`, `schema_migrations`, `transactions`.
-- Migration registry contains `001` through `005`, verified by read-back.
+- Migration registry contains `001` through `007`, verified by read-back.
+- Migration 007 adds `owner_accounts` for database-backed owner provisioning.
 - Migration 004 adds reservation ownership, `REVIEW_REQUIRED` delivery state, and a uniqueness guard for active delivery per inventory item.
 - Migration 005 adds a unique pre-checkout query ID per order to prevent a second distinct checkout query from claiming the same order.
-- Post-deploy read-only content audit (21 Nov 2026): `products=0`, `inventory_items=0`, `orders=0`, `transactions=0`. Database connectivity is healthy, but catalog, stock, and real transaction acceptance have not yet been established.
+- Post-migration audit (21 Nov 2026): `products=4` TEST-only DRAFT products, `inventory_items=0`, `orders=0`, `transactions=0`. Database connectivity is healthy. The owner has not yet completed one-tap fixture activation.
 
 ## Security and code review notes
 
 - Telegram Mini App `initData` HMAC and age validation are implemented.
-- Owner authorization uses the server-side Telegram ID allowlist.
+- Owner authorization uses the server-side Telegram ID allowlist plus an active database-backed `owner_accounts` allowlist. The Profile endpoint returns only the authenticated user's own numeric Telegram ID and owner status.
+- Previous Profile UI silently hid the test setup button on owner-auth failures. The revised UI surfaces verification state and the verified Telegram ID so the owner can be provisioned without manual deployment-secret edits.
+- The test fixture setup action is consolidated to one customer Profile entry point; the duplicate Owner Console seed button was removed.
 - Telegram webhook validates its secret token using a timing-safe comparison.
 - Stock reservation uses database row locks and `SKIP LOCKED`.
 - Digital inventory payloads are encrypted; unsupported account credentials/authentication material are rejected.
