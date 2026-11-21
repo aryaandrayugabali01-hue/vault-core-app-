@@ -32,7 +32,7 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 - Database: `vault_core`
 - Default branch: `main`
 
-The connected schema was checked: 10 application tables are present and all 6 migrations (001–006) are registered. Migrations 004 and 005 add reservation ownership/delivery review and a single pre-checkout claim per order. Migration 006 moves all active product and finance amounts to XTR and adds the TEST fixture marker.
+The connected schema was checked: 11 application tables are present and all 7 migrations (001–007) are registered. Migration 007 adds a database-backed owner account allowlist. Migrations 004 and 005 add reservation ownership/delivery review and a single pre-checkout claim per order. Migration 006 moves all active product and finance amounts to XTR and adds the TEST fixture marker.
 
 ## Local setup
 
@@ -51,7 +51,7 @@ Set `TELEGRAM_WEBHOOK_URL` to the public API route, then run `npm run setup:webh
 
 ## Owner access
 
-Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permitted to use the owner console. Customer and owner API requests must include Telegram Mini App `initData`; the backend validates its HMAC and timestamp.
+Owner authorization accepts either the existing `ADMIN_TELEGRAM_IDS` server-side allowlist or an active record in `owner_accounts`. The Profile screen exposes the backend-verified Telegram numeric ID and owner access state; an owner can be provisioned in the database without editing deployment secrets. Customer and owner API requests must include Telegram Mini App `initData`; the backend validates its HMAC and timestamp.
 
 ## Operational rules
 
@@ -70,15 +70,15 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 - Stars refunds use a two-phase `REFUND_PENDING` state. If Telegram reports an already-refunded charge, the service checks the Stars transaction ledger before finalizing the internal status.
 - Sale price, cost, expenses, order snapshots, reports, refunds, and profit are recorded and displayed in XTR only.
 
-- Owner Console includes an owner-only action to create four DRAFT TEST-only products and encrypted dummy delivery payloads. They remain hidden from the customer catalog until explicitly activated.
+- The customer Profile exposes one owner-only action to create/activate four TEST-only sample products and encrypted dummy delivery payloads. This action is idempotent and seeds one available dummy inventory item per sample product. The samples appear in the customer catalog after successful setup.
 
 ## Current implementation status
 
-Latest deployed application source: `eafd57dca29404729d2dad7587810e7b025a8cdf`. GitHub Actions production deployment run `44902626165`, attempt 1, completed **SUCCESS**. It passed secret and Cloudflare preflight, backend/core tests, frontend build, both Worker deployments, API health with Neon database connection, gateway upstream configuration, custom-domain/DNS/TLS checks for root/www/api, and Telegram webhook read-back.
+Production infrastructure was deployed successfully in run `44902626165`. The latest owner onboarding and one-tap test setup changes are tracked by subsequent CI/production workflow runs; consult GitHub Actions for the current head SHA and deployment result. It passed secret and Cloudflare preflight, backend/core tests, frontend build, both Worker deployments, API health with Neon database connection, gateway upstream configuration, custom-domain/DNS/TLS checks for root/www/api, and Telegram webhook read-back.
 
 Implemented in source and CI-validated: Telegram `initData` authentication, catalog API, order creation/reservation with owning order IDs, single pre-checkout claim per order, Stars invoice generation, successful-payment verification/idempotency, encrypted inventory, ambiguous-delivery review/reconciliation, two-phase Stars refund recovery, `/paysupport`, owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console.
 
-Live production infrastructure is deployed, but sales readiness is still gated by actual catalog setup and acceptance tests. A Neon audit on 21 November 2026 after migration 006 found **4 TEST-only products in DRAFT, 0 inventory items, 0 orders, and 0 transactions**. These sample records are excluded from the customer catalog until Owner activates them. No commercial SKU has been approved or activated. Live XTR payment, refund, fulfilment, IDOR, backup/restore, production rate-limit, and Owner UAT tests remain pending.
+Live production infrastructure is deployed, but sales readiness is still gated by actual catalog setup and acceptance tests. A Neon audit after migration 006 found **4 TEST-only products in DRAFT, 0 inventory items, 0 orders, and 0 transactions**. Migration 007 adds database-backed owner provisioning so the verified owner can run the one-tap setup from Profile. The four samples remain DRAFT until that action is successfully run. No commercial SKU has been approved or activated. Live XTR payment, refund, fulfilment, IDOR, backup/restore, production rate-limit, and Owner UAT tests remain pending.
 
 ## Production deployment
 
