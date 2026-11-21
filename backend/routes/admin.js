@@ -85,17 +85,25 @@ router.post('/test-fixtures', async (req, res) => {
     { sku:'TEST-FREEFIRE-001', gameCategory:'FREE_FIRE', tier:'PLATINUM', name:'TEST ONLY - Free Fire Delivery Sample', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-FREEFIRE-001' },
     { sku:'TEST-GENSHIN-001', gameCategory:'GENSHIN', tier:'SILVER', name:'TEST ONLY - Genshin Delivery Sample', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-GENSHIN-001' }
   ];
-  const client = await pool.connect();
   const result = [];
+  let client = null;
   let changed = false;
+  let stage = 'route-entered';
+  const query = (...args) => process.env.DATABASE_CONNECTION_MODE === 'request'
+    ? pool.query(...args)
+    : query(...args);
+  console.info('[test-fixture-route-entered]');
   try {
-    await client.query('BEGIN');
+    stage = 'database-connect';
+    if (process.env.DATABASE_CONNECTION_MODE !== 'request') client = await pool.connect();
+    stage = 'transaction-begin';
+    await query('BEGIN');
     for (const fixture of fixtures) {
-      const existing = await client.query('SELECT id,is_test,status FROM products WHERE sku=$1 FOR UPDATE', [fixture.sku]);
+      const existing = await query('SELECT id,is_test,status FROM products WHERE sku=$1 FOR UPDATE', [fixture.sku]);
       let product = existing.rows[0];
       if (product && product.is_test !== true) throw new Error('TEST_FIXTURE_SKU_CONFLICT:' + fixture.sku);
       if (!product) {
-        const inserted = await client.query(
+        const inserted = await query(
           `INSERT INTO products (sku,game_category,tier,name,description,fulfillment_type,sale_price_xtr,cost_price_xtr,rights_review_reference,is_test,status)
            VALUES ($1,$2,$3,$4,$5,'SERVICE_INSTRUCTIONS',1,0,'INTERNAL_TEST_FIXTURE_ONLY',TRUE,'DRAFT') RETURNING id`,
           [fixture.sku,fixture.gameCategory,fixture.tier,fixture.name,
@@ -104,35 +112,39 @@ router.post('/test-fixtures', async (req, res) => {
         product = inserted.rows[0];
         changed = true;
       }
-      const stock = await client.query("SELECT id FROM inventory_items WHERE product_id=$1 AND status IN ('AVAILABLE','RESERVED') LIMIT 1", [product.id]);
+      const stock = await query("SELECT id FROM inventory_items WHERE product_id=$1 AND status IN ('AVAILABLE','RESERVED') LIMIT 1", [product.id]);
       if (!stock.rowCount) {
+        stage = 'inventory-encrypt';
         const encrypted = encryptPayload(assertAllowedDigitalPayload(fixture.payload));
-        await client.query(
+        stage = 'inventory-insert';
+        await query(
           'INSERT INTO inventory_items (product_id,payload_ciphertext,payload_nonce,payload_tag) VALUES ($1,$2,$3,$4)',
           [product.id,encrypted.payload_ciphertext,encrypted.payload_nonce,encrypted.payload_tag]
         );
         changed = true;
       }
       if (product.status !== 'ACTIVE') {
-        await client.query("UPDATE products SET status='ACTIVE', updated_at=NOW() WHERE id=$1 AND is_test=TRUE", [product.id]);
+        stage = 'product-activate';
+        await query("UPDATE products SET status='ACTIVE', updated_at=NOW() WHERE id=$1 AND is_test=TRUE", [product.id]);
         changed = true;
       }
       result.push({ sku:fixture.sku, productId:product.id, status:'ACTIVE', isTest:true });
     }
     if (changed) {
-    await client.query(
+    await query(
       `INSERT INTO admin_audit_logs (actor_telegram_user_id,action,entity_type,entity_id,metadata)
        VALUES ($1,'TEST_FIXTURES_CREATED','PRODUCT','BATCH',$2)`,
       [String(req.telegramUser.id), JSON.stringify({ skus:fixtures.map((item) => item.sku), count:fixtures.length })]
     );
     }
-    await client.query('COMMIT');
+    stage = 'transaction-commit';
+    await query('COMMIT');
     res.status(201).json({ createdOrVerified:result.length, fixtures:result, message:'Empat produk uji diaktifkan dengan stok dummy terenkripsi. Produk tampil di katalog; invoice pembelian bernilai 1 XTR dan hanya ditagihkan jika pengguna menyelesaikan pembayaran.' });
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('[test-fixture-seed-error]', error.message);
-    res.status(409).json({ error:'TEST_FIXTURE_SEED_FAILED', message:'Produk contoh uji tidak dapat dibuat. Periksa SKU contoh dan konfigurasi enkripsi.' });
-  } finally { client.release(); }
+    try { await query('ROLLBACK'); } catch {}
+    console.error('[test-fixture-seed-error]', stage, error.name, error.message, error.stack);
+    res.status(500).json({ error:'TEST_FIXTURE_SEED_FAILED', stage, message:'Persiapan produk uji gagal pada tahap ' + stage + '. Detail telah dicatat di log server.' });
+  } finally { client?.release(); }
 });
 router.post('/expenses', async (req, res) => {
   const { category, description, amountXtr, occurredAt } = req.body ?? {};
