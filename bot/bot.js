@@ -13,19 +13,34 @@ if (!webhookUrl.startsWith('https://')) {
   process.exit(1);
 }
 
-const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
-  method: 'POST',
-  headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({
-    url: webhookUrl,
-    secret_token: secret,
-    allowed_updates: ['message', 'pre_checkout_query'],
-    drop_pending_updates: false
-  })
-});
-const result = await response.json();
-if (!response.ok || !result.ok) {
-  console.error(result.description || 'Telegram webhook setup failed.');
+let result;
+let lastError;
+for (let attempt = 1; attempt <= 5; attempt += 1) {
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        url: webhookUrl,
+        secret_token: secret,
+        allowed_updates: ['message', 'pre_checkout_query'],
+        drop_pending_updates: false
+      }),
+      signal: AbortSignal.timeout(15_000)
+    });
+    result = await response.json();
+    if (response.ok && result.ok) break;
+    throw new Error(result.description || 'Telegram webhook setup failed.');
+  } catch (error) {
+    lastError = error;
+    if (attempt === 5) break;
+    const delay = Math.min(1_000 * (2 ** (attempt - 1)), 8_000);
+    console.warn(`Telegram webhook attempt ${attempt} failed; retrying in ${delay}ms.`);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+}
+if (!result?.ok) {
+  console.error(lastError?.message || result?.description || 'Telegram webhook setup failed after retries.');
   process.exit(1);
 }
 console.log(`Telegram webhook configured: ${webhookUrl}`);
