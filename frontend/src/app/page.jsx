@@ -116,7 +116,7 @@ export default function HomePage() {
         <a className="hero-cta" href="#catalog">Lihat katalog <span>↗</span></a>
         <div className="hero-stats">
           <div><strong>4</strong><small>Kategori game</small></div>
-          <div><strong>3</strong><small>Tier pilihan</small></div>
+          <div><strong>3</strong><small>Tingkat produk</small></div>
           <div><strong>XTR</strong><small>Pembayaran Telegram Stars</small></div>
         </div>
       </section>
