@@ -79,7 +79,7 @@ Connected Neon database `vault_core` was inspected read-only:
 ## Deployment blockers
 
 1. Cloudflare application Workers `vault-core-web` and `vault-core-api` still need to be built and deployed; the existing gateway alone does not host either runtime.
-2. Hyperdrive is not configured. A restricted Neon runtime database role and its connection credential are required before connecting the API Worker.
+2. Neon runtime role `vault_core_runtime` has been created and verified with CONNECT, schema USAGE, and table DML privileges. Its password and Cloudflare Hyperdrive configuration remain to be set.
 3. Zone `vaultcore.biz.id` is active. Cloudflare reports IDWebHost as the original registrar and the assigned nameservers are active.
 4. The Next.js frontend and Express API have not yet been adapted and deployed as Cloudflare-compatible application origins.
 5. Production secrets and bindings are not set: Hyperdrive binding, Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
