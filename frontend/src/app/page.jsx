@@ -139,9 +139,10 @@ export default function HomePage() {
         {loading ? <div className="empty-state">Memuat katalog…</div> : error ? <div className="empty-state error">{error}</div> : filtered.length === 0 ? <div className="empty-state"><span className="empty-icon">◇</span><strong>Belum ada produk tersedia</strong><p>Produk akan ditampilkan setelah pemilik toko mengaktifkan produk dan menambahkan stok yang siap dijual.</p></div> : <div className="product-grid">
           {filtered.map((product) => <article className="product-card" key={product.id}>
             <div className="product-top"><span className={`tier-label ${product.tier.toLowerCase()}`}>{TIER_LABELS[product.tier] || product.tier}</span><span className="stock-label">{typeof product.display_stock === 'number' ? `Stok ${product.display_stock}` : product.display_stock === 'IN_STOCK' ? 'Tersedia' : 'Tersedia'}</span></div>
+            {product.is_test && <span className="test-product-label">CONTOH UJI</span>}
             <div className="product-category">{GAME_LABELS[product.game_category] || product.game_category.replaceAll('_', ' ')}</div>
             <h3>{product.name}</h3><p>{product.description}</p>
-            <div className="product-bottom"><div><small>HARGA</small><strong>{product.sale_price_idr ? `Rp${Number(product.sale_price_idr).toLocaleString('id-ID')}` : `${product.sale_price_xtr} Stars`}</strong></div>
+            <div className="product-bottom"><div><small>HARGA</small><strong>{product.sale_price_xtr} XTR</strong></div>
               <button className="buy-button" disabled={buyingId === product.id} onClick={() => buy(product)}>{buyingId === product.id ? '…' : 'Beli'}</button></div>
           </article>)}
         </div>}
