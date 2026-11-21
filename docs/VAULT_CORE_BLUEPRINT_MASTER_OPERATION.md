@@ -49,16 +49,16 @@ Sasaran penyelesaian:
 4. Aplikasi berjalan melalui arsitektur Cloudflare Workers yang telah dipilih, dengan Neon PostgreSQL dipertahankan melalui Hyperdrive.
 5. Proyek lulus pengujian fungsional, keamanan, pemulihan, performa, UAT, dan pengujian live yang disyaratkan sebelum status produksi berubah menjadi READY.
 
-### Hasil teknis yang telah terverifikasi pada baseline repository
+### Hasil teknis yang telah terverifikasi pada baseline dan live recheck 21 November 2026
 
-- Main branch berada pada commit 155bbc6bb4b64475dd10fec048614e53011f84cb.
-- GitHub Actions pada commit tersebut: VAULT CORE CI run 44853143423 SUCCESS dan Cloudflare frontend preparation run 44853143408 SUCCESS.
-- CI menjalankan instalasi dependency, tes backend/core, build Next.js, dan dry-run bundling API Worker.
-- Pipeline frontend menyiapkan konfigurasi Vinext/Cloudflare dan membangun output Worker.
-- Database project Neon dan tiga migration files tercatat pada Deployment Status.
-- Source mencakup customer authentication Telegram Mini App, katalog, order reservation, invoice Stars, pre-checkout, successful payment, encrypted inventory, delivery, refund, Owner API, dan gateway source.
-- Gateway Worker tercatat telah di-deploy. API Worker dan frontend Worker aplikasi belum dinyatakan deployed pada Deployment Status.
-- Secret produksi, domain routing gateway, webhook produksi, uji pembayaran live, dan UAT produksi belum dinyatakan selesai.
+- Latest verified source on `main`: `f682001ee694937d9ba2da77b70867dfdc56f6e3`.
+- GitHub Actions CI run `44885310611`: SUCCESS on the same commit (backend/core tests, Mini App build, API Worker dry-run).
+- Cloudflare frontend preparation run `44885310642`: SUCCESS on the same commit (Vinext compatibility, Cloudflare integration, Worker build/output verification).
+- Neon database `vault_core` contains 10 application tables and five registered migrations (`001`–`005`).
+- Source includes Telegram authentication, catalog, order reservation with owner binding, single pre-checkout claim per order, Stars invoice/payment idempotency, encrypted inventory, ambiguous delivery reconciliation, two-phase Stars refund recovery, Owner API and gateway source.
+- Cloudflare live read-back shows only `vault-core-gateway` (plus unrelated existing Workers); `vault-core-api` and `vault-core-web` do not exist in the target account. Gateway origins remain unset, Worker Custom Domains list is empty, and zone DNS record list is empty.
+- Production workflow run `44884767909` stopped at preflight because `CLOUDFLARE_API_TOKEN` was missing; all five required GitHub Actions secret variables were empty and no deployment steps ran.
+- Production Telegram bot identity/token, webhook, live XTR payment/refund/delivery tests, IDOR review, backup/restore, and UAT remain unverified/pending.
 
 ## 2. Prinsip dan ruang lingkup yang dikunci
 
@@ -214,14 +214,14 @@ Status pada tabel ini mengikuti file sumber yang diperiksa, bukan penilaian visu
 | Order baru | POST /api/orders tersedia | IMPLEMENTED; perlu concurrency test pada staging |
 | Riwayat order customer | GET /api/orders/mine tersedia | IMPLEMENTED |
 | Detail order customer | Endpoint detail single order tidak ditemukan pada route yang diperiksa | PENDING |
-| Reservasi stok | Row locking dan SKIP LOCKED tersedia | IMPLEMENTED; perlu stress test |
+| Reservasi stok | Row locking/SKIP LOCKED, `reserved_order_id`, dan owner constraint tersedia | IMPLEMENTED; CI PASS; concurrency/staging test pending |
 | Pembayaran XTR | Invoice Telegram Stars tersedia | IMPLEMENTED; belum live tested |
-| Pre-checkout | User, status, currency, amount, reservation count divalidasi | IMPLEMENTED; perlu live test |
-| Successful payment | Charge ID unik dan order transaction update tersedia | IMPLEMENTED; perlu replay test |
+| Pre-checkout | User, status, currency, amount, reservation ownership, expiry, and unique pre-checkout query ID per order are validated | IMPLEMENTED; CI PASS; Telegram live test pending |
+| Successful payment | Charge ID unique, same-order idempotency, and pre-checkout claim required | IMPLEMENTED; CI PASS; Telegram replay/live test pending |
 | Enkripsi inventory | Payload encryption saat ditambahkan; ciphertext/nonce/tag disimpan | IMPLEMENTED; perlu key rotation/recovery drill |
-| Delivery otomatis | Pengiriman Telegram dengan protected content dan status | IMPLEMENTED; perlu fail/retry/duplicate test |
-| Retry delivery Owner | Route retry delivery tersedia | IMPLEMENTED; perlu pengujian ambigu network |
-| Refund Stars Owner | Route refund memanggil Telegram dan memperbarui order/transaksi | IMPLEMENTED; belum live tested |
+| Delivery otomatis | Protected content; inventory order-owner check; stale/ambiguous sends go to REVIEW_REQUIRED | IMPLEMENTED; CI PASS; Telegram fail/retry/duplicate test pending |
+| Retry delivery Owner | Retry only for definitive Telegram rejection; ambiguous outcomes use Owner reconciliation endpoint | IMPLEMENTED; CI PASS; live acceptance pending |
+| Refund Stars Owner | Two-phase REFUND_PENDING; Telegram already-refunded charge can be reconciled against getStarTransactions before final status | IMPLEMENTED; CI PASS; live Stars refund test pending |
 | Dashboard Owner | Ringkasan penjualan, stok, order, biaya, profit tersedia | IMPLEMENTED; perlu rekonsiliasi angka |
 | CRUD produk | Create dan patch tersedia; detail route/soft deletion perlu diuji | PARTIAL |
 | Inventory add | Endpoint menambah satu/banyak payload ada | IMPLEMENTED |
@@ -457,6 +457,10 @@ Migration yang tercatat:
 - database/migrations/001_initial_schema.sql
 - database/migrations/002_finance_and_order_snapshots.sql
 - database/migrations/003_delivery_recovery.sql
+- database/migrations/004_reservation_ownership_and_delivery_review.sql
+- database/migrations/005_pre_checkout_single_payment_guard.sql
+
+Migration 004 menambahkan `inventory_items.reserved_order_id`, constraint owner reservation, delivery status `REVIEW_REQUIRED`, dan partial unique index untuk active delivery per inventory item. Migration 005 menambahkan `orders.pre_checkout_query_id` dengan partial unique index agar satu order hanya dapat memiliki satu checkout claim unik. Kedua migration tercatat applied di Neon dengan checksum yang cocok dengan source file.
 
 Tabel yang tercatat pada database deployment status:
 - customers
@@ -919,16 +923,16 @@ Setiap hasil tes harus mencantumkan Test ID, environment, commit SHA, langkah, e
 | ID | Pekerjaan | Alasan/hasil yang diharapkan | Status baseline |
 |---|---|---|---|
 | P0-01 | Konfirmasi dan persetujuan PROJECT_CONTRACT v1.2 Bagian 26.6 | Scope punya persetujuan owner | DONE — persetujuan tertulis pemilik tercatat 2026-11-21 |
-| P0-02 | Verifikasi akun Cloudflare yang benar, token scope, dan akses resource | Deployment tidak memakai akun yang salah | PENDING |
-| P0-03 | Siapkan lima repository secrets wajib | Workflow lolos preflight | PENDING |
-| P0-04 | Konfirmasi BotFather identity dan token produksi | Identitas bot final | PENDING |
-| P0-05 | Verifikasi ADMIN_TELEGRAM_IDS | Owner/admin server-side benar | PENDING |
-| P0-06 | Pastikan migrations/runtime DB role/Hyperdrive konsisten | API mampu query DB | CONFIGURATION RECORDED; recheck required |
-| P0-07 | Audit dan tutup bug kritis payment/order/delivery | Tidak ada transaksi ganda atau kehilangan stok | PENDING acceptance |
-| P0-08 | Deployment API Worker | API berjalan pada Cloudflare | NOT DEPLOYED |
-| P0-09 | Deployment frontend Worker | Mini App berjalan pada Cloudflare | NOT DEPLOYED |
-| P0-10 | Konfigurasi gateway upstream dan custom domains | Domain publik mengarah ke aplikasi | PENDING |
-| P0-11 | Setup webhook Telegram production | Bot menerima update pada API | PENDING |
+| P0-02 | Verifikasi akun Cloudflare yang benar, token scope, dan akses resource | Deployment tidak memakai akun yang salah | ACCOUNT IDENTITY VERIFIED; API-token preflight BLOCKED (secret kosong; connector token verify 401) |
+| P0-03 | Siapkan lima repository secrets wajib | Workflow lolos preflight | BLOCKED — workflow run 44884767909 membuktikan kelima secret environment kosong |
+| P0-04 | Konfirmasi BotFather identity dan token produksi | Identitas bot final | BLOCKED — TELEGRAM_BOT_TOKEN kosong; identitas bot belum dapat dibaca |
+| P0-05 | Verifikasi ADMIN_TELEGRAM_IDS | Owner/admin server-side benar | BLOCKED — secret kosong; owner ID belum dikonfigurasi |
+| P0-06 | Pastikan migrations/runtime DB role/Hyperdrive konsisten | API mampu query DB | VERIFIED — 10 tables, 5 migrations; Neon runtime role dan Hyperdrive resource tersedia; Worker binding belum live |
+| P0-07 | Audit dan tutup bug kritis payment/order/delivery | Tidak ada transaksi ganda atau kehilangan stok | SOURCE FIXES IMPLEMENTED + CI PASS; live/staging acceptance pending |
+| P0-08 | Deployment API Worker | API berjalan pada Cloudflare | VERIFIED ABSENT from target account |
+| P0-09 | Deployment frontend Worker | Mini App berjalan pada Cloudflare | VERIFIED ABSENT from target account |
+| P0-10 | Konfigurasi gateway upstream dan custom domains | Domain publik mengarah ke aplikasi | BLOCKED — origins unset; custom domains/DNS list empty |
+| P0-11 | Setup webhook Telegram production | Bot menerima update pada API | BLOCKED — production bot token not configured |
 | P0-12 | Live health check dan payment/delivery acceptance | Jalur live terbukti | PENDING |
 | P0-13 | Owner UAT dan release approval | Keputusan launch tercatat | PENDING |
 
@@ -942,7 +946,7 @@ Setiap hasil tes harus mencantumkan Test ID, environment, commit SHA, langkah, e
 | P1-04 | Filter/pagination order dan report | Owner dapat mengelola volume data |
 | P1-05 | Rekonsiliasi refund dan revenue | Finance dashboard cocok dengan ledger |
 | P1-06 | SKU approval evidence workflow | Referensi hak produk dapat diperiksa |
-| P1-07 | Delivery ambiguous-result reconciliation | Mencegah pengiriman ganda saat timeout |
+| P1-07 | Delivery ambiguous-result reconciliation | Mencegah pengiriman ganda saat timeout | IMPLEMENTED: REVIEW_REQUIRED + owner reconciliation; live acceptance pending |
 | P1-08 | Backup/restore drill | Database dapat dipulihkan |
 | P1-09 | IDOR/security review | Kepemilikan data customer teruji |
 | P1-10 | Rate-limit multi-instance strategy | Proteksi tetap konsisten saat skala naik |
@@ -1026,13 +1030,13 @@ Change request harus mencakup kebutuhan, use case, alasan, dampak ke UI/API/data
 
 Hal berikut tidak boleh diisi berdasarkan tebakan:
 
-1. Username bot Telegram produksi dan identitas BotFather final.
-2. Nilai rahasia produksi dan status apakah telah dipasang.
-3. Daftar final Telegram user ID Owner/Admin.
-4. Bukti saat ini bahwa Cloudflare API token punya permission Workers Scripts: Edit dan Hyperdrive: Read pada akun yang benar.
-5. Apakah API Worker dan frontend Worker telah berhasil di-deploy setelah baseline commit.
-6. Apakah gateway variables dan custom domains telah disetel setelah baseline deployment status.
-7. Status webhook Telegram production saat ini.
+1. Username bot Telegram produksi dan identitas BotFather final; token secret belum dikonfigurasi.
+2. Nilai rahasia produksi belum tersedia pada GitHub Actions; lima variabel wajib terbukti kosong pada preflight run 44884767909.
+3. Daftar final Telegram user ID Owner/Admin belum dikonfigurasi.
+4. API-token scope belum terverifikasi; connector token verification returned 401 Invalid API Token, sementara workflow preflight tidak dapat menguji secret yang kosong.
+5. API Worker `vault-core-api` dan frontend Worker `vault-core-web` belum ada pada target Cloudflare account (live list verified).
+6. Gateway origins belum disetel; Worker Custom Domains dan zone DNS records kosong (live read-back).
+7. Telegram production webhook belum dikonfigurasi atau diuji.
 8. Harga XTR final seluruh SKU.
 9. Sumber kurs/valuasi XTR ke IDR untuk pelaporan.
 10. Refund policy final per tipe barang.
@@ -1040,8 +1044,8 @@ Hal berikut tidak boleh diisi berdasarkan tebakan:
 12. SLA support dan fulfillment.
 13. Retention policy, RPO, dan RTO.
 14. Target concurrency dan volume transaksi.
-15. Nama legal dan sertifikat tanda tangan elektronik formal pemilik belum tercantum pada rekaman persetujuan tertulis v1.2 CR-02.
-16. Hasil live payment/refund/delivery dan UAT.
+15. Nama legal dan sertifikat tanda tangan elektronik formal pemilik belum tercantum pada rekaman persetujuan tertulis v1.2 CR-02; persetujuan scope tertulis sendiri telah dicatat di Bagian 26.6 kontrak.
+16. Hasil live payment/refund/delivery, IDOR, backup/restore, dan UAT.
 17. Status pendaftaran usaha/PSE dan dokumen legal yang relevan.
 
 Pemilik harus mengisi keputusan ini sebelum pekerjaan yang bergantung padanya dinyatakan selesai.
@@ -1098,6 +1102,8 @@ Status ini harus diperbarui hanya setelah bukti terbaru tersedia.
 | DEC-009 | API Worker memakai request-scoped pg.Client | Implemented and CI validated | backend/db/pool.js, tests/core.test.js |
 | DEC-010 | Production go-live | Belum disetujui | Pending release gate |
 | DEC-011 | Owner approval kontrak v1.2 CR-02 | APPROVED — persetujuan tertulis 2026-11-21 | PROJECT_CONTRACT.md Bagian 26.6 |
+| DEC-012 | Inventory reservation binds to owning order; ambiguous delivery enters manual review | IMPLEMENTED + CI PASS | Migrations 004, backend/services/deliveryService.js, tests/core.test.js |
+| DEC-013 | One unique pre-checkout claim per order | IMPLEMENTED + CI PASS | Migration 005, backend/controllers/paymentController.js |
 
 ## 22. Referensi sumber dan dokumentasi
 
