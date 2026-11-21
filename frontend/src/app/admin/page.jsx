@@ -152,7 +152,7 @@ export default function AdminPage() {
     try {
       const response = await fetch(`${API}/api/admin/expenses`, { method:'POST', headers:headers(), body:JSON.stringify({ ...expenseForm, amountXtr:Number(expenseForm.amountXtr) }) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Biaya operasional tidak dapat dicatat.'));
-      setExpenseForm({ category:'OPERATIONS', description:'', amountIdr:'' }); setNotice('Biaya operasional berhasil dicatat.'); await refresh();
+      setExpenseForm({ category:'OPERATIONS', description:'', amountXtr:'' }); setNotice('Biaya operasional berhasil dicatat.'); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
   }
 
