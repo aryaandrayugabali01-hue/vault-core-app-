@@ -7,6 +7,7 @@ import { resolveDisplayStock, isPublicCatalogProduct, isEligibleCheckoutProduct 
 import { sendStarsInvoice, refundStarPayment, telegramCall } from '../backend/services/telegramApi.js';
 import { sanitizeSuccessfulPaymentUpdate } from '../backend/utils/paymentAudit.js';
 import { createDatabaseAdapter } from '../backend/db/pool.js';
+import { canReconcileDelivery } from '../backend/services/deliveryService.js';
 
 function signedInitData(user, token, authDate = Math.floor(Date.now() / 1000), extraParams = {}) {
   const params = new URLSearchParams({ auth_date: String(authDate), query_id: 'AAE-test', user: JSON.stringify(user), ...extraParams });
@@ -80,6 +81,15 @@ test('test products require the Owner-only test checkout lane', () => {
   assert.equal(isEligibleCheckoutProduct({ ...fixture, status: 'DRAFT' }, { testMode: true, ownerAuthorized: true }), false);
   assert.equal(isEligibleCheckoutProduct({ ...fixture, sale_price_xtr: 2 }, { testMode: true, ownerAuthorized: true }), false);
   assert.equal(isEligibleCheckoutProduct(commercial, { testMode: true, ownerAuthorized: true }), false);
+});
+
+test('manual delivery reconciliation is blocked for refund and terminal order states', () => {
+  assert.equal(canReconcileDelivery('PAID'), true);
+  assert.equal(canReconcileDelivery('FULFILLING'), true);
+  assert.equal(canReconcileDelivery('REFUND_PENDING'), false);
+  assert.equal(canReconcileDelivery('REFUNDED'), false);
+  assert.equal(canReconcileDelivery('FULFILLED'), false);
+  assert.equal(canReconcileDelivery('PENDING_PAYMENT'), false);
 });
 
 test('display stock modes support count, boolean availability, and hidden count', () => {
