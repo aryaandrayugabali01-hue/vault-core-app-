@@ -104,24 +104,26 @@ export default function HomePage() {
   const [setupBusy, setSetupBusy] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
 
+  async function loadCatalog() {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(API + '/api/catalog', { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Katalog tidak dapat dimuat.');
+      setProducts(data.products || []);
+    } catch (e) {
+      setError(e.message || 'Katalog tidak dapat dimuat. Coba kembali.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     const tg = getTelegramWebApp();
     tg?.ready();
     tg?.expand();
-    const load = async () => {
-      try {
-        const response = await fetch(API + '/api/catalog', { cache: 'no-store' });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Katalog tidak dapat dimuat.');
-        setProducts(data.products || []);
-        setError('');
-      } catch (e) {
-        setError(e.message || 'Katalog tidak dapat dimuat. Coba kembali.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    loadCatalog();
   }, []);
 
   const sourceProducts = isTestMode ? testProducts : products;
@@ -129,7 +131,6 @@ export default function HomePage() {
     (category === 'ALL' || p.game_category === category)
     && (tier === 'ALL' || p.tier === tier)
     && (String(p.name || '') + ' ' + String(p.description || '') + ' ' + String(p.sku || '')).toLowerCase().includes(query.toLowerCase())
-    && (isTestMode || p.is_available)
   ), [sourceProducts, category, tier, query, isTestMode]);
 
   async function buy(product) {
@@ -406,7 +407,7 @@ export default function HomePage() {
 
         {loading ? <div className="product-grid" aria-label="Memuat katalog" aria-busy="true">
           {[0, 1, 2, 3].map((item) => <ProductSkeleton index={item} key={item} />)}
-        </div> : error ? <div className="empty-state error" role="alert"><span className="empty-icon">!</span><strong>Katalog belum tersedia</strong><p>{error}</p></div> : filtered.length === 0 ? <div className="empty-state">
+        </div> : error ? <div className="empty-state error" role="alert"><span className="empty-icon">!</span><strong>Katalog belum tersedia</strong><p>{error}</p><button className="reset-filters" type="button" onClick={loadCatalog}>Coba muat ulang</button></div> : filtered.length === 0 ? <div className="empty-state">
           <span className="empty-icon">⌕</span>
           <strong>Produk tidak ditemukan</strong>
           <p>Coba kata kunci lain atau pilih filter kategori dan tier yang berbeda.</p>
@@ -415,9 +416,7 @@ export default function HomePage() {
           {filtered.map((product) => {
             const game = product.game_category || 'OTHER';
             const isDraftTest = isTestMode && product.is_test === true && product.status !== 'ACTIVE';
-            const stockText = typeof product.display_stock === 'number'
-              ? 'Stok ' + product.display_stock
-              : product.display_stock === 'IN_STOCK' ? 'Tersedia' : 'Tersedia';
+            const stockText = formatStock(product);
             return <article className="product-card" key={product.id}>
               <div className="product-card-head">
                 <div className={'product-art art-' + game.toLowerCase()}>
