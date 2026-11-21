@@ -72,7 +72,7 @@ Kategori tampilan awal:
 Tiap kategori dapat memiliki tingkatan:
 
 - **Silver** — produk entry-level.
-- **Gold** — produk utama dengan target harga jual sekitar Rp500.000.
+- **Gold** — produk utama; harga jual dan modal ditentukan langsung per SKU dalam XTR.
 - **Platinum** — produk premium dengan harga yang ditentukan pemilik.
 
 Kategori dan tier merupakan cara pengelompokan katalog. Ketersediaan suatu jenis produk untuk dijual tetap melewati pemeriksaan ketentuan penerbit game, hak distribusi, aturan platform, dan hukum yang berlaku.
@@ -167,7 +167,7 @@ Kartu produk menampilkan sekurang-kurangnya:
 - Kategori game dan tier.
 - Gambar/ilustrasi yang boleh digunakan.
 - Harga jual dalam XTR.
-- Informasi harga IDR indikatif jika dikonfigurasi.
+- Harga ditampilkan hanya dalam XTR.
 - Jumlah stok tersedia aktual atau label ketersediaan non-numerik sesuai mode Display Stock.
 - Ringkasan deskripsi.
 - Status ketersediaan.
@@ -282,7 +282,7 @@ Setiap produk setidaknya menyimpan:
 - Tipe produk.
 - Gambar dan media.
 - Harga jual XTR.
-- Harga tampilan IDR (opsional dan diberi label sesuai sumber konversinya).
+- Harga modal dan biaya internal dicatat dalam XTR.
 - Harga modal default.
 - Status pemeriksaan kepatuhan.
 - Status aktif/nonaktif.
@@ -403,15 +403,16 @@ Tidak tersedia opsi pembayaran manual dengan alamat wallet XTR. Admin tidak bole
 
 Owner dapat melakukan rekonsiliasi administratif atas transaksi Stars yang sudah diterima menggunakan data resmi Bot API. Rekonsiliasi tidak dapat membuat transaksi pembayaran yang tidak ada, mengubah pembayaran gagal menjadi sukses, atau menggantikan invoice.
 
-## 8.6 Harga XTR dan pelaporan IDR
+## 8.6 Harga dan pelaporan XTR
 
-Harga target Gold sekitar Rp500.000 adalah target harga jual komersial, bukan nilai tetap yang dapat langsung dianggap setara dengan sejumlah Stars tertentu.
+Seluruh nilai moneter internal VAULT CORE menggunakan satu satuan, yaitu XTR. Harga jual, harga modal, biaya operasional, snapshot order, omzet, refund, margin, dan laba dicatat serta ditampilkan dalam XTR. Harga pada invoice harus sama dengan harga jual SKU yang berlaku pada saat order dibuat.
 
-- Harga invoice disimpan dalam XTR.
-- Harga acuan IDR disimpan terpisah dengan sumber dan tanggal penetapan.
-- Nilai penerimaan Stars dan nilai pencairan/reward aktual harus dibedakan.
-- Tarif, biaya, VAT, konversi, potongan, atau kelayakan pencairan dapat berubah dan harus diverifikasi saat operasional.
-- Sistem tidak boleh menjanjikan nilai rupiah bersih tertentu hanya berdasarkan jumlah XTR tanpa data konversi/penerimaan yang valid.
+- `sale_price_xtr` adalah harga jual per unit.
+- `cost_price_xtr` adalah biaya modal per unit yang ditetapkan Owner.
+- Biaya operasional dicatat langsung dalam XTR.
+- Order menyimpan snapshot harga jual dan modal dalam XTR agar perubahan harga produk tidak mengubah histori.
+- Laporan menampilkan penerimaan, refund, biaya, dan saldo bersih dalam XTR berdasarkan transaksi Telegram yang terverifikasi.
+- Sistem tidak mengonversi atau menampilkan nilai mata uang lain.
 
 # 9. Model Data Minimum
 
@@ -429,8 +430,8 @@ Skema final dapat disesuaikan pada tahap implementasi, tetapi entitas dan relasi
 
 - `id`, `sku`, `name`, `description`
 - `game_category`, `tier`, `product_type`
-- `price_xtr`, `display_price_idr`
-- `default_cost_idr`
+- `sale_price_xtr`
+- `cost_price_xtr`
 - `compliance_status`, `is_active`
 - `stock_policy`, `delivery_type`
 - `created_at`, `updated_at`
@@ -439,7 +440,7 @@ Skema final dapat disesuaikan pada tahap implementasi, tetapi entitas dan relasi
 
 - `id`, `product_id`
 - `inventory_code` atau identifier stok non-rahasia
-- `cost_idr_snapshot`
+- `cost_xtr_snapshot`
 - `status` (`AVAILABLE`, `RESERVED`, `SOLD`, `DISABLED`)
 - `secret_payload_encrypted` hanya untuk kode redeem, lisensi, voucher, atau payload digital sah yang memang harus dirahasiakan
 - `created_at`, `updated_at`, `sold_at`
@@ -452,7 +453,7 @@ Order:
 
 - `id`, `order_number`, `customer_id`
 - `status`, `subtotal_xtr`, `total_xtr`
-- `reference_total_idr` (opsional)
+- `total_xtr`
 - `created_at`, `expires_at`, `paid_at`, `completed_at`
 
 OrderItem:
@@ -460,7 +461,7 @@ OrderItem:
 - `id`, `order_id`, `product_id`, `inventory_item_id` (jika diperlukan)
 - `sku_snapshot`, `name_snapshot`, `quantity`
 - `unit_price_xtr_snapshot`
-- `unit_cost_idr_snapshot`
+- `unit_cost_xtr_snapshot`
 - `line_total_xtr`
 
 ## 9.5 Transaction
@@ -487,14 +488,14 @@ Expense menyimpan biaya tambahan yang dialokasikan ke order atau periode laporan
 
 ## 10.1 Rumus
 
-- **Omzet bruto IDR indikatif** = nilai penjualan yang dikonversi memakai acuan kurs/valuasi yang disimpan untuk laporan.
-- **Modal barang** = snapshot biaya inventaris yang benar-benar terjual.
-- **Biaya lain** = biaya operasional/transaksi/refund yang dicatat dan dialokasikan.
-- **Profit kotor** = pendapatan penjualan acuan IDR − modal barang.
-- **Profit bersih operasional** = pendapatan bersih yang direalisasikan − modal barang − biaya lain.
-- **Margin kotor (%)** = profit kotor ÷ pendapatan penjualan acuan IDR × 100.
+- **Penjualan bruto (XTR)** = total transaksi Stars yang berhasil dan belum dikurangi refund.
+- **Modal barang (XTR)** = snapshot biaya inventaris yang benar-benar terjual.
+- **Biaya lain (XTR)** = biaya operasional yang dicatat Owner.
+- **Profit kotor (XTR)** = penjualan bersih setelah refund − modal barang.
+- **Profit bersih (XTR)** = profit kotor − biaya operasional.
+- **Margin kotor (%)** = profit kotor ÷ penjualan bersih setelah refund × 100.
 
-Laporan harus membedakan nilai transaksi XTR, valuasi IDR indikatif, serta penerimaan/pencairan yang benar-benar direalisasikan. Satu angka tidak boleh digunakan untuk menyamarkan perbedaan tersebut.
+Seluruh laporan, saldo, nilai order, biaya, dan laba menggunakan XTR. Tidak ada konversi ke mata uang lain di aplikasi.
 
 ## 10.2 Snapshot historis
 
@@ -656,7 +657,7 @@ Proyek dinyatakan siap uji penerimaan jika semua kriteria kritis berikut lolos.
 - [ ] Harga modal dapat diubah untuk order berikutnya.
 - [ ] Perubahan modal tidak mengubah snapshot order lama.
 - [ ] Profit dan margin dihitung sesuai rumus yang disetujui.
-- [ ] Nilai XTR dibedakan dari valuasi IDR.
+- [ ] Harga, modal, biaya, refund, dan laporan konsisten menggunakan XTR.
 - [ ] Refund dan biaya lain mengurangi angka laporan sesuai kategorinya.
 - [ ] Perubahan produk, harga, stok, order manual, dan refund tercatat dalam audit log.
 - [ ] Laporan dapat difilter berdasarkan periode, game, tier, produk, dan status.
@@ -779,7 +780,6 @@ Hal berikut belum ditetapkan oleh informasi proyek saat dokumen ini dibuat:
 4. Apakah PostgreSQL dikelola sendiri atau menggunakan layanan terkelola.
 5. Daftar final SKU yang telah lolos pemeriksaan hak penjualan.
 6. Harga XTR tiap SKU dan aturan penetapan ulang harga.
-7. Kurs/valuasi XTR ke IDR untuk laporan indikatif dan sumber datanya.
 8. Kebijakan refund per tipe produk.
 9. SLA layanan customer support dan waktu pemenuhan.
 10. Jumlah akun admin serta kebijakan MFA.
@@ -871,7 +871,7 @@ Referensi berikut menjadi rujukan implementasi dan harus diperiksa kembali ketik
 - `telegram_payment_charge_id` harus disimpan untuk kebutuhan refund dan penelusuran transaksi.
 - Bot harus menyediakan dukungan pembayaran melalui `/paysupport`.
 - `initData` dari Mini App wajib diverifikasi di server; `initDataUnsafe` tidak boleh dipercaya sebagai sumber identitas.
-- Harga jual yang direncanakan dalam rupiah harus dipetakan ke harga Stars secara terpisah dan ditinjau kembali sesuai biaya, konversi, serta penerimaan aktual.
+- Harga jual tiap SKU ditetapkan langsung dalam XTR dan digunakan sebagai dasar invoice Stars.
 
 ---
 
@@ -909,7 +909,7 @@ Referensi tersebut menunjukkan bahwa kebijakan tidak seragam antar-game. Oleh ka
 
 - Harga invoice XTR ditentukan oleh Owner per SKU.
 - Biaya modal, biaya operasional, serta nilai penerimaan/pencairan dicatat terpisah pada laporan.
-- Owner dapat mengelola asumsi valuasi IDR dan biaya untuk pelaporan tanpa mengubah protokol pembayaran Telegram.
+- Owner mencatat harga modal dan biaya operasional langsung dalam XTR tanpa konversi mata uang di aplikasi.
 - Pembayaran hanya dinyatakan berhasil setelah update `successful_payment` valid diterima dan diverifikasi backend.
 
 Rujukan resmi:
