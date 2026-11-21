@@ -2,6 +2,10 @@ import { pool } from '../db/pool.js';
 import { decryptPayload } from '../utils/encryption.js';
 import { telegramCall } from './telegramApi.js';
 
+export function canReconcileDelivery(orderStatus) {
+  return orderStatus === 'PAID' || orderStatus === 'FULFILLING';
+}
+
 export async function deliverPaidOrder(orderNumber) {
   const client = await pool.connect();
   try {
