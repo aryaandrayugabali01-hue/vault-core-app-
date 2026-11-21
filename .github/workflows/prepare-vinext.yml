@@ -1,8 +1,7 @@
 name: VAULT CORE Cloudflare frontend preparation
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
