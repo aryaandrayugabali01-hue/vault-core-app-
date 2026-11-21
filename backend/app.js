@@ -40,6 +40,7 @@ app.use('/api/orders', apiRateLimit, checkoutRateLimit, requireTelegramUser, ord
 app.use('/api/admin', apiRateLimit, ownerRateLimit, requireTelegramUser, requireOwner, adminRoutes);
 app.use('/api/telegram/webhook', telegramWebhookRoutes);
 app.use((error, _req, res, _next) => {
-  console.error('[api-error]', error.message);
+  const stack = String(error?.stack ?? '').split('\\n').slice(0, 7).join('\\n');
+  console.error('[api-error]', error?.name ?? 'Error', error?.message ?? 'Unknown error', stack);
   res.status(500).json({ error: 'INTERNAL_SERVER_ERROR' });
 });
