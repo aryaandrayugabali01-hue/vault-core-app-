@@ -53,6 +53,8 @@ Set `TELEGRAM_WEBHOOK_URL` to the public API route, then run `npm run setup:webh
 
 Owner authorization accepts either the existing `ADMIN_TELEGRAM_IDS` server-side allowlist or an active record in `owner_accounts`. The Profile screen exposes the backend-verified Telegram numeric ID and owner access state; an owner can be provisioned in the database without editing deployment secrets. Customer and owner API requests must include Telegram Mini App `initData`; the backend validates its HMAC and timestamp.
 
+**Access from a normal browser:** `https://vaultcore.biz.id/` displays the public catalog. Account identity, My Orders, checkout, and Owner tools require opening VAULT CORE from its Telegram Mini App; there is no separate email/password browser login. Inside the Mini App, open **Profile → Buka Dashboard Owner** to enter the Owner Console at `/admin`. The API validates Telegram `initData` and the server-side Owner allowlist on every protected request.
+
 ## Operational rules
 
 - A product is created as `DRAFT`. Only activate a product after the SKU review reference is recorded.
