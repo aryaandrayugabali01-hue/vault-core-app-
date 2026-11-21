@@ -588,6 +588,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
     animation:none!important;opacity:1;transform:none
   }
   .bottom-nav{animation:none!important;opacity:1;transform:translateX(-50%)!important}
+  .category-card:hover,.category-card:active,.product-card:hover,.product-card:active{translate:none!important}
 }
 .category-card:hover,.product-card:hover{translate:0 -2px}
 .category-card:active,.product-card:active{translate:0 1px}
