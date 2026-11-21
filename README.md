@@ -70,9 +70,9 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 - Stars refunds use a two-phase `REFUND_PENDING` state. If Telegram reports an already-refunded charge, the service checks the Stars transaction ledger before finalizing the internal status.
 - Sale price, cost, expenses, order snapshots, reports, refunds, and profit are recorded and displayed in XTR only.
 
-- Owner Console includes an owner-only action to create four DRAFT TEST-only products with encrypted dummy delivery payloads. They remain hidden from the customer catalog until explicitly activated.\n\n## Current implementation status
+- Owner Console includes an owner-only action to create four DRAFT TEST-only products and encrypted dummy delivery payloads. They remain hidden from the customer catalog until explicitly activated.\n\n## Current implementation status
 
-Latest deployed source on `main`: `1a415717e3155a4ca026c5a7f4fe6108cc53f9e8`. GitHub Actions production deployment run `44891173631`, attempt 2, completed **SUCCESS**. It passed secret and Cloudflare preflight, backend/core tests, frontend build, both Worker deployments, API health with Neon database connection, gateway upstream configuration, custom-domain/DNS/TLS checks for root/www/api, and Telegram webhook read-back.
+Latest deployed application source: `eafd57dca29404729d2dad7587810e7b025a8cdf`. GitHub Actions production deployment run `44902626165`, attempt 1, completed **SUCCESS**. It passed backend/core tests, frontend build, both Worker deployments, API health with Neon connection, domain/DNS/TLS and gateway checks, and Telegram webhook read-back. It passed secret and Cloudflare preflight, backend/core tests, frontend build, both Worker deployments, API health with Neon database connection, gateway upstream configuration, custom-domain/DNS/TLS checks for root/www/api, and Telegram webhook read-back.
 
 Implemented in source and CI-validated: Telegram `initData` authentication, catalog API, order creation/reservation with owning order IDs, single pre-checkout claim per order, Stars invoice generation, successful-payment verification/idempotency, encrypted inventory, ambiguous-delivery review/reconciliation, two-phase Stars refund recovery, `/paysupport`, owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console.
 
@@ -86,7 +86,7 @@ Live production infrastructure is deployed, but sales readiness is still gated b
 - Custom domains are attached to the existing gateway: `vaultcore.biz.id`, `www.vaultcore.biz.id`, and `api.vaultcore.biz.id`.
 - Cloudflare DNS records for all three hosts are configured and proxied.
 - Production Telegram webhook: `https://api.vaultcore.biz.id/api/telegram/webhook`; configuration and `getWebhookInfo` read-back passed in the production workflow.
-- Production run: [44891173631](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44891173631), attempt 2, **SUCCESS**.
+- Production run: [44902626165](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44902626165), attempt 1, **SUCCESS**.
 
 ## Remaining launch gates
 
