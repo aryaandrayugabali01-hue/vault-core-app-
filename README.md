@@ -6,6 +6,13 @@ Single-vendor Telegram Mini App store for transferable digital products, voucher
 
 Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current contract draft: **v1.2 (CR-02)**. The approval fields in Section 26.6 are still unsigned in the repository copy.
 
+## Project documents
+
+- [Blueprint and Master Operation (MO)](docs/VAULT_CORE_BLUEPRINT_MASTER_OPERATION.md) — complete execution blueprint, operating procedures, QA, deployment, risk register, and go-live gates.
+- [Project Contract](PROJECT_CONTRACT.md) — product and technical scope; v1.2 CR-02 is still a draft pending owner approval.
+- [Deployment Status](DEPLOYMENT_STATUS.md) — infrastructure and production readiness record.
+- [Production Deployment Runbook](PRODUCTION_DEPLOYMENT_RUNBOOK.md) — secrets, workflow, routing, and Telegram webhook procedure.
+
 ## Technology
 
 - Frontend: Next.js App Router / React
@@ -62,7 +69,7 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 
 ## Current implementation status
 
-Source is published in the existing GitHub repository; the last verified code commit is `89f6d7912070712b07d370acaba9a266ffba1c0e` (40 project source files; original v1.3 ZIP retained). GitHub Actions run `44833016477` completed successfully: dependency install, backend/core tests, and Next.js production build all passed.
+Source is published in the existing GitHub repository. At the blueprint baseline, main is at `155bbc6bb4b64475dd10fec048614e53011f84cb`; CI run `44853143423` and Cloudflare frontend preparation run `44853143408` both completed successfully on that commit. The original v1.3 ZIP is retained in the repository.
 
 Implemented in the source tree: Telegram `initData` authentication, catalog API, order reservation, Stars invoice generation, webhook payment verification, encrypted inventory writes, automated delivery with retry tracking, `/paysupport`, owner-triggered Stars refunds, owner product/inventory/order routes, expense and profit reporting, customer Mini App, and Owner Console.
 
