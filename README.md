@@ -68,7 +68,7 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 - API endpoints have IP-based rate limits. The built-in store is process-local; use a shared store or edge-level controls before scaling to multiple API instances.
 - Delivery claims record attempt count/time and failure reason. Definitive Telegram API rejection can be retried; stale or ambiguous send outcomes enter `REVIEW_REQUIRED` and must be reconciled by Owner before retry.
 - Stars refunds use a two-phase `REFUND_PENDING` state. If Telegram reports an already-refunded charge, the service checks the Stars transaction ledger before finalizing the internal status.
-- Price and cost are snapshotted at order creation. Reports show gross sales, cost, operating expenses, gross profit, and net profit in IDR, alongside received XTR.
+- Sale price, cost, expenses, order snapshots, reports, refunds, and profit are recorded and displayed in XTR only.
 
 ## Current implementation status
 
@@ -90,7 +90,7 @@ Live production infrastructure is deployed, but sales readiness is still gated b
 
 ## Remaining launch gates
 
-1. Create and review the first sellable SKUs, record each rights-review reference, set XTR/IDR price and cost, then add encrypted sellable inventory.
+1. Create and review the first sellable SKUs, record each rights-review reference, set sale and cost amounts in XTR, then add encrypted sellable inventory.
 2. Run end-to-end Owner and customer acceptance: Mini App authentication, catalog, order, XTR invoice, pre-checkout validation, successful payment, exactly-once delivery, refund/recovery, and support.
 3. Complete IDOR/admin authorization review, backup/restore test, production rate-limit review, and record Owner UAT plus explicit release approval.
 
