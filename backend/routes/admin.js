@@ -91,7 +91,7 @@ router.post('/test-fixtures', async (req, res) => {
   let stage = 'route-entered';
   const query = (...args) => process.env.DATABASE_CONNECTION_MODE === 'request'
     ? pool.query(...args)
-    : query(...args);
+    : client.query(...args);
   console.info('[test-fixture-route-entered]');
   try {
     stage = 'database-connect';
