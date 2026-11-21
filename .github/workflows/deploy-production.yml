@@ -1,6 +1,12 @@
 name: VAULT CORE production deployment
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'cloudflare/vault-core-api.js'
+      - '.github/workflows/deploy-production.yml'
   workflow_dispatch:
 
 permissions:

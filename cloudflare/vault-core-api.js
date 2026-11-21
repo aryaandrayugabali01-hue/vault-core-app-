@@ -33,6 +33,9 @@ export default {
     configureEnvironment(env);
     handlerPromise ??= createHandler();
     const handler = await handlerPromise;
-    return handler(request);
+    if (!handler || typeof handler.fetch !== 'function') {
+      throw new Error('CLOUDFLARE_NODE_HTTP_HANDLER_INVALID');
+    }
+    return handler.fetch(request, env, ctx);
   }
 };

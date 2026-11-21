@@ -80,9 +80,9 @@ Implemented and CI-validated in source: Telegram `initData` authentication, cata
 
 - Existing `vault-core-gateway` is deployed, but Workers `vault-core-api` and `vault-core-web` are absent from the target account.
 - Cloudflare zone `vaultcore.biz.id` is ACTIVE; gateway origins are unset, Custom Domains list is empty, and zone DNS records are empty.
-- GitHub Actions production workflow run `44884767909` sees all five required secret variables, but rejects `APP_ENCRYPTION_KEY` because the decoded key is not exactly 32 bytes in canonical Base64 form. Cloudflare token, Hyperdrive, and Telegram bot identity checks have not yet been reached. Deployment stopped before any resource changes.
-- Telegram webhook registration and production owner allowlist acceptance have not been verified; the bot identity check is pending.
-- No live XTR payment, refund, and fulfillment test has been run.
+- GitHub Actions production run `44890576521` passed Cloudflare token verification, Hyperdrive read-back, Telegram bot `getMe`, backend tests, frontend build, and both Worker deployments. The API health endpoint returned HTTP 500 because the deployed adapter called the object returned by `httpServerHandler` as a function; observability recorded `handler is not a function`.
+- The existing gateway origins remain unset; custom domains and DNS records remain unattached/empty because the workflow correctly stopped after failed API health.
+- Telegram webhook registration, owner Mini App access, and live XTR payment/refund/fulfillment tests remain pending.
 - Backup/restore, IDOR, and live rate-limit behavior still require staging validation before launch.
 
 ## Continuous integration

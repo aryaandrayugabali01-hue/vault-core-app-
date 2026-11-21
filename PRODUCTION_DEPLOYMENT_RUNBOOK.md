@@ -10,11 +10,12 @@
 - Frontend Cloudflare Worker build: CI passed.
 - API Worker bundle: Wrangler dry-run passed; Hyperdrive binding resolved.
 - GitHub tests and Next.js build: passed.
-- Production application Workers: not deployed yet.
-- Gateway custom domains and upstream origins: not configured yet.
-- Telegram webhook and live Stars payment/fulfillment: not verified yet.
-- Latest production preflight recheck: GitHub Actions run `44884767909` now resolves all five required secret variables (values are masked). It stops at `APP_ENCRYPTION_KEY`: the supplied value does not pass canonical Base64 validation for exactly 32 decoded bytes. Cloudflare token, Hyperdrive, and Telegram bot identity checks are therefore not yet reached. No Worker, gateway, domain, or webhook resources were changed by the failed preflight.
-- The production deployment workflow is manual (`workflow_dispatch`) only. Add the five required repository secrets first, then run the workflow from Actions on branch `main`.
+- API Worker `vault-core-api`: deployed successfully in run `44890576521`; runtime `/health` currently returns HTTP 500.
+- Frontend Worker `vault-core-web`: deployed successfully in run `44890576521`.
+- The production preflight passed all required secrets, Cloudflare token verification, Hyperdrive read-back, and Telegram bot identity checks.
+- API health failed because Cloudflare observability logged `handler is not a function` for requests to the API Worker. The root source is `cloudflare/vault-core-api.js`, which calls the object returned by `httpServerHandler` as though it were a function.
+- Gateway origins, custom domains, DNS and Telegram webhook remain unconfigured; their workflow steps were skipped after the API health check failed.
+- The production deployment workflow supports a manual `workflow_dispatch` and a restricted `main` push trigger for changes to the API Worker entrypoint or deployment workflow. Keep the five required repository secrets current.
 
 ## Repository secrets required
 
@@ -39,7 +40,7 @@ Copy only the generated output into the secret. The deployment preflight ignores
 Optional:
 - `SUPPORT_CONTACT`: the support contact displayed by the payment-support bot command.
 
-The deployment workflow validates the key length and numeric Telegram IDs before deploying. A malformed/missing required secret stops the deployment before runtime promotion.
+The deployment workflow validates the key length and numeric Telegram IDs before deploying. The latest production run passed these checks. The deployed API adapter fix is being applied to the existing source and the workflow is configured to redeploy when that API entrypoint or the deployment workflow changes on `main`.
 
 ## Database connection model
 

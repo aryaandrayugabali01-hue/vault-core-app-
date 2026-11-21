@@ -923,9 +923,9 @@ Setiap hasil tes harus mencantumkan Test ID, environment, commit SHA, langkah, e
 | ID | Pekerjaan | Alasan/hasil yang diharapkan | Status baseline |
 |---|---|---|---|
 | P0-01 | Konfirmasi dan persetujuan PROJECT_CONTRACT v1.2 Bagian 26.6 | Scope punya persetujuan owner | DONE — persetujuan tertulis pemilik tercatat 2026-11-21 |
-| P0-02 | Verifikasi akun Cloudflare yang benar, token scope, dan akses resource | Deployment tidak memakai akun yang salah | ACCOUNT IDENTITY VERIFIED; GitHub Actions API-token preflight PENDING (belum tercapai karena validasi APP_ENCRYPTION_KEY berhenti lebih dulu); connector token verify 401 |
-| P0-03 | Siapkan lima repository secrets wajib | Workflow lolos preflight | PARTIAL — kelima variabel secret sudah hadir di job; `APP_ENCRYPTION_KEY` perlu lolos validasi 32-byte Base64 pada run workflow terbaru |
-| P0-04 | Konfirmasi BotFather identity dan token produksi | Identitas bot final | BLOCKED — TELEGRAM_BOT_TOKEN kosong; identitas bot belum dapat dibaca |
+| P0-02 | Verifikasi akun Cloudflare yang benar, token scope, dan akses resource | Deployment tidak memakai akun yang salah | PASS in GitHub Actions run 44890576521: Cloudflare API token verification and Hyperdrive read-back succeeded |
+| P0-03 | Siapkan lima repository secrets wajib | Workflow lolos preflight | PASS — all five required repository secret variables passed validation in run 44890576521 |
+| P0-04 | Konfirmasi BotFather identity dan token produksi | Identitas bot final | PASS — Telegram Bot API `getMe` passed in run 44890576521; webhook still pending |
 | P0-05 | Verifikasi ADMIN_TELEGRAM_IDS | Owner/admin server-side benar | BLOCKED — secret kosong; owner ID belum dikonfigurasi |
 | P0-06 | Pastikan migrations/runtime DB role/Hyperdrive konsisten | API mampu query DB | VERIFIED — 10 tables, 5 migrations; Neon runtime role dan Hyperdrive resource tersedia; Worker binding belum live |
 | P0-07 | Audit dan tutup bug kritis payment/order/delivery | Tidak ada transaksi ganda atau kehilangan stok | SOURCE FIXES IMPLEMENTED + CI PASS; live/staging acceptance pending |
@@ -1031,9 +1031,9 @@ Change request harus mencakup kebutuhan, use case, alasan, dampak ke UI/API/data
 Hal berikut tidak boleh diisi berdasarkan tebakan:
 
 1. Username bot Telegram produksi dan identitas BotFather final; token secret belum dikonfigurasi.
-2. Lima variabel rahasia sudah hadir pada GitHub Actions, tetapi nilai `APP_ENCRYPTION_KEY` gagal validasi panjang dan format Base64 pada preflight run 44884767909; workflow telah diperbarui untuk menormalkan whitespace dan memberi diagnostik aman.
+2. All five secrets passed preflight in production run 44890576521. API and frontend Workers were deployed; API health then failed with HTTP 500.
 3. Daftar final Telegram user ID Owner/Admin belum dikonfigurasi.
-4. API-token scope GitHub Actions belum terverifikasi karena preflight berhenti pada `APP_ENCRYPTION_KEY`; konektor Cloudflare terpisah sebelumnya mengembalikan 401 Invalid API Token.
+4. Cloudflare API-token verification and Hyperdrive access passed in run 44890576521. Cloudflare observability identified the API runtime error as `handler is not a function`.
 5. API Worker `vault-core-api` dan frontend Worker `vault-core-web` belum ada pada target Cloudflare account (live list verified).
 6. Gateway origins belum disetel; Worker Custom Domains dan zone DNS records kosong (live read-back).
 7. Telegram production webhook belum dikonfigurasi atau diuji.
