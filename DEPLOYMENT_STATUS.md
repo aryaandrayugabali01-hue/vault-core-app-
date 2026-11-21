@@ -14,7 +14,7 @@
 ## Repository state
 
 - Default branch: `main`.
-- Last verified application code commit: `89f6d7912070712b07d370acaba9a266ffba1c0e`.
+- Latest source commit: `b297d32912605c069d493dedf56ef2832f566b61` (domain correction and Cloudflare API adapter preparation).
 - Cloudflare gateway source commit: `e88739e82119f287db4215a570b3ab0f64eede23`.
 - Source extraction commit: `15780b23e816cd4c8b3647d6359f949b53c4b2ea`.
 - 40 project source files are now present at repository root; original `vault-core-app-v1.3-github-ready.zip` retained as an archive.
@@ -22,7 +22,7 @@
 
 ## CI validation
 
-GitHub Actions workflow `VAULT CORE CI`, code hardening run ID `44833016477`:
+GitHub Actions workflow `VAULT CORE CI`, latest run ID `44841992466`:
 
 - Workspace dependency installation: **PASS**
 - Backend/core automated tests: **PASS**
@@ -78,10 +78,10 @@ Connected Neon database `vault_core` was inspected read-only:
 
 ## Deployment blockers
 
-1. Cloudflare application Workers `vault-core-web` and `vault-core-api` still need to be built and deployed; the existing gateway alone does not host either runtime.
+1. Cloudflare application Workers `vault-core-web` and `vault-core-api` still need their deployment configurations, builds, and deployments; the existing gateway alone does not host either runtime.
 2. Neon runtime role `vault_core_runtime` has been created and verified with CONNECT, schema USAGE, and table DML privileges. Its password has been set using a database-generated secret; Cloudflare Hyperdrive configuration remains pending.
 3. Zone `vaultcore.biz.id` is active. Cloudflare reports IDWebHost as the original registrar and the assigned nameservers are active.
-4. The Next.js frontend and Express API have not yet been adapted and deployed as Cloudflare-compatible application origins.
+4. Express API Worker source adapter is present but still needs Hyperdrive binding and deployment configuration. Next.js frontend vinext setup and Cloudflare build remain pending.
 5. Production secrets and bindings are not set: Hyperdrive binding, Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
 6. Telegram bot username/ownership and production webhook target are not known.
 7. Live XTR payment, refund, and fulfillment tests have not been completed.
