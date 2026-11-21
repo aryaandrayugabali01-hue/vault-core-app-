@@ -86,7 +86,13 @@ Connected Neon database `vault_core` was inspected read-only:
 5. The Hyperdrive binding ID is declared in `wrangler.api.jsonc`; it becomes active only after the API Worker is deployed. `FRONTEND_ORIGIN` and `TELEGRAM_MINI_APP_URL` are set to `https://vaultcore.biz.id`. Production secrets remain unset: `CLOUDFLARE_API_TOKEN`, Telegram bot token, webhook secret, `APP_ENCRYPTION_KEY`, and owner Telegram ID allowlist.
 6. Telegram bot username/ownership and production webhook target are not known. The manual production workflow and `PRODUCTION_DEPLOYMENT_RUNBOOK.md` are committed; it requires the five repository secrets listed in the runbook.
 7. Live XTR payment, refund, and fulfillment tests have not been completed.
-8. Contract v1.2 (CR-02) still has unsigned owner approval fields in Section 26.6.
+
+## Owner contract approval
+
+- Contract `PROJECT_CONTRACT.md` v1.2 (CR-02) is **APPROVED BY OWNER** through the explicit written instruction recorded in the project conversation on 2026-11-21.
+- The four Section 26.6 approval statements are recorded as accepted; this authorizes the v1.2 scope baseline and commencement of the Phase 1 technical foundation.
+- The owner's legal name and formal e-signature certificate are not included in the conversation record.
+- Contract approval is separate from UAT approval and production go-live authorization; production remains blocked by deployment, secrets, Telegram, and live acceptance requirements.
 
 ## Production readiness
 
