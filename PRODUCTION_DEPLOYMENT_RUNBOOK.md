@@ -20,7 +20,7 @@ Add the following secrets to the GitHub repository under **Settings → Secrets 
 
 | Secret name | Value |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token created with the **Edit Cloudflare Workers** template for the connected account |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with **Workers Scripts: Edit** and **Hyperdrive: Read** permissions for the connected account |
 | `TELEGRAM_BOT_TOKEN` | Production bot token from BotFather |
 | `TELEGRAM_WEBHOOK_SECRET` | Random secret token to authenticate Telegram webhook requests |
 | `ADMIN_TELEGRAM_IDS` | Comma-separated numeric Telegram user IDs authorized as admins/owner |
