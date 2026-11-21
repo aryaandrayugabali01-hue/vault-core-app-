@@ -13,6 +13,8 @@
 - Production application Workers: not deployed yet.
 - Gateway custom domains and upstream origins: not configured yet.
 - Telegram webhook and live Stars payment/fulfillment: not verified yet.
+- Latest attempted production preflight: GitHub Actions run `44884767909` stopped before deployment because `CLOUDFLARE_API_TOKEN` was missing; all five required secret variables were empty in that workflow environment. No Worker, gateway, domain, or webhook resources were changed by the attempt.
+- The production deployment workflow is manual (`workflow_dispatch`) only. Add the five required repository secrets first, then run the workflow from Actions on branch `main`.
 
 ## Repository secrets required
 
@@ -20,7 +22,7 @@ Add the following secrets to the GitHub repository under **Settings → Secrets 
 
 | Secret name | Value |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with **Workers Scripts: Edit** and **Hyperdrive: Read** permissions for the connected account |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token scoped to account `67d2069a9ae076d3ce63a9aca629ea8b` with **Workers Scripts: Edit** and **Hyperdrive: Read**; it must also allow attaching Worker Custom Domains in the active zone |
 | `TELEGRAM_BOT_TOKEN` | Production bot token from BotFather |
 | `TELEGRAM_WEBHOOK_SECRET` | Random secret token to authenticate Telegram webhook requests |
 | `ADMIN_TELEGRAM_IDS` | Comma-separated numeric Telegram user IDs authorized as admins/owner |
