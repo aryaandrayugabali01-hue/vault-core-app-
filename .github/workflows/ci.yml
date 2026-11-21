@@ -29,3 +29,6 @@ jobs:
         env:
           NEXT_PUBLIC_API_BASE_URL: https://api.example.invalid
         run: npm run build:frontend
+
+      - name: Validate API Worker bundle (dry run)
+        run: npx --yes wrangler@latest deploy --dry-run --config wrangler.api.jsonc
