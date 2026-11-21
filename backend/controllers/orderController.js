@@ -128,7 +128,7 @@ export async function createOrder(req, res) {
     }
     res.status(502).json({
       error: 'INVOICE_CREATE_FAILED',
-      message: 'Invoice Telegram tidak dapat dibuat. Silakan coba kembali.'
+      message: 'Tagihan Telegram Stars tidak dapat dibuat. Silakan coba lagi.'
     });
   }
 }

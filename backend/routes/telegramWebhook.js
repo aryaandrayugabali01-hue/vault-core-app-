@@ -31,7 +31,7 @@ router.post('/', async (req, res) => {
       if (result.refundRequired && !result.alreadyProcessed) {
         await telegramCall('sendMessage', {
           chat_id: message.chat.id,
-          text: 'Pembayaran VAULT CORE untuk ' + message.successful_payment.invoice_payload + ' telah terverifikasi. Pesanan memerlukan rekonsiliasi stok oleh Owner. Status pembayaran Anda tercatat dan tindak lanjut akan diproses melalui dukungan.'
+          text: 'Pembayaran untuk pesanan ' + message.successful_payment.invoice_payload + ' telah tercatat. Pesanan sedang ditinjau oleh pengelola karena reservasi stok perlu diperiksa. Status pengiriman belum selesai.'
         });
       }
       return res.sendStatus(200);
@@ -40,15 +40,15 @@ router.post('/', async (req, res) => {
       const appUrl = process.env.TELEGRAM_MINI_APP_URL;
       await telegramCall('sendMessage', {
         chat_id: message.chat.id,
-        text: 'Selamat datang di VAULT CORE. Pilih katalog digital dan layanan game yang tersedia.',
-        reply_markup: { inline_keyboard: [[{ text: 'Buka VAULT CORE Store', web_app: { url: appUrl } }]] }
+        text: 'Selamat datang di VAULT CORE. Jelajahi katalog produk digital, voucher, lisensi, dan layanan gaming yang tersedia.',
+        reply_markup: { inline_keyboard: [[{ text: 'Buka toko VAULT CORE', web_app: { url: appUrl } }]] }
       });
       return res.sendStatus(200);
     }
     if (message?.text?.startsWith('/help')) {
       await telegramCall('sendMessage', {
         chat_id: message.chat.id,
-        text: 'Gunakan tombol Buka VAULT CORE Store untuk melihat katalog. Untuk masalah pembayaran, gunakan /paysupport.'
+        text: 'Pilih tombol Buka toko VAULT CORE untuk melihat katalog dan membuat pesanan. Untuk kendala pembayaran, gunakan /paysupport.'
       });
       return res.sendStatus(200);
     }
@@ -57,8 +57,8 @@ router.post('/', async (req, res) => {
       await telegramCall('sendMessage', {
         chat_id: message.chat.id,
         text: contact
-          ? `Dukungan pembayaran VAULT CORE\n\nKirim nomor pesanan dan uraian kendala ke ${contact}. Jangan kirim password, OTP, atau kode pemulihan.`
-          : 'Dukungan pembayaran VAULT CORE\n\nKirim nomor pesanan dan uraian kendala kepada admin toko melalui kanal bantuan yang diberikan saat pembelian. Jangan kirim password, OTP, atau kode pemulihan.'
+          ? `Bantuan pembayaran VAULT CORE\n\nKirim nomor pesanan dan jelaskan kendala Anda ke ${contact}. Jangan kirim kata sandi, OTP, atau kode pemulihan.`
+          : 'Bantuan pembayaran VAULT CORE\n\nKanal bantuan pembayaran belum tersedia. Simpan nomor pesanan dan uraian kendala Anda untuk disampaikan kepada pengelola toko. Jangan kirim kata sandi, OTP, atau kode pemulihan.'
       });
       return res.sendStatus(200);
     }

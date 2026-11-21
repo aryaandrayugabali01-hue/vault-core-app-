@@ -17,6 +17,6 @@ export async function requireTelegramUser(req, res, next) {
     req.telegramUser = user;
     next();
   } catch (error) {
-    res.status(401).json({ error: 'TELEGRAM_AUTH_REQUIRED', message: error.message });
+    res.status(401).json({ error: 'TELEGRAM_AUTH_REQUIRED', message: 'Sesi Telegram tidak dapat diverifikasi. Buka ulang VAULT CORE melalui bot Telegram.' });
   }
 }

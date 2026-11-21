@@ -9,15 +9,28 @@ const CATEGORIES = [
   { id: 'MLBB', label: 'MLBB' },
   { id: 'ROBLOX', label: 'Roblox' },
   { id: 'FREE_FIRE', label: 'Free Fire' },
-  { id: 'GENSHIN', label: 'Genshin' }
+  { id: 'GENSHIN', label: 'Genshin Impact' }
 ];
 const TIERS = [
-  { id: 'ALL', label: 'Semua tier' },
+  { id: 'ALL', label: 'Semua tingkat' },
   { id: 'SILVER', label: 'Silver' },
   { id: 'GOLD', label: 'Gold' },
   { id: 'PLATINUM', label: 'Platinum' },
   { id: 'SERVICE', label: 'Layanan' }
 ];
+
+const GAME_LABELS = { MLBB: 'MLBB', ROBLOX: 'Roblox', FREE_FIRE: 'Free Fire', GENSHIN: 'Genshin Impact', OTHER: 'Lainnya' };
+const TIER_LABELS = { SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Platinum', SERVICE: 'Layanan' };
+const ORDER_STATUS_LABELS = {
+  PENDING_PAYMENT: 'Menunggu pembayaran',
+  PAID: 'Pembayaran diterima',
+  FULFILLING: 'Sedang dikirim',
+  FULFILLED: 'Selesai',
+  CANCELLED: 'Dibatalkan',
+  REFUND_PENDING: 'Pengembalian sedang diproses',
+  REFUNDED: 'Pengembalian selesai',
+  FAILED: 'Pesanan gagal'
+};
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
@@ -57,11 +70,11 @@ export default function HomePage() {
   async function buy(product) {
     const initData = getInitData();
     if (!initData) {
-      setNotice('Buka toko melalui bot Telegram untuk melakukan checkout.');
+      setNotice('Untuk melanjutkan pembayaran, buka VAULT CORE melalui bot Telegram.');
       return;
     }
     setBuyingId(product.id);
-    setNotice('Menyiapkan invoice Telegram Stars…');
+    setNotice('Menyiapkan tagihan Telegram Stars…');
     try {
       const response = await fetch(`${API}/api/orders`, {
         method: 'POST',
@@ -70,7 +83,7 @@ export default function HomePage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Checkout gagal dibuat.');
-      setNotice(`Invoice ${data.orderNumber} siap dibayar.`);
+      setNotice(`Tagihan untuk pesanan ${data.orderNumber} siap dibuka.`);
       openInvoice(data.invoiceUrl);
     } catch (e) { setNotice(e.message); }
     finally { setBuyingId(null); }
@@ -78,10 +91,10 @@ export default function HomePage() {
 
   async function showOrders() {
     const initData = getInitData();
-    if (!initData) { setNotice('Riwayat pesanan tersedia di dalam Telegram.'); return; }
+    if (!initData) { setNotice('Buka VAULT CORE melalui Telegram untuk melihat riwayat pesanan.'); return; }
     const response = await fetch(`${API}/api/orders/mine`, { headers: { 'x-telegram-init-data': initData } });
     const data = await response.json();
-    if (!response.ok) { setNotice(data.message || 'Riwayat pesanan tidak dapat dimuat.'); return; }
+    if (!response.ok) { setNotice(data.message || 'Riwayat pesanan tidak dapat dimuat. Muat ulang Mini App untuk mencoba kembali.'); return; }
     setOrders(data.orders || []);
     setOrdersOpen(true);
   }
@@ -89,7 +102,7 @@ export default function HomePage() {
   return <>
     <main className="shell">
       <header className="topbar">
-        <a className="brand" href="#home" aria-label="Vault Core home">
+        <a className="brand" href="#home" aria-label="Beranda VAULT CORE">
           <span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span>
         </a>
         <button className="icon-button" onClick={showOrders} aria-label="Riwayat pesanan">▤</button>
@@ -97,19 +110,19 @@ export default function HomePage() {
 
       <section className="hero" id="home">
         <div className="hero-glow" />
-        <div className="eyebrow"><span className="pulse" /> DIGITAL GAMING STORE</div>
-        <h1>Level up your<br/><span>gaming vault.</span></h1>
-        <p>Koleksi digital, voucher, dan layanan pilihan. Checkout praktis langsung melalui Telegram.</p>
-        <a className="hero-cta" href="#catalog">Jelajahi katalog <span>↗</span></a>
+        <div className="eyebrow"><span className="pulse" /> TOKO DIGITAL GAMING</div>
+        <h1>Produk digital untuk<br/><span>dunia gaming Anda.</span></h1>
+        <p>Temukan kode digital, voucher, lisensi, dan layanan gaming yang tersedia di katalog VAULT CORE.</p>
+        <a className="hero-cta" href="#catalog">Lihat katalog <span>↗</span></a>
         <div className="hero-stats">
           <div><strong>4</strong><small>Kategori game</small></div>
           <div><strong>3</strong><small>Tier pilihan</small></div>
-          <div><strong>24/7</strong><small>Order online</small></div>
+          <div><strong>XTR</strong><small>Pembayaran Telegram Stars</small></div>
         </div>
       </section>
 
       <section className="section" id="catalog">
-        <div className="section-heading"><div><span className="eyebrow muted">PILIH FAVORITMU</span><h2>Game categories</h2></div><span className="section-count">04 GAMES</span></div>
+        <div className="section-heading"><div><span className="eyebrow muted">PILIH KATEGORI</span><h2>Kategori game</h2></div><span className="section-count">04 KATEGORI</span></div>
         <div className="category-grid">
           {CATEGORIES.slice(1).map((item, i) => <button key={item.id} className={`category-card cat-${i} ${category === item.id ? 'selected' : ''}`} onClick={() => setCategory(category === item.id ? 'ALL' : item.id)}>
             <span className="cat-number">0{i + 1}</span><span className="cat-name">{item.label}</span><span className="cat-arrow">↗</span>
@@ -118,15 +131,15 @@ export default function HomePage() {
       </section>
 
       <section className="section product-section">
-        <div className="section-heading"><div><span className="eyebrow muted">THE COLLECTION</span><h2>Featured assets</h2></div><span className="section-count">{filtered.length.toString().padStart(2, '0')} ITEMS</span></div>
+        <div className="section-heading"><div><span className="eyebrow muted">KATALOG</span><h2>Produk tersedia</h2></div><span className="section-count">{filtered.length.toString().padStart(2, '0')} PRODUK</span></div>
         <div className="filters">
           {TIERS.map((item) => <button key={item.id} className={`filter-chip ${tier === item.id ? 'active' : ''}`} onClick={() => setTier(item.id)}>{item.label}</button>)}
         </div>
         <label className="searchbox"><span>⌕</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari produk atau layanan…" /></label>
-        {loading ? <div className="empty-state">Memuat katalog…</div> : error ? <div className="empty-state error">{error}</div> : filtered.length === 0 ? <div className="empty-state"><span className="empty-icon">◇</span><strong>Belum ada produk tersedia</strong><p>Produk akan muncul setelah owner mengaktifkan katalog dan menambahkan stok yang dapat dijual.</p></div> : <div className="product-grid">
+        {loading ? <div className="empty-state">Memuat katalog…</div> : error ? <div className="empty-state error">{error}</div> : filtered.length === 0 ? <div className="empty-state"><span className="empty-icon">◇</span><strong>Belum ada produk tersedia</strong><p>Produk akan ditampilkan setelah pemilik toko mengaktifkan produk dan menambahkan stok yang siap dijual.</p></div> : <div className="product-grid">
           {filtered.map((product) => <article className="product-card" key={product.id}>
-            <div className="product-top"><span className={`tier-label ${product.tier.toLowerCase()}`}>{product.tier}</span><span className="stock-label">{typeof product.display_stock === 'number' ? `Sisa ${product.display_stock}` : product.display_stock === 'IN_STOCK' ? 'Tersedia' : 'Ready'}</span></div>
-            <div className="product-category">{product.game_category.replace('_', ' ')}</div>
+            <div className="product-top"><span className={`tier-label ${product.tier.toLowerCase()}`}>{TIER_LABELS[product.tier] || product.tier}</span><span className="stock-label">{typeof product.display_stock === 'number' ? `Stok ${product.display_stock}` : product.display_stock === 'IN_STOCK' ? 'Tersedia' : 'Tersedia'}</span></div>
+            <div className="product-category">{GAME_LABELS[product.game_category] || product.game_category.replaceAll('_', ' ')}</div>
             <h3>{product.name}</h3><p>{product.description}</p>
             <div className="product-bottom"><div><small>HARGA</small><strong>{product.sale_price_idr ? `Rp${Number(product.sale_price_idr).toLocaleString('id-ID')}` : `${product.sale_price_xtr} Stars`}</strong></div>
               <button className="buy-button" disabled={buyingId === product.id} onClick={() => buy(product)}>{buyingId === product.id ? '…' : 'Beli'}</button></div>
@@ -134,11 +147,11 @@ export default function HomePage() {
         </div>}
       </section>
 
-      <section className="trust-strip"><span>✦</span><div><strong>Secure Telegram checkout</strong><small>Pembayaran digital menggunakan invoice Telegram Stars resmi.</small></div></section>
-      <footer className="footer"><a className="brand" href="#home"><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a><small>© {new Date().getFullYear()} VAULT CORE. Digital gaming store.</small></footer>
+      <section className="trust-strip"><span>✦</span><div><strong>Pembayaran melalui Telegram Stars</strong><small>Pembayaran dilakukan melalui tagihan Telegram Stars (XTR).</small></div></section>
+      <footer className="footer"><a className="brand" href="#home"><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a><small>© {new Date().getFullYear()} VAULT CORE. Katalog produk digital dan layanan gaming.</small></footer>
 
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Tutup">×</button></div>}
-      {ordersOpen && <div className="modal-backdrop" onClick={() => setOrdersOpen(false)}><section className="orders-modal" onClick={(e) => e.stopPropagation()}><div className="modal-head"><h2>Pesanan saya</h2><button className="icon-button" onClick={() => setOrdersOpen(false)}>×</button></div>{orders.length ? orders.map((order) => <div className="order-row" key={order.order_number}><div><strong>{order.order_number}</strong><small>{new Date(order.created_at).toLocaleString('id-ID')}</small></div><span className={`order-status ${order.status.toLowerCase()}`}>{order.status}</span></div>) : <p className="muted-text">Belum ada pesanan.</p>}</section></div>}
+      {ordersOpen && <div className="modal-backdrop" onClick={() => setOrdersOpen(false)}><section className="orders-modal" onClick={(e) => e.stopPropagation()}><div className="modal-head"><h2>Pesanan saya</h2><button className="icon-button" onClick={() => setOrdersOpen(false)}>×</button></div>{orders.length ? orders.map((order) => <div className="order-row" key={order.order_number}><div><strong>{order.order_number}</strong><small>{new Date(order.created_at).toLocaleString('id-ID')}</small></div><span className={`order-status ${order.status.toLowerCase()}`}>{ORDER_STATUS_LABELS[order.status] || 'Status pesanan sedang diperbarui'}</span></div>) : <p className="muted-text">Belum ada pesanan.</p>}</section></div>}
     </main>
   </>;
 }

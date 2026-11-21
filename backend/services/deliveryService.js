@@ -109,7 +109,7 @@ export async function deliverPaidOrder(orderNumber) {
 
       try {
         const payload = decryptPayload(item);
-        const text = `✅ <b>Pembayaran diterima</b>\n\nProduk: ${escapeHtml(item.product_name)}\n\n<code>${escapeHtml(payload)}</code>\n\nSimpan detail ini dengan aman. Hubungi dukungan jika ada kendala.`;
+        const text = `✅ <b>Pembayaran berhasil</b>\n\nProduk: ${escapeHtml(item.product_name)}\n\n<code>${escapeHtml(payload)}</code>\n\nSimpan kode atau detail ini dengan aman. Hubungi pengelola VAULT CORE jika mengalami kendala.`;
         const result = await telegramCall('sendMessage', {
           chat_id: order.telegram_user_id,
           text,

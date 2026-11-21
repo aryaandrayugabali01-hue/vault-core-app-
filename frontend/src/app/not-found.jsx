@@ -1,3 +1,3 @@
 export default function NotFound() {
-  return <main className="not-found">Halaman tidak ditemukan.</main>;
+  return <main className="not-found">Halaman yang Anda cari tidak tersedia.</main>;
 }

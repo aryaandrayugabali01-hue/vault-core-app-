@@ -2,8 +2,8 @@ import './globals.css';
 import Script from 'next/script';
 
 export const metadata = {
-  title: 'VAULT CORE | Digital Gaming Store',
-  description: 'Katalog digital dan layanan gaming VAULT CORE.'
+  title: 'VAULT CORE | Toko Digital Gaming',
+  description: 'Katalog produk digital, voucher, lisensi, dan layanan gaming VAULT CORE.'
 };
 
 export default function RootLayout({ children }) {

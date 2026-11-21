@@ -4,7 +4,7 @@ import { sanitizeSuccessfulPaymentUpdate } from '../utils/paymentAudit.js';
 
 export async function answerPreCheckout(query) {
   if (!query?.id || !query?.invoice_payload || !query?.from?.id) {
-    return { ok: false, error_message: 'Checkout tidak valid. Silakan buat pesanan baru.' };
+    return { ok: false, error_message: 'Pembayaran tidak valid. Silakan buat pesanan baru.' };
   }
 
   const client = await pool.connect();
@@ -29,7 +29,7 @@ export async function answerPreCheckout(query) {
       && (!order.pre_checkout_query_id || order.pre_checkout_query_id === query.id);
     if (!valid) {
       await client.query('ROLLBACK');
-      return { ok: false, error_message: 'Pesanan sudah diproses, checkout lain sedang berlangsung, stok berubah, atau nominal tidak sesuai.' };
+      return { ok: false, error_message: 'Pesanan sudah diproses, pembayaran lain sedang berlangsung, stok berubah, atau jumlah Stars tidak sesuai.' };
     }
 
     if (!order.pre_checkout_query_id) {
@@ -41,7 +41,7 @@ export async function answerPreCheckout(query) {
       );
       if (!claimed.rowCount) {
         await client.query('ROLLBACK');
-        return { ok: false, error_message: 'Checkout order ini sudah diklaim. Silakan lanjutkan pesanan yang sedang dibuka.' };
+        return { ok: false, error_message: 'Pembayaran untuk pesanan ini sudah diajukan. Lanjutkan pembayaran yang sedang terbuka.' };
       }
     }
     await client.query('COMMIT');
@@ -49,7 +49,7 @@ export async function answerPreCheckout(query) {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('[pre-checkout-validation-error]', error.message);
-    return { ok: false, error_message: 'Sistem belum dapat memverifikasi pesanan. Silakan buat ulang pesanan beberapa saat lagi.' };
+    return { ok: false, error_message: 'Sistem belum dapat memverifikasi pesanan. Buat pesanan baru beberapa saat lagi.' };
   } finally {
     client.release();
   }
