@@ -3,12 +3,19 @@
   "name": "vault-core-api",
   "main": "cloudflare/vault-core-api.js",
   "compatibility_date": "2026-11-21",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "workers_dev": true,
   "observability": {
     "enabled": true,
-    "logs": { "enabled": true, "invocation_logs": true },
-    "traces": { "enabled": true }
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true
+    }
   },
   "hyperdrive": [
     {
@@ -17,6 +24,8 @@
     }
   ],
   "vars": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "FRONTEND_ORIGIN": "https://vaultcore.biz.id",
+    "TELEGRAM_MINI_APP_URL": "https://vaultcore.biz.id"
   }
 }
