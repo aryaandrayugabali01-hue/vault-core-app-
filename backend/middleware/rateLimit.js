@@ -1,3 +1,4 @@
+import { isIP } from 'node:net';
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 
 export function resolveRateLimitKey(req) {
@@ -9,8 +10,10 @@ export function resolveRateLimitKey(req) {
 
   for (const candidate of candidates) {
     if (typeof candidate !== 'string' || !candidate.trim()) continue;
+    const address = candidate.trim();
+    if (isIP(address) === 0) continue;
     try {
-      return `ip:${ipKeyGenerator(candidate.trim())}`;
+      return `ip:${ipKeyGenerator(address)}`;
     } catch {
       // Ignore malformed proxy metadata and try the next trusted source.
     }
