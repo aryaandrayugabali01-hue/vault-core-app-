@@ -11,8 +11,9 @@ export function validateTelegramInitData(initData, botToken, maxAgeSeconds = 86_
   const age = Math.floor(Date.now() / 1000) - authDate;
   if (age < -60 || age > maxAgeSeconds) throw new Error('Telegram initData has expired.');
 
+  // Bot-token HMAC validation excludes only hash; keep Telegram's modern signature field
+  // in the data-check string. Third-party Ed25519 validation uses a different exclusion rule.
   params.delete('hash');
-  params.delete('signature');
   const dataCheckString = [...params.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => `${key}=${value}`)
