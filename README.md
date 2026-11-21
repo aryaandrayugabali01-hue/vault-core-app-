@@ -4,12 +4,12 @@ Single-vendor Telegram Mini App store for transferable digital products, voucher
 
 ## Source of truth
 
-Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current contract draft: **v1.2 (CR-02)**. The approval fields in Section 26.6 are still unsigned in the repository copy.
+Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current approved contract baseline: **v1.2 (CR-02)**. Owner approval was recorded in writing through the project conversation on 21 November 2026; see Section 26.6. Formal legal name/e-signature certificate details are not recorded.
 
 ## Project documents
 
 - [Blueprint and Master Operation (MO)](docs/VAULT_CORE_BLUEPRINT_MASTER_OPERATION.md) — complete execution blueprint, operating procedures, QA, deployment, risk register, and go-live gates.
-- [Project Contract](PROJECT_CONTRACT.md) — product and technical scope; v1.2 CR-02 is still a draft pending owner approval.
+- [Project Contract](PROJECT_CONTRACT.md) — approved product and technical baseline v1.2 CR-02; see Section 26.6 for the owner approval record.
 - [Deployment Status](DEPLOYMENT_STATUS.md) — infrastructure and production readiness record.
 - [Production Deployment Runbook](PRODUCTION_DEPLOYMENT_RUNBOOK.md) — secrets, workflow, routing, and Telegram webhook procedure.
 
