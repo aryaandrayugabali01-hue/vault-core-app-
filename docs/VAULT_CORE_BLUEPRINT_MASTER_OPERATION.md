@@ -57,7 +57,7 @@ Sasaran penyelesaian:
 - Neon database `vault_core` contains 10 application tables and five registered migrations (`001`–`005`).
 - Source includes Telegram authentication, catalog, order reservation with owner binding, single pre-checkout claim per order, Stars invoice/payment idempotency, encrypted inventory, ambiguous delivery reconciliation, two-phase Stars refund recovery, Owner API and gateway source.
 - Cloudflare live read-back shows only `vault-core-gateway` (plus unrelated existing Workers); `vault-core-api` and `vault-core-web` do not exist in the target account. Gateway origins remain unset, Worker Custom Domains list is empty, and zone DNS record list is empty.
-- Production workflow run `44884767909` stopped at preflight because `CLOUDFLARE_API_TOKEN` was missing; all five required GitHub Actions secret variables were empty and no deployment steps ran.
+- Latest retry of production workflow run `44884767909` reached secret validation with all five required variables present, then stopped because `APP_ENCRYPTION_KEY` did not pass the exact 32-byte Base64 check. The workflow now normalizes Base64 whitespace and reports only safe length diagnostics; the corrected workflow has passed CI/build validation but still needs a fresh manual production run.
 - Production Telegram bot identity/token, webhook, live XTR payment/refund/delivery tests, IDOR review, backup/restore, and UAT remain unverified/pending.
 
 ## 2. Prinsip dan ruang lingkup yang dikunci
@@ -923,8 +923,8 @@ Setiap hasil tes harus mencantumkan Test ID, environment, commit SHA, langkah, e
 | ID | Pekerjaan | Alasan/hasil yang diharapkan | Status baseline |
 |---|---|---|---|
 | P0-01 | Konfirmasi dan persetujuan PROJECT_CONTRACT v1.2 Bagian 26.6 | Scope punya persetujuan owner | DONE — persetujuan tertulis pemilik tercatat 2026-11-21 |
-| P0-02 | Verifikasi akun Cloudflare yang benar, token scope, dan akses resource | Deployment tidak memakai akun yang salah | ACCOUNT IDENTITY VERIFIED; API-token preflight BLOCKED (secret kosong; connector token verify 401) |
-| P0-03 | Siapkan lima repository secrets wajib | Workflow lolos preflight | BLOCKED — workflow run 44884767909 membuktikan kelima secret environment kosong |
+| P0-02 | Verifikasi akun Cloudflare yang benar, token scope, dan akses resource | Deployment tidak memakai akun yang salah | ACCOUNT IDENTITY VERIFIED; GitHub Actions API-token preflight PENDING (belum tercapai karena validasi APP_ENCRYPTION_KEY berhenti lebih dulu); connector token verify 401 |
+| P0-03 | Siapkan lima repository secrets wajib | Workflow lolos preflight | PARTIAL — kelima variabel secret sudah hadir di job; `APP_ENCRYPTION_KEY` perlu lolos validasi 32-byte Base64 pada run workflow terbaru |
 | P0-04 | Konfirmasi BotFather identity dan token produksi | Identitas bot final | BLOCKED — TELEGRAM_BOT_TOKEN kosong; identitas bot belum dapat dibaca |
 | P0-05 | Verifikasi ADMIN_TELEGRAM_IDS | Owner/admin server-side benar | BLOCKED — secret kosong; owner ID belum dikonfigurasi |
 | P0-06 | Pastikan migrations/runtime DB role/Hyperdrive konsisten | API mampu query DB | VERIFIED — 10 tables, 5 migrations; Neon runtime role dan Hyperdrive resource tersedia; Worker binding belum live |
@@ -1031,9 +1031,9 @@ Change request harus mencakup kebutuhan, use case, alasan, dampak ke UI/API/data
 Hal berikut tidak boleh diisi berdasarkan tebakan:
 
 1. Username bot Telegram produksi dan identitas BotFather final; token secret belum dikonfigurasi.
-2. Nilai rahasia produksi belum tersedia pada GitHub Actions; lima variabel wajib terbukti kosong pada preflight run 44884767909.
+2. Lima variabel rahasia sudah hadir pada GitHub Actions, tetapi nilai `APP_ENCRYPTION_KEY` gagal validasi panjang dan format Base64 pada preflight run 44884767909; workflow telah diperbarui untuk menormalkan whitespace dan memberi diagnostik aman.
 3. Daftar final Telegram user ID Owner/Admin belum dikonfigurasi.
-4. API-token scope belum terverifikasi; connector token verification returned 401 Invalid API Token, sementara workflow preflight tidak dapat menguji secret yang kosong.
+4. API-token scope GitHub Actions belum terverifikasi karena preflight berhenti pada `APP_ENCRYPTION_KEY`; konektor Cloudflare terpisah sebelumnya mengembalikan 401 Invalid API Token.
 5. API Worker `vault-core-api` dan frontend Worker `vault-core-web` belum ada pada target Cloudflare account (live list verified).
 6. Gateway origins belum disetel; Worker Custom Domains dan zone DNS records kosong (live read-back).
 7. Telegram production webhook belum dikonfigurasi atau diuji.
