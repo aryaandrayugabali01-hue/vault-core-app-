@@ -31,6 +31,12 @@ Optional:
 
 The deployment workflow validates the key length and numeric Telegram IDs before deploying. A malformed/missing required secret stops the deployment before runtime promotion.
 
+## Database connection model
+
+The API Worker uses one fresh `pg.Client` per incoming request through `AsyncLocalStorage`. Controller calls to `pool.query()` and `pool.connect()` within that request share the same client, so order/payment transactions remain on one connection. Hyperdrive manages the underlying origin connection pool and automatically cleans up each Worker-side client when the invocation ends. Local Node.js development and migrations continue using the normal `pg.Pool`.
+
+Reference: [Cloudflare Hyperdrive connection lifecycle](https://developers.cloudflare.com/hyperdrive/concepts/connection-lifecycle/).
+
 ## Run deployment
 
 1. Open the repository's **Actions** tab.
