@@ -1,5 +1,5 @@
 /* VAULT CORE visual system v2 — presentation only */
-:root{color-scheme:dark;--panel2:#151c29;--line:#293346;--line-soft:rgba(174,188,214,.12);--text:#f4f6fb;--muted:#9aa6b8;--subtle:#778398;--green:#62d8a7;--red:#ff8f9b;}
+:root{--red:#ff8f9b;}
 *,*::before,*::after{box-sizing:border-box}
 html{min-width:320px;scroll-behavior:smooth;}
 body{min-width:320px;min-height:100vh;margin:0;overflow-x:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -81,30 +81,18 @@ button,input,select,textarea{font:inherit}button{-webkit-tap-highlight-color:tra
 .admin-actions button:hover{border-color:rgba(165,140,255,.6);background:#242d40}.admin-actions button:disabled{opacity:.55;cursor:wait}
 .table-empty{padding:25px 12px!important;color:var(--muted)!important;text-align:center}.admin-footnote{margin:13px 0 0;color:#8d9aaf;font-size:10px;line-height:1.6}
 .not-found{width:min(100% - 32px,720px);min-height:60vh;display:grid;place-items:center;margin:0 auto;padding:28px;color:#dce2ee;font-size:15px;text-align:center}
-@media(min-width:640px){.category-grid{}.category-card{}.product-grid{}.product-card{min-height:245px;padding:17px}.hero{min-height:390px}.modal-backdrop{align-items:center;padding:24px}.orders-modal{}}
+@media(min-width:640px){.product-card{min-height:245px;padding:17px}.hero{min-height:390px}.modal-backdrop{align-items:center;padding:24px}}
 @media(min-width:960px){.product-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.product-card{min-height:252px}}
 @media(max-width:639px){.admin-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.admin-stats>div{min-height:86px;padding:13px}.admin-form{grid-template-columns:minmax(0,1fr);gap:12px}.span-2,.admin-primary{grid-column:1}.admin-primary{width:100%}.admin-panel{border-radius:16px}}
 @media(max-width:420px){.shell,.admin-shell{padding-right:14px;padding-left:14px}.hero{min-height:0;margin:18px 0 38px;padding:28px 21px 23px;border-radius:22px}.hero h1{font-size:clamp(36px,10.5vw,45px);letter-spacing:-.06em}.hero p{font-size:13px}.hero-stats{gap:16px 21px}.section{margin:38px 0}.section-heading{align-items:start}.section-count{padding-top:5px;font-size:8px}.product-grid{grid-template-columns:minmax(0,1fr);gap:11px}.product-card{min-height:0;padding:15px}.product-category{margin-top:16px}.footer{align-items:flex-start}.footer>small{max-width:100%;text-align:left}.admin-pill{font-size:8px;letter-spacing:.5px}.admin-stats strong{font-size:clamp(14px,4vw,19px)}.admin-section-head{align-items:flex-start}.modal-backdrop{padding-right:0;padding-left:0}.orders-modal{border-radius:21px 21px 0 0}}
-@media(max-width:340px){.brand{gap:8px;font-size:13px}.brand-mark{width:31px;height:31px;flex-basis:31px}.hero{padding-right:18px;padding-left:18px}.category-card{min-height:105px;padding:13px}.cat-name{font-size:14px}.admin-stats{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:340px){.brand{gap:8px;font-size:13px}.brand-mark{width:31px;height:31px;flex-basis:31px}.hero{padding-right:18px;padding-left:18px}.category-card{min-height:105px;padding:13px}.admin-stats{grid-template-columns:minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
 .test-product-label{display:inline-flex;align-items:center;gap:5px;width:max-content;margin:8px 0;padding:4px 8px;border:1px solid rgba(245,183,65,.45);border-radius:999px;background:rgba(245,183,65,.12);color:#f4c66e;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 
 
 /* VAULT CORE App Store inspired customer storefront */
-:root{
-  
-  
-  --panel2:#17171d;
-  --line:#2a2a33;
-  --line-soft:rgba(255,255,255,.09);
-  --text:#f7f7fb;
-  --muted:#a3a3af;
-  --subtle:#777784;
-  
-  
-  
-}
+
 
 
 .shell{padding-bottom:calc(126px + env(safe-area-inset-bottom,0px))}
@@ -231,7 +219,7 @@ button,input,select,textarea{font:inherit}button{-webkit-tap-highlight-color:tra
   .product-card{display:grid;grid-template-columns:minmax(104px,34%) minmax(0,1fr);min-height:166px}
   .product-art{min-height:100%;border-right:1px solid rgba(255,255,255,.07);border-bottom:0}
   .art-monogram{font-size:35px}
-  .art-caption{left:10px;bottom:10px;font-size:7px;letter-spacing:1px}
+  
   .art-ring{width:80px;height:80px}
   .art-orbit{width:104px;height:42px}
   .product-content{padding:12px}
@@ -241,18 +229,18 @@ button,input,select,textarea{font:inherit}button{-webkit-tap-highlight-color:tra
   .product-bottom{align-items:center;gap:8px;padding-top:10px}
   .product-bottom strong{font-size:15px}
   .buy-button{min-height:37px;padding:0 11px;font-size:9px}
-  .product-badge{right:7px;top:8px;min-height:19px;padding:3px 6px;font-size:7px}
+  
   .skeleton-card .product-art{min-height:166px}
   .skeleton-card .product-content{justify-content:center}
   .skeleton-button{width:88px;height:35px}
 }
 @media(max-width:380px){
   .shell{padding-right:13px;padding-left:13px}
-  .topbar-status{gap:6px;padding:7px 8px;font-size:8px}
+  
   .hero{padding:25px 19px;border-radius:24px}
   .hero h1{font-size:clamp(34px,10vw,41px)}
   .category-card{min-width:122px;padding:9px}
-  .cat-name{font-size:10px}
+  
   .product-card{grid-template-columns:98px minmax(0,1fr)}
   .product-content{padding:10px}
   .product-card h3{font-size:12px}
@@ -417,9 +405,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .product-sku{max-width:100%;overflow:hidden;color:#83858c;font-size:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;text-overflow:ellipsis;white-space:nowrap}
 .stock-label{display:inline-flex;align-items:center;gap:5px;color:#8fe3bb;font-size:8px;font-weight:750}
 .stock-dot{width:6px;height:6px;display:inline-block;border-radius:50%;background:#00cf83;box-shadow:0 0 0 3px rgba(0,207,131,.1)}
-.product-badge,.product-test-badge{
-  position:absolute;right:0;top:0;z-index:2;display:inline-flex;align-items:center;min-height:21px;padding:3px 7px;
-  border:1px solid rgba(0,214,138,.24);border-radius:999px;background:rgba(1,135,95,.17);color:#9aefca;
+.product-test-badge{
+  position:absolute;right:0;z-index:2;display:inline-flex;align-items:center;min-height:21px;padding:3px 7px;
+  border:1px solid rgba(0,214,138,.24);border-radius:999px;
   font-size:7px;font-weight:900;letter-spacing:.55px;white-space:nowrap
 }
 .product-test-badge{top:26px;border-color:rgba(245,190,75,.26);background:rgba(133,89,20,.17);color:#f0cd8e}
