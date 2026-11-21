@@ -14,7 +14,7 @@
 ## Repository state
 
 - Default branch: `main`.
-- Latest source commit: `11702981e23eb442ad93d4c5677791ef7ed1e8df` (Hyperdrive configuration and deployment status updated).
+- Latest source commit: `4d0acc3956a29f38e48ae7948347ded0f2d5ad93` (API Worker dry-run validation added to CI).
 - Cloudflare gateway source commit: `e88739e82119f287db4215a570b3ab0f64eede23`.
 - Source extraction commit: `15780b23e816cd4c8b3647d6359f949b53c4b2ea`.
 - 40 project source files are now present at repository root; original `vault-core-app-v1.3-github-ready.zip` retained as an archive.
@@ -78,10 +78,10 @@ Connected Neon database `vault_core` was inspected read-only:
 
 ## Deployment blockers
 
-1. Cloudflare application Workers `vault-core-web` and `vault-core-api` still need builds and deployments; `wrangler.api.jsonc` now configures `vault-core-api` and its Hyperdrive binding. The existing gateway alone does not host either runtime.
+1. Cloudflare application Workers `vault-core-web` and `vault-core-api` still need actual deployment. Native frontend Worker build is verified in CI; API Worker dry-run bundling is being validated. The existing gateway alone does not host either runtime.
 2. Neon runtime role `vault_core_runtime` has been created and verified with CONNECT, schema USAGE, and table DML privileges. Cloudflare Hyperdrive `vault-core-neon` is created and verified; SQL response caching is disabled. Hyperdrive ID: `97e2993f7733422abd08bfbf699ce4e4`.
 3. Zone `vaultcore.biz.id` is active. Cloudflare zone ID `74092a358232c7bf501da8d822fabb47` for `vaultcore.biz.id` is active; IDWebHost is the registrar and assigned nameservers are active. A separate `vaultcore.web.id` zone (ID `14098744832c82ae7b61bc46f695e186`) is pending and is not used by this deployment.
-4. Express API Worker source adapter and `wrangler.api.jsonc` are present; the config now declares the `HYPERDRIVE` binding. Worker build and deployment remain pending. Next.js frontend vinext setup and Cloudflare build remain pending.
+4. Express API Worker source adapter and `wrangler.api.jsonc` are present; the config declares the `HYPERDRIVE` binding. A CI dry-run bundle check for the API Worker has been added and is awaiting its first result. Native vinext Cloudflare integration is configured and the frontend Worker build has passed.
 5. The Hyperdrive binding ID is declared in `wrangler.api.jsonc` but becomes active only after the API Worker is deployed. Production application secrets remain unset: Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
 6. Telegram bot username/ownership and production webhook target are not known.
 7. Live XTR payment, refund, and fulfillment tests have not been completed.
@@ -89,4 +89,4 @@ Connected Neon database `vault_core` was inspected read-only:
 
 ## Production readiness
 
-**NOT READY FOR PRODUCTION.** Source is published and CI passes, and the database schema is verified. Hosting, runtime secrets, domain routing, Telegram webhook, production owner allowlist, end-to-end payment/delivery tests, and critical acceptance testing remain incomplete.
+**NOT READY FOR PRODUCTION.** Source is published, standard CI and the native Cloudflare frontend build pass, and the database schema is verified. Application Workers are not yet deployed; runtime secrets, domain routing, Telegram webhook, production owner allowlist, end-to-end payment/delivery tests, and critical acceptance testing remain incomplete.
