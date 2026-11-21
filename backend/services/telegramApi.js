@@ -44,9 +44,33 @@ export async function sendStarsInvoice({ orderNumber, title, description, amount
   });
 }
 
+async function confirmRefundFromStarLedger(userId, telegramPaymentChargeId) {
+  for (let offset = 0; offset < 10000; offset += 100) {
+    const result = await telegramCall('getStarTransactions', { offset, limit: 100 });
+    const transactions = result?.transactions ?? [];
+    const confirmed = transactions.some((transaction) =>
+      transaction.id === telegramPaymentChargeId
+      && transaction.receiver?.type === 'user'
+      && String(transaction.receiver.user?.id) === String(userId)
+    );
+    if (confirmed) return true;
+    if (transactions.length < 100) return false;
+  }
+  return false;
+}
+
 export async function refundStarPayment({ userId, telegramPaymentChargeId }) {
-  return telegramCall('refundStarPayment', {
-    user_id: Number(userId),
-    telegram_payment_charge_id: telegramPaymentChargeId
-  });
+  try {
+    return await telegramCall('refundStarPayment', {
+      user_id: Number(userId),
+      telegram_payment_charge_id: telegramPaymentChargeId
+    });
+  } catch (error) {
+    if (!error.telegramRejected || !String(error.message).includes('CHARGE_ALREADY_REFUNDED')) {
+      throw error;
+    }
+    const confirmed = await confirmRefundFromStarLedger(userId, telegramPaymentChargeId);
+    if (confirmed) return true;
+    throw new Error('Telegram reports CHARGE_ALREADY_REFUNDED, but the matching outgoing Stars transaction was not confirmed by getStarTransactions. Manual reconciliation is required.');
+  }
 }

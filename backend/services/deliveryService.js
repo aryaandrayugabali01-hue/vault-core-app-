@@ -34,6 +34,15 @@ export async function deliverPaidOrder(orderNumber) {
       [order.id]
     );
     if (stale.rowCount > 0) return { delivered: 0, reviewRequired: true };
+    const { rows: activeReady } = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM deliveries
+       WHERE order_id=$1 AND status='READY'
+         AND COALESCE(last_attempt_at,created_at) >= NOW() - INTERVAL '5 minutes'`,
+      [order.id]
+    );
+    if (activeReady[0].count > 0) {
+      return { delivered: 0, inProgress: true };
+    }
 
     const { rows: expectedRows } = await pool.query(
       `SELECT COALESCE(SUM(quantity),0)::int AS expected_count,

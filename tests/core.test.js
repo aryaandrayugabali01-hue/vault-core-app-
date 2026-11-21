@@ -139,6 +139,37 @@ test('Stars refund calls refundStarPayment with the original charge ID', async (
   }
 });
 
+test('Stars refund reconciles an already-refunded charge from the Telegram ledger', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalToken = process.env.TELEGRAM_BOT_TOKEN;
+  const calls = [];
+  process.env.TELEGRAM_BOT_TOKEN = 'unit-test-token';
+  globalThis.fetch = async (url) => {
+    calls.push(String(url));
+    if (String(url).endsWith('/refundStarPayment')) {
+      return { ok: true, json: async () => ({ ok: false, description: 'Bad Request: CHARGE_ALREADY_REFUNDED' }) };
+    }
+    return { ok: true, json: async () => ({
+      ok: true,
+      result: { transactions: [{
+        id: 'charge-test-002',
+        amount: -75,
+        receiver: { type: 'user', user: { id: 12345 } }
+      }] }
+    }) };
+  };
+  try {
+    const result = await refundStarPayment({ userId: 12345, telegramPaymentChargeId: 'charge-test-002' });
+    assert.equal(result, true);
+    assert.match(calls[0], /refundStarPayment$/);
+    assert.match(calls[1], /getStarTransactions$/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalToken === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalToken;
+  }
+});
+
 test('payment audit snapshot excludes buyer profile and chat data', () => {
   const safe = sanitizeSuccessfulPaymentUpdate({
     message_id: 42,

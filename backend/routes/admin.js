@@ -148,10 +148,11 @@ router.post('/orders/:orderNumber/refund', async (req, res) => {
     return res.status(400).json({ error: 'INVALID_REFUND_REQUEST' });
   }
 
-  const client = await pool.connect();
+  let refund;
+  const prepare = await pool.connect();
   try {
-    await client.query('BEGIN');
-    const { rows } = await client.query(
+    await prepare.query('BEGIN');
+    const { rows } = await prepare.query(
       `SELECT o.id, o.order_number, o.status, c.telegram_user_id,
               t.id AS transaction_id, t.telegram_payment_charge_id, t.status AS transaction_status
        FROM orders o
@@ -162,49 +163,113 @@ router.post('/orders/:orderNumber/refund', async (req, res) => {
     );
     const order = rows[0];
     if (!order) {
-      await client.query('ROLLBACK');
+      await prepare.query('ROLLBACK');
       return res.status(404).json({ error: 'ORDER_OR_PAYMENT_NOT_FOUND' });
     }
     if (order.status === 'REFUNDED' || order.transaction_status === 'REFUNDED') {
-      await client.query('ROLLBACK');
+      await prepare.query('ROLLBACK');
       return res.status(409).json({ error: 'ORDER_ALREADY_REFUNDED' });
     }
     if (!['PAID','FULFILLING','FULFILLED','REFUND_PENDING'].includes(order.status)) {
-      await client.query('ROLLBACK');
+      await prepare.query('ROLLBACK');
       return res.status(409).json({ error: 'ORDER_NOT_REFUNDABLE' });
     }
-    if (order.transaction_status !== 'PAID' || !order.telegram_payment_charge_id) {
-      await client.query('ROLLBACK');
+    if (!['PAID','REFUND_PENDING'].includes(order.transaction_status) || !order.telegram_payment_charge_id) {
+      await prepare.query('ROLLBACK');
       return res.status(409).json({ error: 'PAYMENT_NOT_REFUNDABLE' });
     }
 
-    await refundStarPayment({
+    await prepare.query(
+      `UPDATE transactions SET status='REFUND_PENDING' WHERE id=$1 AND status IN ('PAID','REFUND_PENDING')`,
+      [order.transaction_id]
+    );
+    await prepare.query(`UPDATE orders SET status='REFUND_PENDING' WHERE id=$1`, [order.id]);
+    await prepare.query(
+      `INSERT INTO admin_audit_logs (actor_telegram_user_id,action,entity_type,entity_id,metadata)
+       VALUES ($1,'STARS_REFUND_REQUESTED','ORDER',$2,$3)`,
+      [String(req.telegramUser.id), String(order.id), JSON.stringify({ orderNumber, reason, telegramPaymentChargeId: order.telegram_payment_charge_id })]
+    );
+    await prepare.query('COMMIT');
+    refund = {
+      id: order.id,
+      orderNumber: order.order_number,
       userId: order.telegram_user_id,
+      transactionId: order.transaction_id,
       telegramPaymentChargeId: order.telegram_payment_charge_id
+    };
+  } catch (error) {
+    await prepare.query('ROLLBACK');
+    console.error('[refund-prepare-error]', error.message);
+    return res.status(500).json({ error: 'REFUND_PREPARATION_FAILED' });
+  } finally {
+    prepare.release();
+  }
+
+  try {
+    const confirmed = await refundStarPayment({
+      userId: refund.userId,
+      telegramPaymentChargeId: refund.telegramPaymentChargeId
     });
-    await client.query(`UPDATE transactions SET status='REFUNDED' WHERE id=$1`, [order.transaction_id]);
-    await client.query(`UPDATE orders SET status='REFUNDED' WHERE id=$1`, [order.id]);
-    await client.query(
+    if (confirmed !== true) throw new Error('Telegram did not confirm the Stars refund.');
+  } catch (error) {
+    try {
+      await audit(req, 'STARS_REFUND_ATTEMPT_FAILED', 'ORDER', refund.id, {
+        orderNumber, reason, error: String(error.message || 'Refund outcome unknown').slice(0, 300)
+      });
+    } catch {}
+    console.error('[refund-reconciliation-required]', String(error.message || 'unknown').slice(0, 300));
+    return res.status(502).json({
+      error: 'REFUND_RECONCILIATION_REQUIRED',
+      message: 'Hasil refund belum dapat dikonfirmasi. Pesanan ditahan pada REFUND_PENDING; tindakan ini aman untuk dicoba kembali setelah pemeriksaan ledger Telegram.'
+    });
+  }
+
+  const finalize = await pool.connect();
+  try {
+    await finalize.query('BEGIN');
+    const { rows } = await finalize.query(
+      `SELECT o.id,o.status,t.id AS transaction_id,t.status AS transaction_status
+       FROM orders o JOIN transactions t ON t.order_id=o.id
+       WHERE o.id=$1 AND t.id=$2 FOR UPDATE OF o,t`,
+      [refund.id, refund.transactionId]
+    );
+    const current = rows[0];
+    if (!current) throw new Error('REFUND_LEDGER_RECORD_NOT_FOUND');
+    if (current.status === 'REFUNDED' || current.transaction_status === 'REFUNDED') {
+      await finalize.query('COMMIT');
+      return res.json({ ok: true, orderNumber, status: 'REFUNDED', alreadyFinalized: true });
+    }
+    if (current.status !== 'REFUND_PENDING' || current.transaction_status !== 'REFUND_PENDING') {
+      throw new Error('REFUND_STATE_CHANGED_BEFORE_FINALIZATION');
+    }
+    await finalize.query(`UPDATE transactions SET status='REFUNDED' WHERE id=$1`, [refund.transactionId]);
+    await finalize.query(`UPDATE orders SET status='REFUNDED' WHERE id=$1`, [refund.id]);
+    await finalize.query(
       `UPDATE deliveries SET status='REVOKED', last_error=$2
        WHERE order_id=$1 AND status IN ('PENDING','READY','FAILED','REVIEW_REQUIRED')`,
-      [order.id, `Refunded by owner: ${reason}`]
+      [refund.id, 'Refunded by owner: ' + reason]
     );
-    await client.query(
-      `UPDATE inventory_items SET status='AVAILABLE', reserved_order_id=NULL, reserved_until=NULL WHERE reserved_order_id=$1 AND status='RESERVED'`, [order.id]
+    await finalize.query(
+      `UPDATE inventory_items SET status='AVAILABLE', reserved_order_id=NULL, reserved_until=NULL
+       WHERE reserved_order_id=$1 AND status='RESERVED'`,
+      [refund.id]
     );
-    await client.query(
+    await finalize.query(
       `INSERT INTO admin_audit_logs (actor_telegram_user_id,action,entity_type,entity_id,metadata)
        VALUES ($1,'STARS_REFUND_ISSUED','ORDER',$2,$3)`,
-      [String(req.telegramUser.id), String(order.id), JSON.stringify({ orderNumber, reason })]
+      [String(req.telegramUser.id), String(refund.id), JSON.stringify({ orderNumber, reason, telegramPaymentChargeId: refund.telegramPaymentChargeId })]
     );
-    await client.query('COMMIT');
+    await finalize.query('COMMIT');
     return res.json({ ok: true, orderNumber, status: 'REFUNDED' });
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('[refund-error]', error.message);
-    return res.status(502).json({ error: 'REFUND_FAILED', message: 'Telegram Stars refund gagal. Status order tidak diubah.' });
+    await finalize.query('ROLLBACK');
+    console.error('[refund-finalize-error]', error.message);
+    return res.status(503).json({
+      error: 'REFUND_LEDGER_RECONCILIATION_REQUIRED',
+      message: 'Telegram telah mengonfirmasi refund, tetapi ledger database belum berhasil diperbarui. Jalankan ulang rekonsiliasi refund untuk menyelesaikan status.'
+    });
   } finally {
-    client.release();
+    finalize.release();
   }
 });
 
