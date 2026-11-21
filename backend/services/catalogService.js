@@ -5,3 +5,14 @@ export function resolveDisplayStock({ actualStock, mode = 'EXACT_COUNT', overrid
   const cap = override == null ? actual : Math.max(0, Number(override) || 0);
   return Math.min(actual, cap);
 }
+
+
+export function isPublicCatalogProduct(product) {
+  return product?.status === 'ACTIVE' && product?.is_test !== true;
+}
+
+export function isEligibleCheckoutProduct(product, { testMode = false, ownerAuthorized = false } = {}) {
+  if (!product || product.status !== 'ACTIVE') return false;
+  if (product.is_test === true) return testMode && ownerAuthorized;
+  return !testMode;
+}
