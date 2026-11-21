@@ -6,7 +6,7 @@ const router = Router();
 router.get('/', async (_req, res) => {
   const { rows } = await pool.query(
     `SELECT p.id, p.sku, p.game_category, p.tier, p.name, p.description,
-            p.fulfillment_type, p.sale_price_xtr, p.sale_price_idr,
+            p.fulfillment_type, p.sale_price_xtr, p.is_test,
             p.display_stock_mode, p.display_stock_override, p.low_stock_threshold,
             GREATEST(COUNT(i.id) FILTER (WHERE i.status='AVAILABLE'),0)::int AS sellable_stock
      FROM products p LEFT JOIN inventory_items i ON i.product_id=p.id
