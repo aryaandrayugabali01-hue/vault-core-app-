@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { createOrder, getMyOrders } from '../controllers/orderController.js';
+import { requireOwner } from '../middleware/adminAuth.js';
 const router = Router();
 router.post('/', createOrder);
+router.post('/test', requireOwner, (req, res) => createOrder(req, res, { testMode: true }));
 router.get('/mine', getMyOrders);
 export default router;
