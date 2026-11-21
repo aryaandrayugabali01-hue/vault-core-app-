@@ -14,7 +14,7 @@
 ## Repository state
 
 - Default branch: `main`.
-- Latest source commit: `4d0acc3956a29f38e48ae7948347ded0f2d5ad93` (API Worker dry-run validation added to CI).
+- Latest source commit: `02c5a7728d502eca77190c3454574bba8d79f3b8` (production deployment workflow and runbook added).
 - Cloudflare gateway source commit: `e88739e82119f287db4215a570b3ab0f64eede23`.
 - Source extraction commit: `15780b23e816cd4c8b3647d6359f949b53c4b2ea`.
 - 40 project source files are now present at repository root; original `vault-core-app-v1.3-github-ready.zip` retained as an archive.
@@ -22,13 +22,14 @@
 
 ## CI validation
 
-GitHub Actions workflow `VAULT CORE CI`, latest run ID `44841992466`:
+GitHub Actions validation results:
 
-- Workspace dependency installation: **PASS**
-- Backend/core automated tests: **PASS**
-- Next.js production build: **PASS**
-- Overall workflow conclusion: **SUCCESS**
-- Documentation-sync workflows `44833158677` and `44833203368`: **SUCCESS**
+- `VAULT CORE CI`, run `44852531855`: **SUCCESS** (backend/core tests, Next.js build, Wrangler API Worker dry-run).
+- `VAULT CORE Cloudflare frontend preparation`, run `44852531853`: **SUCCESS** (Vinext compatibility scan, native Cloudflare initialization, Cloudflare Worker build and output verification).
+
+The previous passing deployment-source validation runs are `44852481475` (CI) and `44852481447` (frontend Worker build).
+
+
 
 Latest run completed after rate-limit routing was adjusted so Telegram's payment webhook is not throttled by customer API limits.
 
@@ -78,15 +79,15 @@ Connected Neon database `vault_core` was inspected read-only:
 
 ## Deployment blockers
 
-1. Cloudflare application Workers `vault-core-web` and `vault-core-api` still need actual deployment. Native frontend Worker build is verified in CI; API Worker dry-run bundling is being validated. The existing gateway alone does not host either runtime.
+1. Cloudflare application Workers `vault-core-web` and `vault-core-api` are not yet deployed. Native Vinext Worker build and Wrangler API Worker dry-run both pass CI. The existing gateway alone does not host either runtime.
 2. Neon runtime role `vault_core_runtime` has been created and verified with CONNECT, schema USAGE, and table DML privileges. Cloudflare Hyperdrive `vault-core-neon` is created and verified; SQL response caching is disabled. Hyperdrive ID: `97e2993f7733422abd08bfbf699ce4e4`.
 3. Zone `vaultcore.biz.id` is active. Cloudflare zone ID `74092a358232c7bf501da8d822fabb47` for `vaultcore.biz.id` is active; IDWebHost is the registrar and assigned nameservers are active. A separate `vaultcore.web.id` zone (ID `14098744832c82ae7b61bc46f695e186`) is pending and is not used by this deployment.
-4. Express API Worker source adapter and `wrangler.api.jsonc` are present; the config declares the `HYPERDRIVE` binding. A CI dry-run bundle check for the API Worker has been added and is awaiting its first result. Native vinext Cloudflare integration is configured and the frontend Worker build has passed.
-5. The Hyperdrive binding ID is declared in `wrangler.api.jsonc` but becomes active only after the API Worker is deployed. Production application secrets remain unset: Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
-6. Telegram bot username/ownership and production webhook target are not known.
+4. Native Vinext/Cloudflare configuration is committed in `frontend/cloudflare.config.ts` and `frontend/vite.config.ts`. `wrangler.api.jsonc` declares Hyperdrive and production frontend origins. Both Worker build paths are validated: frontend native Cloudflare build and API Wrangler dry-run.
+5. The Hyperdrive binding ID is declared in `wrangler.api.jsonc`; it becomes active only after the API Worker is deployed. `FRONTEND_ORIGIN` and `TELEGRAM_MINI_APP_URL` are set to `https://vaultcore.biz.id`. Production secrets remain unset: `CLOUDFLARE_API_TOKEN`, Telegram bot token, webhook secret, `APP_ENCRYPTION_KEY`, and owner Telegram ID allowlist.
+6. Telegram bot username/ownership and production webhook target are not known. The manual production workflow and `PRODUCTION_DEPLOYMENT_RUNBOOK.md` are committed; it requires the five repository secrets listed in the runbook.
 7. Live XTR payment, refund, and fulfillment tests have not been completed.
 8. Contract v1.2 (CR-02) still has unsigned owner approval fields in Section 26.6.
 
 ## Production readiness
 
-**NOT READY FOR PRODUCTION.** Source is published, standard CI and the native Cloudflare frontend build pass, and the database schema is verified. Application Workers are not yet deployed; runtime secrets, domain routing, Telegram webhook, production owner allowlist, end-to-end payment/delivery tests, and critical acceptance testing remain incomplete.
+**NOT READY FOR PRODUCTION.** Source is published; standard CI, native frontend Worker build, and API Worker dry-run all pass. The guarded production deployment workflow is committed. Application Workers are not yet deployed because Cloudflare and Telegram production secrets have not been installed; gateway domains, Telegram webhook, production owner allowlist, live payment/delivery tests, and critical acceptance testing remain incomplete.
