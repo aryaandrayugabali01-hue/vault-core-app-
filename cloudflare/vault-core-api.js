@@ -26,7 +26,7 @@ function configureEnvironment(env) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     if (!env.HYPERDRIVE?.connectionString) {
       return Response.json({ error: 'DATABASE_BINDING_NOT_CONFIGURED' }, { status: 503 });
     }
