@@ -119,7 +119,7 @@ router.post('/test-fixtures', async (req, res) => {
       [String(req.telegramUser.id), JSON.stringify({ skus:fixtures.map((item) => item.sku), count:fixtures.length })]
     );
     await client.query('COMMIT');
-    res.status(201).json({ createdOrVerified:result.length, fixtures:result, message:'Produk contoh uji dibuat sebagai DRAFT dengan stok kode dummy terenkripsi. Aktifkan hanya saat siap menguji pembelian XTR.' });
+    res.status(201).json({ createdOrVerified:result.length, fixtures:result, message:'Empat produk uji diaktifkan dengan stok dummy terenkripsi. Produk tampil di katalog; invoice pembelian bernilai 1 XTR dan hanya ditagihkan jika pengguna menyelesaikan pembayaran.' });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('[test-fixture-seed-error]', error.message);
