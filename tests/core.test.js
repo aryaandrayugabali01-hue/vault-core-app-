@@ -72,12 +72,13 @@ test('test fixtures are never visible through the public catalog policy', () => 
 
 test('test products require the Owner-only test checkout lane', () => {
   const commercial = { status: 'ACTIVE', is_test: false };
-  const fixture = { status: 'ACTIVE', is_test: true };
+  const fixture = { status: 'ACTIVE', is_test: true, sale_price_xtr: 1 };
   assert.equal(isEligibleCheckoutProduct(commercial), true);
   assert.equal(isEligibleCheckoutProduct(fixture), false);
   assert.equal(isEligibleCheckoutProduct(fixture, { testMode: true, ownerAuthorized: false }), false);
   assert.equal(isEligibleCheckoutProduct(fixture, { testMode: true, ownerAuthorized: true }), true);
   assert.equal(isEligibleCheckoutProduct({ ...fixture, status: 'DRAFT' }, { testMode: true, ownerAuthorized: true }), false);
+  assert.equal(isEligibleCheckoutProduct({ ...fixture, sale_price_xtr: 2 }, { testMode: true, ownerAuthorized: true }), false);
   assert.equal(isEligibleCheckoutProduct(commercial, { testMode: true, ownerAuthorized: true }), false);
 });
 
