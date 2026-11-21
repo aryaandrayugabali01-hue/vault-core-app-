@@ -32,7 +32,7 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 - Database: `vault_core`
 - Default branch: `main`
 
-The connected schema was checked: 10 tables are present and all 3 migration records are registered.
+The connected schema was checked: 10 application tables are present and all 5 migrations (001–005) are registered. Migrations 004 and 005 add reservation ownership/delivery review and a single pre-checkout claim per order.
 
 ## Local setup
 
@@ -57,6 +57,8 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 
 - A product is created as `DRAFT`. Only activate a product after the SKU review reference is recorded.
 - Inventory payloads are encrypted before storage. Supported payloads are redeem codes, voucher codes, license keys, gift codes, digital files, and service instructions.
+- Each reserved inventory item stores its owning order ID. Release and delivery operations verify ownership; one inventory unit cannot be linked to multiple active deliveries.
+- Each order can claim only one unique Telegram pre-checkout query ID. A valid successful-payment event is recorded once using the Telegram charge ID.
 - Account takeover credentials, email/password bundles, session tokens, OTP seeds, recovery codes, or third-party account credentials are not supported as fulfillment assets.
 - Public display stock is calculated from real sellable inventory. `display_stock_override` is a display cap and can never raise displayed stock above actual availability.
 - Telegram digital goods/services are paid through official Telegram Stars invoices. No manual XTR wallet-address payment flow is implemented.
@@ -64,20 +66,23 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 - `/paysupport` provides a buyer-facing support path. Owner refund requests use Telegram's `refundStarPayment` method and are recorded in the transaction/order status.
 - Payment audit snapshots retain payment identifiers and required order metadata only; buyer profile/chat fields are excluded.
 - API endpoints have IP-based rate limits. The built-in store is process-local; use a shared store or edge-level controls before scaling to multiple API instances.
-- Delivery claims record attempt count/time and failure reason; stale `READY` claims can be retried after the recovery interval. Telegram send operations are externally processed, so an ambiguous network failure may require owner reconciliation before retry.
+- Delivery claims record attempt count/time and failure reason. Definitive Telegram API rejection can be retried; stale or ambiguous send outcomes enter `REVIEW_REQUIRED` and must be reconciled by Owner before retry.
+- Stars refunds use a two-phase `REFUND_PENDING` state. If Telegram reports an already-refunded charge, the service checks the Stars transaction ledger before finalizing the internal status.
 - Price and cost are snapshotted at order creation. Reports show gross sales, cost, operating expenses, gross profit, and net profit in IDR, alongside received XTR.
 
 ## Current implementation status
 
-Source is published in the existing GitHub repository. At the blueprint baseline, main is at `155bbc6bb4b64475dd10fec048614e53011f84cb`; CI run `44853143423` and Cloudflare frontend preparation run `44853143408` both completed successfully on that commit. The original v1.3 ZIP is retained in the repository.
+Latest validated source on `main`: `f682001ee694937d9ba2da77b70867dfdc56f6e3`. CI run `44885310611` and Cloudflare frontend preparation run `44885310642` both completed successfully on that commit. The production deployment preflight run `44884767909` stopped before deployment because all five required GitHub Actions secrets were empty. The original v1.3 ZIP is retained in the repository.
 
-Implemented in the source tree: Telegram `initData` authentication, catalog API, order reservation, Stars invoice generation, webhook payment verification, encrypted inventory writes, automated delivery with retry tracking, `/paysupport`, owner-triggered Stars refunds, owner product/inventory/order routes, expense and profit reporting, customer Mini App, and Owner Console.
+Implemented and CI-validated in source: Telegram `initData` authentication, catalog API, order creation/reservation with owning order IDs, single pre-checkout claim per order, Stars invoice generation, successful-payment verification/idempotency, encrypted inventory, ambiguous-delivery review/reconciliation, two-phase Stars refund recovery, `/paysupport`, owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console. Live payment, refund, delivery, IDOR, backup/restore and Owner UAT tests remain pending.
 
 ## Not yet deployed
 
-- VAULT CORE gateway Worker `vault-core-gateway` is deployed; production frontend and API application origins are not yet deployed or configured.
-- Cloudflare zone `vaultcore.biz.id` is active in the connected account. Worker `vault-core-gateway` is deployed; frontend/API origins and custom-domain bindings remain to be configured.
-- Production environment secrets, Telegram bot identity/token, webhook registration, and owner Telegram ID allowlist are not configured in the connected deployment.
+- Existing `vault-core-gateway` is deployed, but Workers `vault-core-api` and `vault-core-web` are absent from the target account.
+- Cloudflare zone `vaultcore.biz.id` is ACTIVE; gateway origins are unset, Custom Domains list is empty, and zone DNS records are empty.
+- GitHub Actions production workflow run `44884767909` confirmed the five required secrets (`CLOUDFLARE_API_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `ADMIN_TELEGRAM_IDS`, `APP_ENCRYPTION_KEY`) resolve empty in the workflow environment. Deployment stopped before any resource changes.
+- Production Telegram bot identity/token, webhook registration, and owner Telegram ID allowlist are not configured.
+- No live XTR payment, refund, and fulfillment test has been run.
 - No live XTR payment, refund, and fulfillment test has been run.
 - Backup/restore, IDOR, and live rate-limit behavior still require staging validation before launch.
 
