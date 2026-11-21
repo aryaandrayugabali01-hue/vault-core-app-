@@ -588,6 +588,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .test-lane-notice strong{color:#f0cd8e;font-size:9px;font-weight:900;letter-spacing:1px}
 .test-lane-notice span{color:#c6c2b7;font-size:10px;line-height:1.45}
 .test-lane-notice button{min-height:35px;flex:0 0 auto;padding:0 12px;border:1px solid rgba(240,205,142,.24);border-radius:9px;background:rgba(133,89,20,.17);color:#f0cd8e;font-size:9px;font-weight:800}
+.browser-access-notice{display:grid;gap:5px;margin:12px 0;padding:13px 15px;border:1px solid rgba(196,181,253,.2);border-radius:14px;background:linear-gradient(120deg,rgba(68,58,98,.24),rgba(30,31,34,.96))}
+.browser-access-notice strong{color:#e4d7ff;font-size:10px;font-weight:850;letter-spacing:.5px}
+.browser-access-notice span{color:#c6c2d0;font-size:10px;line-height:1.55}
 .product-detail-modal{
   width:min(100%,680px);max-height:min(88vh,820px);margin:0 auto;padding:22px clamp(18px,3vw,27px) calc(24px + env(safe-area-inset-bottom,0px));
   overflow:auto;overscroll-behavior:contain;border:1px solid rgba(255,255,255,.12);border-bottom:0;border-radius:23px 23px 0 0;
