@@ -78,6 +78,23 @@ router.patch('/products/:id', async (req, res) => {
   res.json({ product: rows[0] });
 });
 
+router.get('/test-fixtures', async (_req, res) => {
+  const { rows } = await pool.query(
+    `SELECT p.id,p.sku,p.game_category,p.tier,p.name,p.description,p.fulfillment_type,
+            p.sale_price_xtr,p.status,p.is_test,
+            COUNT(i.id) FILTER (WHERE i.status='AVAILABLE')::int AS sellable_stock
+     FROM products p LEFT JOIN inventory_items i ON i.product_id=p.id
+     WHERE p.is_test=TRUE
+     GROUP BY p.id ORDER BY p.game_category,p.tier,p.name`
+  );
+  const products = rows.map((product) => {
+    const stock = Number(product.sellable_stock);
+    return { ...product, sellable_stock: stock, display_stock: stock,
+      is_available: product.status === 'ACTIVE' && stock > 0 };
+  });
+  res.json({ products });
+});
+
 router.post('/test-fixtures', async (req, res) => {
   const fixtures = [
     { sku:'TEST-MLBB-001', gameCategory:'MLBB', tier:'SILVER', name:'TEST ONLY - MLBB Delivery Sample', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-MLBB-001' },
@@ -105,7 +122,7 @@ router.post('/test-fixtures', async (req, res) => {
       if (!product) {
         const inserted = await query(
           `INSERT INTO products (sku,game_category,tier,name,description,fulfillment_type,sale_price_xtr,cost_price_xtr,rights_review_reference,is_test,status)
-           VALUES ($1,$2,$3,$4,$5,'SERVICE_INSTRUCTIONS',1,0,'INTERNAL_TEST_FIXTURE_ONLY',TRUE,'DRAFT') RETURNING id`,
+           VALUES ($1,$2,$3,$4,$5,'SERVICE_INSTRUCTIONS',1,0,'INTERNAL_TEST_FIXTURE_ONLY',TRUE,'DRAFT') RETURNING id,status`,
           [fixture.sku,fixture.gameCategory,fixture.tier,fixture.name,
            'PRODUK CONTOH UJI INTERNAL. Bukan produk komersial. Kode dummy ini tidak dapat ditukarkan. Harga 1 XTR hanya untuk menguji alur invoice dan transaksi.']
         );
@@ -123,12 +140,7 @@ router.post('/test-fixtures', async (req, res) => {
         );
         changed = true;
       }
-      if (product.status !== 'ACTIVE') {
-        stage = 'product-activate';
-        await query("UPDATE products SET status='ACTIVE', updated_at=NOW() WHERE id=$1 AND is_test=TRUE", [product.id]);
-        changed = true;
-      }
-      result.push({ sku:fixture.sku, productId:product.id, status:'ACTIVE', isTest:true });
+      result.push({ sku:fixture.sku, productId:product.id, status:product.status || 'DRAFT', isTest:true });
     }
     if (changed) {
     await query(
@@ -139,13 +151,60 @@ router.post('/test-fixtures', async (req, res) => {
     }
     stage = 'transaction-commit';
     await query('COMMIT');
-    res.status(201).json({ createdOrVerified:result.length, fixtures:result, message:'Empat produk uji diaktifkan dengan stok dummy terenkripsi. Produk tampil di katalog; invoice pembelian bernilai 1 XTR dan hanya ditagihkan jika pengguna menyelesaikan pembayaran.' });
+    res.status(201).json({ createdOrVerified:result.length, fixtures:result, message:'Empat produk uji dan stok dummy terenkripsi siap. Produk baru berstatus DRAFT dan harus diaktifkan satu per satu oleh Owner sebelum checkout uji.' });
   } catch (error) {
     try { await query('ROLLBACK'); } catch {}
     console.error('[test-fixture-seed-error]', stage, error.name, error.message, error.stack);
     res.status(500).json({ error:'TEST_FIXTURE_SEED_FAILED', stage, message:'Persiapan produk uji gagal pada tahap ' + stage + '. Detail telah dicatat di log server.' });
   } finally { client?.release(); }
 });
+router.post('/test-fixtures/:id/activate', async (req, res) => {
+  const productId = Number(req.params.id);
+  if (!Number.isSafeInteger(productId) || productId <= 0) {
+    return res.status(400).json({ error: 'INVALID_TEST_PRODUCT_ID' });
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query(
+      'SELECT id,sku,status,is_test FROM products WHERE id=$1 FOR UPDATE', [productId]
+    );
+    const product = rows[0];
+    if (!product || product.is_test !== true) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'TEST_PRODUCT_NOT_FOUND' });
+    }
+    const stock = await client.query(
+      "SELECT COUNT(*)::int AS available FROM inventory_items WHERE product_id=$1 AND status='AVAILABLE' AND reserved_order_id IS NULL AND reserved_until IS NULL",
+      [productId]
+    );
+    if (Number(stock.rows[0]?.available || 0) < 1) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'TEST_PRODUCT_STOCK_REQUIRED', message: 'Produk uji memerlukan minimal satu stok dummy tersedia.' });
+    }
+    if (product.status !== 'ACTIVE') {
+      if (product.status !== 'DRAFT') {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'TEST_PRODUCT_NOT_DRAFT', message: 'Hanya produk uji berstatus DRAFT yang dapat diaktifkan.' });
+      }
+      await client.query("UPDATE products SET status='ACTIVE',updated_at=NOW() WHERE id=$1 AND is_test=TRUE", [productId]);
+      await client.query(
+        `INSERT INTO admin_audit_logs (actor_telegram_user_id,action,entity_type,entity_id,metadata)
+         VALUES ($1,'TEST_FIXTURE_ACTIVATED','PRODUCT',$2,$3)`,
+        [String(req.telegramUser.id), String(productId), JSON.stringify({ sku: product.sku })]
+      );
+    }
+    await client.query('COMMIT');
+    return res.json({ product: { id: productId, sku: product.sku, status: 'ACTIVE', is_test: true } });
+  } catch (error) {
+    try { await client.query('ROLLBACK'); } catch {}
+    console.error('[test-fixture-activate-error]', error.name, error.message);
+    return res.status(500).json({ error: 'TEST_PRODUCT_ACTIVATION_FAILED', message: 'Produk uji tidak dapat diaktifkan saat ini.' });
+  } finally {
+    client.release();
+  }
+});
+
 router.post('/expenses', async (req, res) => {
   const { category, description, amountXtr, occurredAt } = req.body ?? {};
   if (!category || !description || !Number.isSafeInteger(Number(amountXtr)) || Number(amountXtr) <= 0) {

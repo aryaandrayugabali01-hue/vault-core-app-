@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
 import { pool } from '../db/pool.js';
 import { sendStarsInvoice } from '../services/telegramApi.js';
+import { isEligibleCheckoutProduct } from '../services/catalogService.js';
 
-export async function createOrder(req, res) {
+export async function createOrder(req, res, { testMode = false } = {}) {
   const productId = Number(req.body?.productId);
   const quantity = Number(req.body?.quantity ?? 1);
   if (!Number.isSafeInteger(productId) || productId <= 0 || !Number.isInteger(quantity) || quantity < 1 || quantity > 5) {
@@ -35,10 +36,12 @@ export async function createOrder(req, res) {
     }
 
     const { rows: products } = await client.query(
-      `SELECT * FROM products WHERE id=$1 AND status='ACTIVE' FOR UPDATE`, [productId]
+      `SELECT * FROM products WHERE id=$1 AND status='ACTIVE' AND ${testMode ? 'is_test=TRUE' : 'COALESCE(is_test,FALSE)=FALSE'} FOR UPDATE`, [productId]
     );
     const product = products[0];
-    if (!product) throw Object.assign(new Error('Produk tidak tersedia.'), { status: 404 });
+    if (!isEligibleCheckoutProduct(product, { testMode, ownerAuthorized: testMode })) {
+      throw Object.assign(new Error('Produk tidak tersedia pada jalur checkout ini.'), { status: 404 });
+    }
     const { rows: stockRows } = await client.query(
       `SELECT id FROM inventory_items
        WHERE product_id=$1 AND status='AVAILABLE'

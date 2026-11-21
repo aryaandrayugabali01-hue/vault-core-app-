@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { validateTelegramInitData } from '../backend/utils/telegram.js';
 import { encryptPayload, decryptPayload, assertAllowedDigitalPayload } from '../backend/utils/encryption.js';
-import { resolveDisplayStock } from '../backend/services/catalogService.js';
+import { resolveDisplayStock, isPublicCatalogProduct, isEligibleCheckoutProduct } from '../backend/services/catalogService.js';
 import { sendStarsInvoice, refundStarPayment, telegramCall } from '../backend/services/telegramApi.js';
 import { sanitizeSuccessfulPaymentUpdate } from '../backend/utils/paymentAudit.js';
 import { createDatabaseAdapter } from '../backend/db/pool.js';
@@ -61,6 +61,25 @@ test('display stock override caps but cannot inflate actual inventory', () => {
   assert.equal(resolveDisplayStock({ actualStock: 3, override: 99 }), 3);
   assert.equal(resolveDisplayStock({ actualStock: 20, override: 4 }), 4);
   assert.equal(resolveDisplayStock({ actualStock: 0, override: 10 }), 0);
+});
+
+
+test('test fixtures are never visible through the public catalog policy', () => {
+  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false }), true);
+  assert.equal(isPublicCatalogProduct({ status: 'DRAFT', is_test: false }), false);
+  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: true }), false);
+});
+
+test('test products require the Owner-only test checkout lane', () => {
+  const commercial = { status: 'ACTIVE', is_test: false };
+  const fixture = { status: 'ACTIVE', is_test: true, sale_price_xtr: 1 };
+  assert.equal(isEligibleCheckoutProduct(commercial), true);
+  assert.equal(isEligibleCheckoutProduct(fixture), false);
+  assert.equal(isEligibleCheckoutProduct(fixture, { testMode: true, ownerAuthorized: false }), false);
+  assert.equal(isEligibleCheckoutProduct(fixture, { testMode: true, ownerAuthorized: true }), true);
+  assert.equal(isEligibleCheckoutProduct({ ...fixture, status: 'DRAFT' }, { testMode: true, ownerAuthorized: true }), false);
+  assert.equal(isEligibleCheckoutProduct({ ...fixture, sale_price_xtr: 2 }, { testMode: true, ownerAuthorized: true }), false);
+  assert.equal(isEligibleCheckoutProduct(commercial, { testMode: true, ownerAuthorized: true }), false);
 });
 
 test('display stock modes support count, boolean availability, and hidden count', () => {
