@@ -14,7 +14,7 @@
 ## Repository state
 
 - Default branch: `main`.
-- Latest source commit: `30a40ae9f5260701bb89f8cbefd01d77bf21b8f5` (API Worker Hyperdrive configuration added).
+- Latest source commit: `11702981e23eb442ad93d4c5677791ef7ed1e8df` (Hyperdrive configuration and deployment status updated).
 - Cloudflare gateway source commit: `e88739e82119f287db4215a570b3ab0f64eede23`.
 - Source extraction commit: `15780b23e816cd4c8b3647d6359f949b53c4b2ea`.
 - 40 project source files are now present at repository root; original `vault-core-app-v1.3-github-ready.zip` retained as an archive.
@@ -58,7 +58,7 @@ Connected Neon database `vault_core` was inspected read-only:
 - Hosting platform: Cloudflare Workers for both application runtimes.
 - Frontend: existing Next.js 15 / React 19 app, migrated non-destructively to vinext and deployed as Worker `vault-core-web`.
 - API: existing Express 5 app deployed as Worker `vault-core-api` using Cloudflare's `cloudflare:node` `httpServerHandler` adapter.
-- Database: existing Neon PostgreSQL retained; Cloudflare Hyperdrive will provide the PostgreSQL connection to the API Worker.
+- Database: existing Neon PostgreSQL retained; Cloudflare Hyperdrive `vault-core-neon` is created and configured to provide the PostgreSQL connection to the API Worker.
 - Public entrypoint: existing `vault-core-gateway` Worker, with `vaultcore.biz.id` and `www.vaultcore.biz.id` for frontend traffic and `api.vaultcore.biz.id` for API traffic.
 - This deployment requires no replacement database and no new repository. The two application Workers are runtime targets for the existing frontend and backend source directories.
 
@@ -82,7 +82,7 @@ Connected Neon database `vault_core` was inspected read-only:
 2. Neon runtime role `vault_core_runtime` has been created and verified with CONNECT, schema USAGE, and table DML privileges. Cloudflare Hyperdrive `vault-core-neon` is created and verified; SQL response caching is disabled. Hyperdrive ID: `97e2993f7733422abd08bfbf699ce4e4`.
 3. Zone `vaultcore.biz.id` is active. Cloudflare reports IDWebHost as the original registrar and the assigned nameservers are active.
 4. Express API Worker source adapter and `wrangler.api.jsonc` are present; the config now declares the `HYPERDRIVE` binding. Worker build and deployment remain pending. Next.js frontend vinext setup and Cloudflare build remain pending.
-5. Production secrets and bindings are not set: Hyperdrive binding, Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
+5. The Hyperdrive binding ID is declared in `wrangler.api.jsonc` but becomes active only after the API Worker is deployed. Production application secrets remain unset: Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
 6. Telegram bot username/ownership and production webhook target are not known.
 7. Live XTR payment, refund, and fulfillment tests have not been completed.
 8. Contract v1.2 (CR-02) still has unsigned owner approval fields in Section 26.6.
