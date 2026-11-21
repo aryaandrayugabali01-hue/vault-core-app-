@@ -58,6 +58,29 @@ export default function AdminPage() {
   }
 
 
+  async function reconcileDelivery(deliveryId) {
+    const outcome = window.prompt('Periksa chat Telegram customer. Ketik DELIVERED jika pesan sudah terkirim, atau NOT_DELIVERED jika belum.');
+    if (!outcome) return;
+    const normalized = outcome.trim().toUpperCase();
+    if (!['DELIVERED','NOT_DELIVERED'].includes(normalized)) {
+      setNotice('Pilihan tidak dikenali. Gunakan DELIVERED atau NOT_DELIVERED.');
+      return;
+    }
+    const reason = window.prompt('Catatan pemeriksaan (wajib):', normalized === 'DELIVERED' ? 'Pesan Telegram ditemukan dan diterima customer.' : 'Pesan tidak ditemukan pada chat customer.');
+    if (!reason || reason.trim().length < 3) return;
+    const messageValue = normalized === 'DELIVERED' ? window.prompt('Telegram message ID (opsional):', '') : null;
+    setBusy(true);
+    try {
+      const response = await fetch(API + '/api/admin/deliveries/' + deliveryId + '/reconcile', {
+        method:'POST', headers:headers(),
+        body:JSON.stringify({ outcome:normalized, reason:reason.trim(), telegramMessageId:messageValue ? Number(messageValue) : null })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || data.error || 'Rekonsiliasi gagal.');
+      setNotice('Delivery ' + deliveryId + ' direkonsiliasi: ' + normalized + '.');
+      await refresh();
+    } catch(e) { setNotice(e.message); } finally { setBusy(false); }
+  }
   async function retryDelivery(orderNumber) {
     setBusy(true);
     try {
@@ -135,7 +158,7 @@ export default function AdminPage() {
 
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">ORDERS & PAYMENTS</span><h2>Transaksi dan pemenuhan</h2></div><span className="section-count">{orders.length} ORDERS</span></div>
       <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Pesanan</th><th>Pelanggan</th><th>Status</th><th>Harga jual</th><th>Modal</th><th>Profit kotor</th><th>Aksi</th></tr></thead><tbody>
-      {orders.map(o=>{ const gross=Number(o.total_sale_idr||0); const cost=Number(o.total_cost_idr||0); const canRefund=['PAID','FULFILLING','FULFILLED'].includes(o.status); const canRetry=['PAID','FULFILLING'].includes(o.status); return <tr key={o.order_number}><td><strong>{o.order_number}</strong><small>{new Date(o.created_at).toLocaleString('id-ID')}</small></td><td>{o.username ? `@${o.username}` : o.telegram_user_id}</td><td><span className={`admin-status ${o.status.toLowerCase()}`}>{o.status}</span></td><td>{rupiah(gross)}<small>{o.total_xtr} XTR</small></td><td>{rupiah(cost)}</td><td className={gross-cost>=0?'profit':'loss'}>{rupiah(gross-cost)}</td><td><div className="admin-actions">{canRetry && <button disabled={busy} onClick={()=>retryDelivery(o.order_number)}>Kirim ulang</button>}{canRefund && <button disabled={busy} onClick={()=>issueRefund(o.order_number)}>Refund Stars</button>}</div></td></tr>})}
+      {orders.map(o=>{ const gross=Number(o.total_sale_idr||0); const cost=Number(o.total_cost_idr||0); const canRefund=['PAID','FULFILLING','FULFILLED','REFUND_PENDING'].includes(o.status); const canRetry=['PAID','FULFILLING'].includes(o.status); return <tr key={o.order_number}><td><strong>{o.order_number}</strong><small>{new Date(o.created_at).toLocaleString('id-ID')}</small></td><td>{o.username ? `@${o.username}` : o.telegram_user_id}</td><td><span className={`admin-status ${o.status.toLowerCase()}`}>{o.status}</span></td><td>{rupiah(gross)}<small>{o.total_xtr} XTR</small></td><td>{rupiah(cost)}</td><td className={gross-cost>=0?'profit':'loss'}>{rupiah(gross-cost)}</td><td><div className="admin-actions">{(o.deliveries||[]).filter(d=>d.status==="REVIEW_REQUIRED").map(d=><button key={d.id} disabled={busy} onClick={()=>reconcileDelivery(d.id)}>Tinjau #{d.id}</button>)}{canRetry && <button disabled={busy} onClick={()=>retryDelivery(o.order_number)}>Kirim ulang</button>}{canRefund && <button disabled={busy} onClick={()=>issueRefund(o.order_number)}>Refund Stars</button>}</div></td></tr>})}
       {!orders.length && <tr><td colSpan="7" className="table-empty">Belum ada transaksi.</td></tr>}
       </tbody></table></div>
       <p className="admin-footnote">Refund hanya untuk pembayaran Stars yang tercatat. Produk yang sudah terkirim tetap tercatat sebagai terjual dan tidak otomatis dikembalikan ke stok.</p>

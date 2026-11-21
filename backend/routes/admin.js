@@ -9,12 +9,13 @@ router.get('/dashboard', async (_req, res) => {
   const [sales, inventory, orders, expenses] = await Promise.all([
     pool.query(`SELECT COUNT(*)::int AS paid_orders, COALESCE(SUM(total_xtr),0)::bigint AS gross_xtr,
       COALESCE(SUM(total_sale_idr),0)::bigint AS gross_idr, COALESCE(SUM(total_cost_idr),0)::bigint AS cost_idr
-      FROM orders WHERE status IN ('PAID','FULFILLING','FULFILLED')`),
+      FROM orders WHERE status IN ('PAID','FULFILLING','FULFILLED','REFUND_PENDING')`),
     pool.query(`SELECT COUNT(*) FILTER (WHERE status='AVAILABLE')::int AS available,
       COUNT(*) FILTER (WHERE status='RESERVED')::int AS reserved,
       COUNT(*) FILTER (WHERE status='SOLD')::int AS sold FROM inventory_items`),
     pool.query(`SELECT COUNT(*) FILTER (WHERE status='PENDING_PAYMENT')::int AS pending,
-      COUNT(*) FILTER (WHERE status='FULFILLED')::int AS fulfilled FROM orders`),
+      COUNT(*) FILTER (WHERE status='FULFILLED')::int AS fulfilled,
+      COUNT(*) FILTER (WHERE status='REFUND_PENDING')::int AS refund_pending FROM orders`),
     pool.query(`SELECT COALESCE(SUM(amount_idr),0)::bigint AS expenses_idr FROM operating_expenses`)
   ]);
   const expenseIdr = Number(expenses.rows[0].expenses_idr);
@@ -168,7 +169,7 @@ router.post('/orders/:orderNumber/refund', async (req, res) => {
       await client.query('ROLLBACK');
       return res.status(409).json({ error: 'ORDER_ALREADY_REFUNDED' });
     }
-    if (order.status !== 'PAID' && order.status !== 'FULFILLING' && order.status !== 'FULFILLED') {
+    if (!['PAID','FULFILLING','FULFILLED','REFUND_PENDING'].includes(order.status)) {
       await client.query('ROLLBACK');
       return res.status(409).json({ error: 'ORDER_NOT_REFUNDABLE' });
     }
@@ -185,13 +186,11 @@ router.post('/orders/:orderNumber/refund', async (req, res) => {
     await client.query(`UPDATE orders SET status='REFUNDED' WHERE id=$1`, [order.id]);
     await client.query(
       `UPDATE deliveries SET status='REVOKED', last_error=$2
-       WHERE order_id=$1 AND status IN ('PENDING','READY','FAILED')`,
+       WHERE order_id=$1 AND status IN ('PENDING','READY','FAILED','REVIEW_REQUIRED')`,
       [order.id, `Refunded by owner: ${reason}`]
     );
     await client.query(
-      `UPDATE inventory_items SET status='AVAILABLE', reserved_until=NULL
-       WHERE id IN (SELECT inventory_item_id FROM deliveries WHERE order_id=$1 AND status='REVOKED')
-         AND status='RESERVED'`, [order.id]
+      `UPDATE inventory_items SET status='AVAILABLE', reserved_order_id=NULL, reserved_until=NULL WHERE reserved_order_id=$1 AND status='RESERVED'`, [order.id]
     );
     await client.query(
       `INSERT INTO admin_audit_logs (actor_telegram_user_id,action,entity_type,entity_id,metadata)
@@ -228,14 +227,77 @@ router.get('/orders', async (_req, res) => {
   const { rows } = await pool.query(
     `SELECT o.order_number,o.status,o.total_xtr,o.total_sale_idr,o.total_cost_idr,o.created_at,o.paid_at,o.fulfilled_at,
       c.telegram_user_id,c.username,
-      COALESCE(json_agg(json_build_object('name',oi.product_name_snapshot,'quantity',oi.quantity,
-       'unit_cost_idr',oi.unit_cost_idr,'unit_sale_xtr',oi.unit_sale_xtr,'unit_sale_idr',oi.unit_sale_idr)) FILTER (WHERE oi.id IS NOT NULL),'[]') items
-     FROM orders o JOIN customers c ON c.id=o.customer_id LEFT JOIN order_items oi ON oi.order_id=o.id
-     GROUP BY o.id,c.id ORDER BY o.created_at DESC LIMIT 200`
+      COALESCE((SELECT json_agg(json_build_object('name',oi.product_name_snapshot,'quantity',oi.quantity,
+       'unit_cost_idr',oi.unit_cost_idr,'unit_sale_xtr',oi.unit_sale_xtr,'unit_sale_idr',oi.unit_sale_idr))
+       FROM order_items oi WHERE oi.order_id=o.id),'[]') AS items,
+      COALESCE((SELECT json_agg(json_build_object('id',d.id,'status',d.status,'last_error',d.last_error,
+       'inventory_item_id',d.inventory_item_id) ORDER BY d.id) FROM deliveries d WHERE d.order_id=o.id),'[]') AS deliveries
+     FROM orders o JOIN customers c ON c.id=o.customer_id
+     ORDER BY o.created_at DESC LIMIT 200`
   );
   res.json({ orders: rows });
 });
 
+router.post('/deliveries/:id/reconcile', async (req, res) => {
+  const deliveryId = Number(req.params.id);
+  const outcome = String(req.body?.outcome || '').toUpperCase();
+  const reason = String(req.body?.reason || '').trim();
+  const messageId = req.body?.telegramMessageId == null ? null : Number(req.body.telegramMessageId);
+  if (!Number.isSafeInteger(deliveryId) || deliveryId <= 0 || !['DELIVERED','NOT_DELIVERED'].includes(outcome)
+      || reason.length < 3 || reason.length > 500
+      || (messageId != null && (!Number.isSafeInteger(messageId) || messageId <= 0))) {
+    return res.status(400).json({ error: 'INVALID_DELIVERY_RECONCILIATION' });
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query(
+      `SELECT d.id,d.order_id,d.inventory_item_id,d.status,o.order_number,i.status AS inventory_status,i.reserved_order_id
+       FROM deliveries d JOIN orders o ON o.id=d.order_id
+       JOIN inventory_items i ON i.id=d.inventory_item_id WHERE d.id=$1 FOR UPDATE OF d,o,i`,
+      [deliveryId]
+    );
+    const delivery = rows[0];
+    if (!delivery) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'DELIVERY_NOT_FOUND' }); }
+    if (delivery.status !== 'REVIEW_REQUIRED') { await client.query('ROLLBACK'); return res.status(409).json({ error: 'DELIVERY_NOT_REQUIRES_REVIEW' }); }
+    if (String(delivery.reserved_order_id) !== String(delivery.order_id) || delivery.inventory_status !== 'RESERVED') {
+      await client.query('ROLLBACK'); return res.status(409).json({ error: 'INVENTORY_RESERVATION_NOT_OWNED_BY_ORDER' });
+    }
+    if (outcome === 'DELIVERED') {
+      const stock = await client.query(
+        `UPDATE inventory_items SET status='SOLD',sold_at=NOW(),reserved_order_id=NULL,reserved_until=NULL
+         WHERE id=$1 AND status='RESERVED' AND reserved_order_id=$2 RETURNING id`,
+        [delivery.inventory_item_id, delivery.order_id]
+      );
+      if (!stock.rowCount) throw new Error('INVENTORY_RESERVATION_NOT_OWNED_BY_ORDER');
+      await client.query(
+        `UPDATE deliveries SET status='DELIVERED',telegram_message_id=$2,delivered_at=NOW(),last_error=NULL WHERE id=$1`,
+        [deliveryId,messageId]
+      );
+    } else {
+      await client.query(`UPDATE deliveries SET status='FAILED',last_error=$2 WHERE id=$1`,
+        [deliveryId, 'Owner confirmed not delivered: ' + reason]);
+    }
+    await client.query(
+      `INSERT INTO admin_audit_logs (actor_telegram_user_id,action,entity_type,entity_id,metadata) VALUES ($1,$2,'DELIVERY',$3,$4)`,
+      [String(req.telegramUser.id), outcome === 'DELIVERED' ? 'DELIVERY_RECONCILED_DELIVERED' : 'DELIVERY_RECONCILED_NOT_DELIVERED',
+       String(deliveryId), JSON.stringify({ orderNumber: delivery.order_number, reason, telegramMessageId: messageId })]
+    );
+    const { rows: remaining } = await client.query(
+      `SELECT COUNT(*)::int AS count FROM deliveries WHERE order_id=$1 AND status <> 'DELIVERED'`, [delivery.order_id]
+    );
+    if (remaining[0].count === 0) await client.query(
+      `UPDATE orders SET status='FULFILLED',fulfilled_at=NOW() WHERE id=$1 AND status IN ('PAID','FULFILLING','REFUND_PENDING')`,
+      [delivery.order_id]
+    );
+    await client.query('COMMIT');
+    return res.json({ ok: true, deliveryId, outcome });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('[delivery-reconcile-error]', error.message);
+    return res.status(500).json({ error: 'DELIVERY_RECONCILIATION_FAILED' });
+  } finally { client.release(); }
+});
 async function audit(req, action, entityType, entityId, metadata) {
   await pool.query(
     `INSERT INTO admin_audit_logs (actor_telegram_user_id,action,entity_type,entity_id,metadata)

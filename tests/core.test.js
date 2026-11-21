@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import { validateTelegramInitData } from '../backend/utils/telegram.js';
 import { encryptPayload, decryptPayload, assertAllowedDigitalPayload } from '../backend/utils/encryption.js';
 import { resolveDisplayStock } from '../backend/services/catalogService.js';
-import { sendStarsInvoice, refundStarPayment } from '../backend/services/telegramApi.js';
+import { sendStarsInvoice, refundStarPayment, telegramCall } from '../backend/services/telegramApi.js';
 import { sanitizeSuccessfulPaymentUpdate } from '../backend/utils/paymentAudit.js';
 import { createDatabaseAdapter } from '../backend/db/pool.js';
 
@@ -58,6 +58,40 @@ test('display stock modes support count, boolean availability, and hidden count'
   assert.equal(resolveDisplayStock({ actualStock: 3, mode: 'IN_STOCK_ONLY' }), 'IN_STOCK');
   assert.equal(resolveDisplayStock({ actualStock: 0, mode: 'IN_STOCK_ONLY' }), 'OUT_OF_STOCK');
   assert.equal(resolveDisplayStock({ actualStock: 5, mode: 'HIDE_COUNT' }), null);
+});
+
+test('Telegram network failure is classified as an ambiguous delivery outcome', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalToken = process.env.TELEGRAM_BOT_TOKEN;
+  process.env.TELEGRAM_BOT_TOKEN = 'unit-test-token';
+  globalThis.fetch = async () => { throw new Error('socket hang up'); };
+  try {
+    await assert.rejects(
+      telegramCall('sendMessage', { chat_id: 123, text: 'test' }),
+      (error) => error.deliveryOutcomeUnknown === true && error.telegramRejected !== true
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalToken === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalToken;
+  }
+});
+
+test('Telegram API rejection is classified as a safe-to-retry rejection', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalToken = process.env.TELEGRAM_BOT_TOKEN;
+  process.env.TELEGRAM_BOT_TOKEN = 'unit-test-token';
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({ ok: false, description: 'chat not found' }) });
+  try {
+    await assert.rejects(
+      telegramCall('sendMessage', { chat_id: 123, text: 'test' }),
+      (error) => error.telegramRejected === true
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalToken === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = originalToken;
+  }
 });
 
 test('Stars invoice uses XTR and a single price component', async () => {

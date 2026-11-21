@@ -27,7 +27,13 @@ router.post('/', async (req, res) => {
     }
     const message = update.message;
     if (message?.successful_payment) {
-      await recordSuccessfulPayment(message);
+      const result = await recordSuccessfulPayment(message);
+      if (result.refundRequired && !result.alreadyProcessed) {
+        await telegramCall('sendMessage', {
+          chat_id: message.chat.id,
+          text: 'Pembayaran VAULT CORE untuk ' + message.successful_payment.invoice_payload + ' telah terverifikasi. Pesanan memerlukan rekonsiliasi stok oleh Owner. Status pembayaran Anda tercatat dan tindak lanjut akan diproses melalui dukungan.'
+        });
+      }
       return res.sendStatus(200);
     }
     if (message?.text?.startsWith('/start')) {

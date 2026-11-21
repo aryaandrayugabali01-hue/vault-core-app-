@@ -43,7 +43,7 @@ Reference: [Cloudflare Hyperdrive connection lifecycle](https://developers.cloud
 2. Select **VAULT CORE production deployment**.
 3. Select **Run workflow** on branch `main`.
 
-The workflow installs the committed lockfile, runs backend tests, deploys `vault-core-api`, applies its secrets, deploys `vault-core-web`, then checks the API health route and frontend response.
+The workflow installs the committed lockfile, validates the five required secrets and Cloudflare token, runs backend tests/build, deploys `vault-core-api` and `vault-core-web`, installs API secrets, configures gateway origins, attaches the three custom domains, configures the Telegram webhook, and reads each public endpoint back.
 
 ## Production routing after Worker deployment
 
@@ -52,7 +52,7 @@ The public gateway is already deployed as `vault-core-gateway`. After both app W
 - `WEB_ORIGIN=https://vault-core-web.premiumdigital-id.workers.dev`
 - `API_ORIGIN=https://vault-core-api.premiumdigital-id.workers.dev`
 
-Then attach these custom domains to the gateway Worker in the active Cloudflare zone `vaultcore.biz.id` (zone ID `74092a358232c7bf501da8d822fabb47`):
+The deployment workflow attaches these custom domains to the gateway Worker in the active Cloudflare zone `vaultcore.biz.id` (zone ID `74092a358232c7bf501da8d822fabb47`):
 
 - `vaultcore.biz.id`
 - `www.vaultcore.biz.id`
@@ -66,7 +66,7 @@ After the public domain is active, set the Telegram bot webhook to:
 
 `https://api.vaultcore.biz.id/api/telegram/webhook`
 
-Use the exact `TELEGRAM_WEBHOOK_SECRET` stored in GitHub/Worker secrets when configuring Telegram's webhook secret token. Validate:
+The deployment workflow uses the exact `TELEGRAM_WEBHOOK_SECRET` stored in GitHub/Worker secrets and reads back `getWebhookInfo` after configuring Telegram's webhook. Then validate:
 - bot /start opens `https://vaultcore.biz.id`;
 - Telegram Mini App authentication succeeds;
 - catalog is readable and only sellable inventory is shown;

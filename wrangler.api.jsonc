@@ -25,7 +25,7 @@
   ],
   "vars": {
     "NODE_ENV": "production",
-    "FRONTEND_ORIGIN": "https://vaultcore.biz.id",
+    "FRONTEND_ORIGIN": "https://vaultcore.biz.id,https://www.vaultcore.biz.id",
     "TELEGRAM_MINI_APP_URL": "https://vaultcore.biz.id",
     "DATABASE_CONNECTION_MODE": "request"
   }

@@ -13,19 +13,42 @@ export async function createOrder(req, res) {
   let order;
   try {
     await client.query('BEGIN');
-    await client.query(`UPDATE orders SET status='CANCELLED' WHERE status='PENDING_PAYMENT' AND created_at < NOW() - INTERVAL '15 minutes'`);
-    await client.query(`UPDATE inventory_items SET status='AVAILABLE', reserved_until=NULL WHERE status='RESERVED' AND reserved_until < NOW()`);
+    const { rows: expiredOrders } = await client.query(
+      `UPDATE orders SET status='CANCELLED'
+       WHERE status='PENDING_PAYMENT' AND created_at < NOW() - INTERVAL '15 minutes'
+       RETURNING id`
+    );
+    const expiredIds = expiredOrders.map((item) => item.id);
+    if (expiredIds.length) {
+      await client.query(
+        `UPDATE deliveries
+         SET status='REVOKED', last_error='Payment window expired; reservation released.'
+         WHERE order_id = ANY($1::bigint[]) AND status IN ('PENDING','READY','FAILED','REVIEW_REQUIRED')`,
+        [expiredIds]
+      );
+      await client.query(
+        `UPDATE inventory_items
+         SET status='AVAILABLE', reserved_order_id=NULL, reserved_until=NULL
+         WHERE status='RESERVED' AND reserved_order_id = ANY($1::bigint[])`,
+        [expiredIds]
+      );
+    }
+
     const { rows: products } = await client.query(
       `SELECT * FROM products WHERE id=$1 AND status='ACTIVE' FOR UPDATE`, [productId]
     );
     const product = products[0];
     if (!product) throw Object.assign(new Error('Produk tidak tersedia.'), { status: 404 });
-    if (product.sale_price_idr == null) throw Object.assign(new Error('Harga rupiah produk belum dikonfigurasi.'), { status: 409 });
+    if (product.sale_price_idr == null || Number(product.sale_price_idr) <= 0) {
+      throw Object.assign(new Error('Harga rupiah produk belum dikonfigurasi.'), { status: 409 });
+    }
 
     const { rows: stockRows } = await client.query(
       `SELECT id FROM inventory_items
        WHERE product_id=$1 AND status='AVAILABLE'
-       ORDER BY id LIMIT $2 FOR UPDATE SKIP LOCKED`, [productId, quantity]
+         AND reserved_order_id IS NULL AND reserved_until IS NULL
+       ORDER BY id LIMIT $2 FOR UPDATE SKIP LOCKED`,
+      [productId, quantity]
     );
     if (stockRows.length < quantity) throw Object.assign(new Error('Stok tidak mencukupi.'), { status: 409 });
 
@@ -45,19 +68,27 @@ export async function createOrder(req, res) {
       [order.id, product.id, quantity, product.sale_price_xtr, product.sale_price_idr, product.cost_price_idr, product.name]
     );
     for (const stock of stockRows) {
-      await client.query(
-        `UPDATE inventory_items SET status='RESERVED', reserved_until=NOW() + INTERVAL '15 minutes' WHERE id=$1`,
-        [stock.id]
+      const reservation = await client.query(
+        `UPDATE inventory_items
+         SET status='RESERVED', reserved_order_id=$2, reserved_until=NOW() + INTERVAL '15 minutes'
+         WHERE id=$1 AND status='AVAILABLE' AND reserved_order_id IS NULL
+         RETURNING id`,
+        [stock.id, order.id]
       );
+      if (!reservation.rowCount) throw new Error('INVENTORY_RESERVATION_CONFLICT');
       await client.query(
-        `INSERT INTO deliveries (order_id, inventory_item_id, idempotency_key) VALUES ($1,$2,$3)`,
+        `INSERT INTO deliveries (order_id, inventory_item_id, idempotency_key)
+         VALUES ($1,$2,$3)`,
         [order.id, stock.id, `${orderNumber}:${stock.id}`]
       );
     }
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK');
-    return res.status(error.status ?? 500).json({ error: error.status ? 'ORDER_REJECTED' : 'ORDER_CREATE_FAILED', message: error.status ? error.message : 'Pesanan tidak dapat dibuat saat ini.' });
+    return res.status(error.status ?? 500).json({
+      error: error.status ? 'ORDER_REJECTED' : 'ORDER_CREATE_FAILED',
+      message: error.status ? error.message : 'Pesanan tidak dapat dibuat saat ini.'
+    });
   } finally {
     client.release();
   }
@@ -70,13 +101,35 @@ export async function createOrder(req, res) {
       amount: Number(order.total_xtr)
     });
     res.status(201).json({ orderNumber: order.order_number, totalXtr: Number(order.total_xtr), invoiceUrl });
-  } catch (error) {
-    await pool.query(`UPDATE orders SET status='FAILED' WHERE id=$1 AND status='PENDING_PAYMENT'`, [order.id]);
-    await pool.query(
-      `UPDATE inventory_items SET status='AVAILABLE', reserved_until=NULL WHERE id IN (SELECT inventory_item_id FROM deliveries WHERE order_id=$1) AND status='RESERVED'`,
-      [order.id]
-    );
-    res.status(502).json({ error: 'INVOICE_CREATE_FAILED', message: 'Invoice Telegram tidak dapat dibuat. Silakan coba kembali.' });
+  } catch {
+    const cleanup = await pool.connect();
+    try {
+      await cleanup.query('BEGIN');
+      await cleanup.query(
+        `UPDATE orders SET status='FAILED' WHERE id=$1 AND status='PENDING_PAYMENT'`,
+        [order.id]
+      );
+      await cleanup.query(
+        `UPDATE deliveries SET status='REVOKED', last_error='Invoice creation failed; reservation released.'
+         WHERE order_id=$1 AND status IN ('PENDING','READY','FAILED','REVIEW_REQUIRED')`,
+        [order.id]
+      );
+      await cleanup.query(
+        `UPDATE inventory_items
+         SET status='AVAILABLE', reserved_order_id=NULL, reserved_until=NULL
+         WHERE status='RESERVED' AND reserved_order_id=$1`,
+        [order.id]
+      );
+      await cleanup.query('COMMIT');
+    } catch {
+      await cleanup.query('ROLLBACK');
+    } finally {
+      cleanup.release();
+    }
+    res.status(502).json({
+      error: 'INVOICE_CREATE_FAILED',
+      message: 'Invoice Telegram tidak dapat dibuat. Silakan coba kembali.'
+    });
   }
 }
 
