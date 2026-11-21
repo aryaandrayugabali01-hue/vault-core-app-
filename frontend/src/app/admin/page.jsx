@@ -44,9 +44,9 @@ export default function AdminPage() {
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [expenseForm, setExpenseForm] = useState({ category:'OPERATIONS', description:'', amountIdr:'' });
+  const [expenseForm, setExpenseForm] = useState({ category:'OPERATIONS', description:'', amountXtr:'' });
   const [notice, setNotice] = useState('Memverifikasi akses pemilik…');
-  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', salePriceIdr:'500000', costPriceIdr:'300000', rightsReviewReference:'' });
+  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'' });
   const [stockProduct, setStockProduct] = useState('');
   const [stockPayload, setStockPayload] = useState('');
   const [displayCap, setDisplayCap] = useState({});
@@ -67,10 +67,20 @@ export default function AdminPage() {
   }
   useEffect(() => { refresh().catch((e) => setNotice(e.message)); }, []);
 
+  async function seedTestFixtures() {
+    setBusy(true);
+    try {
+      const response = await fetch(API + '/api/admin/test-fixtures', { method:'POST', headers:headers(), body:JSON.stringify({}) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(apiErrorMessage(data, 'Produk contoh uji tidak dapat dibuat.'));
+      setNotice('4 produk contoh uji dan stok dummy berhasil disiapkan. Semua berstatus Draf.');
+      await refresh();
+    } catch(e) { setNotice(e.message); } finally { setBusy(false); }
+  }
   async function createProduct(e) {
     e.preventDefault(); setBusy(true);
     try {
-      const response = await fetch(`${API}/api/admin/products`, { method:'POST', headers:headers(), body:JSON.stringify({ ...form, salePriceXtr:Number(form.salePriceXtr), salePriceIdr:Number(form.salePriceIdr), costPriceIdr:Number(form.costPriceIdr) }) });
+      const response = await fetch(`${API}/api/admin/products`, { method:'POST', headers:headers(), body:JSON.stringify({ ...form, salePriceXtr:Number(form.salePriceXtr), costPriceXtr:Number(form.costPriceXtr) }) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Produk tidak dapat disimpan. Periksa kembali data produk.'));
       setNotice(`Produk ${data.product.sku} berhasil disimpan dengan status Draf.`); setForm({ ...form, sku:'', name:'', description:'' }); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
@@ -140,27 +150,28 @@ export default function AdminPage() {
   async function addExpense(e) {
     e.preventDefault(); setBusy(true);
     try {
-      const response = await fetch(`${API}/api/admin/expenses`, { method:'POST', headers:headers(), body:JSON.stringify({ ...expenseForm, amountIdr:Number(expenseForm.amountIdr) }) });
+      const response = await fetch(`${API}/api/admin/expenses`, { method:'POST', headers:headers(), body:JSON.stringify({ ...expenseForm, amountXtr:Number(expenseForm.amountXtr) }) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Biaya operasional tidak dapat dicatat.'));
       setExpenseForm({ category:'OPERATIONS', description:'', amountIdr:'' }); setNotice('Biaya operasional berhasil dicatat.'); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
   }
 
-  const rupiah = (n) => `Rp${Number(n || 0).toLocaleString('id-ID')}`;
+  const xtr = (n) => `${Number(n || 0).toLocaleString('en-US')} XTR`;
   return <main className="admin-shell">
     <header className="admin-head"><a className="brand" href="/"><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a><span className="admin-pill">PANEL PEMILIK</span></header>
-    <section className="admin-title"><span className="eyebrow muted">PANEL KONTROL / PEMILIK</span><h1>Dashboard pemilik</h1><p>Kelola katalog, stok, harga, pesanan, dan laporan keuangan toko.</p></section>
+    <section className="admin-title"><span className="eyebrow muted">PANEL KONTROL / PEMILIK</span><h1>Dashboard pemilik</h1><p>Kelola katalog, stok, harga, pesanan, dan laporan usaha dalam XTR.</p></section>
     {notice && <div className="admin-notice">{notice}</div>}
     {stats && <section className="admin-stats">
       <div><small>Pesanan terbayar</small><strong>{stats.sales.paid_orders}</strong></div>
-      <div><small>Penjualan kotor (rupiah)</small><strong>{rupiah(stats.sales.gross_idr)}</strong></div>
-      <div><small>Laba kotor</small><strong>{rupiah(stats.grossProfitIdr)}</strong></div>
-      <div><small>Laba bersih</small><strong className={stats.netProfitIdr >= 0 ? 'profit' : 'loss'}>{rupiah(stats.netProfitIdr)}</strong></div>
+      <div><small>Penjualan kotor</small><strong>{xtr(stats.sales.gross_xtr)}</strong></div>
+      <div><small>Laba kotor</small><strong>{xtr(stats.grossProfitXtr)}</strong></div>
+      <div><small>Laba bersih</small><strong className={stats.netProfitXtr >= 0 ? 'profit' : 'loss'}>{xtr(stats.netProfitXtr)}</strong></div>
       <div><small>Stok tersedia</small><strong>{stats.inventory.available}</strong></div>
       <div><small>Menunggu pembayaran</small><strong>{stats.orders.pending}</strong></div>
     </section>}
 
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">KATALOG</span><h2>Buat produk</h2></div></div>
+      <div className="admin-section-head"><button type="button" className="admin-primary" disabled={busy} onClick={seedTestFixtures}>Buat 4 produk contoh uji + stok dummy</button></div>
       <form className="admin-form" onSubmit={createProduct}>
         <label>SKU<input required value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} placeholder="MLBB-GOLD-001" /></label>
         <label>Kategori game<select value={form.gameCategory} onChange={e=>setForm({...form,gameCategory:e.target.value})}><option value="MLBB">MLBB</option><option value="ROBLOX">Roblox</option><option value="FREE_FIRE">Free Fire</option><option value="GENSHIN">Genshin Impact</option><option value="OTHER">Lainnya</option></select></label>
@@ -169,8 +180,7 @@ export default function AdminPage() {
         <label className="span-2">Deskripsi<textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} rows="2" /></label>
         <label>Metode pemenuhan<select value={form.fulfillmentType} onChange={e=>setForm({...form,fulfillmentType:e.target.value})}><option value="REDEEM_CODE">Kode penukaran</option><option value="VOUCHER_CODE">Kode voucher</option><option value="LICENSE_KEY">Kunci lisensi</option><option value="GIFT_CODE">Kode hadiah</option><option value="DIGITAL_FILE">Berkas digital</option><option value="SERVICE_INSTRUCTIONS">Petunjuk layanan</option></select></label>
         <label>Harga jual (XTR)<input required type="number" min="1" step="1" value={form.salePriceXtr} onChange={e=>setForm({...form,salePriceXtr:e.target.value})} /></label>
-        <label>Harga jual (rupiah)<input required type="number" min="1" value={form.salePriceIdr} onChange={e=>setForm({...form,salePriceIdr:e.target.value})} /></label>
-        <label>Harga modal (rupiah)<input required type="number" min="0" value={form.costPriceIdr} onChange={e=>setForm({...form,costPriceIdr:e.target.value})} /></label>
+        <label>Modal (XTR)<input required type="number" min="0" step="1" value={form.costPriceXtr} onChange={e=>setForm({...form,costPriceXtr:e.target.value})} /></label>
         <label className="span-2">Referensi verifikasi hak penjualan<input required value={form.rightsReviewReference} onChange={e=>setForm({...form,rightsReviewReference:e.target.value})} placeholder="Nomor dokumen atau referensi hak penjualan" /></label>
         <button className="admin-primary" disabled={busy}>Simpan produk sebagai Draf</button>
       </form>
@@ -185,8 +195,8 @@ export default function AdminPage() {
     </section>
 
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">PENGELOLAAN STOK</span><h2>Produk dan tampilan stok</h2></div></div>
-      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Produk</th><th>Harga jual</th><th>Harga modal</th><th>Stok aktual</th><th>Batas tampilan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
-      {products.map(p=><tr key={p.id}><td><strong>{p.name}</strong><small>{p.sku} · {GAME_LABELS[p.game_category] || p.game_category} / {TIER_LABELS[p.tier] || p.tier}</small></td><td>{rupiah(p.sale_price_idr)}<small>{p.sale_price_xtr} XTR</small></td><td>{rupiah(p.cost_price_idr)}</td><td>{p.actual_stock}</td><td><input className="cap-input" type="number" min="0" value={displayCap[p.id] ?? p.display_stock_override ?? ''} placeholder="Aktual" onChange={e=>setDisplayCap({...displayCap,[p.id]:e.target.value})}/></td><td><span className={`admin-status ${p.status.toLowerCase()}`}>{displayStatus(p.status)}</span></td><td><div className="admin-actions"><button onClick={()=>updateProduct(p.id,{displayStockOverride:displayCap[p.id]==='' ? null : Number(displayCap[p.id])})} disabled={busy}>Simpan batas</button><button onClick={()=>updateProduct(p.id,{status:p.status==='ACTIVE'?'PAUSED':'ACTIVE'})} disabled={busy || (p.status!=='ACTIVE' && !p.rights_review_reference)}>{p.status==='ACTIVE'?'Jeda':'Aktifkan'}</button></div></td></tr>)}
+      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Produk</th><th>Harga jual (XTR)</th><th>Modal (XTR)</th><th>Stok aktual</th><th>Batas tampilan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
+      {products.map(p=><tr key={p.id}><td><strong>{p.name} {p.is_test && <span className="test-product-label">CONTOH UJI</span>}</strong><small>{p.sku} · {GAME_LABELS[p.game_category] || p.game_category} / {TIER_LABELS[p.tier] || p.tier}</small></td><td>{xtr(p.sale_price_xtr)}</td><td>{xtr(p.cost_price_xtr)}</td><td>{p.actual_stock}</td><td><input className="cap-input" type="number" min="0" value={displayCap[p.id] ?? p.display_stock_override ?? ''} placeholder="Aktual" onChange={e=>setDisplayCap({...displayCap,[p.id]:e.target.value})}/></td><td><span className={`admin-status ${p.status.toLowerCase()}`}>{displayStatus(p.status)}</span></td><td><div className="admin-actions"><button onClick={()=>updateProduct(p.id,{displayStockOverride:displayCap[p.id]==='' ? null : Number(displayCap[p.id])})} disabled={busy}>Simpan batas</button><button onClick={()=>updateProduct(p.id,{status:p.status==='ACTIVE'?'PAUSED':'ACTIVE'})} disabled={busy || (p.status!=='ACTIVE' && !p.rights_review_reference)}>{p.status==='ACTIVE'?'Jeda':'Aktifkan'}</button></div></td></tr>)}
       {!products.length && <tr><td colSpan="7" className="table-empty">Belum ada produk dibuat.</td></tr>}
       </tbody></table></div>
       <p className="admin-footnote">Batas tampilan hanya membatasi angka yang ditampilkan. Sistem tetap menghitung dan memeriksa stok tersedia aktual saat checkout.</p>
@@ -194,7 +204,7 @@ export default function AdminPage() {
 
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">PESANAN & PEMBAYARAN</span><h2>Transaksi dan pemenuhan</h2></div><span className="section-count">{orders.length} PESANAN</span></div>
       <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Pesanan</th><th>Pelanggan</th><th>Status</th><th>Harga jual</th><th>Harga modal</th><th>Laba kotor</th><th>Aksi</th></tr></thead><tbody>
-      {orders.map(o=>{ const gross=Number(o.total_sale_idr||0); const cost=Number(o.total_cost_idr||0); const canRefund=['PAID','FULFILLING','FULFILLED','REFUND_PENDING'].includes(o.status); const canRetry=['PAID','FULFILLING'].includes(o.status); return <tr key={o.order_number}><td><strong>{o.order_number}</strong><small>{new Date(o.created_at).toLocaleString('id-ID')}</small></td><td>{o.username ? `@${o.username}` : o.telegram_user_id}</td><td><span className={`admin-status ${o.status.toLowerCase()}`}>{displayStatus(o.status)}</span></td><td>{rupiah(gross)}<small>{o.total_xtr} XTR</small></td><td>{rupiah(cost)}</td><td className={gross-cost>=0?'profit':'loss'}>{rupiah(gross-cost)}</td><td><div className="admin-actions">{(o.deliveries||[]).filter(d=>d.status==="REVIEW_REQUIRED").map(d=><button key={d.id} disabled={busy} onClick={()=>reconcileDelivery(d.id)}>Periksa #{d.id}</button>)}{canRetry && <button disabled={busy} onClick={()=>retryDelivery(o.order_number)}>Ulangi pengiriman</button>}{canRefund && <button disabled={busy} onClick={()=>issueRefund(o.order_number)}>Kembalikan Stars</button>}</div></td></tr>})}
+      {orders.map(o=>{ const gross=Number(o.total_xtr||0); const cost=Number(o.total_cost_xtr||0); const canRefund=['PAID','FULFILLING','FULFILLED','REFUND_PENDING'].includes(o.status); const canRetry=['PAID','FULFILLING'].includes(o.status); return <tr key={o.order_number}><td><strong>{o.order_number}</strong><small>{new Date(o.created_at).toLocaleString('id-ID')}</small></td><td>{o.username ? `@${o.username}` : o.telegram_user_id}</td><td><span className={`admin-status ${o.status.toLowerCase()}`}>{displayStatus(o.status)}</span></td><td>{xtr(gross)}</td><td>{xtr(cost)}</td><td className={gross-cost>=0?'profit':'loss'}>{xtr(gross-cost)}</td><td><div className="admin-actions">{(o.deliveries||[]).filter(d=>d.status==="REVIEW_REQUIRED").map(d=><button key={d.id} disabled={busy} onClick={()=>reconcileDelivery(d.id)}>Periksa #{d.id}</button>)}{canRetry && <button disabled={busy} onClick={()=>retryDelivery(o.order_number)}>Ulangi pengiriman</button>}{canRefund && <button disabled={busy} onClick={()=>issueRefund(o.order_number)}>Kembalikan Stars</button>}</div></td></tr>})}
       {!orders.length && <tr><td colSpan="7" className="table-empty">Belum ada transaksi.</td></tr>}
       </tbody></table></div>
       <p className="admin-footnote">Pengembalian dana hanya tersedia untuk pembayaran Stars yang tercatat. Produk yang sudah terkirim tetap tercatat sebagai terjual dan tidak otomatis dikembalikan ke stok.</p>
@@ -203,7 +213,7 @@ export default function AdminPage() {
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">BIAYA OPERASIONAL</span><h2>Biaya operasional</h2></div></div>
       <form className="admin-form" onSubmit={addExpense}>
         <label>Kategori<select value={expenseForm.category} onChange={e=>setExpenseForm({...expenseForm,category:e.target.value})}><option value="OPERATIONS">Operasional</option><option value="MARKETING">Pemasaran</option><option value="PLATFORM">Platform</option><option value="SUPPORT">Dukungan</option><option value="OTHER">Lainnya</option></select></label>
-        <label>Jumlah biaya (rupiah)<input required type="number" min="1" value={expenseForm.amountIdr} onChange={e=>setExpenseForm({...expenseForm,amountIdr:e.target.value})}/></label>
+        <label>Jumlah biaya (XTR)<input required type="number" min="1" value={expenseForm.amountXtr} onChange={e=>setExpenseForm({...expenseForm,amountXtr:e.target.value})}/></label>
         <label className="span-2">Keterangan<input required value={expenseForm.description} onChange={e=>setExpenseForm({...expenseForm,description:e.target.value})} placeholder="Contoh: biaya promosi minggu ini"/></label>
         <button className="admin-primary" disabled={busy}>Catat biaya</button>
       </form>
