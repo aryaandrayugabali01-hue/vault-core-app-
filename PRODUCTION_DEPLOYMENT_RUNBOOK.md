@@ -13,7 +13,7 @@
 - Gateway `WEB_ORIGIN` and `API_ORIGIN` secrets are installed.
 - Custom domains `vaultcore.biz.id`, `www.vaultcore.biz.id`, and `api.vaultcore.biz.id` are attached to the existing `vault-core-gateway`; public DNS/TLS, API health, and gateway-origin checks passed.
 - Telegram webhook was configured to `https://api.vaultcore.biz.id/api/telegram/webhook`; `getWebhookInfo` read-back passed.
-- Post-deploy Neon audit found 0 products, 0 inventory items, 0 orders, and 0 transactions. The infrastructure is deployed, but the store has not yet been populated with reviewed SKUs and sellable encrypted inventory.
+- Neon catalog import `008_catalog_sku_import.sql` completed: 12 commercial SKUs are present across MLBB, Roblox, Free Fire, and Genshin Impact. All 12 remain `PENDING_REVIEW`; fulfillment type and descriptions are intentionally unset because the source catalog did not provide them. No sellable inventory was added, so none of these products is public or checkout-eligible. Existing internal test fixtures remain separate (`is_test=true`).
 - The production deployment workflow supports manual `workflow_dispatch` and a restricted `main` push trigger for changes to the API Worker entrypoint or deployment workflow. Keep the five repository secrets current.
 
 ## Repository secrets required
