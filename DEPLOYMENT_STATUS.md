@@ -1,20 +1,20 @@
 # VAULT CORE — Deployment Status
 
-**Updated:** 2026-11-21 (production deployment and post-deploy audit)
+**Updated:** 2026-11-21 (XTR-only production deployment, migration 006, and test fixture setup)
 
 ## Connected infrastructure
 
 | Service | Resource | Verified status |
 |---|---|---|
-| Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; 10 application tables and 5 migration records verified, including 004 and 005 |
+| Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; 10 application tables and 6 migration records verified, including XTR-only migration 006 |
 | GitHub | `aryaandrayugabali01-hue/vault-core-app-` / `main` | Source published; repository read/write operations verified |
-| Cloudflare | Primary account | `vault-core-gateway`, `vault-core-api`, and `vault-core-web` deployed; gateway origins installed; root/www/api custom domains attached and public DNS/TLS checks passed in production run `44891173631` attempt 2 |
-| Telegram | Bot API | Production bot identity passed `getMe`; webhook was set to `https://api.vaultcore.biz.id/api/telegram/webhook` and read-back passed in production run `44891173631` attempt 2 |
+| Cloudflare | Primary account | `vault-core-gateway`, `vault-core-api`, and `vault-core-web` deployed; gateway origins installed; root/www/api custom domains attached and public DNS/TLS checks passed in production run `44902626165` attempt 1 |
+| Telegram | Bot API | Production bot identity passed `getMe`; webhook was set to `https://api.vaultcore.biz.id/api/telegram/webhook` and read-back passed in production run `44902626165` attempt 1 |
 
 ## Repository state
 
 - Default branch: `main`.
-- Latest deployed source commit: `1a415717e3155a4ca026c5a7f4fe6108cc53f9e8` (Cloudflare Node HTTP handler adapter and Worker execution-context fix). Earlier business-logic baseline includes pre-checkout single-payment guard and migration 005.
+- Latest deployed application source commit: `eafd57dca29404729d2dad7587810e7b025a8cdf`, deployed successfully in production run `44902626165` attempt 1. XTR-only database migration 006 is applied and registered.
 - Cloudflare gateway source commit: `e88739e82119f287db4215a570b3ab0f64eede23`.
 - Source extraction commit: `15780b23e816cd4c8b3647d6359f949b53c4b2ea`.
 - 40 project source files are now present at repository root; original `vault-core-app-v1.3-github-ready.zip` retained as an archive.
@@ -26,7 +26,7 @@ GitHub Actions validation results:
 
 - `VAULT CORE CI`, run `44885310611` on commit `f682001ee694937d9ba2da77b70867dfdc56f6e3`: **SUCCESS** (backend/core tests, Mini App build, Wrangler API Worker dry-run).
 - `VAULT CORE Cloudflare frontend preparation`, run `44885310642` on the same commit: **SUCCESS** (Vinext compatibility scan, native Cloudflare initialization, Cloudflare Worker build and output verification).
-- Production run [`44891173631`](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44891173631), attempt 2: **SUCCESS**. Passed secrets/Cloudflare/Hyperdrive/Telegram preflight, backend/core tests, frontend build, API and frontend Worker deploy, API + Neon health check, gateway upstream setup, root/www/api custom-domain and DNS/TLS checks, Telegram webhook set and `getWebhookInfo` read-back.
+- Production run [`44902626165`](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44902626165), attempt 1: **SUCCESS**. Passed secrets/Cloudflare/Hyperdrive/Telegram preflight, backend/core tests, frontend build, API and frontend Worker deploy, API + Neon health check, gateway upstream setup, root/www/api custom-domain and DNS/TLS checks, Telegram webhook set and `getWebhookInfo` read-back.
 - Database adapter tests verify one Hyperdrive `pg.Client` per concurrent request, shared context across transactions within each request, and correct failure propagation.
 - Previous passing checks: CI `44852531855` and frontend build `44852531853`.
 
@@ -82,36 +82,36 @@ Connected Neon database `vault_core` was inspected read-only:
 - Cloudflare zone `vaultcore.biz.id` is active. Verified zone ID: `74092a358232c7bf501da8d822fabb47`.
 - Assigned Cloudflare nameservers: `marty.ns.cloudflare.com` and `sharon.ns.cloudflare.com`; Cloudflare zone status is ACTIVE.
 - Live read-back after deployment: `vaultcore.biz.id`, `www.vaultcore.biz.id`, and `api.vaultcore.biz.id` are attached to `vault-core-gateway`; three proxied DNS AAAA records are present.
-- Gateway secrets `WEB_ORIGIN` and `API_ORIGIN` are installed. Public verification in run `44891173631` passed root, www, api, TLS, and gateway-origin checks. `/_gateway/health` alone remains a gateway-only check, not application readiness.
+- Gateway secrets `WEB_ORIGIN` and `API_ORIGIN` are installed. Public verification in run `44902626165` passed root, www, api, TLS, and gateway-origin checks. `/_gateway/health` alone remains a gateway-only check, not application readiness.
 - The gateway source is stored at `cloudflare/vault-core-gateway.js` in this repository.
 
 ## Remaining production release gates
 
-1. Runtime deployment is complete: `vault-core-api`, `vault-core-web`, and `vault-core-gateway` are present. API health and Neon database connectivity passed in production run `44891173631` attempt 2.
+1. Runtime deployment is complete: `vault-core-api`, `vault-core-web`, and `vault-core-gateway` are present. API health and Neon database connectivity passed in production run `44902626165` attempt 1.
 2. Neon runtime role `vault_core_runtime` has been created and verified with CONNECT, schema USAGE, and table DML privileges. Cloudflare Hyperdrive `vault-core-neon` is created and verified; SQL response caching is disabled. Hyperdrive ID: `97e2993f7733422abd08bfbf699ce4e4`.
 3. Zone `vaultcore.biz.id` is active. Cloudflare zone ID `74092a358232c7bf501da8d822fabb47` for `vaultcore.biz.id` is active; IDWebHost is the registrar and assigned nameservers are active. A separate `vaultcore.web.id` zone (ID `14098744832c82ae7b61bc46f695e186`) is pending and is not used by this deployment.
 4. Native Vinext/Cloudflare configuration is committed in `frontend/cloudflare.config.ts` and `frontend/vite.config.ts`. `wrangler.api.jsonc` declares Hyperdrive, `DATABASE_CONNECTION_MODE=request`, and production frontend origins. Both Worker build paths and the Hyperdrive request-scoped DB adapter are validated in CI.
 5. Hyperdrive `vault-core-neon` and all four API Worker secrets (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `ADMIN_TELEGRAM_IDS`, `APP_ENCRYPTION_KEY`) are attached and verified by successful production preflight/health checks.
 6. Telegram Bot API identity and production webhook configuration/read-back passed. Actual customer `/start`, Owner access, successful XTR payment, refund, and delivery still require end-to-end acceptance.
-7. Catalog readiness is currently empty: the read-only database audit found 0 products and 0 inventory items. Create rights-reviewed SKUs, prices/cost snapshots, and encrypted sellable stock before real customer orders can be accepted.
+7. Catalog contains 4 internal TEST-only products in DRAFT, with 0 inventory items. They are hidden from the customer catalog. Owner Console can add encrypted non-redeemable dummy stock; commercial SKUs still require separate rights review and approval.
 8. Live XTR payment/refund/fulfillment, IDOR, backup/restore, production rate-limit, and Owner UAT/release approval remain pending.
 
 ## Owner contract approval
 
-- Contract `PROJECT_CONTRACT.md` v1.2 (CR-02) is **APPROVED BY OWNER** through the explicit written instruction recorded in the project conversation on 2026-11-21.
-- The four Section 26.6 approval statements are recorded as accepted; this authorizes the v1.2 scope baseline and commencement of the Phase 1 technical foundation.
+- Contract `PROJECT_CONTRACT.md` v1.2 (CR-02) and Addendum v1.3 (CR-03) are **APPROVED BY OWNER** through explicit written instructions recorded in the project conversation on 2026-11-21.
+- The four Section 26.6 approval statements and the XTR-only/test-fixture instruction in Section 27 are recorded as accepted.
 - The owner's legal name and formal e-signature certificate are not included in the conversation record.
 - Contract approval is separate from UAT approval and production go-live authorization. Infrastructure deployment is complete; general sales remain gated by catalog/inventory setup, live payment/delivery acceptance, security recovery checks, and Owner UAT.
 
 ## Latest source and deployment proof
 
-- Latest source baseline: `f682001ee694937d9ba2da77b70867dfdc56f6e3`.
-- CI: [run 44885310611](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44885310611) SUCCESS.
-- Frontend: [run 44885310642](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44885310642) SUCCESS.
-- Production deployment: [run 44891173631](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44891173631), attempt 2, SUCCESS; all 16 production steps passed through Telegram webhook read-back.
+- Latest deployed application source: `eafd57dca29404729d2dad7587810e7b025a8cdf`; latest repository documentation revision: `b9cbdfa8d724dca83e061878bc1f234cb61dbcf0`.
+- CI: [run 44902626129](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44902626129) SUCCESS.
+- Frontend preparation: [run 44902626134](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44902626134) SUCCESS.
+- Production deployment: [run 44902626165](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44902626165), attempt 1, SUCCESS; all 16 production steps passed through Telegram webhook read-back.
 - Cloudflare live state: all three Workers exist; API Hyperdrive and secrets are attached; gateway upstream secrets exist; three custom domains and three proxied DNS records are configured.
 - The GitHub Actions deployment runner verified root, www, API, TLS, and gateway origins. Cloudflare Observability recent audit returned no error-level events for API and gateway during the checked post-deployment window.
 
 ## Production deployment and sales readiness
 
-**DEPLOYED — NOT YET READY FOR GENERAL SALES.** Production infrastructure deployment is complete: API/frontend/gateway Workers, Neon/Hyperdrive health, gateway origins, root/www/api custom domains, public DNS/TLS checks, and Telegram webhook read-back all passed in run `44891173631` attempt 2. The remaining blockers are operational/product acceptance: the database has 0 products and 0 inventory items; no live XTR payment/refund/delivery acceptance, IDOR/backup-restore review, or Owner UAT/release approval has been recorded.
+**DEPLOYED — NOT YET READY FOR GENERAL SALES.** Production infrastructure deployment is complete: API/frontend/gateway Workers, Neon/Hyperdrive health, gateway origins, root/www/api custom domains, public DNS/TLS checks, and Telegram webhook read-back all passed in run `44902626165` attempt 1. The remaining blockers are operational/product acceptance: the database has 4 TEST-only DRAFT products and 0 inventory items; no live customer XTR payment/refund/delivery acceptance, IDOR/backup-restore review, or Owner UAT/release approval has been recorded.
