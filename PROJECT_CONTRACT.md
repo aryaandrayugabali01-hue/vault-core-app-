@@ -7,12 +7,14 @@
 | Jenis dokumen | Kontrak spesifikasi dan acuan pelaksanaan proyek |
 | Versi | 1.2 — Addendum CR-02 |
 | Tanggal dokumen | 21 November 2026 |
-| Status | Draft revisi untuk persetujuan pemilik; fondasi teknis dapat dimulai dalam ruang lingkup yang disetujui |
+| Status | DISETUJUI PEMILIK — v1.2 CR-02 (persetujuan tertulis melalui percakapan proyek, 21 November 2026) |
 | Model usaha | Single-Vendor Store |
 | Kanal utama | Telegram Bot dan Telegram Mini App |
 | Domain rencana | `vaultcore.biz.id` (belum dikonfirmasi kepemilikannya dan konfigurasi DNS-nya) |
 
 > **Kedudukan dokumen.** Dokumen ini menjadi acuan ruang lingkup, arsitektur, perilaku sistem, dan kriteria penerimaan VAULT CORE. Dokumen ini bukan pendapat hukum atau pengganti kontrak jasa profesional yang ditandatangani para pihak. Perubahan terhadap ruang lingkup atau perilaku yang telah disetujui harus dicatat sebagai revisi dokumen atau change request.
+>
+> **Rekaman persetujuan pemilik:** Status v1.2 CR-02 ditetapkan DISETUJUI berdasarkan instruksi tertulis eksplisit pemilik proyek dalam percakapan proyek pada 21 November 2026. Persetujuan tersebut mencakup butir 26.1–26.5 dan empat pernyataan persetujuan pada Bagian 26.6, termasuk dimulainya fondasi teknis Tahap 1. Nama legal dan sertifikat tanda tangan elektronik formal tidak tercantum dalam rekaman percakapan.
 >
 > **Riwayat revisi:** v1.1 menilai tiga permintaan perubahan CR-01; v1.2 mencatat CR-02 dan keputusan implementasi yang dapat dijalankan. Pengiriman kredensial akun game, penerimaan pembayaran XTR melalui alamat wallet manual, dan angka stok publik yang sengaja berbeda dari stok aktual tidak dimasukkan. Alternatif operasional yang dapat diterapkan dijelaskan dalam Bagian 25 dan menggantikan ketentuan lama apabila terdapat perbedaan.
 
@@ -878,7 +880,7 @@ Referensi berikut menjadi rujukan implementasi dan harus diperiksa kembali ketik
 
 # 25. Addendum CR-01 — Evaluasi Tiga Permintaan Revisi Pemilik
 
-Addendum ini mencatat permintaan revisi yang disampaikan setelah draft v1.0. Addendum berlaku sebagai penjelasan dan pengganti ketentuan yang bertentangan di bagian sebelumnya. Status dokumen tetap **DRAFT** sampai pemilik menyetujui versi 1.1.
+Addendum ini mencatat permintaan revisi yang disampaikan setelah draft v1.0. Addendum berlaku sebagai penjelasan dan pengganti ketentuan yang bertentangan di bagian sebelumnya. Pada saat Addendum CR-01 diterbitkan, status dokumen masih **DRAFT** sampai versi 1.1 disetujui. Status terkini telah diperbarui menjadi **DISETUJUI PEMILIK** untuk versi 1.2 CR-02 berdasarkan rekaman persetujuan pada Bagian 26.6.
 
 ## 25.1 Katalog: pengiriman kredensial akun `Email:Pass`
 
@@ -959,13 +961,13 @@ Karena ketiga permintaan awal tidak seluruhnya disetujui dalam bentuk yang dimin
 
 ---
 
-**Akhir dokumen — VAULT CORE Project Contract v1.2 (Draft Revisi CR-02)**
+**Akhir Addendum CR-01 — riwayat revisi yang kini menjadi bagian dari VAULT CORE Project Contract v1.2 CR-02.**
 
 
 # 26. Addendum CR-02 — Permintaan Perubahan Operasional dan Keputusan Implementasi
 
 **Tanggal:** 21 November 2026  
-**Status:** Keputusan ruang lingkup teknis; menunggu persetujuan pemilik untuk penguncian kontrak.  
+**Status:** DISETUJUI PEMILIK melalui instruksi tertulis pada percakapan proyek, 21 November 2026; menjadi baseline kontrak v1.2 CR-02.  
 **Menggantikan:** Tidak menghapus CR-01. Bagian ini menjelaskan ulang keputusan untuk tiga permintaan yang diajukan setelah CR-01.
 
 Pemilik meminta agar tiga kemampuan berikut dimasukkan: pengiriman Email:Password secara otomatis, alamat wallet XTR manual, dan `display_stock_override` yang dapat berbeda dari stok aktual. Permintaan dicatat seluruhnya. Keputusan implementasinya adalah sebagai berikut.
@@ -1028,19 +1030,19 @@ Fitur yang tidak disetujui dalam bentuk yang diminta tidak akan dibangun. Setiap
 
 ## 26.6 Persetujuan Addendum CR-02
 
-- [ ] Saya menerima encrypted delivery untuk kode/voucher/lisensi/instruksi digital yang sah, dengan pengecualian kredensial akun game dan data autentikasi.
-- [ ] Saya menerima invoice Telegram Stars resmi untuk transaksi digital di Telegram; tidak menggunakan alamat wallet XTR manual.
-- [ ] Saya menerima `display_stock_override` sebagai display cap yang tidak dapat melebihi stok tersedia aktual.
-- [ ] Saya menyetujui fondasi teknis Tahap 1 dimulai berdasarkan ruang lingkup v1.2.
+- [x] Saya menerima encrypted delivery untuk kode/voucher/lisensi/instruksi digital yang sah, dengan pengecualian kredensial akun game dan data autentikasi.
+- [x] Saya menerima invoice Telegram Stars resmi untuk transaksi digital di Telegram; tidak menggunakan alamat wallet XTR manual.
+- [x] Saya menerima `display_stock_override` sebagai display cap yang tidak dapat melebihi stok tersedia aktual.
+- [x] Saya menyetujui fondasi teknis Tahap 1 dimulai berdasarkan ruang lingkup v1.2.
 
 | Persetujuan | Isian |
 |---|---|
-| Nama pemilik proyek | ______________________________ |
-| Tanggal | ______________________________ |
+| Nama pemilik proyek | Pemilik proyek; nama legal belum dicantumkan dalam rekaman percakapan |
+| Tanggal | 21 November 2026 |
 | Versi disetujui | 1.2 — CR-02 |
-| Catatan | ______________________________ |
-| Tanda tangan/persetujuan digital | ______________________________ |
+| Catatan | Persetujuan tertulis diberikan melalui instruksi eksplisit pemilik pada percakapan proyek; mencakup butir 26.1–26.5 dan dimulainya fondasi teknis Tahap 1. |
+| Tanda tangan/persetujuan digital | Persetujuan tertulis melalui percakapan proyek pada 21 November 2026; sertifikat/tanda tangan elektronik formal tidak tercatat. |
 
 ---
 
-**Akhir dokumen — VAULT CORE Project Contract v1.2 (Draft Revisi CR-02)**
+**Akhir dokumen — VAULT CORE Project Contract v1.2 (CR-02, DISETUJUI PEMILIK).**
