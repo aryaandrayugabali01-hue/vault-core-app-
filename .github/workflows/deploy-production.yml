@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'cloudflare/vault-core-api.js'
+      - 'frontend/**'
       - '.github/workflows/deploy-production.yml'
   workflow_dispatch:
 
