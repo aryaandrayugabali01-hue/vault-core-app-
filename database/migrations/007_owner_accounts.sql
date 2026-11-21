@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS owner_accounts (
+  telegram_user_id TEXT PRIMARY KEY,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
