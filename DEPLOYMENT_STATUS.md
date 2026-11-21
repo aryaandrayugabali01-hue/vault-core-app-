@@ -80,9 +80,8 @@ Connected Neon database `vault_core` was inspected read-only:
 
 1. Cloudflare application Workers `vault-core-web` and `vault-core-api` still need to be built and deployed; the existing gateway alone does not host either runtime.
 2. Hyperdrive is not configured. A restricted Neon runtime database role and its connection credential are required before connecting the API Worker.
-
-1. Zone `vaultcore.biz.id` is pending. Its assigned Cloudflare nameservers must be installed at the registrar. Domain registration/ownership remains unverified until confirmed in PANDI/registrar records.
-4. The Next.js frontend and Express API have not yet been adapted and deployed as Cloudflare-compatible application origins. The gateway Worker exists, but does not replace those application runtimes.
+3. Zone `vaultcore.biz.id` is active. Cloudflare reports IDWebHost as the original registrar and the assigned nameservers are active.
+4. The Next.js frontend and Express API have not yet been adapted and deployed as Cloudflare-compatible application origins.
 5. Production secrets and bindings are not set: Hyperdrive binding, Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
 6. Telegram bot username/ownership and production webhook target are not known.
 7. Live XTR payment, refund, and fulfillment tests have not been completed.
