@@ -73,13 +73,13 @@ Connected Neon database `vault_core` was inspected read-only:
 - `API_ORIGIN` and `WEB_ORIGIN` are intentionally unset until `vault-core-api` and `vault-core-web` are deployed. `/_gateway/health` reports gateway readiness only, not application readiness. Unconfigured upstream requests return HTTP 503.
 - Cloudflare zone `vaultcore.biz.id` has been created as a full zone, active.
 - Assigned nameservers: `marty.ns.cloudflare.com` and `sharon.ns.cloudflare.com`. They are already active at the registrar.
-- Worker Custom Domains are not attached yet. Once the application origins are deployed, attach `vaultcore.biz.id`, `www.vaultcore.web.id`, and `api.vaultcore.web.id` to this Worker; Cloudflare will provision their DNS records and TLS certificates.
+- Worker Custom Domains are not attached yet. Once the application origins are deployed, attach `vaultcore.biz.id`, `www.vaultcore.biz.id`, and `api.vaultcore.biz.id` to this Worker; Cloudflare will provision their DNS records and TLS certificates.
 - The gateway source is stored at `cloudflare/vault-core-gateway.js` in this repository.
 
 ## Deployment blockers
 
 1. Cloudflare application Workers `vault-core-web` and `vault-core-api` still need to be built and deployed; the existing gateway alone does not host either runtime.
-2. Neon runtime role `vault_core_runtime` has been created and verified with CONNECT, schema USAGE, and table DML privileges. Its password and Cloudflare Hyperdrive configuration remain to be set.
+2. Neon runtime role `vault_core_runtime` has been created and verified with CONNECT, schema USAGE, and table DML privileges. Its password has been set using a database-generated secret; Cloudflare Hyperdrive configuration remains pending.
 3. Zone `vaultcore.biz.id` is active. Cloudflare reports IDWebHost as the original registrar and the assigned nameservers are active.
 4. The Next.js frontend and Express API have not yet been adapted and deployed as Cloudflare-compatible application origins.
 5. Production secrets and bindings are not set: Hyperdrive binding, Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
