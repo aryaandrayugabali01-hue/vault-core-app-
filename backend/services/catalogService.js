@@ -13,6 +13,6 @@ export function isPublicCatalogProduct(product) {
 
 export function isEligibleCheckoutProduct(product, { testMode = false, ownerAuthorized = false } = {}) {
   if (!product || product.status !== 'ACTIVE') return false;
-  if (product.is_test === true) return testMode && ownerAuthorized;
+  if (product.is_test === true) return testMode && ownerAuthorized && Number(product.sale_price_xtr) === 1;
   return !testMode;
 }
