@@ -72,7 +72,7 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 
 ## Current implementation status
 
-Latest validated source on `main`: `f682001ee694937d9ba2da77b70867dfdc56f6e3`. CI run `44885310611` and Cloudflare frontend preparation run `44885310642` both completed successfully on that commit. The production deployment preflight run `44884767909` stopped before deployment because all five required GitHub Actions secrets were empty. The original v1.3 ZIP is retained in the repository.
+Latest validated application source on `main`: `f682001ee694937d9ba2da77b70867dfdc56f6e3`; repository workflow/documentation updates are tracked separately. CI run `44885310611` and Cloudflare frontend preparation run `44885310642` completed successfully. Production preflight run `44884767909` has all five required secret variables present, but stops because `APP_ENCRYPTION_KEY` does not decode to exactly 32 canonical Base64 bytes. The original v1.3 ZIP is retained in the repository.
 
 Implemented and CI-validated in source: Telegram `initData` authentication, catalog API, order creation/reservation with owning order IDs, single pre-checkout claim per order, Stars invoice generation, successful-payment verification/idempotency, encrypted inventory, ambiguous-delivery review/reconciliation, two-phase Stars refund recovery, `/paysupport`, owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console. Live payment, refund, delivery, IDOR, backup/restore and Owner UAT tests remain pending.
 
@@ -80,9 +80,8 @@ Implemented and CI-validated in source: Telegram `initData` authentication, cata
 
 - Existing `vault-core-gateway` is deployed, but Workers `vault-core-api` and `vault-core-web` are absent from the target account.
 - Cloudflare zone `vaultcore.biz.id` is ACTIVE; gateway origins are unset, Custom Domains list is empty, and zone DNS records are empty.
-- GitHub Actions production workflow run `44884767909` confirmed the five required secrets (`CLOUDFLARE_API_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `ADMIN_TELEGRAM_IDS`, `APP_ENCRYPTION_KEY`) resolve empty in the workflow environment. Deployment stopped before any resource changes.
-- Production Telegram bot identity/token, webhook registration, and owner Telegram ID allowlist are not configured.
-- No live XTR payment, refund, and fulfillment test has been run.
+- GitHub Actions production workflow run `44884767909` sees all five required secret variables, but rejects `APP_ENCRYPTION_KEY` because the decoded key is not exactly 32 bytes in canonical Base64 form. Cloudflare token, Hyperdrive, and Telegram bot identity checks have not yet been reached. Deployment stopped before any resource changes.
+- Telegram webhook registration and production owner allowlist acceptance have not been verified; the bot identity check is pending.
 - No live XTR payment, refund, and fulfillment test has been run.
 - Backup/restore, IDOR, and live rate-limit behavior still require staging validation before launch.
 

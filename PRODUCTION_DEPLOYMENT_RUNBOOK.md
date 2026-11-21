@@ -13,7 +13,7 @@
 - Production application Workers: not deployed yet.
 - Gateway custom domains and upstream origins: not configured yet.
 - Telegram webhook and live Stars payment/fulfillment: not verified yet.
-- Latest attempted production preflight: GitHub Actions run `44884767909` stopped before deployment because `CLOUDFLARE_API_TOKEN` was missing; all five required secret variables were empty in that workflow environment. No Worker, gateway, domain, or webhook resources were changed by the attempt.
+- Latest production preflight recheck: GitHub Actions run `44884767909` now resolves all five required secret variables (values are masked). It stops at `APP_ENCRYPTION_KEY`: the supplied value does not pass canonical Base64 validation for exactly 32 decoded bytes. Cloudflare token, Hyperdrive, and Telegram bot identity checks are therefore not yet reached. No Worker, gateway, domain, or webhook resources were changed by the failed preflight.
 - The production deployment workflow is manual (`workflow_dispatch`) only. Add the five required repository secrets first, then run the workflow from Actions on branch `main`.
 
 ## Repository secrets required
@@ -26,7 +26,15 @@ Add the following secrets to the GitHub repository under **Settings → Secrets 
 | `TELEGRAM_BOT_TOKEN` | Production bot token from BotFather |
 | `TELEGRAM_WEBHOOK_SECRET` | Random secret token to authenticate Telegram webhook requests |
 | `ADMIN_TELEGRAM_IDS` | Comma-separated numeric Telegram user IDs authorized as admins/owner |
-| `APP_ENCRYPTION_KEY` | Base64-encoded 32-byte key used for AES-256-GCM inventory encryption |
+| `APP_ENCRYPTION_KEY` | Standard Base64 encoding of exactly 32 random bytes, used for AES-256-GCM inventory encryption |
+
+Generate it with Node.js:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+Copy only the generated output into the secret. The deployment preflight ignores line breaks/whitespace around or within the Base64 value and reports only its character and decoded-byte counts; it never prints the key.
 
 Optional:
 - `SUPPORT_CONTACT`: the support contact displayed by the payment-support bot command.

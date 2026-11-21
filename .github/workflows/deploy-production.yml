@@ -56,11 +56,17 @@ jobs:
             exit 1
           fi
           node --input-type=module -e '
-            const key = process.env.APP_ENCRYPTION_KEY;
+            const raw = process.env.APP_ENCRYPTION_KEY ?? "";
+            const key = raw.replace(/\\s+/g, "");
             const decoded = Buffer.from(key, "base64");
-            if (decoded.length !== 32 || decoded.toString("base64").replace(/=+$/, "") !== key.replace(/=+$/, "")) {
-              console.error("APP_ENCRYPTION_KEY must be valid base64 for exactly 32 bytes.");
+            const canonical = decoded.toString("base64");
+            if (decoded.length !== 32 || canonical.replace(/=+$/, "") !== key.replace(/=+$/, "")) {
+              console.error("APP_ENCRYPTION_KEY invalid: whitespace-normalized character count=" + key.length + ", decoded byte count=" + decoded.length + ". Generate a one-line standard Base64 key from exactly 32 random bytes and copy only the output.");
               process.exit(1);
+            }
+            if (raw !== key) {
+              const fs = await import("node:fs");
+              fs.appendFileSync(process.env.GITHUB_ENV, "APP_ENCRYPTION_KEY=" + key + "\\n");
             }
             const ids = process.env.ADMIN_TELEGRAM_IDS.split(",").map((v) => v.trim()).filter(Boolean);
             if (!ids.length || ids.some((v) => !/^[0-9]+$/.test(v))) {

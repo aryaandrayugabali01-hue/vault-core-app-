@@ -9,7 +9,7 @@
 | Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; 10 application tables and 5 migration records verified, including 004 and 005 |
 | GitHub | `aryaandrayugabali01-hue/vault-core-app-` / `main` | Source published; repository read/write operations verified |
 | Cloudflare | Primary account | `vault-core-gateway` deployed; zone `vaultcore.biz.id` active; assigned nameservers are recorded below; a separate `vaultcore.web.id` zone is pending and is not the selected production domain |
-| Telegram | Bot API | Production bot username/token and webhook are not configured in GitHub Actions; deployment preflight confirms the required secret values are empty |
+| Telegram | Bot API | `TELEGRAM_BOT_TOKEN` and webhook secret are present in the workflow environment; bot identity check has not run yet because preflight stops earlier at the encryption-key check; webhook is not configured |
 
 ## Repository state
 
@@ -26,7 +26,7 @@ GitHub Actions validation results:
 
 - `VAULT CORE CI`, run `44885310611` on commit `f682001ee694937d9ba2da77b70867dfdc56f6e3`: **SUCCESS** (backend/core tests, Mini App build, Wrangler API Worker dry-run).
 - `VAULT CORE Cloudflare frontend preparation`, run `44885310642` on the same commit: **SUCCESS** (Vinext compatibility scan, native Cloudflare initialization, Cloudflare Worker build and output verification).
-- Production deploy preflight run `44884767909` stopped safely before deployment because `CLOUDFLARE_API_TOKEN` was missing; the run log shows all five required production secrets were empty.
+- Production deploy preflight run `44884767909` has been retried after secrets were added. All five required secret variables now resolve in the job environment, but `APP_ENCRYPTION_KEY` fails the exact 32-byte Base64 validation. The workflow stops before Cloudflare token verification, Hyperdrive read-back, Telegram `getMe`, tests, or deployment. No infrastructure resources were changed.
 - Database adapter tests verify one Hyperdrive `pg.Client` per concurrent request, shared context across transactions within each request, and correct failure propagation.
 - Previous passing checks: CI `44852531855` and frontend build `44852531853`.
 
@@ -90,7 +90,7 @@ Connected Neon database `vault_core` was inspected read-only:
 2. Neon runtime role `vault_core_runtime` has been created and verified with CONNECT, schema USAGE, and table DML privileges. Cloudflare Hyperdrive `vault-core-neon` is created and verified; SQL response caching is disabled. Hyperdrive ID: `97e2993f7733422abd08bfbf699ce4e4`.
 3. Zone `vaultcore.biz.id` is active. Cloudflare zone ID `74092a358232c7bf501da8d822fabb47` for `vaultcore.biz.id` is active; IDWebHost is the registrar and assigned nameservers are active. A separate `vaultcore.web.id` zone (ID `14098744832c82ae7b61bc46f695e186`) is pending and is not used by this deployment.
 4. Native Vinext/Cloudflare configuration is committed in `frontend/cloudflare.config.ts` and `frontend/vite.config.ts`. `wrangler.api.jsonc` declares Hyperdrive, `DATABASE_CONNECTION_MODE=request`, and production frontend origins. Both Worker build paths and the Hyperdrive request-scoped DB adapter are validated in CI.
-5. The Hyperdrive binding ID is declared in `wrangler.api.jsonc`; it becomes active only after the API Worker is deployed. `FRONTEND_ORIGIN` includes root and www. Production preflight `44884767909` proved that all five required GitHub Actions secrets resolve empty: `CLOUDFLARE_API_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `ADMIN_TELEGRAM_IDS`, and `APP_ENCRYPTION_KEY`.
+5. The Hyperdrive binding ID is declared in `wrangler.api.jsonc`; it becomes active only after the API Worker is deployed. `FRONTEND_ORIGIN` includes root and www. The five required GitHub Actions secret variables now resolve in the production job, but preflight `44884767909` rejects `APP_ENCRYPTION_KEY` because its decoded value is not exactly 32 canonical Base64 bytes. Cloudflare token, Hyperdrive, and Telegram identity checks have not yet run.
 6. Telegram production bot identity/ownership remains unverified. Deployment is now `workflow_dispatch` only and must be run manually after the five repository secrets are populated; production webhook has not been configured.
 7. Live XTR payment, refund, fulfillment, IDOR, backup/restore, production rate-limit, and Owner UAT tests have not been completed.
 
@@ -106,10 +106,10 @@ Connected Neon database `vault_core` was inspected read-only:
 - Latest source baseline: `f682001ee694937d9ba2da77b70867dfdc56f6e3`.
 - CI: [run 44885310611](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44885310611) SUCCESS.
 - Frontend: [run 44885310642](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44885310642) SUCCESS.
-- Production preflight: [run 44884767909](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44884767909) FAILED at the missing `CLOUDFLARE_API_TOKEN`; every later deployment step was skipped.
-- Cloudflare connector identity matches `aryaandrayugabali01@gmail.com`. Token verification via the connector returned HTTP 401 `Invalid API Token`; this is separate from the missing GitHub Actions secret and does not verify a future replacement token.
+- Production preflight: [run 44884767909](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44884767909) FAILED at `APP_ENCRYPTION_KEY` format validation after all five secret variables became available; every later deployment step was skipped.
+- Cloudflare connector identity matches `aryaandrayugabali01@gmail.com`. Token verification via the connector previously returned HTTP 401 `Invalid API Token`; the separate token stored as the GitHub Actions secret has not yet been tested because workflow preflight exits at the encryption-key check.
 - Live Cloudflare state: zone `vaultcore.biz.id` ACTIVE; `vault-core-gateway` exists; application Workers `vault-core-api` and `vault-core-web` are absent; gateway origins unset; custom domains empty; DNS record list empty.
 
 ## Production readiness
 
-**NOT READY FOR PRODUCTION.** Source changes for reservation ownership, one pre-checkout per order, ambiguous delivery reconciliation, and two-phase Stars refunds are committed and CI-validated. Five Neon migrations are registered. Application Workers have not been deployed. GitHub Actions production secrets are absent, Cloudflare API-token scope has not passed the workflow preflight, Telegram production bot identity/token is unconfigured, domains/gateway origins are not attached, and no live XTR/refund/delivery or Owner UAT acceptance exists.
+**NOT READY FOR PRODUCTION.** Source changes for reservation ownership, one pre-checkout per order, ambiguous delivery reconciliation, and two-phase Stars refunds are committed and CI-validated. Five Neon migrations are registered. Application Workers have not been deployed. GitHub Actions secrets are present but `APP_ENCRYPTION_KEY` fails preflight validation; Cloudflare API-token scope and Telegram bot identity have not yet been tested by the workflow. Domains/gateway origins are not attached, and no live XTR/refund/delivery or Owner UAT acceptance exists.
