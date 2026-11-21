@@ -76,7 +76,7 @@ Latest deployed source on `main`: `1a415717e3155a4ca026c5a7f4fe6108cc53f9e8`. Gi
 
 Implemented in source and CI-validated: Telegram `initData` authentication, catalog API, order creation/reservation with owning order IDs, single pre-checkout claim per order, Stars invoice generation, successful-payment verification/idempotency, encrypted inventory, ambiguous-delivery review/reconciliation, two-phase Stars refund recovery, `/paysupport`, owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console.
 
-Live production infrastructure is deployed, but sales readiness is still gated by actual catalog setup and acceptance tests. A read-only Neon audit on 21 November 2026 found **0 products, 0 inventory items, 0 orders, and 0 transactions**. No SKU has yet been entered with its rights-review reference and sellable encrypted inventory. Live XTR payment, refund, fulfilment, IDOR, backup/restore, production rate-limit, and Owner UAT tests remain pending.
+Live production infrastructure is deployed, but sales readiness is still gated by actual catalog setup and acceptance tests. A Neon audit on 21 November 2026 after migration 006 found **4 TEST-only products in DRAFT, 0 inventory items, 0 orders, and 0 transactions**. These sample records are excluded from the customer catalog until Owner activates them. No commercial SKU has been approved or activated. Live XTR payment, refund, fulfilment, IDOR, backup/restore, production rate-limit, and Owner UAT tests remain pending.
 
 ## Production deployment
 
