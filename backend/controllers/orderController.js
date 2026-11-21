@@ -39,10 +39,6 @@ export async function createOrder(req, res) {
     );
     const product = products[0];
     if (!product) throw Object.assign(new Error('Produk tidak tersedia.'), { status: 404 });
-    if (product.sale_price_idr == null || Number(product.sale_price_idr) <= 0) {
-      throw Object.assign(new Error('Harga rupiah produk belum dikonfigurasi.'), { status: 409 });
-    }
-
     const { rows: stockRows } = await client.query(
       `SELECT id FROM inventory_items
        WHERE product_id=$1 AND status='AVAILABLE'
@@ -54,18 +50,17 @@ export async function createOrder(req, res) {
 
     const orderNumber = `VC-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
     const totalXtr = Number(product.sale_price_xtr) * quantity;
-    const totalCostIdr = Number(product.cost_price_idr) * quantity;
-    const totalSaleIdr = Number(product.sale_price_idr) * quantity;
+    const totalCostXtr = Number(product.cost_price_xtr) * quantity;
     const { rows: orderRows } = await client.query(
-      `INSERT INTO orders (order_number, customer_id, total_xtr, total_sale_idr, total_cost_idr)
-       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-      [orderNumber, req.customer.id, totalXtr, totalSaleIdr, totalCostIdr]
+      `INSERT INTO orders (order_number, customer_id, total_xtr, total_cost_xtr)
+       VALUES ($1,$2,$3,$4) RETURNING *`,
+      [orderNumber, req.customer.id, totalXtr, totalCostXtr]
     );
     order = orderRows[0];
     await client.query(
-      `INSERT INTO order_items (order_id, product_id, quantity, unit_sale_xtr, unit_sale_idr, unit_cost_idr, product_name_snapshot)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [order.id, product.id, quantity, product.sale_price_xtr, product.sale_price_idr, product.cost_price_idr, product.name]
+      `INSERT INTO order_items (order_id, product_id, quantity, unit_sale_xtr, unit_cost_xtr, product_name_snapshot)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [order.id, product.id, quantity, product.sale_price_xtr, product.cost_price_xtr, product.name]
     );
     for (const stock of stockRows) {
       const reservation = await client.query(
