@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { pool } from '../db/pool.js';
 import { encryptPayload, assertAllowedDigitalPayload } from '../utils/encryption.js';
 import { refundStarPayment } from '../services/telegramApi.js';
-import { deliverPaidOrder } from '../services/deliveryService.js';
+import { deliverPaidOrder, canReconcileDelivery } from '../services/deliveryService.js';
 const router = Router();
 
 router.get('/dashboard', async (_req, res) => {
@@ -443,13 +443,17 @@ router.post('/deliveries/:id/reconcile', async (req, res) => {
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
-      `SELECT d.id,d.order_id,d.inventory_item_id,d.status,o.order_number,i.status AS inventory_status,i.reserved_order_id
+      `SELECT d.id,d.order_id,d.inventory_item_id,d.status,o.order_number,o.status AS order_status,i.status AS inventory_status,i.reserved_order_id
        FROM deliveries d JOIN orders o ON o.id=d.order_id
        JOIN inventory_items i ON i.id=d.inventory_item_id WHERE d.id=$1 FOR UPDATE OF d,o,i`,
       [deliveryId]
     );
     const delivery = rows[0];
     if (!delivery) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'DELIVERY_NOT_FOUND' }); }
+    if (!canReconcileDelivery(delivery.order_status)) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'ORDER_NOT_ELIGIBLE_FOR_DELIVERY_RECONCILIATION' });
+    }
     if (delivery.status !== 'REVIEW_REQUIRED') { await client.query('ROLLBACK'); return res.status(409).json({ error: 'DELIVERY_NOT_REQUIRES_REVIEW' }); }
     if (String(delivery.reserved_order_id) !== String(delivery.order_id) || delivery.inventory_status !== 'RESERVED') {
       await client.query('ROLLBACK'); return res.status(409).json({ error: 'INVENTORY_RESERVATION_NOT_OWNED_BY_ORDER' });
@@ -478,7 +482,7 @@ router.post('/deliveries/:id/reconcile', async (req, res) => {
       `SELECT COUNT(*)::int AS count FROM deliveries WHERE order_id=$1 AND status <> 'DELIVERED'`, [delivery.order_id]
     );
     if (remaining[0].count === 0) await client.query(
-      `UPDATE orders SET status='FULFILLED',fulfilled_at=NOW() WHERE id=$1 AND status IN ('PAID','FULFILLING','REFUND_PENDING')`,
+      `UPDATE orders SET status='FULFILLED',fulfilled_at=NOW() WHERE id=$1 AND status IN ('PAID','FULFILLING')`,
       [delivery.order_id]
     );
     await client.query('COMMIT');
