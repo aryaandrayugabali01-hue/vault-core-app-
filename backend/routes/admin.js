@@ -8,7 +8,7 @@ const router = Router();
 router.get('/dashboard', async (_req, res) => {
   const [sales, inventory, orders, expenses] = await Promise.all([
     pool.query(`SELECT COUNT(*)::int AS paid_orders, COALESCE(SUM(total_xtr),0)::bigint AS gross_xtr,
-      COALESCE(SUM(total_sale_idr),0)::bigint AS gross_idr, COALESCE(SUM(total_cost_idr),0)::bigint AS cost_idr
+      COALESCE(SUM(total_cost_xtr),0)::bigint AS cost_xtr
       FROM orders WHERE status IN ('PAID','FULFILLING','FULFILLED','REFUND_PENDING')`),
     pool.query(`SELECT COUNT(*) FILTER (WHERE status='AVAILABLE')::int AS available,
       COUNT(*) FILTER (WHERE status='RESERVED')::int AS reserved,
@@ -16,13 +16,13 @@ router.get('/dashboard', async (_req, res) => {
     pool.query(`SELECT COUNT(*) FILTER (WHERE status='PENDING_PAYMENT')::int AS pending,
       COUNT(*) FILTER (WHERE status='FULFILLED')::int AS fulfilled,
       COUNT(*) FILTER (WHERE status='REFUND_PENDING')::int AS refund_pending FROM orders`),
-    pool.query(`SELECT COALESCE(SUM(amount_idr),0)::bigint AS expenses_idr FROM operating_expenses`)
+    pool.query(`SELECT COALESCE(SUM(amount_xtr),0)::bigint AS expenses_xtr FROM operating_expenses`)
   ]);
-  const expenseIdr = Number(expenses.rows[0].expenses_idr);
-  const grossIdr = Number(sales.rows[0].gross_idr);
-  const costIdr = Number(sales.rows[0].cost_idr);
-  res.json({ sales: sales.rows[0], inventory: inventory.rows[0], orders: orders.rows[0], expensesIdr: expenseIdr,
-    netProfitIdr: grossIdr - costIdr - expenseIdr, grossProfitIdr: grossIdr - costIdr });
+  const expensesXtr = Number(expenses.rows[0].expenses_xtr);
+  const grossXtr = Number(sales.rows[0].gross_xtr);
+  const costXtr = Number(sales.rows[0].cost_xtr);
+  res.json({ sales: sales.rows[0], inventory: inventory.rows[0], orders: orders.rows[0], expensesXtr,
+    netProfitXtr: grossXtr - costXtr - expensesXtr, grossProfitXtr: grossXtr - costXtr });
 });
 
 router.get('/products', async (_req, res) => {
@@ -36,17 +36,16 @@ router.get('/products', async (_req, res) => {
 
 router.post('/products', async (req, res) => {
   const { sku, gameCategory, tier, name, description = '', fulfillmentType,
-    salePriceXtr, salePriceIdr = null, costPriceIdr = 0,
-    rightsReviewReference = null } = req.body ?? {};
-  if (!sku || !gameCategory || !tier || !name || !fulfillmentType || !Number.isSafeInteger(Number(salePriceXtr)) || Number(salePriceXtr) <= 0 || (salePriceIdr != null && (!Number.isSafeInteger(Number(salePriceIdr)) || Number(salePriceIdr) < 0)) || !Number.isSafeInteger(Number(costPriceIdr)) || Number(costPriceIdr) < 0) {
+    salePriceXtr, costPriceXtr = 0, rightsReviewReference = null } = req.body ?? {};
+  if (!sku || !gameCategory || !tier || !name || !fulfillmentType || !Number.isSafeInteger(Number(salePriceXtr)) || Number(salePriceXtr) <= 0 || !Number.isSafeInteger(Number(costPriceXtr)) || Number(costPriceXtr) < 0) {
     return res.status(400).json({ error: 'INVALID_PRODUCT_INPUT' });
   }
   const { rows } = await pool.query(
     `INSERT INTO products (sku, game_category, tier, name, description, fulfillment_type,
-      sale_price_xtr, sale_price_idr, cost_price_idr, rights_review_reference, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'DRAFT') RETURNING *`,
+      sale_price_xtr, cost_price_xtr, rights_review_reference, status)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'DRAFT') RETURNING *`,
     [sku, gameCategory, tier, name, description, fulfillmentType, Number(salePriceXtr),
-      salePriceIdr == null ? null : Number(salePriceIdr), Number(costPriceIdr), rightsReviewReference]
+      Number(costPriceXtr), rightsReviewReference]
   );
   await audit(req, 'PRODUCT_CREATED', 'PRODUCT', rows[0].id, { sku });
   res.status(201).json({ product: rows[0] });
@@ -54,11 +53,11 @@ router.post('/products', async (req, res) => {
 
 router.patch('/products/:id', async (req, res) => {
   const id = Number(req.params.id);
-  const allowed = ['name','description','sale_price_xtr','sale_price_idr','cost_price_idr',
+  const allowed = ['name','description','sale_price_xtr','cost_price_xtr',
     'low_stock_threshold','display_stock_mode','display_stock_override','status','rights_review_reference'];
   const mapping = {
-    name:'name', description:'description', salePriceXtr:'sale_price_xtr', salePriceIdr:'sale_price_idr',
-    costPriceIdr:'cost_price_idr', lowStockThreshold:'low_stock_threshold', displayStockMode:'display_stock_mode',
+    name:'name', description:'description', salePriceXtr:'sale_price_xtr',
+    costPriceXtr:'cost_price_xtr', lowStockThreshold:'low_stock_threshold', displayStockMode:'display_stock_mode',
     displayStockOverride:'display_stock_override', status:'status', rightsReviewReference:'rights_review_reference'
   };
   const pairs = Object.entries(mapping).filter(([key]) => Object.hasOwn(req.body ?? {}, key));
@@ -79,17 +78,64 @@ router.patch('/products/:id', async (req, res) => {
   res.json({ product: rows[0] });
 });
 
+router.post('/test-fixtures', async (req, res) => {
+  const fixtures = [
+    { sku:'TEST-MLBB-001', gameCategory:'MLBB', tier:'SILVER', name:'TEST ONLY - MLBB Delivery Sample', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-MLBB-001' },
+    { sku:'TEST-ROBLOX-001', gameCategory:'ROBLOX', tier:'GOLD', name:'TEST ONLY - Roblox Delivery Sample', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-ROBLOX-001' },
+    { sku:'TEST-FREEFIRE-001', gameCategory:'FREE_FIRE', tier:'PLATINUM', name:'TEST ONLY - Free Fire Delivery Sample', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-FREEFIRE-001' },
+    { sku:'TEST-GENSHIN-001', gameCategory:'GENSHIN', tier:'SILVER', name:'TEST ONLY - Genshin Delivery Sample', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-GENSHIN-001' }
+  ];
+  const client = await pool.connect();
+  const result = [];
+  try {
+    await client.query('BEGIN');
+    for (const fixture of fixtures) {
+      const existing = await client.query('SELECT id,is_test FROM products WHERE sku=$1 FOR UPDATE', [fixture.sku]);
+      let product = existing.rows[0];
+      if (product && product.is_test !== true) throw new Error('TEST_FIXTURE_SKU_CONFLICT:' + fixture.sku);
+      if (!product) {
+        const inserted = await client.query(
+          `INSERT INTO products (sku,game_category,tier,name,description,fulfillment_type,sale_price_xtr,cost_price_xtr,rights_review_reference,is_test,status)
+           VALUES ($1,$2,$3,$4,$5,'SERVICE_INSTRUCTIONS',1,0,'INTERNAL_TEST_FIXTURE_ONLY',TRUE,'DRAFT') RETURNING id`,
+          [fixture.sku,fixture.gameCategory,fixture.tier,fixture.name,
+           'PRODUK CONTOH UJI INTERNAL. Bukan produk komersial. Kode dummy ini tidak dapat ditukarkan. Harga 1 XTR hanya untuk menguji alur invoice dan transaksi.']
+        );
+        product = inserted.rows[0];
+      }
+      const stock = await client.query("SELECT id FROM inventory_items WHERE product_id=$1 AND status IN ('AVAILABLE','RESERVED') LIMIT 1", [product.id]);
+      if (!stock.rowCount) {
+        const encrypted = encryptPayload(assertAllowedDigitalPayload(fixture.payload));
+        await client.query(
+          'INSERT INTO inventory_items (product_id,payload_ciphertext,payload_nonce,payload_tag) VALUES ($1,$2,$3,$4)',
+          [product.id,encrypted.payload_ciphertext,encrypted.payload_nonce,encrypted.payload_tag]
+        );
+      }
+      result.push({ sku:fixture.sku, productId:product.id, status:'DRAFT', isTest:true });
+    }
+    await client.query(
+      `INSERT INTO admin_audit_logs (actor_telegram_user_id,action,entity_type,entity_id,metadata)
+       VALUES ($1,'TEST_FIXTURES_CREATED','PRODUCT','BATCH',$2)`,
+      [String(req.telegramUser.id), JSON.stringify({ skus:fixtures.map((item) => item.sku), count:fixtures.length })]
+    );
+    await client.query('COMMIT');
+    res.status(201).json({ createdOrVerified:result.length, fixtures:result, message:'Produk contoh uji dibuat sebagai DRAFT dengan stok kode dummy terenkripsi. Aktifkan hanya saat siap menguji pembelian XTR.' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('[test-fixture-seed-error]', error.message);
+    res.status(409).json({ error:'TEST_FIXTURE_SEED_FAILED', message:'Produk contoh uji tidak dapat dibuat. Periksa SKU contoh dan konfigurasi enkripsi.' });
+  } finally { client.release(); }
+});
 router.post('/expenses', async (req, res) => {
-  const { category, description, amountIdr, occurredAt } = req.body ?? {};
-  if (!category || !description || !Number.isSafeInteger(Number(amountIdr)) || Number(amountIdr) <= 0) {
+  const { category, description, amountXtr, occurredAt } = req.body ?? {};
+  if (!category || !description || !Number.isSafeInteger(Number(amountXtr)) || Number(amountXtr) <= 0) {
     return res.status(400).json({ error: 'INVALID_EXPENSE_INPUT' });
   }
   const { rows } = await pool.query(
-    `INSERT INTO operating_expenses (category,description,amount_idr,occurred_at,created_by_telegram_user_id)
+    `INSERT INTO operating_expenses (category,description,amount_xtr,occurred_at,created_by_telegram_user_id)
      VALUES ($1,$2,$3,COALESCE($4::timestamptz,NOW()),$5) RETURNING *`,
-    [category, description, Number(amountIdr), occurredAt ?? null, String(req.telegramUser.id)]
+    [category, description, Number(amountXtr), occurredAt ?? null, String(req.telegramUser.id)]
   );
-  await audit(req, 'EXPENSE_CREATED', 'EXPENSE', rows[0].id, { category, amountIdr: Number(amountIdr) });
+  await audit(req, 'EXPENSE_CREATED', 'EXPENSE', rows[0].id, { category, amountXtr: Number(amountXtr) });
   res.status(201).json({ expense: rows[0] });
 });
 
@@ -290,11 +336,11 @@ router.post('/orders/:orderNumber/retry-delivery', async (req, res) => {
 
 router.get('/orders', async (_req, res) => {
   const { rows } = await pool.query(
-    `SELECT o.order_number,o.status,o.total_xtr,o.total_sale_idr,o.total_cost_idr,o.created_at,o.paid_at,o.fulfilled_at,
+    `SELECT o.order_number,o.status,o.total_xtr,o.total_cost_xtr,o.created_at,o.paid_at,o.fulfilled_at,
       c.telegram_user_id,c.username,
       COALESCE((SELECT json_agg(json_build_object('name',oi.product_name_snapshot,'quantity',oi.quantity,
-       'unit_cost_idr',oi.unit_cost_idr,'unit_sale_xtr',oi.unit_sale_xtr,'unit_sale_idr',oi.unit_sale_idr))
-       FROM order_items oi WHERE oi.order_id=o.id),'[]') AS items,
+       'unit_cost_xtr',oi.unit_cost_xtr,'unit_sale_xtr',oi.unit_sale_xtr,'is_test',p.is_test))
+       FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=o.id),'[]') AS items,
       COALESCE((SELECT json_agg(json_build_object('id',d.id,'status',d.status,'last_error',d.last_error,
        'inventory_item_id',d.inventory_item_id) ORDER BY d.id) FROM deliveries d WHERE d.order_id=o.id),'[]') AS deliveries
      FROM orders o JOIN customers c ON c.id=o.customer_id
