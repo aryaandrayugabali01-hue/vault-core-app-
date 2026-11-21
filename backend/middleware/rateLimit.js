@@ -1,8 +1,30 @@
-import { rateLimit } from 'express-rate-limit';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
+
+export function resolveRateLimitKey(req) {
+  const candidates = [
+    req.headers?.['cf-connecting-ip'],
+    req.ip,
+    req.socket?.remoteAddress
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string' || !candidate.trim()) continue;
+    try {
+      return `ip:${ipKeyGenerator(candidate.trim())}`;
+    } catch {
+      // Ignore malformed proxy metadata and try the next trusted source.
+    }
+  }
+
+  // Keep a conservative shared bucket instead of throwing when the runtime
+  // does not expose a client address. Cloudflare normally supplies this header.
+  return 'ip:unknown';
+}
 
 const common = {
   standardHeaders: 'draft-8',
   legacyHeaders: false,
+  keyGenerator: resolveRateLimitKey,
   message: { error: 'RATE_LIMIT_EXCEEDED', message: 'Terlalu banyak permintaan. Silakan coba kembali beberapa saat lagi.' }
 };
 
