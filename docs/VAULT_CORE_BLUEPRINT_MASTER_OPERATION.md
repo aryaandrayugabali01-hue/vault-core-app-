@@ -11,11 +11,11 @@
 | Branch | main |
 | Commit baseline yang diperiksa | 155bbc6bb4b64475dd10fec048614e53011f84cb |
 | Kontrak acuan | PROJECT_CONTRACT.md v1.2 — Addendum CR-02 |
-| Status kontrak | Draft revisi; kolom persetujuan pemilik pada Bagian 26.6 belum ditandatangani dalam sumber yang diperiksa |
+| Status kontrak | DISETUJUI PEMILIK — v1.2 CR-02; persetujuan tertulis tercatat 21 November 2026 pada PROJECT_CONTRACT.md Bagian 26.6 |
 | Status produksi | NOT READY FOR PRODUCTION |
 | Tujuan dokumen | Menjadi satu acuan kerja operasional sampai sistem lulus UAT dan rilis produksi |
 
-> **Kedudukan dokumen.** Dokumen ini adalah blueprint pelaksanaan yang menjabarkan kontrak, sumber kode, konfigurasi, dan status deployment yang tercatat pada repository. Dokumen ini tidak mengubah kontrak, tidak memberi persetujuan atas keputusan yang masih menunggu pemilik, dan tidak menggantikan change request. Bila ada konflik, gunakan keputusan kontrak/change request yang telah disetujui pemilik sebagai dasar final. Perubahan terhadap baseline harus dicatat di bagian Decision Log dan dilakukan melalui pull request atau commit yang dapat ditelusuri.
+> **Kedudukan dokumen.** Dokumen ini adalah blueprint pelaksanaan yang menjabarkan kontrak v1.2 CR-02 yang telah disetujui pemilik, sumber kode, konfigurasi, dan status deployment yang tercatat pada repository. Blueprint ini tidak menggantikan kontrak atau change request. Bila ada konflik, gunakan keputusan kontrak/change request yang telah disetujui pemilik sebagai dasar final. Perubahan terhadap baseline harus dicatat di bagian Decision Log dan dilakukan melalui pull request atau commit yang dapat ditelusuri.
 
 ---
 
@@ -918,7 +918,7 @@ Setiap hasil tes harus mencantumkan Test ID, environment, commit SHA, langkah, e
 
 | ID | Pekerjaan | Alasan/hasil yang diharapkan | Status baseline |
 |---|---|---|---|
-| P0-01 | Konfirmasi dan persetujuan PROJECT_CONTRACT v1.2 Bagian 26.6 | Scope punya persetujuan owner | PENDING |
+| P0-01 | Konfirmasi dan persetujuan PROJECT_CONTRACT v1.2 Bagian 26.6 | Scope punya persetujuan owner | DONE — persetujuan tertulis pemilik tercatat 2026-11-21 |
 | P0-02 | Verifikasi akun Cloudflare yang benar, token scope, dan akses resource | Deployment tidak memakai akun yang salah | PENDING |
 | P0-03 | Siapkan lima repository secrets wajib | Workflow lolos preflight | PENDING |
 | P0-04 | Konfirmasi BotFather identity dan token produksi | Identitas bot final | PENDING |
@@ -1019,7 +1019,7 @@ Change request harus mencakup kebutuhan, use case, alasan, dampak ke UI/API/data
 | Rate limit process-local | Limit tidak konsisten pada multi-instance | Shared state/edge rate limit sebelum scale |
 | XTR valuation berubah | Laporan IDR meleset | Pisahkan XTR dari nilai realisasi |
 | Refund tanpa rekonsiliasi | Ledger dan payment tidak cocok | Refund runbook dan charge ID |
-| Kontrak belum disetujui | Scope dapat diperdebatkan | Owner approval sebelum final acceptance |
+| Perubahan scope di luar baseline | Perilaku sistem menyimpang dari kontrak | Change request dan persetujuan owner | Setiap perubahan dilacak melalui dokumen/issue yang disetujui |
 | Legal/privacy belum ditetapkan | Risiko operasional/kepatuhan | Owner review dan dokumentasi sebelum publik |
 
 ## 19. Hal yang belum diketahui atau belum dibuktikan
@@ -1040,7 +1040,7 @@ Hal berikut tidak boleh diisi berdasarkan tebakan:
 12. SLA support dan fulfillment.
 13. Retention policy, RPO, dan RTO.
 14. Target concurrency dan volume transaksi.
-15. Persetujuan Owner terhadap kontrak v1.2 Bagian 26.6.
+15. Nama legal dan sertifikat tanda tangan elektronik formal pemilik belum tercantum pada rekaman persetujuan tertulis v1.2 CR-02.
 16. Hasil live payment/refund/delivery dan UAT.
 17. Status pendaftaran usaha/PSE dan dokumen legal yang relevan.
 
@@ -1079,7 +1079,7 @@ Alasan utama yang tercatat:
 - Webhook production dan bot identity belum diverifikasi.
 - Live Stars, refund, dan delivery test belum dilakukan.
 - Backup/restore, IDOR, rate-limit production, dan UAT masih pending.
-- Kontrak v1.2 CR-02 masih menunggu persetujuan owner.
+- Persetujuan kontrak v1.2 CR-02 telah tercatat; UAT dan go-live tetap menunggu release gate tersendiri.
 
 Status ini harus diperbarui hanya setelah bukti terbaru tersedia.
 
@@ -1097,7 +1097,7 @@ Status ini harus diperbarui hanya setelah bukti terbaru tersedia.
 | DEC-008 | Neon dipertahankan, koneksi Worker memakai Hyperdrive | Deployment architecture | DEPLOYMENT_STATUS.md, wrangler.api.jsonc |
 | DEC-009 | API Worker memakai request-scoped pg.Client | Implemented and CI validated | backend/db/pool.js, tests/core.test.js |
 | DEC-010 | Production go-live | Belum disetujui | Pending release gate |
-| DEC-011 | Owner approval kontrak v1.2 CR-02 | Pending | PROJECT_CONTRACT.md Bagian 26.6 |
+| DEC-011 | Owner approval kontrak v1.2 CR-02 | APPROVED — persetujuan tertulis 2026-11-21 | PROJECT_CONTRACT.md Bagian 26.6 |
 
 ## 22. Referensi sumber dan dokumentasi
 
