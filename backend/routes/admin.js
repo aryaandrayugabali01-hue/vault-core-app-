@@ -38,7 +38,7 @@ router.post('/products', async (req, res) => {
   const { sku, gameCategory, tier, name, description = '', fulfillmentType,
     salePriceXtr, salePriceIdr = null, costPriceIdr = 0,
     rightsReviewReference = null } = req.body ?? {};
-  if (!sku || !gameCategory || !tier || !name || !fulfillmentType || !Number.isInteger(Number(salePriceXtr)) || Number(salePriceXtr) <= 0 || !Number.isFinite(Number(salePriceIdr)) || Number(salePriceIdr) <= 0) {
+  if (!sku || !gameCategory || !tier || !name || !fulfillmentType || !Number.isSafeInteger(Number(salePriceXtr)) || Number(salePriceXtr) <= 0 || (salePriceIdr != null && (!Number.isSafeInteger(Number(salePriceIdr)) || Number(salePriceIdr) < 0)) || !Number.isSafeInteger(Number(costPriceIdr)) || Number(costPriceIdr) < 0) {
     return res.status(400).json({ error: 'INVALID_PRODUCT_INPUT' });
   }
   const { rows } = await pool.query(
