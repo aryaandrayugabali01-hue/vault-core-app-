@@ -74,7 +74,7 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 
 ## Current implementation status
 
-Latest deployed application source: `eafd57dca29404729d2dad7587810e7b025a8cdf`. GitHub Actions production deployment run `44902626165`, attempt 1, completed **SUCCESS**. It passed backend/core tests, frontend build, both Worker deployments, API health with Neon connection, domain/DNS/TLS and gateway checks, and Telegram webhook read-back. It passed secret and Cloudflare preflight, backend/core tests, frontend build, both Worker deployments, API health with Neon database connection, gateway upstream configuration, custom-domain/DNS/TLS checks for root/www/api, and Telegram webhook read-back.
+Latest deployed application source: `eafd57dca29404729d2dad7587810e7b025a8cdf`. GitHub Actions production deployment run `44902626165`, attempt 1, completed **SUCCESS**. It passed secret and Cloudflare preflight, backend/core tests, frontend build, both Worker deployments, API health with Neon database connection, gateway upstream configuration, custom-domain/DNS/TLS checks for root/www/api, and Telegram webhook read-back.
 
 Implemented in source and CI-validated: Telegram `initData` authentication, catalog API, order creation/reservation with owning order IDs, single pre-checkout claim per order, Stars invoice generation, successful-payment verification/idempotency, encrypted inventory, ambiguous-delivery review/reconciliation, two-phase Stars refund recovery, `/paysupport`, owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console.
 
