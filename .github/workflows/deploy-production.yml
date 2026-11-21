@@ -99,11 +99,6 @@ jobs:
       - name: Run backend and core tests
         run: npm test
 
-      - name: Build frontend
-        env:
-          NEXT_PUBLIC_API_BASE_URL: ""
-        run: npm run build:frontend
-
       - name: Deploy API Worker
         run: npx --yes wrangler@latest deploy --config wrangler.api.jsonc
 
