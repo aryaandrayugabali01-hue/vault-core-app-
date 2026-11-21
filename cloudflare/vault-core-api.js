@@ -17,7 +17,8 @@ function configureEnvironment(env) {
     'ADMIN_TELEGRAM_IDS',
     'APP_ENCRYPTION_KEY',
     'FRONTEND_ORIGIN',
-    'SUPPORT_CONTACT'
+    'SUPPORT_CONTACT',
+    'DATABASE_CONNECTION_MODE'
   ];
   for (const name of names) {
     if (typeof env[name] === 'string') process.env[name] = env[name];
