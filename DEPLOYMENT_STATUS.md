@@ -53,6 +53,15 @@ Connected Neon database `vault_core` was inspected read-only:
 - Duplicate Telegram charge IDs are checked against the order they were first linked to.
 - IDOR, backup/restore, production rate-limit behavior, and live payment/delivery checks remain pending.
 
+## Cloudflare hosting target (selected)
+
+- Hosting platform: Cloudflare Workers for both application runtimes.
+- Frontend: existing Next.js 15 / React 19 app, migrated non-destructively to vinext and deployed as Worker `vault-core-web`.
+- API: existing Express 5 app deployed as Worker `vault-core-api` using Cloudflare's `cloudflare:node` `httpServerHandler` adapter.
+- Database: existing Neon PostgreSQL retained; Cloudflare Hyperdrive will provide the PostgreSQL connection to the API Worker.
+- Public entrypoint: existing `vault-core-gateway` Worker, with `vaultcore.biz.id` and `www.vaultcore.biz.id` for frontend traffic and `api.vaultcore.biz.id` for API traffic.
+- This deployment requires no replacement database and no new repository. The two application Workers are runtime targets for the existing frontend and backend source directories.
+
 ## Cloudflare gateway
 
 - Worker: `vault-core-gateway`.
@@ -61,7 +70,7 @@ Connected Neon database `vault_core` was inspected read-only:
 - Worker URL: `https://vault-core-gateway.premiumdigital-id.workers.dev`.
 - `workers.dev` was enabled and Worker settings were read back successfully; observability logs and traces are enabled.
 - Gateway routes `/api/*` and `api.*` host traffic to `API_ORIGIN`; other paths route to `WEB_ORIGIN`.
-- `API_ORIGIN` and `WEB_ORIGIN` are intentionally unset. `/_gateway/health` reports gateway readiness only, not application readiness. Unconfigured upstream requests return HTTP 503.
+- `API_ORIGIN` and `WEB_ORIGIN` are intentionally unset until `vault-core-api` and `vault-core-web` are deployed. `/_gateway/health` reports gateway readiness only, not application readiness. Unconfigured upstream requests return HTTP 503.
 - Cloudflare zone `vaultcore.biz.id` has been created as a full zone, active.
 - Assigned nameservers: `marty.ns.cloudflare.com` and `sharon.ns.cloudflare.com`. They are already active at the registrar.
 - Worker Custom Domains are not attached yet. Once the application origins are deployed, attach `vaultcore.biz.id`, `www.vaultcore.web.id`, and `api.vaultcore.web.id` to this Worker; Cloudflare will provision their DNS records and TLS certificates.
@@ -69,12 +78,15 @@ Connected Neon database `vault_core` was inspected read-only:
 
 ## Deployment blockers
 
+1. Cloudflare application Workers `vault-core-web` and `vault-core-api` still need to be built and deployed; the existing gateway alone does not host either runtime.
+2. Hyperdrive is not configured. A restricted Neon runtime database role and its connection credential are required before connecting the API Worker.
+
 1. Zone `vaultcore.biz.id` is pending. Its assigned Cloudflare nameservers must be installed at the registrar. Domain registration/ownership remains unverified until confirmed in PANDI/registrar records.
-2. The Next.js frontend and Express API have not yet been adapted and deployed as Cloudflare-compatible application origins. The gateway Worker exists, but does not replace those application runtimes.
-3. Production secrets and bindings are not set: Neon runtime connection/Hyperdrive, Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
-4. Telegram bot username/ownership and production webhook target are not known.
-5. Live XTR payment, refund, and fulfillment tests have not been completed.
-6. Contract v1.2 (CR-02) still has unsigned owner approval fields in Section 26.6.
+4. The Next.js frontend and Express API have not yet been adapted and deployed as Cloudflare-compatible application origins. The gateway Worker exists, but does not replace those application runtimes.
+5. Production secrets and bindings are not set: Hyperdrive binding, Telegram bot token, webhook secret, encryption key, frontend origin, and owner Telegram ID allowlist.
+6. Telegram bot username/ownership and production webhook target are not known.
+7. Live XTR payment, refund, and fulfillment tests have not been completed.
+8. Contract v1.2 (CR-02) still has unsigned owner approval fields in Section 26.6.
 
 ## Production readiness
 
