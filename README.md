@@ -32,7 +32,7 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 - Database: `vault_core`
 - Default branch: `main`
 
-The connected schema was checked: 10 application tables are present and all 5 migrations (001–005) are registered. Migrations 004 and 005 add reservation ownership/delivery review and a single pre-checkout claim per order.
+The connected schema was checked: 10 application tables are present and all 6 migrations (001–006) are registered. Migrations 004 and 005 add reservation ownership/delivery review and a single pre-checkout claim per order. Migration 006 moves all active product and finance amounts to XTR and adds the TEST fixture marker.
 
 ## Local setup
 
