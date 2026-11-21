@@ -9,7 +9,6 @@ async function createHandler() {
 }
 
 function configureEnvironment(env) {
-  process.env.NODE_ENV = 'production';
   process.env.DATABASE_URL = env.HYPERDRIVE.connectionString;
   const names = [
     'TELEGRAM_BOT_TOKEN',
