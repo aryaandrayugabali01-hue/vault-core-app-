@@ -78,7 +78,7 @@ Sasaran penyelesaian:
 | Database | PostgreSQL yang sudah digunakan proyek |
 | Hosting target | Cloudflare Workers |
 | Domain target | vaultcore.biz.id |
-| Bahasa nilai uang | XTR untuk pembayaran Telegram; IDR untuk modal, acuan penjualan, biaya, dan laporan |
+| Satuan nilai uang | XTR untuk harga, modal, biaya, laporan, dan transaksi |
 
 ### 2.2 Tipe payload yang diizinkan oleh baseline kontrak dan kode
 
@@ -258,7 +258,7 @@ Identitas dari initDataUnsafe di frontend bukan sumber otoritatif untuk authoriz
 
 1. Customer memilih kategori game.
 2. Customer memilih tier atau SKU.
-3. Detail menampilkan nama, deskripsi, harga XTR, referensi harga IDR jika tersedia, ketersediaan, dan ketentuan layanan.
+3. Detail menampilkan nama, deskripsi, harga XTR, ketersediaan, dan ketentuan layanan.
 4. Customer memilih kuantitas sesuai limit API.
 5. Backend mengunci produk dan unit stok dalam transaksi.
 6. Backend membuat order dengan order number unik dan snapshot produk, harga, modal, dan total.
@@ -313,7 +313,7 @@ Customer hanya dapat melihat order miliknya. Riwayat harus memperlihatkan order 
 
 ### 7.1 Aktivasi produk
 
-1. Owner membuat produk dengan SKU, kategori, tier, tipe fulfillment, deskripsi, XTR, nilai IDR acuan, dan biaya modal.
+1. Owner membuat produk dengan SKU, kategori, tier, tipe fulfillment, deskripsi, harga jual XTR, modal XTR, dan referensi pemeriksaan hak.
 2. Produk tersimpan sebagai DRAFT.
 3. Owner menyertakan referensi pemeriksaan hak distribusi/pemenuhan per SKU.
 4. Reviewer memeriksa ketentuan penerbit/platform, bukti hak, konten, dan cara pengiriman.
@@ -337,8 +337,8 @@ Jangan masukkan kredensial login, password, OTP, cookie, session token, atau rec
 ### 7.3 Pengelolaan harga dan modal
 
 - Sale price XTR adalah jumlah Stars untuk invoice.
-- Sale price IDR adalah nilai acuan pelaporan yang ditetapkan Owner.
-- Cost price IDR adalah biaya modal produk sesuai dasar yang tercatat.
+- Sale price XTR adalah harga jual yang digunakan pada invoice.
+- Cost price XTR adalah nilai modal internal yang ditetapkan Owner.
 - Perubahan harga berlaku untuk order baru.
 - Order lama tetap menggunakan snapshot saat dibuat.
 - Kurs, komisi, pencairan, dan penerimaan bersih tidak boleh disamakan dengan nilai nominal XTR tanpa data aktual.
@@ -374,22 +374,21 @@ Refund dilakukan melalui Telegram API; bukan transfer manual dengan cara lain. O
 
 ### 7.6 Biaya dan laporan
 
-Owner mencatat biaya operasional dengan kategori, deskripsi, nominal IDR, tanggal kejadian, dan aktor. Laporan harus membedakan:
-- Gross sales reference IDR.
-- Total modal.
-- Operating expenses.
-- Gross profit.
-- Net operating profit.
-- XTR received.
-- Refund.
-- Nilai realisasi/pencairan bila tersedia secara terpisah.
+Owner mencatat biaya operasional langsung dalam XTR dengan kategori, deskripsi, tanggal kejadian, dan aktor. Laporan menggunakan satuan yang konsisten:
+- Gross sales XTR.
+- Cost of goods XTR.
+- Operating expenses XTR.
+- Gross profit XTR.
+- Net profit XTR.
+- Refund XTR.
 
-Formula yang tercantum pada kontrak:
-- Profit kotor = pendapatan penjualan acuan IDR − modal barang.
-- Profit bersih operasional = pendapatan bersih yang direalisasikan − modal barang − biaya lain.
-- Margin kotor (%) = profit kotor ÷ pendapatan penjualan acuan IDR × 100.
+Formula:
+- Penjualan bersih = gross sales − refund.
+- Profit kotor = penjualan bersih − modal barang.
+- Profit bersih = profit kotor − biaya operasional.
+- Margin kotor (%) = profit kotor ÷ penjualan bersih × 100.
 
-Dashboard kode saat ini menghitung gross profit dari nilai sale IDR dikurangi cost IDR, lalu net profit dikurangi expenses. Rekonsiliasi perlakuan refund, nilai realisasi, dan tanggal pengakuan pendapatan harus disepakati sebelum laporan dianggap final.
+Harga dan modal disimpan sebagai snapshot XTR pada saat order dibuat. Aplikasi tidak melakukan konversi atau menampilkan nilai mata uang lain.
 
 ## 8. Status data dan konsistensi workflow
 
@@ -715,7 +714,7 @@ Setelah API dan custom domain sehat:
 ### 13.2 Prosedur publikasi SKU
 
 1. Buat produk dalam status DRAFT.
-2. Lengkapi identitas SKU, kategori, tier, deskripsi, tipe payload, harga XTR, acuan IDR, modal, refund policy, lead time, dan rights review reference.
+2. Lengkapi identitas SKU, kategori, tier, deskripsi, tipe payload, harga jual XTR, modal XTR, refund policy, lead time, dan rights review reference.
 3. Lampirkan/arsipkan bukti hak distribusi di penyimpanan dokumen internal yang dikuasai Owner.
 4. Reviewer memberi keputusan: APPROVED, REJECTED, atau NEEDS_INFO di catatan review.
 5. Aktifkan hanya setelah APPROVED; bila belum ada bukti atau aturan platform tidak jelas, status tetap DRAFT/PENDING_REVIEW.
@@ -770,7 +769,7 @@ Setelah API dan custom domain sehat:
 
 - Rekap order baru, paid, fulfilled, failed, cancelled, refunded.
 - Rekap XTR diterima dan charge ID.
-- Rekap nilai IDR acuan, modal, expenses, dan profit.
+- Rekap penjualan, modal, expenses, refund, dan profit dalam XTR.
 - Rekonsiliasi order yang statusnya tidak sinkron.
 - Periksa delivery FAILED/READY lama.
 - Periksa produk dengan stok rendah.
@@ -809,7 +808,7 @@ Setiap hasil tes harus mencantumkan Test ID, environment, commit SHA, langkah, e
 - [ ] VC-CUS-004: initData invalid/expired ditolak.
 - [ ] VC-CUS-005: Kategori dan SKU aktif terbaca.
 - [ ] VC-CUS-006: Produk DRAFT/PAUSED/ARCHIVED tidak tampil untuk customer.
-- [ ] VC-CUS-007: Harga XTR dan informasi IDR sesuai konfigurasi.
+- [ ] VC-CUS-007: Harga dan total checkout hanya menggunakan XTR.
 - [ ] VC-CUS-008: Display stock sesuai sellable stock.
 - [ ] VC-CUS-009: Customer tidak dapat membaca harga modal/profit.
 - [ ] VC-CUS-010: Customer A tidak dapat membaca order Customer B.
@@ -875,7 +874,7 @@ Setiap hasil tes harus mencantumkan Test ID, environment, commit SHA, langkah, e
 - [ ] VC-OWN-005: Owner dapat menambah expense.
 - [ ] VC-OWN-006: Harga/modal baru tidak mengubah snapshot order sebelumnya.
 - [ ] VC-OWN-007: Gross profit dan net profit cocok dengan dataset yang disepakati.
-- [ ] VC-OWN-008: XTR, IDR indicative, dan cash/redeemed amount dibedakan.
+- [ ] VC-OWN-008: Harga, modal, biaya, refund, dan laba dicatat konsisten dalam XTR.
 - [ ] VC-OWN-009: Refund memengaruhi laporan menurut aturan yang disepakati.
 - [ ] VC-OWN-010: Aktivitas owner yang kritis masuk audit log.
 - [ ] VC-OWN-011: Audit log dapat ditelusuri oleh owner.
@@ -957,7 +956,7 @@ Setiap hasil tes harus mencantumkan Test ID, environment, commit SHA, langkah, e
 
 - UI polish berdasarkan UAT dan penggunaan perangkat Android nyata.
 - Dashboard keuangan dengan filter dan ekspor.
-- Laporan rekonsiliasi XTR dan IDR.
+- Laporan rekonsiliasi transaksi dan saldo XTR.
 - Monitoring alert yang mengurangi pemeriksaan manual.
 - Peningkatan aksesibilitas, loading states, dan pengalaman error.
 - Improvement observability sesuai kebutuhan operasi.
@@ -1021,7 +1020,7 @@ Change request harus mencakup kebutuhan, use case, alasan, dampak ke UI/API/data
 | Stok ganda | Over-selling | Transaction lock dan concurrency test |
 | DB outage | Checkout/order gagal | Monitoring, backup, restore plan |
 | Rate limit process-local | Limit tidak konsisten pada multi-instance | Shared state/edge rate limit sebelum scale |
-| XTR valuation berubah | Laporan IDR meleset | Pisahkan XTR dari nilai realisasi |
+| Refund atau biaya tidak tersinkron | Laporan XTR meleset | Rekonsiliasi dari charge ID dan audit log |
 | Refund tanpa rekonsiliasi | Ledger dan payment tidak cocok | Refund runbook dan charge ID |
 | Perubahan scope di luar baseline | Perilaku sistem menyimpang dari kontrak | Change request dan persetujuan owner | Setiap perubahan dilacak melalui dokumen/issue yang disetujui |
 | Legal/privacy belum ditetapkan | Risiko operasional/kepatuhan | Owner review dan dokumentasi sebelum publik |
@@ -1038,7 +1037,7 @@ Hal berikut tidak boleh diisi berdasarkan tebakan:
 6. The three production domains are attached to the existing gateway and their public DNS/TLS checks passed in the completed deployment workflow.
 7. Telegram production webhook is configured and `getWebhookInfo` read-back passed; an actual Telegram `/start` and Owner access acceptance test is pending.
 8. Harga XTR final seluruh SKU.
-9. Sumber kurs/valuasi XTR ke IDR untuk pelaporan.
+9. Dasar penetapan harga modal dan biaya operasional dalam XTR.
 10. Refund policy final per tipe barang.
 11. Daftar SKU yang sudah lolos pemeriksaan hak distribusi.
 12. SLA support dan fulfillment.
