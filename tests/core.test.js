@@ -8,8 +8,8 @@ import { sendStarsInvoice, refundStarPayment, telegramCall } from '../backend/se
 import { sanitizeSuccessfulPaymentUpdate } from '../backend/utils/paymentAudit.js';
 import { createDatabaseAdapter } from '../backend/db/pool.js';
 
-function signedInitData(user, token, authDate = Math.floor(Date.now() / 1000)) {
-  const params = new URLSearchParams({ auth_date: String(authDate), query_id: 'AAE-test', user: JSON.stringify(user) });
+function signedInitData(user, token, authDate = Math.floor(Date.now() / 1000), extraParams = {}) {
+  const params = new URLSearchParams({ auth_date: String(authDate), query_id: 'AAE-test', user: JSON.stringify(user), ...extraParams });
   const check = [...params.entries()].sort(([a],[b]) => a.localeCompare(b)).map(([k,v])=>`${k}=${v}`).join('\n');
   const secret = crypto.createHmac('sha256', 'WebAppData').update(token).digest();
   const hash = crypto.createHmac('sha256', secret).update(check).digest('hex');
@@ -21,6 +21,15 @@ test('Telegram initData accepts a valid signature', () => {
   const token = 'test-token';
   const user = { id: 123456, first_name: 'Vault Customer' };
   assert.equal(validateTelegramInitData(signedInitData(user, token), token).id, user.id);
+});
+
+test('Telegram initData validates HMAC when the modern Ed25519 signature field is present', () => {
+  const token = 'test-token';
+  const user = { id: 6888336983, first_name: 'Vault Owner', username: 'vault_owner' };
+  const data = signedInitData(user, token, Math.floor(Date.now() / 1000), {
+    signature: 'telegram-third-party-signature-field'
+  });
+  assert.equal(validateTelegramInitData(data, token).id, user.id);
 });
 
 test('Telegram initData rejects a modified payload', () => {
