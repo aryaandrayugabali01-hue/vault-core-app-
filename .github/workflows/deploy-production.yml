@@ -208,3 +208,80 @@ jobs:
             console.log("Telegram webhook URL verified.");
           '
           echo "Deployment health checks completed. Live order, Stars payment, refund, delivery and UAT tests remain a separate release gate."
+
+      - name: Ensure encrypted non-redeemable Owner test fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import crypto from 'node:crypto';
+
+          const apiOrigin = process.env.API_ORIGIN;
+          const botToken = process.env.TELEGRAM_BOT_TOKEN;
+          const configuredIds = String(process.env.ADMIN_TELEGRAM_IDS || '')
+            .split(',').map((value) => value.trim()).filter((value) => /^[0-9]+$/.test(value));
+          const ownerId = configuredIds[0];
+          if (!apiOrigin || !botToken || !ownerId) {
+            throw new Error('Owner fixture bootstrap configuration is missing.');
+          }
+
+          const params = new URLSearchParams();
+          params.set('auth_date', String(Math.floor(Date.now() / 1000)));
+          params.set('user', JSON.stringify({
+            id: Number(ownerId),
+            first_name: 'VAULT CORE Owner'
+          }));
+          const checkString = [...params.entries()]
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, value]) => `${key}=${value}`)
+            .join('\\n');
+          const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
+          const hash = crypto.createHmac('sha256', secretKey).update(checkString).digest('hex');
+          params.set('hash', hash);
+
+          const headers = {
+            'content-type': 'application/json',
+            'x-telegram-init-data': params.toString()
+          };
+          const seeded = await fetch(`${apiOrigin}/api/admin/test-fixtures`, {
+            method: 'POST',
+            headers,
+            body: '{}'
+          });
+          const seedBody = await seeded.json().catch(() => ({}));
+          if (!seeded.ok || seedBody.createdOrVerified !== 4) {
+            console.error('Owner fixture bootstrap failed:', JSON.stringify({
+              status: seeded.status,
+              error: seedBody.error || null,
+              stage: seedBody.stage || null,
+              message: seedBody.message || null
+            }));
+            process.exit(1);
+          }
+
+          const checked = await fetch(`${apiOrigin}/api/admin/test-fixtures`, {
+            headers: { 'x-telegram-init-data': params.toString() },
+            cache: 'no-store'
+          });
+          const checkBody = await checked.json().catch(() => ({}));
+          const fixtures = checkBody.products || [];
+          const valid = checked.ok && fixtures.length === 4
+            && fixtures.every((item) => item.is_test === true
+              && Number(item.sellable_stock) >= 1
+              && item.sale_price_xtr === 1);
+          if (!valid) {
+            console.error('Owner fixture verification failed:', JSON.stringify({
+              status: checked.status,
+              fixtureCount: fixtures.length,
+              fixtures: fixtures.map((item) => ({
+                sku: item.sku,
+                is_test: item.is_test,
+                status: item.status,
+                sellable_stock: item.sellable_stock,
+                sale_price_xtr: item.sale_price_xtr
+              }))
+            }));
+            process.exit(1);
+          }
+          console.log('Verified four encrypted non-redeemable fixtures with one or more stock units each. Products remain in their current status; no invoice or payment was created.');
+          NODE
