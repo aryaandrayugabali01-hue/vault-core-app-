@@ -6,7 +6,12 @@ on:
       - main
     paths:
       - 'cloudflare/vault-core-api.js'
+      - 'backend/**'
+      - 'database/migrations/**'
       - 'frontend/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/deploy-production.yml'
   workflow_dispatch:
 
