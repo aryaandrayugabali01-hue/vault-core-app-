@@ -5,18 +5,18 @@
 |---|---|
 | Nama proyek | VAULT CORE |
 | Jenis dokumen | Kontrak spesifikasi dan acuan pelaksanaan proyek |
-| Versi | 1.2 — Addendum CR-02 |
+| Versi | 1.3 — Addendum CR-03 |
 | Tanggal dokumen | 21 November 2026 |
-| Status | DISETUJUI PEMILIK — v1.2 CR-02 (persetujuan tertulis melalui percakapan proyek, 21 November 2026) |
+| Status | Baseline v1.2 disetujui; Addendum CR-03 XTR-only disetujui melalui instruksi pemilik, 21 November 2026 |
 | Model usaha | Single-Vendor Store |
 | Kanal utama | Telegram Bot dan Telegram Mini App |
 | Domain rencana | `vaultcore.biz.id` (belum dikonfirmasi kepemilikannya dan konfigurasi DNS-nya) |
 
 > **Kedudukan dokumen.** Dokumen ini menjadi acuan ruang lingkup, arsitektur, perilaku sistem, dan kriteria penerimaan VAULT CORE. Dokumen ini bukan pendapat hukum atau pengganti kontrak jasa profesional yang ditandatangani para pihak. Perubahan terhadap ruang lingkup atau perilaku yang telah disetujui harus dicatat sebagai revisi dokumen atau change request.
 >
-> **Rekaman persetujuan pemilik:** Status v1.2 CR-02 ditetapkan DISETUJUI berdasarkan instruksi tertulis eksplisit pemilik proyek dalam percakapan proyek pada 21 November 2026. Persetujuan tersebut mencakup butir 26.1–26.5 dan empat pernyataan persetujuan pada Bagian 26.6, termasuk dimulainya fondasi teknis Tahap 1. Nama legal dan sertifikat tanda tangan elektronik formal tidak tercantum dalam rekaman percakapan.
+> **Rekaman persetujuan pemilik:** Status v1.2 CR-02 ditetapkan DISETUJUI berdasarkan instruksi tertulis pemilik proyek. Addendum CR-03 pada Bagian 27 disetujui melalui instruksi eksplisit pemilik pada 21 November 2026. Nama legal dan sertifikat tanda tangan elektronik formal tidak tercantum dalam rekaman percakapan.
 >
-> **Riwayat revisi:** v1.1 menilai tiga permintaan perubahan CR-01; v1.2 mencatat CR-02 dan keputusan implementasi yang dapat dijalankan. Pengiriman kredensial akun game, penerimaan pembayaran XTR melalui alamat wallet manual, dan angka stok publik yang sengaja berbeda dari stok aktual tidak dimasukkan. Alternatif operasional yang dapat diterapkan dijelaskan dalam Bagian 25 dan menggantikan ketentuan lama apabila terdapat perbedaan.
+> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan produk fixture uji internal melalui CR-03. Pengiriman kredensial akun game, penerimaan pembayaran XTR melalui alamat wallet manual, dan angka stok publik yang sengaja berbeda dari stok aktual tidak dimasukkan. Alternatif operasional yang dapat diterapkan dijelaskan dalam Bagian 25 dan menggantikan ketentuan lama apabila terdapat perbedaan.
 
 ---
 
@@ -1046,3 +1046,49 @@ Fitur yang tidak disetujui dalam bentuk yang diminta tidak akan dibangun. Setiap
 ---
 
 **Akhir dokumen — VAULT CORE Project Contract v1.2 (CR-02, DISETUJUI PEMILIK).**
+
+# 27. Addendum CR-03 — XTR-Only dan Produk Contoh Uji
+
+**Tanggal:** 21 November 2026  
+**Status:** Disetujui melalui instruksi tertulis pemilik di percakapan proyek.  
+**Berlaku untuk:** Mini App customer, Owner Console, API, bot, database, laporan, dokumentasi operasional, dan pengujian.
+
+## 27.1 Satu satuan nilai uang
+
+VAULT CORE menggunakan **XTR saja** pada seluruh aplikasi dan pencatatan internal. Harga jual, modal, biaya operasional, total order, snapshot item, refund, laporan, margin, dan laba dicatat serta ditampilkan dalam XTR. Tidak ada kolom harga, modal, biaya, konversi, atau tampilan nominal mata uang lain dalam model aplikasi aktif.
+
+Rumus:
+- Penjualan bersih = penjualan XTR − refund XTR.
+- Profit kotor = penjualan bersih XTR − modal barang XTR.
+- Profit bersih = profit kotor XTR − biaya operasional XTR.
+- Margin kotor = profit kotor ÷ penjualan bersih × 100%.
+
+Nilai biaya internal dalam XTR merupakan satuan pembukuan internal VAULT CORE, bukan pernyataan nilai pencairan atau kurs eksternal. Pembayaran pelanggan tetap diverifikasi melalui successful_payment Telegram Stars.
+
+## 27.2 Produk contoh uji internal
+
+Owner Console menyediakan tindakan untuk membuat empat produk contoh pada kategori MLBB, Roblox, Free Fire, dan Genshin Impact. Semua produk contoh:
+- Menggunakan SKU berawalan TEST- dan nama TEST ONLY.
+- Memiliki is_test = true dan referensi internal INTERNAL_TEST_FIXTURE_ONLY.
+- Berstatus awal DRAFT, sehingga belum tampil di katalog customer.
+- Menggunakan tipe pemenuhan SERVICE_INSTRUCTIONS dengan payload dummy terenkripsi yang jelas bukan kode penukaran.
+- Memiliki harga uji 1 XTR dan modal 0 XTR.
+
+Owner dapat mengaktifkan satu produk contoh ketika siap menjalankan pengujian checkout. Produk akan tampil dengan label CONTOH UJI. Aktivasi contoh tidak memberikan hak untuk menjual aset game sungguhan dan tidak mengubah SKU komersial. Pembelian melalui invoice produksi tetap merupakan pembayaran Stars nyata sebesar harga yang tercantum; label uji tidak mengubah sifat pembayaran tersebut.
+
+## 27.3 File inventaris yang ditolak
+
+File unggahan kredensial_sku_produk.csv berisi 24 entri berupa paket Email:Password. Seluruh nilai kredensial dikecualikan dari inventaris dan tidak dimasukkan ke database. Daftar sanitasi hanya mempertahankan identitas SKU dan status penolakan tanpa nilai kredensial. Kandidat pemetaan SKU dalam file sanitasi hanya referensi terhadap katalog; status komersial tetap DRAFT/PENDING_REVIEW sampai hak penjualan/pemenuhan diverifikasi.
+
+## 27.4 Kriteria penerimaan CR-03
+
+- [ ] Harga, modal, biaya, order, transaksi, refund, dan laporan hanya menggunakan XTR.
+- [ ] Checkout tidak memerlukan kolom harga mata uang lain.
+- [ ] Produk contoh dibuat sebagai DRAFT, ditandai is_test, dan stok dummy dienkripsi.
+- [ ] Produk contoh customer menampilkan label CONTOH UJI setelah diaktifkan.
+- [ ] Payload inventaris tetap menolak paket Email:Password dan data autentikasi.
+- [ ] Produk contoh tidak disajikan sebagai aset komersial atau kode penukaran sungguhan.
+
+---
+
+**Akhir dokumen — VAULT CORE Project Contract v1.3 (CR-03).**
