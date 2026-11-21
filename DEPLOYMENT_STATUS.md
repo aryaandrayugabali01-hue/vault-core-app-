@@ -101,7 +101,7 @@ Connected Neon database `vault_core` was inspected read-only:
 - Contract `PROJECT_CONTRACT.md` v1.2 (CR-02) is **APPROVED BY OWNER** through the explicit written instruction recorded in the project conversation on 2026-11-21.
 - The four Section 26.6 approval statements are recorded as accepted; this authorizes the v1.2 scope baseline and commencement of the Phase 1 technical foundation.
 - The owner's legal name and formal e-signature certificate are not included in the conversation record.
-- Contract approval is separate from UAT approval and production go-live authorization; production remains blocked by deployment, secrets, Telegram, and live acceptance requirements.
+- Contract approval is separate from UAT approval and production go-live authorization. Infrastructure deployment is complete; general sales remain gated by catalog/inventory setup, live payment/delivery acceptance, security recovery checks, and Owner UAT.
 
 ## Latest source and deployment proof
 
@@ -112,6 +112,6 @@ Connected Neon database `vault_core` was inspected read-only:
 - Cloudflare live state: all three Workers exist; API Hyperdrive and secrets are attached; gateway upstream secrets exist; three custom domains and three proxied DNS records are configured.
 - The GitHub Actions deployment runner verified root, www, API, TLS, and gateway origins. Cloudflare Observability recent audit returned no error-level events for API and gateway during the checked post-deployment window.
 
-## Production readiness
+## Production deployment and sales readiness
 
 **DEPLOYED — NOT YET READY FOR GENERAL SALES.** Production infrastructure deployment is complete: API/frontend/gateway Workers, Neon/Hyperdrive health, gateway origins, root/www/api custom domains, public DNS/TLS checks, and Telegram webhook read-back all passed in run `44891173631` attempt 2. The remaining blockers are operational/product acceptance: the database has 0 products and 0 inventory items; no live XTR payment/refund/delivery acceptance, IDOR/backup-restore review, or Owner UAT/release approval has been recorded.

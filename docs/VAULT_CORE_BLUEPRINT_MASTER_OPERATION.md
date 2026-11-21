@@ -12,7 +12,7 @@
 | Commit baseline yang diperiksa | 155bbc6bb4b64475dd10fec048614e53011f84cb |
 | Kontrak acuan | PROJECT_CONTRACT.md v1.2 — Addendum CR-02 |
 | Status kontrak | DISETUJUI PEMILIK — v1.2 CR-02; persetujuan tertulis tercatat 21 November 2026 pada PROJECT_CONTRACT.md Bagian 26.6 |
-| Status produksi | NOT READY FOR PRODUCTION |
+| Status produksi | DEPLOYED — NOT READY FOR GENERAL SALES (product setup and release acceptance pending) |
 | Tujuan dokumen | Menjadi satu acuan kerja operasional sampai sistem lulus UAT dan rilis produksi |
 
 > **Kedudukan dokumen.** Dokumen ini adalah blueprint pelaksanaan yang menjabarkan kontrak v1.2 CR-02 yang telah disetujui pemilik, sumber kode, konfigurasi, dan status deployment yang tercatat pada repository. Blueprint ini tidak menggantikan kontrak atau change request. Bila ada konflik, gunakan keputusan kontrak/change request yang telah disetujui pemilik sebagai dasar final. Perubahan terhadap baseline harus dicatat di bagian Decision Log dan dilakukan melalui pull request atau commit yang dapat ditelusuri.
@@ -1072,9 +1072,9 @@ Pemilik harus mengisi keputusan ini sebelum pekerjaan yang bergantung padanya di
 
 Satu saja blocker kritis pada keamanan, payment integrity, stock integrity, secret, database, atau delivery berarti rilis ditunda. CI PASS saja bukan syarat yang cukup untuk GO.
 
-### Status baseline 21 November 2026
+### Current production status — 21 November 2026
 
-**NOT READY FOR PRODUCTION.**
+**DEPLOYED — NOT READY FOR GENERAL SALES.**
 
 Alasan utama yang tercatat:
 - Deployment produksi berhasil pada run `44891173631` attempt 2: API/frontend Workers, API+Neon health, gateway origins, root/www/api DNS+TLS, dan Telegram webhook read-back PASS.
