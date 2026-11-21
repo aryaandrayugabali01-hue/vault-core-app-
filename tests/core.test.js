@@ -8,6 +8,7 @@ import { sendStarsInvoice, refundStarPayment, telegramCall } from '../backend/se
 import { sanitizeSuccessfulPaymentUpdate } from '../backend/utils/paymentAudit.js';
 import { createDatabaseAdapter } from '../backend/db/pool.js';
 import { canReconcileDelivery } from '../backend/services/deliveryService.js';
+import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
 
 function signedInitData(user, token, authDate = Math.floor(Date.now() / 1000), extraParams = {}) {
   const params = new URLSearchParams({ auth_date: String(authDate), query_id: 'AAE-test', user: JSON.stringify(user), ...extraParams });
@@ -81,6 +82,29 @@ test('test products require the Owner-only test checkout lane', () => {
   assert.equal(isEligibleCheckoutProduct({ ...fixture, status: 'DRAFT' }, { testMode: true, ownerAuthorized: true }), false);
   assert.equal(isEligibleCheckoutProduct({ ...fixture, sale_price_xtr: 2 }, { testMode: true, ownerAuthorized: true }), false);
   assert.equal(isEligibleCheckoutProduct(commercial, { testMode: true, ownerAuthorized: true }), false);
+});
+
+test('rate limiter uses Cloudflare client IP when Express request.ip is unavailable', () => {
+  assert.equal(
+    resolveRateLimitKey({ headers: { 'cf-connecting-ip': '203.0.113.14' } }),
+    'ip:203.0.113.14'
+  );
+});
+
+test('rate limiter falls back to Express IP or socket address without throwing', () => {
+  assert.equal(resolveRateLimitKey({ ip: '198.51.100.8' }), 'ip:198.51.100.8');
+  assert.equal(resolveRateLimitKey({ socket: { remoteAddress: '192.0.2.18' } }), 'ip:192.0.2.18');
+  assert.equal(resolveRateLimitKey({ headers: {} }), 'ip:unknown');
+});
+
+test('rate limiter skips malformed Cloudflare IP metadata and uses a valid fallback', () => {
+  assert.equal(
+    resolveRateLimitKey({
+      headers: { 'cf-connecting-ip': 'not-an-ip' },
+      ip: '198.51.100.22'
+    }),
+    'ip:198.51.100.22'
+  );
 });
 
 test('manual delivery reconciliation is blocked for refund and terminal order states', () => {
