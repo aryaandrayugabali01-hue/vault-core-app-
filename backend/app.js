@@ -7,7 +7,7 @@ import ordersRoutes from './routes/orders.js';
 import adminRoutes from './routes/admin.js';
 import telegramWebhookRoutes from './routes/telegramWebhook.js';
 import { requireTelegramUser } from './middleware/telegramAuth.js';
-import { requireOwner } from './middleware/adminAuth.js';
+import { isOwnerTelegramUser, requireOwner } from './middleware/adminAuth.js';
 import { apiRateLimit, checkoutRateLimit, ownerRateLimit } from './middleware/rateLimit.js';
 
 export const app = express();
@@ -23,6 +23,16 @@ app.get('/health', async (_req, res) => {
     res.json({ status: 'ok', service: 'vault-core-api', database: 'connected' });
   } catch {
     res.status(503).json({ status: 'degraded', service: 'vault-core-api', database: 'unavailable' });
+  }
+});
+app.get('/api/session', apiRateLimit, requireTelegramUser, async (req, res) => {
+  try {
+    const userId = String(req.telegramUser.id);
+    const isOwner = await isOwnerTelegramUser(userId);
+    return res.json({ userId, username: req.telegramUser.username ?? null, isOwner });
+  } catch (error) {
+    console.error('[session-check]', error.message);
+    return res.status(503).json({ error: 'SESSION_CHECK_UNAVAILABLE' });
   }
 });
 app.use('/api/catalog', apiRateLimit, catalogRoutes);
