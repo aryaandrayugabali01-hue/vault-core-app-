@@ -67,16 +67,6 @@ export default function AdminPage() {
   }
   useEffect(() => { refresh().catch((e) => setNotice(e.message)); }, []);
 
-  async function seedTestFixtures() {
-    setBusy(true);
-    try {
-      const response = await fetch(API + '/api/admin/test-fixtures', { method:'POST', headers:headers(), body:JSON.stringify({}) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(apiErrorMessage(data, 'Produk contoh uji tidak dapat dibuat.'));
-      setNotice('4 produk contoh uji aktif dan stok dummy siap. Produk kini tampil di katalog customer. Pembelian memakai invoice nyata 1 XTR.');
-      await refresh();
-    } catch(e) { setNotice(e.message); } finally { setBusy(false); }
-  }
   async function createProduct(e) {
     e.preventDefault(); setBusy(true);
     try {
@@ -171,8 +161,6 @@ export default function AdminPage() {
     </section>}
 
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">KATALOG</span><h2>Buat produk</h2></div></div>
-      <div className="admin-section-head"><button type="button" className="admin-primary" disabled={busy} onClick={seedTestFixtures}>Siapkan 4 produk uji agar tampil di katalog</button></div>
-      <p className="admin-footnote">Produk uji akan langsung tampil di katalog dengan stok dummy. Harga uji 1 XTR; invoice Telegram Stars nyata hanya dibuat saat checkout, dan pembayaran hanya terjadi jika pengguna menyetujuinya. Kode yang dikirim adalah dummy, bukan kode redeem.</p>
       <form className="admin-form" onSubmit={createProduct}>
         <label>SKU<input required value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} placeholder="MLBB-GOLD-001" /></label>
         <label>Kategori game<select value={form.gameCategory} onChange={e=>setForm({...form,gameCategory:e.target.value})}><option value="MLBB">MLBB</option><option value="ROBLOX">Roblox</option><option value="FREE_FIRE">Free Fire</option><option value="GENSHIN">Genshin Impact</option><option value="OTHER">Lainnya</option></select></label>
