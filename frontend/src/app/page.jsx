@@ -78,6 +78,8 @@ export default function HomePage() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileUser, setProfileUser] = useState(null);
   const [ownerAccess, setOwnerAccess] = useState(false);
+  const [ownerUserId, setOwnerUserId] = useState('');
+  const [ownerCheck, setOwnerCheck] = useState('checking');
   const [setupBusy, setSetupBusy] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
 
@@ -164,12 +166,21 @@ export default function HomePage() {
     const user = getTelegramWebApp()?.initDataUnsafe?.user || null;
     setProfileUser(user);
     setOwnerAccess(false);
+    setOwnerUserId('');
+    setOwnerCheck('checking');
     setProfileOpen(true);
     setActiveTab('profile');
     const initData = getInitData();
-    if (initData) fetch(API + '/api/admin/dashboard', { headers: { 'x-telegram-init-data': initData }, cache: 'no-store' })
-      .then((response) => { if (response.ok) setOwnerAccess(true); })
-      .catch(() => setOwnerAccess(false));
+    if (!initData) { setOwnerCheck('telegram_required'); return; }
+    fetch(API + '/api/session', { headers: { 'x-telegram-init-data': initData }, cache: 'no-store' })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'SESSION_CHECK_UNAVAILABLE');
+        setOwnerUserId(String(data.userId || ''));
+        setOwnerAccess(data.isOwner === true);
+        setOwnerCheck(data.isOwner === true ? 'owner' : 'not_owner');
+      })
+      .catch(() => setOwnerCheck('error'));
   }
 
   async function prepareTestProducts() {
@@ -348,6 +359,10 @@ export default function HomePage() {
           <div className="profile-info-row"><span>Status akun</span><strong><span className={'status-dot ' + (profileUser ? 'online' : '')} />{profileUser ? 'Terhubung' : 'Belum terhubung'}</strong></div>
           <div className="profile-info-row"><span>Metode pembayaran</span><strong>Telegram Stars · XTR</strong></div>
           <p className="profile-note">Identitas akun diverifikasi oleh Telegram saat Anda membuka VAULT CORE melalui bot.</p>
+          {ownerCheck === 'checking' && <p className="profile-note">Memeriksa akses pemilik…</p>}
+          {ownerCheck === 'not_owner' && <div className="profile-note"><strong>Akses pemilik belum terdaftar.</strong><br />ID Telegram terverifikasi: <strong>{ownerUserId}</strong><br />Kirim ID ini kepada pengelola untuk mengaktifkan akses pemilik.</div>}
+          {ownerCheck === 'error' && <p className="profile-note">Pemeriksaan akses gagal. Tutup dan buka kembali Mini App melalui bot Telegram.</p>}
+          {ownerCheck === 'telegram_required' && <p className="profile-note">Buka VAULT CORE dari tombol bot Telegram agar identitas dapat diverifikasi.</p>}
           <button className="profile-orders-button" type="button" onClick={() => { setProfileOpen(false); showOrders(); }}>Lihat riwayat pesanan <span>↗</span></button>
           {ownerAccess && <button className="profile-orders-button" type="button" disabled={setupBusy} onClick={prepareTestProducts}>{setupBusy ? 'Menyiapkan produk uji…' : 'Siapkan 4 produk uji sekarang'} <span>↗</span></button>}
         </section>
