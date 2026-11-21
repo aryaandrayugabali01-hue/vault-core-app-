@@ -624,3 +624,30 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .test-lane-notice button{width:100%}
   .detail-facts{gap:7px}
 }
+
+
+/* VAULT CORE asset library v1.0 — production visual integration */
+.hero{
+  background-image:
+    linear-gradient(90deg,rgba(7,11,18,.94) 0%,rgba(7,11,18,.76) 46%,rgba(7,11,18,.48) 100%),
+    url('/assets/02-hero/hero-vaultcore-loop.webp');
+  background-position:center;
+  background-size:cover;
+}
+.category-card{
+  background-position:center;
+  background-size:cover;
+  background-repeat:no-repeat;
+}
+.category-card.cat-mlbb{
+  background-image:linear-gradient(90deg,rgba(8,13,21,.94),rgba(8,13,21,.46)),url('/assets/03-categories/category-mlbb.png');
+}
+.category-card.cat-roblox{
+  background-image:linear-gradient(90deg,rgba(8,13,21,.94),rgba(8,13,21,.46)),url('/assets/03-categories/category-roblox.png');
+}
+.category-card.cat-free_fire{
+  background-image:linear-gradient(90deg,rgba(8,13,21,.94),rgba(8,13,21,.46)),url('/assets/03-categories/category-free-fire.png');
+}
+.category-card.cat-genshin{
+  background-image:linear-gradient(90deg,rgba(8,13,21,.94),rgba(8,13,21,.46)),url('/assets/03-categories/category-genshin.png');
+}
