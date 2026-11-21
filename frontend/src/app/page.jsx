@@ -77,6 +77,8 @@ export default function HomePage() {
   const [ordersError, setOrdersError] = useState('');
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileUser, setProfileUser] = useState(null);
+  const [ownerAccess, setOwnerAccess] = useState(false);
+  const [setupBusy, setSetupBusy] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
 
   useEffect(() => {
@@ -161,8 +163,39 @@ export default function HomePage() {
   function openProfile() {
     const user = getTelegramWebApp()?.initDataUnsafe?.user || null;
     setProfileUser(user);
+    setOwnerAccess(false);
     setProfileOpen(true);
     setActiveTab('profile');
+    const initData = getInitData();
+    if (initData) fetch(API + '/api/admin/dashboard', { headers: { 'x-telegram-init-data': initData }, cache: 'no-store' })
+      .then((response) => { if (response.ok) setOwnerAccess(true); })
+      .catch(() => setOwnerAccess(false));
+  }
+
+  async function prepareTestProducts() {
+    const initData = getInitData();
+    if (!initData || !ownerAccess || setupBusy) return;
+    setSetupBusy(true);
+    setNotice('Menyiapkan empat produk uji dan stok dummy…');
+    try {
+      const response = await fetch(API + '/api/admin/test-fixtures', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-telegram-init-data': initData },
+        body: JSON.stringify({})
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Persiapan produk uji gagal.');
+      const catalog = await fetch(API + '/api/catalog', { cache: 'no-store' });
+      const catalogData = await catalog.json();
+      if (!catalog.ok) throw new Error('Produk uji tersimpan, tetapi katalog belum dapat dimuat ulang.');
+      setProducts(catalogData.products || []);
+      setCategory('ALL'); setTier('ALL'); setQuery('');
+      setProfileOpen(false); setActiveTab('home');
+      setNotice('Selesai. Empat produk uji dan stok dummy sudah tampil di katalog. Harga uji 1 XTR.');
+      document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      setNotice(e.message || 'Persiapan produk uji gagal.');
+    } finally { setSetupBusy(false); }
   }
 
   function closeProfile() {
@@ -316,6 +349,7 @@ export default function HomePage() {
           <div className="profile-info-row"><span>Metode pembayaran</span><strong>Telegram Stars · XTR</strong></div>
           <p className="profile-note">Identitas akun diverifikasi oleh Telegram saat Anda membuka VAULT CORE melalui bot.</p>
           <button className="profile-orders-button" type="button" onClick={() => { setProfileOpen(false); showOrders(); }}>Lihat riwayat pesanan <span>↗</span></button>
+          {ownerAccess && <button className="profile-orders-button" type="button" disabled={setupBusy} onClick={prepareTestProducts}>{setupBusy ? 'Menyiapkan produk uji…' : 'Siapkan 4 produk uji sekarang'} <span>↗</span></button>}
         </section>
       </div>}
     </main>
