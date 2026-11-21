@@ -46,6 +46,22 @@ jobs:
         with:
           ref: main
 
+      - name: Install VAULT CORE visual assets from committed library
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="frontend/VAULT_CORE_ASSET_LIBRARY_v1.0.zip"
+          test -s "$archive"
+          rm -rf /tmp/vault-core-asset-library
+          mkdir -p /tmp/vault-core-asset-library frontend/public/assets
+          unzip -q "$archive" -d /tmp/vault-core-asset-library
+          source_dir="/tmp/vault-core-asset-library/VAULT_CORE_ASSETS"
+          test -s "$source_dir/02-hero/hero-vaultcore-loop.webp"
+          test -s "$source_dir/03-categories/category-mlbb.png"
+          cp -a "$source_dir/." frontend/public/assets/
+          test -s frontend/public/assets/02-hero/hero-vaultcore-loop.webp
+          echo "VAULT CORE visual assets extracted and verified for production build."
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
