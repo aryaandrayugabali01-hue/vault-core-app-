@@ -1,7 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import { pool } from './db/pool.js';
+import { pool, databaseRequestContext } from './db/pool.js';
 import catalogRoutes from './routes/catalog.js';
 import ordersRoutes from './routes/orders.js';
 import adminRoutes from './routes/admin.js';
@@ -15,6 +15,7 @@ app.disable('x-powered-by');
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: process.env.FRONTEND_ORIGIN?.split(',').map((v) => v.trim()) ?? false }));
 app.use(express.json({ limit: '32kb' }));
+app.use(databaseRequestContext);
 
 app.get('/health', async (_req, res) => {
   try {
