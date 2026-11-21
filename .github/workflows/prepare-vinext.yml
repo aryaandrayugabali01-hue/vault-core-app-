@@ -1,0 +1,51 @@
+name: VAULT CORE Cloudflare frontend preparation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-vinext:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install existing workspace
+        run: npm install --workspaces --include-workspace-root --no-audit --no-fund
+
+      - name: Check Next.js compatibility
+        working-directory: frontend
+        run: npx --yes vinext check
+
+      - name: Initialize vinext for Cloudflare Workers
+        working-directory: frontend
+        run: npx --yes vinext init --platform=cloudflare --name vault-core-web --cdn-cache=none --data-cache=none --image-optimization=none
+
+      - name: Build Cloudflare frontend
+        working-directory: frontend
+        run: npm run build:vinext
+
+      - name: Commit generated configuration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit."
+          else
+            git commit -m "chore(frontend): initialize vinext Cloudflare deployment"
+            git push origin HEAD:main
+          fi
