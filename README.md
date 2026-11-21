@@ -70,7 +70,9 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 - Stars refunds use a two-phase `REFUND_PENDING` state. If Telegram reports an already-refunded charge, the service checks the Stars transaction ledger before finalizing the internal status.
 - Sale price, cost, expenses, order snapshots, reports, refunds, and profit are recorded and displayed in XTR only.
 
-- Owner Console includes an owner-only action to create four DRAFT TEST-only products and encrypted dummy delivery payloads. They remain hidden from the customer catalog until explicitly activated.\n\n## Current implementation status
+- Owner Console includes an owner-only action to create four DRAFT TEST-only products and encrypted dummy delivery payloads. They remain hidden from the customer catalog until explicitly activated.
+
+## Current implementation status
 
 Latest deployed application source: `eafd57dca29404729d2dad7587810e7b025a8cdf`. GitHub Actions production deployment run `44902626165`, attempt 1, completed **SUCCESS**. It passed backend/core tests, frontend build, both Worker deployments, API health with Neon connection, domain/DNS/TLS and gateway checks, and Telegram webhook read-back. It passed secret and Cloudflare preflight, backend/core tests, frontend build, both Worker deployments, API health with Neon database connection, gateway upstream configuration, custom-domain/DNS/TLS checks for root/www/api, and Telegram webhook read-back.
 
