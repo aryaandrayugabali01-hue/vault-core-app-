@@ -110,7 +110,8 @@ router.post('/test-fixtures', async (req, res) => {
           [product.id,encrypted.payload_ciphertext,encrypted.payload_nonce,encrypted.payload_tag]
         );
       }
-      result.push({ sku:fixture.sku, productId:product.id, status:'DRAFT', isTest:true });
+      await client.query("UPDATE products SET status='ACTIVE', updated_at=NOW() WHERE id=$1 AND is_test=TRUE", [product.id]);
+      result.push({ sku:fixture.sku, productId:product.id, status:'ACTIVE', isTest:true });
     }
     await client.query(
       `INSERT INTO admin_audit_logs (actor_telegram_user_id,action,entity_type,entity_id,metadata)
