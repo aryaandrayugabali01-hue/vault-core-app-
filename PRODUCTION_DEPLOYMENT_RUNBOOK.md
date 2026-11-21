@@ -6,16 +6,15 @@
 
 ## Deployment state
 
-- Frontend native Vinext/Cloudflare Worker configuration: generated and committed.
-- Frontend Cloudflare Worker build: CI passed.
-- API Worker bundle: Wrangler dry-run passed; Hyperdrive binding resolved.
-- GitHub tests and Next.js build: passed.
-- API Worker `vault-core-api`: deployed successfully in run `44890576521`; runtime `/health` currently returns HTTP 500.
-- Frontend Worker `vault-core-web`: deployed successfully in run `44890576521`.
-- The production preflight passed all required secrets, Cloudflare token verification, Hyperdrive read-back, and Telegram bot identity checks.
-- API health failed because Cloudflare observability logged `handler is not a function` for requests to the API Worker. The root source is `cloudflare/vault-core-api.js`, which calls the object returned by `httpServerHandler` as though it were a function.
-- Gateway origins, custom domains, DNS and Telegram webhook remain unconfigured; their workflow steps were skipped after the API health check failed.
-- The production deployment workflow supports a manual `workflow_dispatch` and a restricted `main` push trigger for changes to the API Worker entrypoint or deployment workflow. Keep the five required repository secrets current.
+- Production deployment run [`44891173631`](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44891173631), attempt 2, completed **SUCCESS**.
+- Production preflight passed all five required secrets, Cloudflare API-token verification, Hyperdrive read-back, and Telegram Bot API identity.
+- Backend/core tests and frontend build passed.
+- API Worker `vault-core-api` and frontend Worker `vault-core-web` are deployed; API `/health` returned `status: ok` and `database: connected`.
+- Gateway `WEB_ORIGIN` and `API_ORIGIN` secrets are installed.
+- Custom domains `vaultcore.biz.id`, `www.vaultcore.biz.id`, and `api.vaultcore.biz.id` are attached to the existing `vault-core-gateway`; public DNS/TLS, API health, and gateway-origin checks passed.
+- Telegram webhook was configured to `https://api.vaultcore.biz.id/api/telegram/webhook`; `getWebhookInfo` read-back passed.
+- Post-deploy Neon audit found 0 products, 0 inventory items, 0 orders, and 0 transactions. The infrastructure is deployed, but the store has not yet been populated with reviewed SKUs and sellable encrypted inventory.
+- The production deployment workflow supports manual `workflow_dispatch` and a restricted `main` push trigger for changes to the API Worker entrypoint or deployment workflow. Keep the five repository secrets current.
 
 ## Repository secrets required
 
@@ -54,7 +53,7 @@ Reference: [Cloudflare Hyperdrive connection lifecycle](https://developers.cloud
 2. Select **VAULT CORE production deployment**.
 3. Select **Run workflow** on branch `main`.
 
-The workflow installs the committed lockfile, validates the five required secrets and Cloudflare token, runs backend tests/build, deploys `vault-core-api` and `vault-core-web`, installs API secrets, configures gateway origins, attaches the three custom domains, configures the Telegram webhook, and reads each public endpoint back.
+The workflow installs the committed lockfile, validates secrets and account access, runs tests/build, deploys both application Workers, installs API secrets, configures gateway origins, attaches the three custom domains, verifies public DNS/TLS/API health, configures the Telegram webhook, and verifies `getWebhookInfo`. The latest full run passed. New runs are triggered by an API entrypoint/workflow change on `main` or manually.
 
 ## Production routing after Worker deployment
 
@@ -87,4 +86,4 @@ The deployment workflow uses the exact `TELEGRAM_WEBHOOK_SECRET` stored in GitHu
 - delivery runs once and stores the expected audit data;
 - refund and recovery flows behave correctly.
 
-Production must remain marked **NOT READY** until these live checks pass.
+Production infrastructure deployment is complete. Keep the application marked **NOT READY FOR GENERAL SALES** until reviewed SKUs and sellable inventory exist, and live order/XTR payment/pre-checkout/delivery/refund, Owner UAT, IDOR, backup/restore and release approval checks pass.

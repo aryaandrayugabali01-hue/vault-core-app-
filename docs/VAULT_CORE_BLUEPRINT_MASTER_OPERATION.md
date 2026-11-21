@@ -56,9 +56,9 @@ Sasaran penyelesaian:
 - Cloudflare frontend preparation run `44885310642`: SUCCESS on the same commit (Vinext compatibility, Cloudflare integration, Worker build/output verification).
 - Neon database `vault_core` contains 10 application tables and five registered migrations (`001`–`005`).
 - Source includes Telegram authentication, catalog, order reservation with owner binding, single pre-checkout claim per order, Stars invoice/payment idempotency, encrypted inventory, ambiguous delivery reconciliation, two-phase Stars refund recovery, Owner API and gateway source.
-- Cloudflare live read-back shows only `vault-core-gateway` (plus unrelated existing Workers); `vault-core-api` and `vault-core-web` do not exist in the target account. Gateway origins remain unset, Worker Custom Domains list is empty, and zone DNS record list is empty.
-- Latest retry of production workflow run `44884767909` reached secret validation with all five required variables present, then stopped because `APP_ENCRYPTION_KEY` did not pass the exact 32-byte Base64 check. The workflow now normalizes Base64 whitespace and reports only safe length diagnostics; the corrected workflow has passed CI/build validation but still needs a fresh manual production run.
-- Production Telegram bot identity/token, webhook, live XTR payment/refund/delivery tests, IDOR review, backup/restore, and UAT remain unverified/pending.
+- Production deployment run `44891173631` attempt 2 completed SUCCESS: `vault-core-api`, `vault-core-web`, and the existing gateway are live; gateway origins, three custom domains, public DNS/TLS checks, API+Neon health, and Telegram webhook read-back all passed.
+- The latest production deployment uses source commit `1a415717e3155a4ca026c5a7f4fe6108cc53f9e8` and passed the full deployment workflow on attempt 2. All required secrets, Cloudflare token, Hyperdrive and Telegram bot identity preflight checks passed.
+- Telegram production webhook configuration and `getWebhookInfo` read-back passed. The database currently has 0 products and 0 inventory items; live XTR payment/refund/delivery, IDOR, backup/restore and Owner UAT remain pending.
 
 ## 2. Prinsip dan ruang lingkup yang dikunci
 
@@ -119,15 +119,15 @@ Setiap SKU wajib memiliki dasar hak jual/pemenuhan yang dapat diperiksa. Produk 
 | Komponen | Nama/resource | Peran | Status tercatat pada baseline |
 |---|---|---|---|
 | Source repository | aryaandrayugabali01-hue/vault-core-app- | Source of truth | Source terbit di main |
-| Frontend | Next.js 15 / React 19 + Vinext | Telegram Mini App dan Owner Console | Build Worker CI PASS; production Worker belum deployed |
-| API | Express 5 melalui Cloudflare node httpServerHandler | API katalog, order, admin, webhook | Dry-run API Worker PASS; production Worker belum deployed |
+| Frontend | Next.js 15 / React 19 + Vinext | Telegram Mini App dan Owner Console | PRODUCTION DEPLOYED; public root/www checks passed |
+| API | Express 5 melalui Cloudflare node httpServerHandler | API katalog, order, admin, webhook | PRODUCTION DEPLOYED; `/health` and Neon connection PASS |
 | Gateway | vault-core-gateway | Routing host/path ke frontend dan API | Tercatat deployed |
-| Frontend Worker target | vault-core-web | Menjalankan frontend | Belum tercatat deployed |
-| API Worker target | vault-core-api | Menjalankan API | Belum tercatat deployed |
+| Frontend Worker target | vault-core-web | Menjalankan frontend | DEPLOYED and public root/www checks PASS |
+| API Worker target | vault-core-api | Menjalankan API | DEPLOYED; Hyperdrive and runtime secrets attached |
 | Database | Neon PostgreSQL, project VAULT CORE | Persistensi data transaksi | Tercatat tersedia dan terhubung |
 | Database edge connector | Hyperdrive vault-core-neon | Koneksi Worker ke Neon | Tercatat dibuat dan dikonfigurasi |
-| Telegram Bot API | Bot production milik owner | Invoice, webhook, notifikasi, delivery, refund | Token/bot production belum terpasang pada deployment menurut status file |
-| Domain | vaultcore.biz.id | URL Mini App | Zone tercatat aktif; routing Worker belum selesai |
+| Telegram Bot API | Bot production milik owner | Invoice, webhook, notifikasi, delivery, refund | Bot identity verified; production webhook set and `getWebhookInfo` read-back PASS |
+| Domain | vaultcore.biz.id | URL Mini App | Root/www/api domains attached to existing gateway; public DNS/TLS workflow checks PASS |
 
 ### 3.2 Aliran request
 
@@ -230,12 +230,12 @@ Status pada tabel ini mengikuti file sumber yang diperiksa, bukan penilaian visu
 | Order list Owner | Daftar maksimum 200 order tersedia | IMPLEMENTED; pagination/filter belum dibuktikan |
 | Audit log query | Write audit helper ada; endpoint baca/ekspor belum ditemukan | PENDING |
 | Reporting filter/export | Dashboard agregat ada; endpoint laporan filter/ekspor belum ditemukan | PENDING |
-| Telegram /start, /help, /paysupport | Handler webhook tersedia | IMPLEMENTED; perlu test bot production |
-| Webhook bot setup | bot/bot.js mengatur webhook Telegram | IMPLEMENTED as setup script |
+| Telegram /start, /help, /paysupport | Handler webhook tersedia | IMPLEMENTED; webhook configured; customer/Owner end-to-end tests pending |
+| Webhook bot setup | bot/bot.js mengatur webhook Telegram | CONFIGURED; webhook read-back PASS in production run |
 | Bot process polling | Tidak tampak sebagai proses polling terpisah; webhook ditangani API | Bukan komponen target pada arsitektur saat ini |
-| API Worker live | Deployment Status menyatakan belum deployed | PENDING |
-| Frontend Worker live | Deployment Status menyatakan belum deployed | PENDING |
-| Gateway origins/domains | WEB_ORIGIN, API_ORIGIN, custom domains belum disetel pada Deployment Status | PENDING |
+| API Worker live | API and Neon health checked through production workflow | DEPLOYED / HEALTH PASS |
+| Frontend Worker live | Public root/www HTTPS checks passed | DEPLOYED / HEALTH PASS |
+| Gateway origins/domains | Gateway secrets, custom domains and public DNS/TLS checked by production workflow | CONFIGURED / VERIFIED |
 | Backup/restore test | Belum ada bukti uji | PENDING |
 | IDOR/security acceptance | Belum ada bukti hasil uji | PENDING |
 | Live payment/refund/delivery | Belum ada bukti | PENDING |
@@ -923,17 +923,17 @@ Setiap hasil tes harus mencantumkan Test ID, environment, commit SHA, langkah, e
 | ID | Pekerjaan | Alasan/hasil yang diharapkan | Status baseline |
 |---|---|---|---|
 | P0-01 | Konfirmasi dan persetujuan PROJECT_CONTRACT v1.2 Bagian 26.6 | Scope punya persetujuan owner | DONE — persetujuan tertulis pemilik tercatat 2026-11-21 |
-| P0-02 | Verifikasi akun Cloudflare yang benar, token scope, dan akses resource | Deployment tidak memakai akun yang salah | PASS in GitHub Actions run 44890576521: Cloudflare API token verification and Hyperdrive read-back succeeded |
-| P0-03 | Siapkan lima repository secrets wajib | Workflow lolos preflight | PASS — all five required repository secret variables passed validation in run 44890576521 |
-| P0-04 | Konfirmasi BotFather identity dan token produksi | Identitas bot final | PASS — Telegram Bot API `getMe` passed in run 44890576521; webhook still pending |
-| P0-05 | Verifikasi ADMIN_TELEGRAM_IDS | Owner/admin server-side benar | BLOCKED — secret kosong; owner ID belum dikonfigurasi |
-| P0-06 | Pastikan migrations/runtime DB role/Hyperdrive konsisten | API mampu query DB | VERIFIED — 10 tables, 5 migrations; Neon runtime role dan Hyperdrive resource tersedia; Worker binding belum live |
+| P0-02 | Verifikasi akun Cloudflare yang benar, token scope, dan akses resource | Deployment tidak memakai akun yang salah | PASS — token verification and Hyperdrive read-back passed in production run 44891173631 attempt 2 |
+| P0-03 | Siapkan lima repository secrets wajib | Workflow lolos preflight | PASS — all five required repository secrets passed validation in production run 44891173631 attempt 2 |
+| P0-04 | Konfirmasi BotFather identity dan token produksi | Identitas bot final | PASS — Telegram Bot API `getMe` and production webhook `getWebhookInfo` read-back passed |
+| P0-05 | Verifikasi ADMIN_TELEGRAM_IDS | Owner/admin server-side benar | PARTIAL — secret presence and numeric format validated; owner identity/access still requires Owner UAT |
+| P0-06 | Pastikan migrations/runtime DB role/Hyperdrive konsisten | API mampu query DB | PASS — 10 tables, 5 migrations, Hyperdrive binding attached, API `/health` returned database connected |
 | P0-07 | Audit dan tutup bug kritis payment/order/delivery | Tidak ada transaksi ganda atau kehilangan stok | SOURCE FIXES IMPLEMENTED + CI PASS; live/staging acceptance pending |
-| P0-08 | Deployment API Worker | API berjalan pada Cloudflare | VERIFIED ABSENT from target account |
-| P0-09 | Deployment frontend Worker | Mini App berjalan pada Cloudflare | VERIFIED ABSENT from target account |
-| P0-10 | Konfigurasi gateway upstream dan custom domains | Domain publik mengarah ke aplikasi | BLOCKED — origins unset; custom domains/DNS list empty |
-| P0-11 | Setup webhook Telegram production | Bot menerima update pada API | BLOCKED — production bot token not configured |
-| P0-12 | Live health check dan payment/delivery acceptance | Jalur live terbukti | PENDING |
+| P0-08 | Deployment API Worker | API berjalan pada Cloudflare | PASS — deployed and API health passed |
+| P0-09 | Deployment frontend Worker | Mini App berjalan pada Cloudflare | PASS — deployed and public root/www checks passed |
+| P0-10 | Konfigurasi gateway upstream dan custom domains | Domain publik mengarah ke aplikasi | PASS — `WEB_ORIGIN`, `API_ORIGIN`, root/www/api custom domains, public DNS/TLS and gateway health verified |
+| P0-11 | Setup webhook Telegram production | Bot menerima update pada API | PASS — webhook set and `getWebhookInfo` read-back verified |
+| P0-12 | Live health check dan payment/delivery acceptance | Jalur live terbukti | PARTIAL — production health, DNS/TLS and webhook PASS; live catalog/order/XTR/payment/delivery/refund acceptance pending because products and stock are empty |
 | P0-13 | Owner UAT dan release approval | Keputusan launch tercatat | PENDING |
 
 ### P1 — Kelengkapan operasional sebelum skala transaksi
@@ -1030,13 +1030,13 @@ Change request harus mencakup kebutuhan, use case, alasan, dampak ke UI/API/data
 
 Hal berikut tidak boleh diisi berdasarkan tebakan:
 
-1. Username bot Telegram produksi dan identitas BotFather final; token secret belum dikonfigurasi.
-2. All five secrets passed preflight in production run 44890576521. API and frontend Workers were deployed; API health then failed with HTTP 500.
-3. Daftar final Telegram user ID Owner/Admin belum dikonfigurasi.
-4. Cloudflare API-token verification and Hyperdrive access passed in run 44890576521. Cloudflare observability identified the API runtime error as `handler is not a function`.
-5. API Worker `vault-core-api` dan frontend Worker `vault-core-web` belum ada pada target Cloudflare account (live list verified).
-6. Gateway origins belum disetel; Worker Custom Domains dan zone DNS records kosong (live read-back).
-7. Telegram production webhook belum dikonfigurasi atau diuji.
+1. Telegram Bot API production identity check (`getMe`) passed and the webhook URL was read back successfully. Owner access to the deployed Mini App still needs UAT.
+2. Production workflow run `44891173631` attempt 2 passed all deployment stages, including API/Neon health, public domains, and Telegram webhook read-back.
+3. The `ADMIN_TELEGRAM_IDS` secret passed numeric-format validation, but the exact owner identity and Owner Console access have not yet been proven by UAT.
+4. Cloudflare API token verification, Hyperdrive connection health, gateway routing and Worker deployment passed. The corrected API adapter now returns HTTP 200 for its health route.
+5. Neon content audit found 0 product records, 0 inventory items, 0 orders and 0 transactions. The store needs its first rights-reviewed SKUs and encrypted sellable inventory before customer sales tests.
+6. The three production domains are attached to the existing gateway and their public DNS/TLS checks passed in the completed deployment workflow.
+7. Telegram production webhook is configured and `getWebhookInfo` read-back passed; an actual Telegram `/start` and Owner access acceptance test is pending.
 8. Harga XTR final seluruh SKU.
 9. Sumber kurs/valuasi XTR ke IDR untuk pelaporan.
 10. Refund policy final per tipe barang.
@@ -1077,12 +1077,9 @@ Satu saja blocker kritis pada keamanan, payment integrity, stock integrity, secr
 **NOT READY FOR PRODUCTION.**
 
 Alasan utama yang tercatat:
-- API Worker dan frontend Worker belum deployed pada Deployment Status.
-- Production secrets belum terpasang.
-- Gateway origins/custom domains belum dikonfigurasi.
-- Webhook production dan bot identity belum diverifikasi.
-- Live Stars, refund, dan delivery test belum dilakukan.
-- Backup/restore, IDOR, rate-limit production, dan UAT masih pending.
+- Deployment produksi berhasil pada run `44891173631` attempt 2: API/frontend Workers, API+Neon health, gateway origins, root/www/api DNS+TLS, dan Telegram webhook read-back PASS.
+- Database saat ini kosong: 0 produk dan 0 inventory. SKU, rights-review reference, harga/modal, serta stok terenkripsi yang dapat dijual belum dimasukkan.
+- Live customer/Owner authentication, XTR invoice/pre-checkout/payment, exactly-once delivery, refund/recovery, backup/restore, IDOR, production rate-limit, dan Owner UAT/release approval masih pending.
 - Persetujuan kontrak v1.2 CR-02 telah tercatat; UAT dan go-live tetap menunggu release gate tersendiri.
 
 Status ini harus diperbarui hanya setelah bukti terbaru tersedia.

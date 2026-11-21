@@ -72,18 +72,27 @@ Set `ADMIN_TELEGRAM_IDS` to the comma-separated numeric Telegram user IDs permit
 
 ## Current implementation status
 
-Latest validated application source on `main`: `f682001ee694937d9ba2da77b70867dfdc56f6e3`; repository workflow/documentation updates are tracked separately. CI run `44885310611` and Cloudflare frontend preparation run `44885310642` completed successfully. Production preflight run `44884767909` has all five required secret variables present, but stops because `APP_ENCRYPTION_KEY` does not decode to exactly 32 canonical Base64 bytes. The original v1.3 ZIP is retained in the repository.
+Latest deployed source on `main`: `1a415717e3155a4ca026c5a7f4fe6108cc53f9e8`. GitHub Actions production deployment run `44891173631`, attempt 2, completed **SUCCESS**. It passed secret and Cloudflare preflight, backend/core tests, frontend build, both Worker deployments, API health with Neon database connection, gateway upstream configuration, custom-domain/DNS/TLS checks for root/www/api, and Telegram webhook read-back.
 
-Implemented and CI-validated in source: Telegram `initData` authentication, catalog API, order creation/reservation with owning order IDs, single pre-checkout claim per order, Stars invoice generation, successful-payment verification/idempotency, encrypted inventory, ambiguous-delivery review/reconciliation, two-phase Stars refund recovery, `/paysupport`, owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console. Live payment, refund, delivery, IDOR, backup/restore and Owner UAT tests remain pending.
+Implemented in source and CI-validated: Telegram `initData` authentication, catalog API, order creation/reservation with owning order IDs, single pre-checkout claim per order, Stars invoice generation, successful-payment verification/idempotency, encrypted inventory, ambiguous-delivery review/reconciliation, two-phase Stars refund recovery, `/paysupport`, owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console.
 
-## Not yet deployed
+Live production infrastructure is deployed, but sales readiness is still gated by actual catalog setup and acceptance tests. A read-only Neon audit on 21 November 2026 found **0 products, 0 inventory items, 0 orders, and 0 transactions**. No SKU has yet been entered with its rights-review reference and sellable encrypted inventory. Live XTR payment, refund, fulfilment, IDOR, backup/restore, production rate-limit, and Owner UAT tests remain pending.
 
-- Existing `vault-core-gateway` is deployed, but Workers `vault-core-api` and `vault-core-web` are absent from the target account.
-- Cloudflare zone `vaultcore.biz.id` is ACTIVE; gateway origins are unset, Custom Domains list is empty, and zone DNS records are empty.
-- GitHub Actions production run `44890576521` passed Cloudflare token verification, Hyperdrive read-back, Telegram bot `getMe`, backend tests, frontend build, and both Worker deployments. The API health endpoint returned HTTP 500 because the deployed adapter called the object returned by `httpServerHandler` as a function; observability recorded `handler is not a function`.
-- The existing gateway origins remain unset; custom domains and DNS records remain unattached/empty because the workflow correctly stopped after failed API health.
-- Telegram webhook registration, owner Mini App access, and live XTR payment/refund/fulfillment tests remain pending.
-- Backup/restore, IDOR, and live rate-limit behavior still require staging validation before launch.
+## Production deployment
+
+- Frontend Worker: `vault-core-web`.
+- API Worker: `vault-core-api`, connected to Neon through Hyperdrive `vault-core-neon`.
+- Existing gateway: `vault-core-gateway`; `WEB_ORIGIN` and `API_ORIGIN` secrets are installed.
+- Custom domains are attached to the existing gateway: `vaultcore.biz.id`, `www.vaultcore.biz.id`, and `api.vaultcore.biz.id`.
+- Cloudflare DNS records for all three hosts are configured and proxied.
+- Production Telegram webhook: `https://api.vaultcore.biz.id/api/telegram/webhook`; configuration and `getWebhookInfo` read-back passed in the production workflow.
+- Production run: [44891173631](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44891173631), attempt 2, **SUCCESS**.
+
+## Remaining launch gates
+
+1. Create and review the first sellable SKUs, record each rights-review reference, set XTR/IDR price and cost, then add encrypted sellable inventory.
+2. Run end-to-end Owner and customer acceptance: Mini App authentication, catalog, order, XTR invoice, pre-checkout validation, successful payment, exactly-once delivery, refund/recovery, and support.
+3. Complete IDOR/admin authorization review, backup/restore test, production rate-limit review, and record Owner UAT plus explicit release approval.
 
 ## Continuous integration
 
