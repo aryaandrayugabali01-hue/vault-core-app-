@@ -14,7 +14,7 @@
 ## Repository state
 
 - Default branch: `main`.
-- Latest source commit: `02c5a7728d502eca77190c3454574bba8d79f3b8` (production deployment workflow and runbook added).
+- Latest verified application source commit: `5b0fccd54586dc99af3b2dbc1257565a8c2f8801` (request-scoped Hyperdrive client adapter and concurrency tests). Additional deployment runbook and guarded manual deploy workflow are committed on `main`.
 - Cloudflare gateway source commit: `e88739e82119f287db4215a570b3ab0f64eede23`.
 - Source extraction commit: `15780b23e816cd4c8b3647d6359f949b53c4b2ea`.
 - 40 project source files are now present at repository root; original `vault-core-app-v1.3-github-ready.zip` retained as an archive.
@@ -24,10 +24,10 @@
 
 GitHub Actions validation results:
 
-- `VAULT CORE CI`, run `44852531855`: **SUCCESS** (backend/core tests, Next.js build, Wrangler API Worker dry-run).
-- `VAULT CORE Cloudflare frontend preparation`, run `44852531853`: **SUCCESS** (Vinext compatibility scan, native Cloudflare initialization, Cloudflare Worker build and output verification).
-
-The previous passing deployment-source validation runs are `44852481475` (CI) and `44852481447` (frontend Worker build).
+- `VAULT CORE CI`, run `44852945988`: **SUCCESS** (backend/core tests, Next.js build, Wrangler API Worker dry-run).
+- `VAULT CORE Cloudflare frontend preparation`, run `44852945979`: **SUCCESS** (Vinext compatibility scan, native Cloudflare initialization, Cloudflare Worker build and output verification).
+- Database adapter tests verify one Hyperdrive `pg.Client` per concurrent request, shared context across transactions within each request, and correct failure propagation.
+- Previous passing checks: CI `44852531855` and frontend build `44852531853`.
 
 
 
@@ -58,7 +58,7 @@ Connected Neon database `vault_core` was inspected read-only:
 
 - Hosting platform: Cloudflare Workers for both application runtimes.
 - Frontend: existing Next.js 15 / React 19 app, migrated non-destructively to vinext and deployed as Worker `vault-core-web`.
-- API: existing Express 5 app deployed as Worker `vault-core-api` using Cloudflare's `cloudflare:node` `httpServerHandler` adapter.
+- API: existing Express 5 app deployed as Worker `vault-core-api` using Cloudflare's `cloudflare:node` `httpServerHandler` adapter. Hyperdrive uses a fresh `pg.Client` per Express request via `AsyncLocalStorage`; the Node.js local/migration environment retains its normal `pg.Pool`.
 - Database: existing Neon PostgreSQL retained; Cloudflare Hyperdrive `vault-core-neon` is created and configured to provide the PostgreSQL connection to the API Worker.
 - Public entrypoint: existing `vault-core-gateway` Worker, with `vaultcore.biz.id` and `www.vaultcore.biz.id` for frontend traffic and `api.vaultcore.biz.id` for API traffic.
 - This deployment requires no replacement database and no new repository. The two application Workers are runtime targets for the existing frontend and backend source directories.
@@ -79,10 +79,10 @@ Connected Neon database `vault_core` was inspected read-only:
 
 ## Deployment blockers
 
-1. Cloudflare application Workers `vault-core-web` and `vault-core-api` are not yet deployed. Native Vinext Worker build and Wrangler API Worker dry-run both pass CI. The existing gateway alone does not host either runtime.
+1. Cloudflare application Workers `vault-core-web` and `vault-core-api` are not yet deployed. Native Vinext Worker build, Wrangler API Worker dry-run, automated tests, and per-request Hyperdrive lifecycle tests all pass CI. The existing gateway alone does not host either runtime.
 2. Neon runtime role `vault_core_runtime` has been created and verified with CONNECT, schema USAGE, and table DML privileges. Cloudflare Hyperdrive `vault-core-neon` is created and verified; SQL response caching is disabled. Hyperdrive ID: `97e2993f7733422abd08bfbf699ce4e4`.
 3. Zone `vaultcore.biz.id` is active. Cloudflare zone ID `74092a358232c7bf501da8d822fabb47` for `vaultcore.biz.id` is active; IDWebHost is the registrar and assigned nameservers are active. A separate `vaultcore.web.id` zone (ID `14098744832c82ae7b61bc46f695e186`) is pending and is not used by this deployment.
-4. Native Vinext/Cloudflare configuration is committed in `frontend/cloudflare.config.ts` and `frontend/vite.config.ts`. `wrangler.api.jsonc` declares Hyperdrive and production frontend origins. Both Worker build paths are validated: frontend native Cloudflare build and API Wrangler dry-run.
+4. Native Vinext/Cloudflare configuration is committed in `frontend/cloudflare.config.ts` and `frontend/vite.config.ts`. `wrangler.api.jsonc` declares Hyperdrive, `DATABASE_CONNECTION_MODE=request`, and production frontend origins. Both Worker build paths and the Hyperdrive request-scoped DB adapter are validated in CI.
 5. The Hyperdrive binding ID is declared in `wrangler.api.jsonc`; it becomes active only after the API Worker is deployed. `FRONTEND_ORIGIN` and `TELEGRAM_MINI_APP_URL` are set to `https://vaultcore.biz.id`. Production secrets remain unset: `CLOUDFLARE_API_TOKEN`, Telegram bot token, webhook secret, `APP_ENCRYPTION_KEY`, and owner Telegram ID allowlist.
 6. Telegram bot username/ownership and production webhook target are not known. The manual production workflow and `PRODUCTION_DEPLOYMENT_RUNBOOK.md` are committed; it requires the five repository secrets listed in the runbook.
 7. Live XTR payment, refund, and fulfillment tests have not been completed.
@@ -90,4 +90,4 @@ Connected Neon database `vault_core` was inspected read-only:
 
 ## Production readiness
 
-**NOT READY FOR PRODUCTION.** Source is published; standard CI, native frontend Worker build, and API Worker dry-run all pass. The guarded production deployment workflow is committed. Application Workers are not yet deployed because Cloudflare and Telegram production secrets have not been installed; gateway domains, Telegram webhook, production owner allowlist, live payment/delivery tests, and critical acceptance testing remain incomplete.
+**NOT READY FOR PRODUCTION.** Source is published; standard CI, native frontend Worker build, API Worker dry-run, and Hyperdrive request-isolation tests pass. The guarded production deployment workflow and runbook are committed. Application Workers are not yet deployed because Cloudflare and Telegram production secrets have not been installed; gateway origins/domains, Telegram webhook, production owner allowlist, live payment/delivery tests, and critical acceptance testing remain incomplete.
