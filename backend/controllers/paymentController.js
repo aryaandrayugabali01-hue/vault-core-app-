@@ -3,24 +3,56 @@ import { deliverPaidOrder } from '../services/deliveryService.js';
 import { sanitizeSuccessfulPaymentUpdate } from '../utils/paymentAudit.js';
 
 export async function answerPreCheckout(query) {
-  const { rows } = await pool.query(
-    `SELECT o.order_number, o.total_xtr, o.status, c.telegram_user_id,
-       COALESCE((SELECT COUNT(*) FROM deliveries d JOIN inventory_items i ON i.id=d.inventory_item_id
-         WHERE d.order_id=o.id AND d.status='PENDING' AND i.status='RESERVED'
-           AND i.reserved_order_id=o.id AND i.reserved_until > NOW()),0)::int AS reserved_count,
-       COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id=o.id),0)::int AS requested_count
-     FROM orders o JOIN customers c ON c.id=o.customer_id WHERE o.order_number=$1`,
-    [query.invoice_payload]
-  );
-  const order = rows[0];
-  const valid = order && order.status === 'PENDING_PAYMENT'
-    && order.reserved_count === order.requested_count
-    && Number(order.total_xtr) === Number(query.total_amount)
-    && query.currency === 'XTR'
-    && String(order.telegram_user_id) === String(query.from.id);
-  return valid
-    ? { ok: true }
-    : { ok: false, error_message: 'Pesanan tidak valid, sudah diproses, atau nominal tidak sesuai.' };
+  if (!query?.id || !query?.invoice_payload || !query?.from?.id) {
+    return { ok: false, error_message: 'Checkout tidak valid. Silakan buat pesanan baru.' };
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query(
+      `SELECT o.id,o.order_number,o.total_xtr,o.status,o.pre_checkout_query_id,c.telegram_user_id,
+        COALESCE((SELECT COUNT(*) FROM deliveries d JOIN inventory_items i ON i.id=d.inventory_item_id
+          WHERE d.order_id=o.id AND d.status='PENDING' AND i.status='RESERVED'
+            AND i.reserved_order_id=o.id AND i.reserved_until > NOW()),0)::int AS reserved_count,
+        COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id=o.id),0)::int AS requested_count
+       FROM orders o JOIN customers c ON c.id=o.customer_id
+       WHERE o.order_number=$1 FOR UPDATE OF o`,
+      [query.invoice_payload]
+    );
+    const order = rows[0];
+    const valid = order && order.status === 'PENDING_PAYMENT'
+      && order.reserved_count > 0 && order.reserved_count === order.requested_count
+      && Number(order.total_xtr) === Number(query.total_amount)
+      && query.currency === 'XTR'
+      && String(order.telegram_user_id) === String(query.from.id)
+      && (!order.pre_checkout_query_id || order.pre_checkout_query_id === query.id);
+    if (!valid) {
+      await client.query('ROLLBACK');
+      return { ok: false, error_message: 'Pesanan sudah diproses, checkout lain sedang berlangsung, stok berubah, atau nominal tidak sesuai.' };
+    }
+
+    if (!order.pre_checkout_query_id) {
+      const claimed = await client.query(
+        `UPDATE orders SET pre_checkout_query_id=$2
+         WHERE id=$1 AND status='PENDING_PAYMENT' AND pre_checkout_query_id IS NULL
+         RETURNING id`,
+        [order.id, query.id]
+      );
+      if (!claimed.rowCount) {
+        await client.query('ROLLBACK');
+        return { ok: false, error_message: 'Checkout order ini sudah diklaim. Silakan lanjutkan pesanan yang sedang dibuka.' };
+      }
+    }
+    await client.query('COMMIT');
+    return { ok: true };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('[pre-checkout-validation-error]', error.message);
+    return { ok: false, error_message: 'Sistem belum dapat memverifikasi pesanan. Silakan buat ulang pesanan beberapa saat lagi.' };
+  } finally {
+    client.release();
+  }
 }
 
 export async function recordSuccessfulPayment(message) {
@@ -40,6 +72,7 @@ export async function recordSuccessfulPayment(message) {
     );
     const order = rows[0];
     if (!order || String(order.telegram_user_id) !== String(message.from.id)
+        || !order.pre_checkout_query_id
         || payment.currency !== 'XTR' || Number(payment.total_amount) !== Number(order.total_xtr)) {
       throw new Error('Successful payment does not match a valid order.');
     }
