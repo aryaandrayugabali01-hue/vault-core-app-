@@ -388,7 +388,7 @@ test('Owner web session is signed and cookie is HttpOnly with SameSite protectio
     assert.match(cookie, /HttpOnly/);
     assert.match(cookie, /SameSite=Lax/);
     assert.match(cookie, /Secure/);
-    assert.match(cookie, /Domain=\\.vaultcore\\.biz\\.id/);
+    assert.match(cookie, /Domain=\.vaultcore\.biz\.id/);
   } finally {
     if (previousToken === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
     else process.env.TELEGRAM_BOT_TOKEN = previousToken;
