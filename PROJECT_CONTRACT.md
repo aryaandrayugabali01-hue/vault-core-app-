@@ -5,18 +5,18 @@
 |---|---|
 | Nama proyek | VAULT CORE |
 | Jenis dokumen | Kontrak spesifikasi dan acuan pelaksanaan proyek |
-| Versi | 1.4 — Addendum CR-04 |
-| Tanggal dokumen | 22 November 2026 |
-| Status | Baseline v1.2 dan CR-03 disetujui; CR-04 menetapkan pengecualian bersyarat untuk transfer akun yang diotorisasi, 22 November 2026 |
+| Versi | 1.5 — Addendum CR-05 (Owner Product Authority) |
+| Tanggal dokumen | 23 November 2026 |
+| Status | Baseline v1.2, CR-03, CR-04, dan CR-05 disetujui melalui instruksi tertulis pemilik; CR-05 menetapkan Owner sebagai pemegang keputusan internal tunggal atas siklus hidup produk dan pemenuhan, 23 November 2026 |
 | Model usaha | Single-Vendor Store |
 | Kanal utama | Telegram Bot dan Telegram Mini App |
 | Domain rencana | `vaultcore.biz.id` (belum dikonfirmasi kepemilikannya dan konfigurasi DNS-nya) |
 
 > **Kedudukan dokumen.** Dokumen ini menjadi acuan ruang lingkup, arsitektur, perilaku sistem, dan kriteria penerimaan VAULT CORE. Dokumen ini bukan pendapat hukum atau pengganti kontrak jasa profesional yang ditandatangani para pihak. Perubahan terhadap ruang lingkup atau perilaku yang telah disetujui harus dicatat sebagai revisi dokumen atau change request.
 >
-> **Rekaman persetujuan pemilik:** Status v1.2 CR-02 ditetapkan DISETUJUI berdasarkan instruksi tertulis pemilik proyek. Addendum CR-03 pada Bagian 27 disetujui melalui instruksi eksplisit pemilik pada 21 November 2026. Addendum CR-04 disetujui melalui instruksi tertulis pemilik pada 22 November 2026. Nama legal dan sertifikat tanda tangan elektronik formal tidak tercantum dalam rekaman percakapan.
+ > **Rekaman persetujuan pemilik:** Status v1.2 CR-02 ditetapkan DISETUJUI berdasarkan instruksi tertulis pemilik proyek. Addendum CR-03 pada Bagian 27 disetujui pada 21 November 2026, CR-04 pada 22 November 2026, dan CR-05 pada 23 November 2026 melalui instruksi tertulis pemilik di percakapan proyek. Rekaman ini menetapkan keputusan operasional internal Owner, bukan sertifikasi hukum atau pengesampingan hak pihak ketiga. Nama legal dan sertifikat tanda tangan elektronik formal tidak tercantum dalam rekaman percakapan.
 >
-> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan produk fixture uji internal melalui CR-03. v1.4 melalui CR-04 memperjelas bahwa data akses akun game hanya dapat diproses untuk transfer yang secara resmi diizinkan penerbit dan didukung bukti hak transfer; ketentuan pembayaran XTR dan stok tetap berlaku. Alternatif operasional yang dapat diterapkan dijelaskan dalam Bagian 25 dan menggantikan ketentuan lama apabila terdapat perbedaan.
+> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan fixture uji melalui CR-03; v1.4 menetapkan dukungan bersyarat transfer akun melalui CR-04; v1.5 melalui CR-05 menetapkan Owner sebagai otoritas internal untuk pencatatan, penilaian internal, persetujuan, rincian katalog, stok, metode pemenuhan, dan pengiriman. Kewajiban eksternal, pembayaran XTR, dan sumber stok aktual tetap berlaku.
 
 ---
 
@@ -1168,4 +1168,96 @@ Pembayaran tetap mengikuti ketentuan CR-03: transaksi produk digital di Telegram
 
 ---
 
-**Akhir dokumen — VAULT CORE Project Contract v1.4 (CR-04).**
+
+
+# 29. Addendum CR-05 — Owner Product Authority dan Pengelolaan Pemenuhan Internal
+
+**Tanggal:** 23 November 2026  
+**Status:** Disetujui melalui instruksi tertulis pemilik di percakapan proyek.  
+**Mengubah:** Bagian 4.2, 7.2, 7.3, 25.1, 28.2, dan 28.4 sejauh mengatur alur persetujuan internal, pencatatan bukti, kewenangan katalog, dan pemenuhan. Jika terdapat pertentangan pada tata kelola internal, CR-05 yang berlaku; batas hak eksternal dan ketentuan penerbit tetap berlaku.  
+**Berlaku untuk:** katalog, formulir input produk, pemeriksaan internal, hak distribusi yang dicatat, harga, detail produk, inventaris, metode pemenuhan, pengiriman, API, database, Owner Console, audit log, dan prosedur operasional.
+
+## 29.1 Kewenangan internal Owner
+
+Owner VAULT CORE merupakan pemegang keputusan internal tunggal dan bertanggung jawab penuh atas seluruh siklus hidup setiap SKU, mulai dari sebelum produk dimasukkan ke katalog sampai pesanan dipenuhi. Kewenangan internal Owner mencakup:
+
+1. Menentukan apakah SKU akan dibuat, ditampilkan, ditunda, dijeda, diaktifkan, diubah, atau diarsipkan.
+2. Mengisi dan mengesahkan seluruh rincian SKU: identitas, kategori, tier, nama, deskripsi, media, harga jual, modal, ketentuan, wilayah, masa berlaku, sumber produk, dan keterangan pelanggan.
+3. Menentukan dasar hak/sumber produk, vendor, bukti pendukung, rantai sumber, dan hasil pemeriksaan internal.
+4. Menentukan metode pemenuhan yang sesuai dengan jenis produk, prosedur kerja, referensi sumber, stok, dan instruksi kepada pelanggan.
+5. Menambahkan, mengubah status, menonaktifkan, atau menarik unit inventaris serta mengelola pemenuhan pesanan.
+6. Menyetujui, menolak, memperbarui, atau mencabut persetujuan internal berdasarkan informasi dan bukti yang tersedia.
+7. Menentukan pemeriksa internal, catatan pemeriksaan, tanggal peninjauan ulang, dan masa berlaku keputusan internal.
+
+Sistem tidak mengambil keputusan bisnis tersebut secara otomatis. Sistem menyediakan validasi kelengkapan, batas keamanan, pencatatan, riwayat, dan penguncian transaksi. Akun Admin hanya dapat menjalankan kewenangan yang secara teknis diberikan oleh Owner; pada implementasi saat ini endpoint Owner/Admin tetap dilindungi pemeriksaan Owner server-side.
+
+## 29.2 Arti persetujuan internal dan batas hak eksternal
+
+Status pemeriksaan `APPROVED` berarti **Owner telah menyetujui SKU secara internal** berdasarkan deklarasi, sumber, dokumen, dan informasi yang dicatat. Status tersebut bukan opini hukum, bukan sertifikat dari penerbit, dan bukan jaminan bahwa pihak ketiga mengakui hak distribusi.
+
+Kewenangan Owner berlaku untuk pengelolaan internal VAULT CORE. Kewenangan internal tidak dengan sendirinya menciptakan kepemilikan, lisensi, izin penjualan, atau hak transfer yang tidak dimiliki toko; tidak menghapus ketentuan penerbit/platform; dan tidak mengesampingkan hukum yang berlaku. Untuk produk pihak ketiga, Owner wajib memilih dasar hak yang benar dan mencatat bukti yang relevan. Bila ketentuan penerbit melarang penjualan/transfer atau bukti yang diwajibkan tidak tersedia, Owner tidak boleh menyatakan bahwa hak eksternal telah diperoleh. Produk harus ditahan, ditolak, atau dijeda sesuai hasil pemeriksaan.
+
+## 29.3 Catatan hak produk terstruktur
+
+Setiap SKU komersial wajib memiliki catatan pemeriksaan internal terstruktur yang terhubung langsung ke produk. Catatan mencakup sekurang-kurangnya:
+
+| Field | Aturan pencatatan |
+|---|---|
+| SKU | Diambil dari produk yang sedang diperiksa |
+| Rights basis | OWNER_CREATED, OWNER_OWNED, AUTHORIZED_VENDOR, OFFICIAL_DISTRIBUTION, LICENSED_CONTENT, SERVICE, atau OTHER |
+| Publisher/platform | Nama penerbit/platform atau INTERNAL_OWNER bila memang produk dibuat/dimiliki internal |
+| Official terms URL | Diisi untuk produk yang tunduk pada ketentuan penerbit/platform |
+| Authorization evidence reference | Referensi dokumen/URL/nomor otorisasi bila dasar hak bergantung pada otorisasi pihak lain |
+| Chain of title | Sumber produk dan urutan perolehan/kewenangan; tidak boleh dikarang |
+| Transfer method | Metode pemenuhan/transfer yang benar-benar akan dilakukan |
+| Region | Wilayah penggunaan/transfer yang disetujui Owner berdasarkan informasi yang tersedia |
+| Reviewer | ID Telegram Owner yang melakukan pemeriksaan, ditetapkan server |
+| Reviewed at | Waktu pemeriksaan, ditetapkan server |
+| Valid until | Batas peninjauan ulang/masa berlaku keputusan internal |
+| Review status | PENDING / APPROVED / REJECTED / EXPIRED |
+| Review notes | Catatan alasan dan batasan pemeriksaan |
+| Owner attestation | Pernyataan Owner bahwa data yang dimasukkan benar dan ia bertanggung jawab atas keputusan internal |
+
+Field yang bersifat kondisional wajib diisi saat relevan dengan dasar hak. Referensi vendor internal saja tidak boleh ditampilkan sebagai otorisasi penerbit. Sistem menyimpan riwayat pemeriksaan dan perubahan status secara append-only untuk audit. Reviewer dan timestamp tidak dapat ditentukan atau ditimpa dari input browser.
+
+## 29.4 Siklus kerja SKU
+
+1. SKU dibuat dalam status DRAFT atau PENDING_REVIEW.
+2. Owner melengkapi identitas produk, deskripsi, rincian penawaran, sumber, dasar hak, metode pemenuhan, wilayah, dan catatan pemeriksaan.
+3. Owner mengirim pemeriksaan dan memilih hasil PENDING, APPROVED, atau REJECTED. APPROVED memerlukan deklarasi Owner dan field wajib yang lengkap sesuai dasar hak.
+4. Aktivasi komersial hanya dapat dilakukan setelah catatan pemeriksaan internal terkini berstatus APPROVED dan belum melewati valid_until, metode pemenuhan tersedia, serta pemeriksaan teknis dan persediaan memenuhi aturan.
+5. Owner dapat menjeda produk atau membuat pemeriksaan baru. Pemeriksaan PENDING, REJECTED, atau EXPIRED mengunci penjualan dan pengiriman baru.
+6. Ketika masa berlaku pemeriksaan lewat, SKU tidak lagi memenuhi syarat katalog, checkout, pre-checkout, atau delivery sampai Owner melakukan pemeriksaan ulang.
+
+## 29.5 Keterikatan sumber dan persediaan
+
+Setiap unit inventaris komersial harus memiliki referensi sumber/vendor atau referensi asal internal yang dapat diaudit dan terhubung ke catatan pemeriksaan hak produk yang berlaku saat unit ditambahkan. Sistem tidak boleh menerima stok komersial tanpa referensi sumber serta pemeriksaan internal APPROVED yang masih berlaku. Perubahan atau kedaluwarsa pemeriksaan tidak boleh membuat stok lama otomatis kembali dapat dijual; unit terkait tetap tertahan sampai Owner menyelesaikan pemeriksaan ulang.
+
+Data fixture TEST ONLY tetap menggunakan jalur uji internal yang terpisah, tidak memerlukan bukti komersial, dan tidak boleh dicampurkan dengan katalog atau persediaan komersial.
+
+## 29.6 Bukti dan penyimpanan
+
+Bukti tidak boleh dibuat-buat. Sistem menyimpan metadata pemeriksaan, URL, nomor dokumen, atau referensi bukti yang dimasukkan Owner. Unggahan berkas hanya dapat diaktifkan setelah tersedia object storage yang sudah dikonfigurasi dan diotorisasi pada infrastruktur proyek. Sampai penyimpanan tersebut tersedia, aplikasi tidak boleh mengklaim bahwa berkas biner telah diunggah atau disimpan; Owner menggunakan URL/referensi bukti yang dapat diakses dan dapat diaudit.
+
+## 29.7 Pembayaran, keamanan, dan pemenuhan
+
+CR-05 tidak mengubah kontrak pembayaran: barang/jasa digital di Telegram tetap menggunakan invoice Telegram Stars (`XTR`) resmi, dan hanya `successful_payment` yang tervalidasi yang menandai order sebagai PAID. CR-05 tidak mengizinkan pengiriman tanpa pembayaran valid, pengiriman ganda, penggunaan ulang stok, atau pencatatan kredensial autentikasi yang tidak diperlukan. Setiap proses tambah stok, aktivasi, perubahan pemeriksaan, penahanan stok, pengiriman, dan rekonsiliasi wajib menghasilkan audit log.
+
+## 29.8 Penerapan ke katalog yang sudah ada
+
+CR-05 tidak mengaktifkan SKU komersial secara otomatis dan tidak mengubah harga, modal, atau status produk yang telah tersimpan. Dua belas SKU contoh komersial tetap PENDING_REVIEW sampai Owner mengisi rincian dan membuat keputusan internal untuk masing-masing SKU. Empat fixture TEST ONLY tetap pada status yang sudah ada.
+
+## 29.9 Kriteria penerimaan CR-05
+
+- Owner menjadi otoritas internal untuk seluruh keputusan katalog, rincian produk, pemeriksaan internal, inventaris, dan pemenuhan.
+- Semua keputusan hak internal disimpan terstruktur per SKU, dengan reviewer, timestamp, masa berlaku, status, dan riwayat.
+- APPROVED hanya dapat dicatat setelah deklarasi Owner serta field wajib sesuai dasar hak terpenuhi.
+- Aktivasi dan checkout menolak catatan yang tidak lengkap, ditolak, kedaluwarsa, atau tidak lagi terkini.
+- Setiap unit inventaris komersial mempunyai referensi sumber dan terikat pada pemeriksaan hak yang berlaku.
+- Bukti yang tidak diberikan tidak boleh diisi dengan data buatan atau ditampilkan sebagai telah diverifikasi.
+- Dua belas SKU komersial tidak berubah status secara otomatis.
+- Fixture internal, Telegram Stars XTR, keamanan stok, dan jalur delivery tetap terpisah serta konsisten.
+
+---
+
+**Akhir dokumen — VAULT CORE Project Contract v1.5 (CR-05).**

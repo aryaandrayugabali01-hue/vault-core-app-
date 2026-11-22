@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { validateTelegramInitData } from '../backend/utils/telegram.js';
 import { encryptPayload, decryptPayload, assertAllowedDigitalPayload } from '../backend/utils/encryption.js';
-import { resolveDisplayStock, isPublicCatalogProduct, isEligibleCheckoutProduct, canAddProductInventory } from '../backend/services/catalogService.js';
+import { resolveDisplayStock, isPublicCatalogProduct, isEligibleCheckoutProduct } from '../backend/services/catalogService.js';
+import { validateRightsReviewInput, isRightsReviewUsable, canAddProductInventory } from '../backend/services/rightsReviewService.js';
 import { sendStarsInvoice, refundStarPayment, telegramCall } from '../backend/services/telegramApi.js';
 import { sanitizeSuccessfulPaymentUpdate } from '../backend/utils/paymentAudit.js';
 import { createDatabaseAdapter } from '../backend/db/pool.js';
@@ -409,11 +410,75 @@ test('inventory payload text splits LF and CRLF lines, trims entries, and ignore
 });
 
 
-test('inventory input is blocked for test fixtures and unreviewed catalog examples', () => {
-  assert.equal(canAddProductInventory({ status: 'DRAFT', is_test: false }), true);
-  assert.equal(canAddProductInventory({ status: 'ACTIVE', is_test: false }), true);
-  assert.equal(canAddProductInventory({ status: 'PENDING_REVIEW', is_test: false }), false);
-  assert.equal(canAddProductInventory({ status: 'PAUSED', is_test: false }), false);
-  assert.equal(canAddProductInventory({ status: 'ACTIVE', is_test: true }), false);
-  assert.equal(canAddProductInventory(null), false);
+test('Owner-created product review can be approved only with complete internal attestation', () => {
+  const now = new Date('2026-11-23T12:00:00.000Z');
+  const result = validateRightsReviewInput({
+    rightsBasis:'OWNER_OWNED',
+    publisherPlatform:'INTERNAL_OWNER',
+    chainOfTitle:'Owned and maintained by the store owner.',
+    transferMethod:'Deliver the owner-created digital file through the existing protected delivery flow.',
+    region:'Global',
+    validUntil:'2026-12-31',
+    reviewStatus:'APPROVED',
+    ownerAttested:true
+  }, now);
+  assert.equal(result.ok, true);
+  assert.equal(result.value.reviewStatus, 'APPROVED');
+  assert.equal(result.value.ownerAttested, true);
+  assert.ok(new Date(result.value.validUntil) > now);
+});
+
+test('external product approval requires an official terms URL and authorization reference', () => {
+  const now = new Date('2026-11-23T12:00:00.000Z');
+  const base = {
+    rightsBasis:'AUTHORIZED_VENDOR',
+    publisherPlatform:'Example Publisher',
+    chainOfTitle:'Vendor source and seller authority are documented in the reviewed agreement.',
+    transferMethod:'Use the publisher-approved transfer process.',
+    region:'Indonesia',
+    validUntil:'2026-12-31',
+    reviewStatus:'APPROVED',
+    ownerAttested:true
+  };
+  assert.deepEqual(
+    validateRightsReviewInput(base, now).errors.sort(),
+    ['AUTHORIZATION_EVIDENCE_REFERENCE_REQUIRED','OFFICIAL_TERMS_URL_REQUIRED'].sort()
+  );
+  const complete = validateRightsReviewInput({
+    ...base,
+    officialTermsUrl:'https://publisher.example/terms',
+    authorizationEvidenceReference:'DOC-OWNER-2026-001'
+  }, now);
+  assert.equal(complete.ok, true);
+});
+
+test('Owner review rejects incomplete declarations, invalid URLs and expired validity dates', () => {
+  const now = new Date('2026-11-23T12:00:00.000Z');
+  const result = validateRightsReviewInput({
+    rightsBasis:'OWNER_CREATED',
+    publisherPlatform:'INTERNAL_OWNER',
+    officialTermsUrl:'http://not-secure.example/terms',
+    chainOfTitle:'Internal source',
+    transferMethod:'Internal delivery',
+    region:'Indonesia',
+    validUntil:'2026-11-01',
+    reviewStatus:'APPROVED',
+    ownerAttested:false
+  }, now);
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.includes('OWNER_ATTESTATION_REQUIRED'));
+  assert.ok(result.errors.includes('VALID_UNTIL_MUST_BE_FUTURE'));
+  assert.ok(result.errors.includes('OFFICIAL_TERMS_URL_MUST_BE_HTTPS'));
+});
+
+test('rights review validity expires at its date and inventory must use the current review', () => {
+  const now = new Date('2026-11-23T12:00:00.000Z');
+  const review = { id:12, review_status:'APPROVED', owner_attested:true, valid_until:'2026-12-31T16:59:59.999Z' };
+  const product = { id:1, status:'PENDING_REVIEW', is_test:false, current_rights_review_id:12 };
+  assert.equal(isRightsReviewUsable(review, now), true);
+  assert.equal(canAddProductInventory(product, review, now), true);
+  assert.equal(canAddProductInventory({ ...product,current_rights_review_id:11 }, review, now), false);
+  assert.equal(canAddProductInventory({ ...product,is_test:true }, review, now), false);
+  assert.equal(canAddProductInventory({ ...product,status:'PAUSED' }, review, now), false);
+  assert.equal(isRightsReviewUsable({ ...review,valid_until:'2026-11-23T11:59:59.000Z' }, now), false);
 });

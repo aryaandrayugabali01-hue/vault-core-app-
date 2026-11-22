@@ -63,6 +63,11 @@ export default function AdminPage() {
   const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', name:'Mobile Legends Gold', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'' });
   const [stockProduct, setStockProduct] = useState('');
   const [stockPayload, setStockPayload] = useState('');
+  const [stockSourceReference, setStockSourceReference] = useState('');
+  const [rightsProductId, setRightsProductId] = useState('');
+  const [rightsHistory, setRightsHistory] = useState([]);
+  const [rightsEvents, setRightsEvents] = useState([]);
+  const [rightsForm, setRightsForm] = useState({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
   const [displayCap, setDisplayCap] = useState({});
   const [busy, setBusy] = useState(false);
   const [authState, setAuthState] = useState('checking');
@@ -82,7 +87,10 @@ export default function AdminPage() {
     const productData = await productResponse.json();
     const orderData = await orderResponse.json();
     if (!dashboard.ok || !productResponse.ok || !orderResponse.ok) throw new Error(apiErrorMessage(dashboardData, '') || apiErrorMessage(productData, '') || apiErrorMessage(orderData, '') || 'Akses panel pemilik tidak dapat diverifikasi. Buka VAULT CORE melalui Telegram dengan akun pemilik.');
-    setStats(dashboardData); setProducts(productData.products || []); setOrders(orderData.orders || []); setNotice('Panel pemilik berhasil terhubung.');
+    const nextProducts = productData.products || [];
+    setStats(dashboardData); setProducts(nextProducts); setOrders(orderData.orders || []);
+    if (!rightsProductId && nextProducts.length) setRightsProductId(String(nextProducts.find((item) => !item.is_test)?.id || nextProducts[0].id));
+    setNotice('Panel pemilik berhasil terhubung.');
   }
   useEffect(() => {
     let alive = true;
@@ -192,11 +200,48 @@ export default function AdminPage() {
     e.preventDefault(); if (!stockProduct || !stockPayload.trim()) return;
     setBusy(true);
     try {
-      const response = await fetch(`${API}/api/admin/products/${stockProduct}/inventory`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ payloads:stockPayload.split('\n').map(v=>v.trim()).filter(Boolean) }) });
+      const response = await fetch(`${API}/api/admin/products/${stockProduct}/inventory`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ payloads:stockPayload.split('\n').map(v=>v.trim()).filter(Boolean), sourceReference:stockSourceReference }) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Stok tidak dapat ditambahkan. Periksa kembali data yang dimasukkan.'));
-      setNotice(`${data.inserted} unit stok berhasil dienkripsi dan disimpan.`); setStockPayload(''); await refresh();
+      setNotice(`${data.inserted} unit stok berhasil dienkripsi dan dikaitkan ke pemeriksaan Owner.`); setStockPayload(''); setStockSourceReference(''); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
   }
+  async function loadRightsHistory(productId) {
+    if (!productId) { setRightsHistory([]); setRightsEvents([]); return; }
+    try {
+      const response = await fetch(`${API}/api/admin/products/${productId}/rights-review`, { headers:headers(), credentials:'include', cache:'no-store' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(apiErrorMessage(data, 'Riwayat pemeriksaan Owner tidak dapat dimuat.'));
+      setRightsHistory(data.history || []); setRightsEvents(data.events || []);
+    } catch (error) {
+      setRightsHistory([]); setRightsEvents([]);
+      setNotice(error.message || 'Riwayat pemeriksaan Owner tidak dapat dimuat.');
+    }
+  }
+
+  useEffect(() => {
+    if (authState === 'authenticated' && rightsProductId) loadRightsHistory(rightsProductId);
+  }, [authState, rightsProductId]);
+
+  async function saveRightsReview(event) {
+    event.preventDefault();
+    if (!rightsProductId || busy) return;
+    setBusy(true);
+    try {
+      const response = await fetch(`${API}/api/admin/products/${rightsProductId}/rights-review`, {
+        method:'POST', headers:headers(), credentials:'include', body:JSON.stringify(rightsForm)
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        const details = Array.isArray(data.details) ? ' ' + data.details.join(', ') : '';
+        throw new Error(apiErrorMessage(data, 'Pemeriksaan internal Owner belum lengkap.') + details);
+      }
+      setNotice(data.message || 'Pemeriksaan internal Owner tersimpan.');
+      await refresh(); await loadRightsHistory(rightsProductId);
+    } catch (error) {
+      setNotice(error.message || 'Pemeriksaan Owner gagal disimpan.');
+    } finally { setBusy(false); }
+  }
+
   async function updateProduct(id, patch) {
     setBusy(true);
     try {
@@ -296,18 +341,45 @@ export default function AdminPage() {
 
     <section className="admin-panel" id="inventory-panel"><div className="admin-section-head"><div><span className="eyebrow muted">LANGKAH 2 · PERSEDIAAN</span><h2>Tambah stok digital</h2></div></div>
       <form className="admin-form" onSubmit={addStock}>
-        <label className="span-2">Produk<select required value={stockProduct} onChange={e=>setStockProduct(e.target.value)}><option value="">Pilih produk yang siap menerima stok</option>{products.filter(p=>p.status==='ACTIVE' && !p.is_test).map(p=><option key={p.id} value={p.id}>{p.sku} · {p.name}</option>)}</select></label>
-        <label className="span-2">Satu unit per baris<textarea required rows="5" value={stockPayload} onChange={e=>setStockPayload(e.target.value)} placeholder="Masukkan kode voucher, lisensi, atau kode penukaran satu per baris." /></label>
-        <button className="admin-primary" disabled={busy}>Enkripsi dan simpan stok</button>
+        <label className="span-2">Produk<select required value={stockProduct} onChange={e=>setStockProduct(e.target.value)}><option value="">Pilih produk yang siap menerima stok</option>{products.filter(p=>['DRAFT','PENDING_REVIEW','ACTIVE'].includes(p.status) && p.rights_review_usable && !p.is_test).map(p=><option key={p.id} value={p.id}>{p.sku} · {p.name}</option>)}</select></label>
+        <label className="span-2">Referensi sumber/vendor atau asal internal Owner<input required minLength="3" maxLength="2000" value={stockSourceReference} onChange={e=>setStockSourceReference(e.target.value)} placeholder="Nomor dokumen, vendor/ref sumber, atau ID asal internal" /></label>
+        <label className="span-2">Satu unit per baris<textarea required rows="5" value={stockPayload} onChange={e=>setStockPayload(e.target.value)} placeholder="Masukkan kode digital/instruksi pemenuhan satu unit per baris." /></label>
+        <button className="admin-primary" disabled={busy || !stockSourceReference.trim()}>Enkripsi dan simpan stok</button>
       </form>
     </section>
 
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">PENGELOLAAN STOK</span><h2>Produk dan tampilan stok</h2></div></div>
       <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Produk</th><th>Harga jual (XTR)</th><th>Modal (XTR)</th><th>Stok aktual</th><th>Batas tampilan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
-      {products.map(p=><tr key={p.id}><td><strong>{p.name} {p.is_test ? <span className="test-product-label">CONTOH UJI</span> : p.status==='PENDING_REVIEW' ? <span className="catalog-example-label">CONTOH KATALOG</span> : null}</strong><small>{p.sku} · {GAME_LABELS[p.game_category] || p.game_category} / {TIER_LABELS[p.tier] || p.tier}</small><details className="admin-product-details"><summary>Detail lengkap</summary><div><p>{p.description || 'Deskripsi belum diisi.'}</p><small>Metode: {p.fulfillment_type || 'BELUM DIKETAHUI'} · Referensi hak: {p.rights_review_reference || 'BELUM DIKETAHUI'} · Stok aktual: {p.actual_stock} · Status: {displayStatus(p.status)}</small></div></details></td><td>{xtr(p.sale_price_xtr)}</td><td>{xtr(p.cost_price_xtr)}</td><td>{p.actual_stock}</td><td><input className="cap-input" type="number" min="0" value={displayCap[p.id] ?? p.display_stock_override ?? ''} placeholder="Aktual" onChange={e=>setDisplayCap({...displayCap,[p.id]:e.target.value})}/></td><td><span className={`admin-status ${p.status.toLowerCase()}`}>{displayStatus(p.status)}</span></td><td><div className="admin-actions"><button onClick={()=>updateProduct(p.id,{displayStockOverride:displayCap[p.id]==='' ? null : Number(displayCap[p.id])})} disabled={busy}>Simpan batas</button>{p.is_test ? <button disabled title="Fixture hanya dapat diaktifkan melalui ruang uji Owner">Ruang uji Owner</button> : p.status==='ACTIVE' ? <button onClick={()=>updateProduct(p.id,{status:'PAUSED'})} disabled={busy}>Jeda</button> : <button disabled title="Aktivasi komersial menunggu workflow bukti hak penjualan CR-04">Menunggu CR-04</button>}</div></td></tr>)}
+      {products.map(p=><tr key={p.id}><td><strong>{p.name} {p.is_test ? <span className="test-product-label">CONTOH UJI</span> : p.status==='PENDING_REVIEW' ? <span className="catalog-example-label">CONTOH KATALOG</span> : null}</strong><small>{p.sku} · {GAME_LABELS[p.game_category] || p.game_category} / {TIER_LABELS[p.tier] || p.tier}</small><details className="admin-product-details"><summary>Detail lengkap</summary><div><p>{p.description || 'Deskripsi belum diisi.'}</p><small>Metode: {p.fulfillment_type || 'BELUM DIKETAHUI'} · Review internal: {p.rights_review_status || 'BELUM ADA'} · Berlaku sampai: {p.rights_valid_until ? new Date(p.rights_valid_until).toLocaleDateString('id-ID') : 'BELUM DIKETAHUI'} · Referensi lama: {p.rights_review_reference || '—'} · Stok aktual: {p.actual_stock} · Status: {displayStatus(p.status)}</small></div></details></td><td>{xtr(p.sale_price_xtr)}</td><td>{xtr(p.cost_price_xtr)}</td><td>{p.actual_stock}</td><td><input className="cap-input" type="number" min="0" value={displayCap[p.id] ?? p.display_stock_override ?? ''} placeholder="Aktual" onChange={e=>setDisplayCap({...displayCap,[p.id]:e.target.value})}/></td><td><span className={`admin-status ${p.status.toLowerCase()}`}>{displayStatus(p.status)}</span></td><td><div className="admin-actions"><button onClick={()=>updateProduct(p.id,{displayStockOverride:displayCap[p.id]==='' ? null : Number(displayCap[p.id])})} disabled={busy}>Simpan batas</button>{p.is_test ? <button disabled title="Fixture hanya dapat diaktifkan melalui ruang uji Owner">Ruang uji Owner</button> : p.status==='ACTIVE' ? <button onClick={()=>updateProduct(p.id,{status:'PAUSED'})} disabled={busy}>Jeda</button> : p.rights_review_usable && p.fulfillment_type ? <button onClick={()=>updateProduct(p.id,{status:'ACTIVE'})} disabled={busy}>Aktifkan</button> : <button onClick={()=>{setRightsProductId(String(p.id));document.getElementById('rights-review-panel')?.scrollIntoView({behavior:'smooth',block:'start'});}} disabled={busy}>Periksa CR-05</button>}</div></td></tr>)}
       {!products.length && <tr><td colSpan="7" className="table-empty">Belum ada produk dibuat.</td></tr>}
       </tbody></table></div>
-      <p className="admin-footnote">Batas tampilan hanya membatasi angka yang ditampilkan. Sistem tetap menghitung dan memeriksa stok tersedia aktual saat checkout.</p><p className="admin-footnote">Contoh katalog berstatus Menunggu pemeriksaan dan fixture internal tidak menerima stok melalui formulir ini. Aktivasi komersial memerlukan bukti hak penjualan lengkap sesuai CR-04.</p>
+      <p className="admin-footnote">Batas tampilan hanya membatasi angka yang ditampilkan. Sistem tetap menghitung dan memeriksa stok tersedia aktual saat checkout.</p><p className="admin-footnote">Produk komersial menerima stok hanya setelah pemeriksaan internal Owner APPROVED dan masih berlaku. Setiap batch stok wajib memiliki referensi sumber.</p>
+    </section>
+
+    <section className="admin-panel" id="rights-review-panel">
+      <div className="admin-section-head"><div><span className="eyebrow muted">CR-05 · KEPUTUSAN INTERNAL OWNER</span><h2>Pemeriksaan hak dan dasar pemenuhan</h2><p>Owner mengisi catatan sumber, dasar hak, cara pemenuhan, hasil, serta masa berlaku per SKU.</p></div></div>
+      <form className="admin-form" onSubmit={saveRightsReview}>
+        <label className="span-2">SKU yang diperiksa<select required value={rightsProductId} onChange={e=>setRightsProductId(e.target.value)}>{products.filter(p=>!p.is_test).map(p=><option key={p.id} value={p.id}>{p.sku} · {p.name}</option>)}</select></label>
+        <label>Dasar hak<select required value={rightsForm.rightsBasis} onChange={e=>setRightsForm({...rightsForm,rightsBasis:e.target.value})}><option value="">Pilih dasar hak</option><option value="OWNER_CREATED">Dibuat internal Owner</option><option value="OWNER_OWNED">Dimiliki Owner</option><option value="AUTHORIZED_VENDOR">Vendor berotorisasi</option><option value="OFFICIAL_DISTRIBUTION">Distribusi resmi</option><option value="LICENSED_CONTENT">Konten berlisensi</option><option value="SERVICE">Layanan internal</option><option value="OTHER">Lainnya</option></select></label>
+        <label>Penerbit / platform<input required value={rightsForm.publisherPlatform} onChange={e=>setRightsForm({...rightsForm,publisherPlatform:e.target.value})} placeholder="INTERNAL_OWNER untuk produk internal" /></label>
+        <label className="span-2">Official terms URL<input type="url" value={rightsForm.officialTermsUrl} onChange={e=>setRightsForm({...rightsForm,officialTermsUrl:e.target.value})} placeholder="https://... (untuk platform eksternal)" /></label>
+        <label className="span-2">Referensi bukti otorisasi<input value={rightsForm.authorizationEvidenceReference} onChange={e=>setRightsForm({...rightsForm,authorizationEvidenceReference:e.target.value})} placeholder="URL, nomor surat, kontrak, atau ID dokumen yang tersedia" /></label>
+        <label className="span-2">Chain of title / asal produk<textarea required rows="3" value={rightsForm.chainOfTitle} onChange={e=>setRightsForm({...rightsForm,chainOfTitle:e.target.value})} placeholder="Jelaskan asal, kepemilikan, sumber vendor, serta kewenangan yang benar-benar dimiliki." /></label>
+        <label className="span-2">Metode transfer / pemenuhan<textarea required rows="3" value={rightsForm.transferMethod} onChange={e=>setRightsForm({...rightsForm,transferMethod:e.target.value})} placeholder="Jelaskan prosedur pemenuhan yang akan dijalankan Owner." /></label>
+        <label>Wilayah / region<input required value={rightsForm.region} onChange={e=>setRightsForm({...rightsForm,region:e.target.value})} placeholder="Contoh: Indonesia / Global" /></label>
+        <label>Berlaku sampai<input required type="date" value={rightsForm.validUntil} onChange={e=>setRightsForm({...rightsForm,validUntil:e.target.value})} /></label>
+        <label>Status pemeriksaan<select value={rightsForm.reviewStatus} onChange={e=>setRightsForm({...rightsForm,reviewStatus:e.target.value})}><option value="PENDING">PENDING</option><option value="APPROVED">APPROVED · keputusan internal Owner</option><option value="REJECTED">REJECTED</option></select></label>
+        <label className="span-2">Catatan pemeriksaan<textarea rows="3" value={rightsForm.reviewNotes} onChange={e=>setRightsForm({...rightsForm,reviewNotes:e.target.value})} placeholder="Batasan, keputusan, tindak lanjut, atau alasan penolakan." /></label>
+        <label className="span-2 field-check"><input type="checkbox" checked={rightsForm.ownerAttested} onChange={e=>setRightsForm({...rightsForm,ownerAttested:e.target.checked})} /> Saya sebagai Owner menyatakan data ini benar dan bertanggung jawab atas keputusan internal.</label>
+        <button className="admin-primary" disabled={busy || !rightsProductId}>Simpan pemeriksaan Owner</button>
+      </form>
+      <p className="admin-footnote">APPROVED adalah persetujuan internal Owner, bukan sertifikasi hukum atau izin dari penerbit. Jangan masukkan referensi bukti yang tidak tersedia. Unggahan berkas belum tersedia; gunakan URL atau nomor referensi dokumen.</p>
+      <div className="admin-section-head" style={{marginTop:'22px'}}><div><span className="eyebrow muted">AUDIT TRAIL</span><h2>Riwayat pemeriksaan</h2></div></div>
+      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Waktu</th><th>Status</th><th>Reviewer</th><th>Berlaku sampai</th><th>Dasar hak</th><th>Catatan</th></tr></thead><tbody>
+        {rightsHistory.map(item=><tr key={item.id}><td>{item.reviewed_at ? new Date(item.reviewed_at).toLocaleString('id-ID') : '—'}</td><td>{item.review_status}</td><td>{item.reviewer_telegram_user_id}</td><td>{item.valid_until ? new Date(item.valid_until).toLocaleDateString('id-ID') : '—'}</td><td>{item.rights_basis}</td><td>{item.review_notes || '—'}</td></tr>)}
+        {!rightsHistory.length && <tr><td colSpan="6" className="table-empty">Belum ada pemeriksaan untuk SKU ini.</td></tr>}
+      </tbody></table></div>
+      <p className="admin-footnote">{rightsEvents.length} catatan perubahan status/aktivitas tercatat pada audit trail.</p>
     </section>
 
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">PESANAN & PEMBAYARAN</span><h2>Transaksi dan pemenuhan</h2></div><span className="section-count">{orders.length} PESANAN</span></div>

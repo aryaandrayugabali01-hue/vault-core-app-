@@ -4,12 +4,12 @@ Single-vendor Telegram Mini App store for transferable digital products, voucher
 
 ## Source of truth
 
-Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current contract revision: **v1.4 (CR-04)**. See Section 28 for the conditional, evidence-based game-account transfer scope. Owner approval was recorded in writing through the project conversation on 21 November 2026; see Section 26.6. Formal legal name/e-signature certificate details are not recorded.
+Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current contract revision: **v1.5 (CR-05)**. See Section 29 for Owner authority over the internal product lifecycle, structured rights-review records, inventory sourcing, and fulfillment. Section 28's external rights and platform constraints remain applicable. Owner approval was recorded in writing through the project conversation on 21 November 2026; see Section 26.6. Formal legal name/e-signature certificate details are not recorded.
 
 ## Project documents
 
 - [Blueprint and Master Operation (MO)](docs/VAULT_CORE_BLUEPRINT_MASTER_OPERATION.md) — complete execution blueprint, operating procedures, QA, deployment, risk register, and go-live gates.
-- [Project Contract](PROJECT_CONTRACT.md) — current project contract v1.4 CR-04; see Section 28 for conditional game-account transfer rules and Section 27 for the XTR-only model.
+- [Project Contract](PROJECT_CONTRACT.md) — current project contract v1.5 CR-05; see Section 29 for Owner product authority and Section 27 for the XTR-only model.
 - [Deployment Status](DEPLOYMENT_STATUS.md) — infrastructure and production readiness record.
 - [Production Deployment Runbook](PRODUCTION_DEPLOYMENT_RUNBOOK.md) — secrets, workflow, routing, and Telegram webhook procedure.
 
@@ -32,7 +32,7 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 - Database: `vault_core`
 - Default branch: `main`
 
-The connected schema was checked: 11 application tables are present and all 7 migrations (001–007) are registered. Migration 007 adds a database-backed owner account allowlist. Migrations 004 and 005 add reservation ownership/delivery review and a single pre-checkout claim per order. Migration 006 moves all active product and finance amounts to XTR and adds the TEST fixture marker.
+The connected schema was checked with the existing application tables and migrations 001–010 registered. Migration 011 adds structured Owner rights reviews, append-only review events, source-bound inventory, and database guards for product activation/inventory insertion. Migration 011 is applied to production only after the CR-05 release checks pass.
 
 ## Local setup
 
@@ -62,11 +62,11 @@ Owner authorization accepts either the existing `ADMIN_TELEGRAM_IDS` server-side
 
 ## Operational rules
 
-- A product is created as `DRAFT`. Only activate a product after the SKU review reference is recorded.
-- Inventory payloads are encrypted before storage. Supported payloads are redeem codes, voucher codes, license keys, gift codes, digital files, and service instructions.
+- A product is created as `DRAFT`. Only Owner may approve the structured CR-05 internal rights review and activate a commercial SKU. The approval must be current, complete, attested, and unexpired; a free-form `rights_review_reference` is not sufficient.
+- Inventory payloads are encrypted before storage. Each commercial inventory unit is bound to the current Owner-approved rights review and a source/vendor or internal-origin reference. Supported payloads are redeem codes, voucher codes, license keys, gift codes, digital files, and service instructions.
 - Each reserved inventory item stores its owning order ID. Release and delivery operations verify ownership; one inventory unit cannot be linked to multiple active deliveries.
 - Each order can claim only one unique Telegram pre-checkout query ID. A valid successful-payment event is recorded once using the Telegram charge ID.
-- Account takeover credentials, email/password bundles, session tokens, OTP seeds, recovery codes, or third-party account credentials are not supported as fulfillment assets.
+- Owner is the internal decision-maker for product detail, source records, approval, inventory, and fulfillment. Internal approval does not create third-party ownership/license or override publisher/platform terms or applicable law. Account takeover credentials, email/password bundles, session tokens, OTP seeds, recovery codes, or third-party account credentials remain unsupported as fulfillment assets.
 - Public display stock is calculated from real sellable inventory. `display_stock_override` is a display cap and can never raise displayed stock above actual availability.
 - Telegram digital goods/services are paid through official Telegram Stars invoices. No manual XTR wallet-address payment flow is implemented.
 - `successful_payment` is the only event that marks an order paid. Screenshot claims or client-side callbacks never mark an order paid.
@@ -78,6 +78,14 @@ Owner authorization accepts either the existing `ADMIN_TELEGRAM_IDS` server-side
 - Sale price, cost, expenses, order snapshots, reports, refunds, and profit are recorded and displayed in XTR only.
 
 - The customer Profile exposes one owner-only action to create/activate four TEST-only sample products and encrypted dummy delivery payloads. This action is idempotent and seeds one available dummy inventory item per sample product. The samples appear in the customer catalog after successful setup.
+
+## CR-05 structured rights workflow
+
+- Owner Console records rights basis, publisher/platform, official terms URL, authorization reference where applicable, chain of title, transfer method, region, validity, notes, and Owner attestation.
+- Reviewer identity and review time are set server-side. Review revisions and status transitions are retained in an append-only event history.
+- Catalog, activation, inventory insertion, order creation, Telegram pre-checkout, and delivery recheck the current review and its expiry.
+- Every commercial stock unit stores its source reference and the exact review ID that approved it. Expired or superseded review records block new sales and delivery.
+- File uploads are not enabled because the existing Cloudflare account has R2 disabled. The current workflow stores evidence URLs/document references; it does not claim binary attachments are uploaded.
 
 ## Current implementation status
 

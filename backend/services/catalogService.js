@@ -18,7 +18,3 @@ export function isEligibleCheckoutProduct(product, { testMode = false, ownerAuth
 }
 
 
-export function canAddProductInventory(product) {
-  if (!product || product.is_test === true) return false;
-  return !['PENDING_REVIEW', 'PAUSED', 'ARCHIVED'].includes(product.status);
-}

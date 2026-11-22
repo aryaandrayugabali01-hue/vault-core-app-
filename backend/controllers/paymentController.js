@@ -15,7 +15,25 @@ export async function answerPreCheckout(query) {
         COALESCE((SELECT COUNT(*) FROM deliveries d JOIN inventory_items i ON i.id=d.inventory_item_id
           WHERE d.order_id=o.id AND d.status='PENDING' AND i.status='RESERVED'
             AND i.reserved_order_id=o.id AND i.reserved_until > NOW()),0)::int AS reserved_count,
-        COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id=o.id),0)::int AS requested_count
+        COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.order_id=o.id),0)::int AS requested_count,
+        COALESCE((SELECT COUNT(*) FROM order_items oi
+          JOIN products p ON p.id=oi.product_id
+          LEFT JOIN product_rights_reviews rr
+            ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
+          WHERE oi.order_id=o.id AND COALESCE(p.is_test,FALSE)=FALSE
+            AND (p.status<>'ACTIVE' OR p.fulfillment_type IS NULL
+              OR rr.id IS NULL OR rr.review_status<>'APPROVED'
+              OR rr.owner_attested IS NOT TRUE OR rr.valid_until<=NOW())),0)::int AS invalid_product_review_count,
+        COALESCE((SELECT COUNT(*) FROM deliveries d
+          JOIN inventory_items i ON i.id=d.inventory_item_id
+          JOIN products p ON p.id=i.product_id
+          LEFT JOIN product_rights_reviews rr
+            ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
+          WHERE d.order_id=o.id AND COALESCE(p.is_test,FALSE)=FALSE
+            AND (i.rights_review_id IS DISTINCT FROM p.current_rights_review_id
+              OR i.source_reference IS NULL OR length(btrim(i.source_reference))<3
+              OR rr.id IS NULL OR rr.review_status<>'APPROVED'
+              OR rr.owner_attested IS NOT TRUE OR rr.valid_until<=NOW())),0)::int AS invalid_inventory_rights_count
        FROM orders o JOIN customers c ON c.id=o.customer_id
        WHERE o.order_number=$1 FOR UPDATE OF o`,
       [query.invoice_payload]
@@ -23,6 +41,8 @@ export async function answerPreCheckout(query) {
     const order = rows[0];
     const valid = order && order.status === 'PENDING_PAYMENT'
       && order.reserved_count > 0 && order.reserved_count === order.requested_count
+      && Number(order.invalid_product_review_count) === 0
+      && Number(order.invalid_inventory_rights_count) === 0
       && Number(order.total_xtr) === Number(query.total_amount)
       && query.currency === 'XTR'
       && String(order.telegram_user_id) === String(query.from.id)

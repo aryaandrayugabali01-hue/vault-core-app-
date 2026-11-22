@@ -9,8 +9,14 @@ router.get('/', async (_req, res) => {
             p.fulfillment_type, p.sale_price_xtr, p.is_test,
             p.display_stock_mode, p.display_stock_override, p.low_stock_threshold,
             GREATEST(COUNT(i.id) FILTER (WHERE i.status='AVAILABLE'),0)::int AS sellable_stock
-     FROM products p LEFT JOIN inventory_items i ON i.product_id=p.id
+     FROM products p
+     JOIN product_rights_reviews rr
+       ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
+     LEFT JOIN inventory_items i
+       ON i.product_id=p.id AND i.rights_review_id=rr.id AND i.source_reference IS NOT NULL
      WHERE p.status='ACTIVE' AND COALESCE(p.is_test,FALSE)=FALSE
+       AND p.fulfillment_type IS NOT NULL
+       AND rr.review_status='APPROVED' AND rr.owner_attested=TRUE AND rr.valid_until>NOW()
      GROUP BY p.id ORDER BY p.game_category, p.tier, p.name`
   );
   const products = rows.filter(isPublicCatalogProduct).map((product) => {
