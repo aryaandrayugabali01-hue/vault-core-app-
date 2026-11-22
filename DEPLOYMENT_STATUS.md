@@ -4,12 +4,12 @@
 
 ## Current production snapshot — 23 November 2026
 
-- Latest confirmed production source: e315e2f4c28b37583b87b4dd0cdb68881c196385.
-- Production deployment: run 45056388433, SUCCESS. API Worker, frontend Worker, gateway, public domains, Neon connectivity, and Telegram webhook read-back passed.
+- Latest confirmed production source: b3dc38a37b8ed7df44dc6ad7e2812d2e533c1e70 (CR-05 + CR-06).
+- Production deployment: run 45058882018, SUCCESS. API Worker, frontend Worker, gateway, public domains, public artwork, Neon connectivity, Telegram webhook read-back, and encrypted TEST fixtures passed.
 - Neon migrations 001–012 are registered. CR-05 migration 011 and additive CR-06 migration 012 are applied. Migration 012 SHA-256: ac983f418dc7797cf971c39dfe222badbc8f18c383182fdfbba44c368763eb5a.
 - Database: 16 products total; 12 commercial SKUs all PENDING_REVIEW; 0 commercial SKUs active; 0 Owner rights reviews; 4 TEST-only inventory items; 0 orders; 0 transactions.
 - TEST inventory is dummy and non-commercial. No sellable commercial inventory has been sourced or added. No real customer payment/delivery acceptance has been performed.
-- CR-06 application changes are in PR #6. CI passed the backend/core tests, frontend build, and API Worker dry-run. The CR-06 UI/API changes are not live until PR #6 is merged and the existing production deployment workflow succeeds.
+- CR-06 application changes in PR #6 are merged and live. CI run 45058785912 passed backend/core tests, frontend build, asset verification, and API Worker dry-run.
 - Product image management currently accepts HTTPS URLs or local /assets paths. Binary image/evidence upload remains unavailable because Cloudflare R2 is disabled.
 - Remaining launch gates: Owner completes accurate per-SKU details and CR-05 reviews, adds source-bound stock, then performs controlled XTR payment/refund/delivery acceptance, security/recovery checks, and Owner UAT/release approval.
 
