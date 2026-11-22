@@ -19,7 +19,11 @@ export function validateRightsReviewInput(input, now = new Date()) {
   const chainOfTitle = clean(input?.chainOfTitle, 4000);
   const transferMethod = clean(input?.transferMethod, 2000);
   const region = clean(input?.region, 240);
-  const validUntilInput = clean(input?.validUntil, 40);\n  const normalizedValidUntil = /^\\d{4}-\\d{2}-\\d{2}$/.test(validUntilInput)\n    ? validUntilInput + 'T23:59:59.999+07:00'\n    : validUntilInput;\n  const validUntil = new Date(normalizedValidUntil);
+  const validUntilInput = clean(input?.validUntil, 40);
+  const normalizedValidUntil = /^\\d{4}-\\d{2}-\\d{2}$/.test(validUntilInput)
+    ? validUntilInput + 'T23:59:59.999+07:00'
+    : validUntilInput;
+  const validUntil = new Date(normalizedValidUntil);
   const reviewNotes = clean(input?.reviewNotes, 4000);
   const ownerAttested = input?.ownerAttested === true;
 
