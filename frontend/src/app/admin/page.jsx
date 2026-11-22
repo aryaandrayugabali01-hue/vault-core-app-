@@ -40,28 +40,12 @@ const API_ERROR_MESSAGES = {
 };
 const displayStatus = (status) => STATUS_LABELS[status] || 'Status sedang diperbarui';
 const apiErrorMessage = (data, fallback) => API_ERROR_MESSAGES[data?.error] || data?.message || fallback;
-const SKU_PREFIX = { MLBB:'MLBB', ROBLOX:'RBLX', FREE_FIRE:'FFIR', GENSHIN:'GNSH', OTHER:'OTHR' };
-const TIER_CODE = { SILVER:'SLV', GOLD:'GLD', PLATINUM:'PLT', SERVICE:'SRV' };
-const GAME_NAME = { MLBB:'Mobile Legends', ROBLOX:'Roblox', FREE_FIRE:'Free Fire', GENSHIN:'Genshin Impact', OTHER:'Produk Digital' };
-const TIER_NAME = { SILVER:'Silver', GOLD:'Gold', PLATINUM:'Platinum', SERVICE:'Layanan' };
-function suggestedSku(category, tier, products) {
-  const prefix = (SKU_PREFIX[category] || 'ITEM') + '-' + (TIER_CODE[tier] || 'STD') + '-';
-  const used = new Set(products.map((product) => String(product.sku || '').toUpperCase()));
-  let number = 1;
-  while (used.has(prefix + String(number).padStart(3, '0'))) number += 1;
-  return prefix + String(number).padStart(3, '0');
-}
-function suggestedName(category, tier) {
-  return (GAME_NAME[category] || 'Produk Digital') + ' ' + (TIER_NAME[tier] || 'Standard');
-}
-
 export default function AdminPage() {
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [expenseForm, setExpenseForm] = useState({ category:'OPERATIONS', description:'', amountXtr:'' });
   const [notice, setNotice] = useState('Memverifikasi akses pemilik…');
-  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', name:'Mobile Legends Gold', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'' });
   const [stockProduct, setStockProduct] = useState('');
   const [stockPayload, setStockPayload] = useState('');
   const [stockSourceReference, setStockSourceReference] = useState('');
@@ -77,7 +61,6 @@ export default function AdminPage() {
   const [botUsername, setBotUsername] = useState('');
   const [loginMessage, setLoginMessage] = useState('');
   const [loginBusy, setLoginBusy] = useState(false);
-  const [skuManual, setSkuManual] = useState(false);
   const headers = () => ({ 'content-type':'application/json', 'x-telegram-init-data':getInitData() });
 
   async function refresh() {
@@ -158,47 +141,6 @@ export default function AdminPage() {
     setLoginMessage('Anda telah keluar dari Dashboard Owner.');
   }
 
-  async function createProduct(e) {
-    e.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    const initialPayloads = splitInventoryPayloads(stockPayload);
-    try {
-      const response = await fetch(`${API}/api/admin/products`, {
-        method:'POST', headers:headers(), credentials:'include',
-        body:JSON.stringify({ ...form, salePriceXtr:Number(form.salePriceXtr), costPriceXtr:Number(form.costPriceXtr) })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(apiErrorMessage(data, 'Produk tidak dapat disimpan. Periksa kembali data produk.'));
-      const productId = String(data.product.id);
-      setStockProduct(productId);
-      if (initialPayloads.length) {
-        const stockResponse = await fetch(`${API}/api/admin/products/${productId}/inventory`, {
-          method:'POST', headers:headers(), credentials:'include',
-          body:JSON.stringify({ payloads:initialPayloads })
-        });
-        const stockData = await stockResponse.json();
-        if (!stockResponse.ok) {
-          await refresh();
-          setNotice(`Produk ${data.product.sku} tersimpan sebagai Draf, tetapi stok awal belum masuk: ${apiErrorMessage(stockData, 'Periksa payload lalu tambahkan stok dari panel persediaan.')} Produk tetap tersimpan dan dapat dilanjutkan.`);
-          document.getElementById('inventory-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
-          return;
-        }
-        setNotice(`Produk ${data.product.sku} dibuat sebagai Draf dan ${stockData.inserted} unit stok awal berhasil dienkripsi.`);
-        setStockPayload('');
-      } else {
-        setNotice(`Produk ${data.product.sku} dibuat sebagai Draf. Stok dapat ditambahkan sekarang atau nanti.`);
-      }
-      setSkuManual(false);
-      setForm({ ...form, sku:'', name:suggestedName(form.gameCategory,form.tier), description:'', rightsReviewReference:'' });
-      await refresh();
-      document.getElementById('inventory-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
-    } catch(e) {
-      setNotice(e.message || 'Produk tidak dapat disimpan.');
-    } finally {
-      setBusy(false);
-    }
-  }
   async function addStock(e) {
     e.preventDefault(); if (!stockProduct || !stockPayload.trim()) return;
     setBusy(true);
