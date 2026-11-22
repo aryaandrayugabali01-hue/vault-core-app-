@@ -49,7 +49,8 @@ function readOwnerSession(cookieHeader) {
 export function validateTelegramLoginPayload(data) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token || !data || typeof data !== 'object') throw new Error('TELEGRAM_LOGIN_UNAVAILABLE');
-  const { hash, auth_date: authDate, ...fields } = data;
+  const { hash, ...fields } = data;
+  const authDate = fields.auth_date;
   if (typeof hash !== 'string' || !/^[a-f0-9]{64}$/i.test(hash)) throw new Error('INVALID_TELEGRAM_SIGNATURE');
   const timestamp = Number(authDate);
   const now = Math.floor(Date.now() / 1000);
