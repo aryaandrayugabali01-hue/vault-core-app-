@@ -4,12 +4,12 @@ Single-vendor Telegram Mini App store for transferable digital products, voucher
 
 ## Source of truth
 
-Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current approved contract baseline: **v1.3 (CR-03)**. Owner approval was recorded in writing through the project conversation on 21 November 2026; see Section 26.6. Formal legal name/e-signature certificate details are not recorded.
+Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current contract revision: **v1.4 (CR-04)**. See Section 28 for the conditional, evidence-based game-account transfer scope. Owner approval was recorded in writing through the project conversation on 21 November 2026; see Section 26.6. Formal legal name/e-signature certificate details are not recorded.
 
 ## Project documents
 
 - [Blueprint and Master Operation (MO)](docs/VAULT_CORE_BLUEPRINT_MASTER_OPERATION.md) — complete execution blueprint, operating procedures, QA, deployment, risk register, and go-live gates.
-- [Project Contract](PROJECT_CONTRACT.md) — approved product and technical baseline v1.3 CR-03; see Sections 26.6 and 27 for the approval record and XTR-only model.
+- [Project Contract](PROJECT_CONTRACT.md) — current project contract v1.4 CR-04; see Section 28 for conditional game-account transfer rules and Section 27 for the XTR-only model.
 - [Deployment Status](DEPLOYMENT_STATUS.md) — infrastructure and production readiness record.
 - [Production Deployment Runbook](PRODUCTION_DEPLOYMENT_RUNBOOK.md) — secrets, workflow, routing, and Telegram webhook procedure.
 
@@ -51,9 +51,14 @@ Set `TELEGRAM_WEBHOOK_URL` to the public API route, then run `npm run setup:webh
 
 ## Owner access
 
-Owner authorization accepts either the existing `ADMIN_TELEGRAM_IDS` server-side allowlist or an active record in `owner_accounts`. The Profile screen exposes the backend-verified Telegram numeric ID and owner access state; an owner can be provisioned in the database without editing deployment secrets. Customer and owner API requests must include Telegram Mini App `initData`; the backend validates its HMAC and timestamp.
+Owner authorization accepts either the existing `ADMIN_TELEGRAM_IDS` server-side allowlist or an active record in `owner_accounts`. Protected Owner API routes accept a validated Telegram Mini App `initData` session or a signed, HttpOnly browser session created after Telegram Login Widget verification. Owner status is checked server-side on every protected request.
 
-**Access from a normal browser:** `https://vaultcore.biz.id/` displays the public catalog. Account identity, My Orders, checkout, and Owner tools require opening VAULT CORE from its Telegram Mini App; there is no separate email/password browser login. Inside the Mini App, open **Profile → Buka Dashboard Owner** to enter the Owner Console at `/admin`. The API validates Telegram `initData` and the server-side Owner allowlist on every protected request.
+**Web browser login:** open `https://vaultcore.biz.id/admin` and choose **Log in with Telegram**. Telegram verifies the identity; VAULT CORE then checks the Telegram numeric ID against the Owner allowlist. The browser session is signed by the API and stored in a Secure, HttpOnly, SameSite cookie shared only across the VAULT CORE subdomains. No email/password login is used.
+
+**One-time Telegram setup:** in `@BotFather`, run `/setdomain` and select the existing VAULT CORE bot, then register `vaultcore.biz.id`. This authorizes Telegram's Login Widget for the website domain. The bot token already used by the API is also used for server-side signature verification. If the widget is not displayed or Telegram rejects the domain, complete this BotFather step first.
+
+**Mini App login:** users can continue to open VAULT CORE from the Telegram bot. The existing `initData` validation remains supported. In the Mini App, open **Profile → Buka Dashboard Owner** to enter the Owner Console at `/admin`.
+
 
 ## Operational rules
 
