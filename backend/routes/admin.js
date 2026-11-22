@@ -29,7 +29,7 @@ router.get('/dashboard', async (_req, res) => {
 
 router.get('/products', async (_req, res) => {
   const { rows } = await pool.query(
-    `SELECT p.*, rr.review_status AS rights_review_status,
+    `SELECT p.*, mc.name AS marketplace_category_name, mc.slug AS marketplace_category_slug, rr.review_status AS rights_review_status,
             rr.valid_until AS rights_valid_until, rr.reviewed_at AS rights_reviewed_at,
             rr.rights_basis, rr.publisher_platform,
             COUNT(i.id) FILTER (WHERE i.status='AVAILABLE'
@@ -40,8 +40,9 @@ router.get('/products', async (_req, res) => {
      FROM products p
      LEFT JOIN product_rights_reviews rr
        ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
+     LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
      LEFT JOIN inventory_items i ON i.product_id=p.id
-     GROUP BY p.id,rr.id ORDER BY p.created_at DESC`
+     GROUP BY p.id,rr.id,mc.id ORDER BY p.created_at DESC`
   );
   const products = rows.map((product) => ({
     ...product,

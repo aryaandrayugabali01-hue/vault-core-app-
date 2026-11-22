@@ -36,7 +36,8 @@ function nextSku(category, tier, products) {
 
 export default function NewProductPage() {
   const [products, setProducts] = useState([]);
-  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'', imageUrl:'', customerTerms:'', fulfillmentEta:'' });
+  const [marketplaceCategories, setMarketplaceCategories] = useState([]);
+  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', marketplaceCategoryId:'', tier:'GOLD', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'', imageUrl:'', imageGalleryText:'', customerTerms:'', fulfillmentEta:'' });
   const [stock, setStock] = useState('');
   const [stockSourceReference, setStockSourceReference] = useState('');
   const [rightsForm, setRightsForm] = useState({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
@@ -55,14 +56,17 @@ export default function NewProductPage() {
     let active = true;
     async function load() {
       try {
-        const [session, response] = await Promise.all([
+        const [session, response, categoryResponse] = await Promise.all([
           fetch(API + '/api/owner-auth/session', { headers:{ 'x-telegram-init-data':getInitData() }, credentials:'include', cache:'no-store' }),
-          fetch(API + '/api/admin/products', { headers:{ 'x-telegram-init-data':getInitData() }, credentials:'include', cache:'no-store' })
+          fetch(API + '/api/admin/products', { headers:{ 'x-telegram-init-data':getInitData() }, credentials:'include', cache:'no-store' }),
+          fetch(API + '/api/admin/marketplace-categories', { headers:{ 'x-telegram-init-data':getInitData() }, credentials:'include', cache:'no-store' })
         ]);
-        if (!session.ok || !response.ok) { window.location.replace('/admin'); return; }
+        if (!session.ok || !response.ok || !categoryResponse.ok) { window.location.replace('/admin'); return; }
         const data = await response.json();
+        const categoryData = await categoryResponse.json();
         if (!active) return;
         setProducts(data.products || []);
+        setMarketplaceCategories(categoryData.categories || []);
         setReady(true);
       } catch {
         if (active) setError('Koneksi ke panel Owner gagal. Muat ulang halaman.');
@@ -92,6 +96,8 @@ export default function NewProductPage() {
       const productPayload = {
         ...form,
         sku:String(form.sku).trim().toUpperCase(),
+        marketplaceCategoryId:form.marketplaceCategoryId || null,
+        imageGallery:String(form.imageGalleryText || '').split(/\\r?\\n/).map((value)=>value.trim()).filter(Boolean),
         salePriceXtr:Number(form.salePriceXtr),
         costPriceXtr:Number(form.costPriceXtr)
       };
@@ -197,12 +203,14 @@ export default function NewProductPage() {
       <div className="admin-section-head"><div><span className="eyebrow muted">LANGKAH 1</span><h2>Informasi produk</h2></div></div>
       <form className="admin-form" onSubmit={submit}>
         <label>SKU <small className="field-hint">Otomatis, bisa diedit</small><input required value={form.sku} onChange={(e)=>{setManualSku(true);change('sku',e.target.value.toUpperCase());}} /></label>
-        <label>Kategori<select value={form.gameCategory} onChange={(e)=>change('gameCategory',e.target.value)}>{CATEGORIES.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label>Game<select value={form.gameCategory} onChange={(e)=>change('gameCategory',e.target.value)}>{CATEGORIES.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label className="span-2">Kategori marketplace<select value={form.marketplaceCategoryId} onChange={(e)=>change('marketplaceCategoryId',e.target.value)}><option value="">Belum ditetapkan</option>{marketplaceCategories.filter((item)=>item.is_active).map((item)=><option key={item.id} value={String(item.id)}>{item.name}</option>)}</select><small className="field-hint">Pilih kategori yang dikelola Owner. Perubahan kategori SKU memerlukan review CR-05.</small></label>
         <label>Tingkat produk<select value={form.tier} onChange={(e)=>change('tier',e.target.value)}>{TIERS.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
         <label>Nama produk<input required maxLength="160" value={form.name} onChange={(e)=>change('name',e.target.value)} placeholder="Nama yang tampil di katalog" /></label>
         <label className="span-2">Deskripsi produk<textarea rows="4" value={form.description} onChange={(e)=>change('description',e.target.value)} placeholder="Jelaskan isi produk, manfaat, ketentuan, dan cara pemenuhan." /></label>
         <label>Metode pemenuhan<select value={form.fulfillmentType} onChange={(e)=>change('fulfillmentType',e.target.value)}>{FULFILLMENT.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-        <label className="span-2">URL gambar produk <small className="field-hint">HTTPS publik atau file lokal /assets/</small><input type="text" value={form.imageUrl} onChange={(e)=>change('imageUrl',e.target.value)} placeholder="https://.../produk.webp" /></label>
+        <label className="span-2">URL gambar utama <small className="field-hint">HTTPS publik atau file lokal /assets/</small><input type="text" value={form.imageUrl} onChange={(e)=>change('imageUrl',e.target.value)} placeholder="https://.../produk.webp" /></label>
+        <label className="span-2">Galeri gambar, satu URL per baris<textarea rows="3" value={form.imageGalleryText} onChange={(e)=>change('imageGalleryText',e.target.value)} placeholder={'https://cdn.../gambar-1.webp\\nhttps://cdn.../gambar-2.webp'} /></label>
         <label className="span-2">Ketentuan produk untuk pelanggan<textarea rows="3" maxLength="5000" value={form.customerTerms} onChange={(e)=>change('customerTerms',e.target.value)} placeholder="Isi paket, syarat penggunaan, wilayah, masa berlaku, dan batasan produk." /></label>
         <label className="span-2">Estimasi waktu pemenuhan<input maxLength="160" value={form.fulfillmentEta} onChange={(e)=>change('fulfillmentEta',e.target.value)} placeholder="Contoh: 5–15 menit setelah pembayaran terverifikasi" /></label>
         <label>Harga jual (XTR)<input required type="number" min="1" step="1" value={form.salePriceXtr} onChange={(e)=>change('salePriceXtr',e.target.value)} /></label>

@@ -47,6 +47,7 @@ const apiErrorMessage = (data, fallback) => API_ERROR_MESSAGES[data?.error] || d
 export default function AdminPage() {
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
+  const [marketplaceCategories, setMarketplaceCategories] = useState([]);
   const [orders, setOrders] = useState([]);
   const [expenseForm, setExpenseForm] = useState({ category:'OPERATIONS', description:'', amountXtr:'' });
   const [notice, setNotice] = useState('Memverifikasi akses pemilik…');
@@ -59,7 +60,7 @@ export default function AdminPage() {
   const [rightsForm, setRightsForm] = useState({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
   const [displayCap, setDisplayCap] = useState({});
   const [editingProductId, setEditingProductId] = useState('');
-  const [editForm, setEditForm] = useState({ sku:'', gameCategory:'MLBB', tier:'SILVER', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', imageUrl:'', customerTerms:'', fulfillmentEta:'' });
+  const [editForm, setEditForm] = useState({ sku:'', gameCategory:'MLBB', tier:'SILVER', marketplaceCategoryId:'', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', imageUrl:'', imageGalleryText:'', customerTerms:'', fulfillmentEta:'' });
   const [busy, setBusy] = useState(false);
   const [authState, setAuthState] = useState('checking');
   const [botUsername, setBotUsername] = useState('');
@@ -68,17 +69,19 @@ export default function AdminPage() {
   const headers = () => ({ 'content-type':'application/json', 'x-telegram-init-data':getInitData() });
 
   async function refresh() {
-    const [dashboard, productResponse, orderResponse] = await Promise.all([
+    const [dashboard, productResponse, orderResponse, categoryResponse] = await Promise.all([
       fetch(`${API}/api/admin/dashboard`, { headers:headers(), credentials:'include', cache:'no-store' }),
       fetch(`${API}/api/admin/products`, { headers:headers(), credentials:'include', cache:'no-store' }),
-      fetch(`${API}/api/admin/orders`, { headers:headers(), credentials:'include', cache:'no-store' })
+      fetch(`${API}/api/admin/orders`, { headers:headers(), credentials:'include', cache:'no-store' }),
+      fetch(`${API}/api/admin/marketplace-categories`, { headers:headers(), credentials:'include', cache:'no-store' })
     ]);
     const dashboardData = await dashboard.json();
     const productData = await productResponse.json();
     const orderData = await orderResponse.json();
-    if (!dashboard.ok || !productResponse.ok || !orderResponse.ok) throw new Error(apiErrorMessage(dashboardData, '') || apiErrorMessage(productData, '') || apiErrorMessage(orderData, '') || 'Akses panel pemilik tidak dapat diverifikasi. Buka VAULT CORE melalui Telegram dengan akun pemilik.');
+    const categoryData = await categoryResponse.json();
+    if (!dashboard.ok || !productResponse.ok || !orderResponse.ok || !categoryResponse.ok) throw new Error(apiErrorMessage(dashboardData, '') || apiErrorMessage(productData, '') || apiErrorMessage(orderData, '') || apiErrorMessage(categoryData, '') || 'Akses panel pemilik tidak dapat diverifikasi. Buka VAULT CORE melalui Telegram dengan akun pemilik.');
     const nextProducts = productData.products || [];
-    setStats(dashboardData); setProducts(nextProducts); setOrders(orderData.orders || []);
+    setStats(dashboardData); setProducts(nextProducts); setOrders(orderData.orders || []); setMarketplaceCategories(categoryData.categories || []);
     if (!rightsProductId && nextProducts.length) setRightsProductId(String(nextProducts.find((item) => !item.is_test)?.id || nextProducts[0].id));
     setNotice('Panel pemilik berhasil terhubung.');
   }
@@ -159,6 +162,7 @@ export default function AdminPage() {
     setEditForm({
       sku:product.sku || '',
       gameCategory:product.game_category || 'OTHER',
+      marketplaceCategoryId:product.marketplace_category_id ? String(product.marketplace_category_id) : '',
       tier:product.tier || 'SILVER',
       name:product.name || '',
       description:product.description || '',
@@ -166,6 +170,7 @@ export default function AdminPage() {
       salePriceXtr:String(product.sale_price_xtr ?? ''),
       costPriceXtr:String(product.cost_price_xtr ?? '0'),
       imageUrl:product.image_url || '',
+      imageGalleryText:Array.isArray(product.image_gallery)?product.image_gallery.join('\n'):'',
       customerTerms:product.customer_terms || '',
       fulfillmentEta:product.fulfillment_eta || ''
     });
@@ -182,6 +187,8 @@ export default function AdminPage() {
         body:JSON.stringify({
           ...editForm,
           sku:String(editForm.sku).trim().toUpperCase(),
+          marketplaceCategoryId:editForm.marketplaceCategoryId || null,
+          imageGallery:String(editForm.imageGalleryText || '').split(/\\r?\\n/).map((value)=>value.trim()).filter(Boolean),
           salePriceXtr:Number(editForm.salePriceXtr),
           costPriceXtr:Number(editForm.costPriceXtr)
         })
@@ -331,14 +338,15 @@ export default function AdminPage() {
 
     <section className="admin-panel admin-product-entry">
       <div className="admin-section-head"><div><span className="eyebrow muted">KATALOG / INPUT PRODUK</span><h2>Tambah produk baru</h2><p>Gunakan halaman khusus untuk detail produk, harga, dan stok awal.</p></div></div>
-      <a className="admin-primary admin-product-entry-link" href="/admin/products/new">+ Input produk baru</a>
+      <div className="admin-entry-actions"><a className="admin-primary admin-product-entry-link" href="/admin/products/new">+ Input produk baru</a><a className="admin-secondary-link" href="/admin/categories">Kelola kategori &amp; panduan beli</a></div>
     </section>
 
     {editingProductId && <section className="admin-panel" id="product-edit-panel">
       <div className="admin-section-head"><div><span className="eyebrow muted">OWNER / EDIT SKU</span><h2>Edit rincian produk</h2><p>Perubahan disimpan ke SKU yang dipilih. Metode pemenuhan baru memerlukan review ulang.</p></div></div>
       <form className="admin-form" onSubmit={saveProductDetails}>
         <label>SKU<input required value={editForm.sku} onChange={e=>setEditForm({...editForm,sku:e.target.value.toUpperCase()})} /></label>
-        <label>Kategori<select value={editForm.gameCategory} onChange={e=>setEditForm({...editForm,gameCategory:e.target.value})}>{Object.entries(GAME_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label>Game<select value={editForm.gameCategory} onChange={e=>setEditForm({...editForm,gameCategory:e.target.value})}>{Object.entries(GAME_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label className="span-2">Kategori marketplace<select value={editForm.marketplaceCategoryId} onChange={e=>setEditForm({...editForm,marketplaceCategoryId:e.target.value})}><option value="">Belum ditetapkan</option>{marketplaceCategories.filter((item)=>item.is_active).map((item)=><option key={item.id} value={String(item.id)}>{item.name}</option>)}</select><small className="field-hint">Perubahan kategori marketplace memerlukan review ulang CR-05.</small></label>
         <label>Tier<select value={editForm.tier} onChange={e=>setEditForm({...editForm,tier:e.target.value})}>{Object.entries(TIER_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
         <label>Nama produk<input required maxLength="160" value={editForm.name} onChange={e=>setEditForm({...editForm,name:e.target.value})} /></label>
         <label className="span-2">Deskripsi produk<textarea rows="3" maxLength="5000" value={editForm.description} onChange={e=>setEditForm({...editForm,description:e.target.value})} /></label>
@@ -347,7 +355,8 @@ export default function AdminPage() {
         </select></label>
         <label>Harga jual (XTR)<input required type="number" min="1" step="1" value={editForm.salePriceXtr} onChange={e=>setEditForm({...editForm,salePriceXtr:e.target.value})} /></label>
         <label>Modal (XTR)<input required type="number" min="0" step="1" value={editForm.costPriceXtr} onChange={e=>setEditForm({...editForm,costPriceXtr:e.target.value})} /></label>
-        <label className="span-2">URL gambar (HTTPS atau /assets/)<input type="text" value={editForm.imageUrl} onChange={e=>setEditForm({...editForm,imageUrl:e.target.value})} placeholder="https://.../produk.webp" /></label>
+        <label className="span-2">URL gambar utama (HTTPS atau /assets/)<input type="text" value={editForm.imageUrl} onChange={e=>setEditForm({...editForm,imageUrl:e.target.value})} placeholder="https://.../produk.webp" /></label>
+        <label className="span-2">Galeri gambar, satu URL per baris<textarea rows="3" value={editForm.imageGalleryText} onChange={e=>setEditForm({...editForm,imageGalleryText:e.target.value})} placeholder={'https://cdn.../gambar-1.webp\\nhttps://cdn.../gambar-2.webp'} /></label>
         <label className="span-2">Ketentuan untuk pelanggan<textarea rows="3" maxLength="5000" value={editForm.customerTerms} onChange={e=>setEditForm({...editForm,customerTerms:e.target.value})} /></label>
         <label className="span-2">Estimasi waktu pemenuhan<input maxLength="160" value={editForm.fulfillmentEta} onChange={e=>setEditForm({...editForm,fulfillmentEta:e.target.value})} placeholder="Contoh: 5–15 menit setelah pembayaran" /></label>
         <div className="admin-actions"><button className="admin-primary" disabled={busy}>Simpan rincian</button><button type="button" onClick={()=>setEditingProductId('')} disabled={busy}>Batal</button></div>
