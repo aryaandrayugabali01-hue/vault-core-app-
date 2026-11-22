@@ -68,8 +68,22 @@ export async function deliverPaidOrder(orderNumber) {
        FROM deliveries d
        JOIN inventory_items i ON i.id=d.inventory_item_id
        JOIN products p ON p.id=i.product_id
+       LEFT JOIN product_rights_reviews rr
+         ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
        WHERE d.order_id=$1 AND d.status IN ('PENDING','FAILED')
          AND i.status='RESERVED' AND i.reserved_order_id=$1
+         AND (
+           COALESCE(p.is_test,FALSE)=TRUE
+           OR (
+             p.status='ACTIVE'
+             AND p.fulfillment_type IS NOT NULL
+             AND i.rights_review_id=p.current_rights_review_id
+             AND i.source_reference IS NOT NULL
+             AND rr.review_status='APPROVED'
+             AND rr.owner_attested=TRUE
+             AND rr.valid_until>NOW()
+           )
+         )
        ORDER BY d.id`,
       [order.id]
     );
