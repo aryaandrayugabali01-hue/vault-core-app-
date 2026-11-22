@@ -2,7 +2,7 @@ const RIGHTS_BASES = new Set([
   'OWNER_CREATED','OWNER_OWNED','AUTHORIZED_VENDOR','OFFICIAL_DISTRIBUTION',
   'LICENSED_CONTENT','SERVICE','OTHER'
 ]);
-const REVIEW_STATUSES = new Set(['PENDING','APPROVED','REJECTED','EXPIRED']);
+const REVIEW_STATUSES = new Set(['PENDING','APPROVED','REJECTED']);
 const EXTERNAL_AUTH_BASES = new Set(['AUTHORIZED_VENDOR','OFFICIAL_DISTRIBUTION','LICENSED_CONTENT','OTHER']);
 
 const clean = (value, max) => String(value ?? '').trim().slice(0, max);
@@ -19,7 +19,7 @@ export function validateRightsReviewInput(input, now = new Date()) {
   const chainOfTitle = clean(input?.chainOfTitle, 4000);
   const transferMethod = clean(input?.transferMethod, 2000);
   const region = clean(input?.region, 240);
-  const validUntil = new Date(input?.validUntil);
+  const validUntilInput = clean(input?.validUntil, 40);\n  const normalizedValidUntil = /^\\d{4}-\\d{2}-\\d{2}$/.test(validUntilInput)\n    ? validUntilInput + 'T23:59:59.999+07:00'\n    : validUntilInput;\n  const validUntil = new Date(normalizedValidUntil);
   const reviewNotes = clean(input?.reviewNotes, 4000);
   const ownerAttested = input?.ownerAttested === true;
 
