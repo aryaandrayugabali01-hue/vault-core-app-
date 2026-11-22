@@ -339,7 +339,7 @@ test('request-scoped database adapter rejects DB calls after a connection failur
 
 function signedTelegramLoginPayload(user, token, authDate = Math.floor(Date.now() / 1000)) {
   const fields = { ...user, auth_date: String(authDate) };
-  const check = Object.keys(fields).sort().map((key) => key + '=' + String(fields[key])).join('\\n');
+  const check = Object.keys(fields).sort().map((key) => key + '=' + String(fields[key])).join('\n');
   const secret = crypto.createHash('sha256').update(token).digest();
   const hash = crypto.createHmac('sha256', secret).update(check).digest('hex');
   return { ...fields, hash };
