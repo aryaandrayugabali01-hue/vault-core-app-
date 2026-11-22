@@ -20,7 +20,7 @@ const API_ERROR_MESSAGES = {
   INVALID_PRODUCT_UPDATE:'Perubahan produk belum lengkap atau tidak valid. Periksa kembali data yang akan disimpan.',
   INVALID_PRODUCT_IMAGE_URL:'Gunakan URL gambar HTTPS atau path lokal /assets/ yang valid.',
   PRODUCT_SKU_ALREADY_EXISTS:'SKU tersebut sudah digunakan oleh produk lain.',
-  PRODUCT_REVIEW_REQUIRED_AFTER_FULFILLMENT_CHANGE:'Metode pemenuhan berubah. Simpan review CR-05 baru sebelum mengaktifkan SKU.',
+  PRODUCT_REVIEW_REQUIRED_AFTER_DETAIL_CHANGE:'Metode pemenuhan berubah. Simpan review CR-05 baru sebelum mengaktifkan SKU.',
   PRODUCT_HAS_OPEN_ORDERS:'Metode pemenuhan belum dapat diubah karena masih ada pesanan aktif untuk SKU ini. Selesaikan atau rekonsiliasi pesanan terlebih dahulu.',
   PRODUCT_REVIEW_REFERENCE_REQUIRED:'Tambahkan referensi verifikasi hak penjualan sebelum mengaktifkan produk.',
   PRODUCT_NOT_FOUND:'Produk tidak ditemukan. Muat ulang daftar produk lalu coba kembali.',
@@ -188,7 +188,7 @@ export default function AdminPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(apiErrorMessage(data, 'Detail produk tidak dapat disimpan.'));
-      setNotice(data.fulfillmentReviewReset
+      setNotice(data.productReviewReset
         ? 'Detail produk disimpan. Metode pemenuhan berubah, sehingga SKU dijeda dan harus menjalani review CR-05 baru.'
         : 'Detail produk berhasil diperbarui.');
       setEditingProductId('');
