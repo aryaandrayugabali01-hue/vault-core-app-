@@ -33,7 +33,9 @@ router.get('/products', async (_req, res) => {
             rr.rights_basis, rr.publisher_platform,
             COUNT(i.id) FILTER (WHERE i.status='AVAILABLE'
               AND i.rights_review_id=p.current_rights_review_id
-              AND i.source_reference IS NOT NULL)::int AS actual_stock
+              AND i.source_reference IS NOT NULL
+              AND rr.review_status='APPROVED' AND rr.owner_attested=TRUE
+              AND rr.valid_until>NOW())::int AS actual_stock
      FROM products p
      LEFT JOIN product_rights_reviews rr
        ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
