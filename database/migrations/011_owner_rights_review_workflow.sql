@@ -103,12 +103,12 @@ CREATE INDEX IF NOT EXISTS idx_product_rights_review_events_history
 CREATE OR REPLACE FUNCTION vault_core_prevent_rights_event_mutation()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $
+AS $$
 BEGIN
   RAISE EXCEPTION 'PRODUCT_RIGHTS_REVIEW_EVENTS_ARE_APPEND_ONLY'
     USING ERRCODE = '55000';
 END;
-$;
+$$;
 
 DROP TRIGGER IF EXISTS trg_product_rights_events_append_only ON product_rights_review_events;
 CREATE TRIGGER trg_product_rights_events_append_only
