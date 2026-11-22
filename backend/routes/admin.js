@@ -241,7 +241,7 @@ router.patch('/products/:id', async (req, res) => {
     const assignments = columns.map((column, index) => `${column}=$${index + 1}`);
     if (productReviewReset && current.rows[0].is_test !== true) {
       assignments.push("current_rights_review_id=NULL");
-      assignments.push("status='PAUSED'");
+      assignments.push("status=CASE WHEN status='ACTIVE' THEN 'PAUSED' ELSE status END");
       await client.query("UPDATE inventory_items SET status='UNAVAILABLE' WHERE product_id=$1 AND status='AVAILABLE'",[id]);
     }
     values.push(id);
