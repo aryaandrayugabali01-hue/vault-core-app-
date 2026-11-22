@@ -84,7 +84,7 @@ export default function NewProductPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(apiMessage(data));
       productId = data.product.id;
-      const lines = stock.split(/\\r?\\n/).map((value) => value.trim()).filter(Boolean);
+      const lines = stock.split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
       if (lines.length) {
         const inventory = await fetch(API + '/api/admin/products/' + productId + '/inventory', {
           method:'POST', headers, credentials:'include', body:JSON.stringify({ payloads:lines })
