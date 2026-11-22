@@ -18,6 +18,41 @@ const TIERS = [
   { id: 'PLATINUM', label: 'Tier Platinum' },
   { id: 'SERVICE', label: 'Layanan' }
 ];
+const STORE_FILTERS = [
+  { key: 'ALL', mode: 'all', id: 'ALL', label: 'Semua produk' },
+  { key: 'TIER_SILVER', mode: 'tier', id: 'SILVER', label: '🥈 Silver' },
+  { key: 'TIER_GOLD', mode: 'tier', id: 'GOLD', label: '🥇 Gold' },
+  { key: 'TIER_PLATINUM', mode: 'tier', id: 'PLATINUM', label: '💎 Platinum' },
+  { key: 'GAME_MLBB', mode: 'game', id: 'MLBB', label: '⚔ MLBB' },
+  { key: 'GAME_ROBLOX', mode: 'game', id: 'ROBLOX', label: 'Roblox' },
+  { key: 'GAME_FREE_FIRE', mode: 'game', id: 'FREE_FIRE', label: '◎ Free Fire' },
+  { key: 'GAME_GENSHIN', mode: 'game', id: 'GENSHIN', label: '✧ Genshin Impact' }
+];
+const CATEGORY_TILES = [
+  { id: 'MLBB', label: 'Mobile Legends', subtitle: 'Kategori game', mode: 'game', mark: '⚔' },
+  { id: 'ROBLOX', label: 'Roblox', subtitle: 'Kategori game', mode: 'game', mark: 'R' },
+  { id: 'FREE_FIRE', label: 'Free Fire', subtitle: 'Kategori game', mode: 'game', mark: '◎' },
+  { id: 'GENSHIN', label: 'Genshin Impact', subtitle: 'Kategori game', mode: 'game', mark: '✧' },
+  { id: 'PLATINUM', label: 'Tier Platinum', subtitle: 'Koleksi premium', mode: 'tier', mark: '💎' }
+];
+const GAME_ART = {
+  MLBB: '/assets/03-categories/category-mlbb.png',
+  ROBLOX: '/assets/03-categories/category-roblox.png',
+  FREE_FIRE: '/assets/03-categories/category-free-fire.png',
+  GENSHIN: '/assets/03-categories/category-genshin.png',
+  OTHER: '/assets/03-categories/category-other.png'
+};
+const TIER_ART = {
+  SILVER: '/assets/04-tiers/tier-silver.png',
+  GOLD: '/assets/04-tiers/tier-gold.png',
+  PLATINUM: '/assets/04-tiers/tier-platinum.png'
+};
+const TRUST_ITEMS = [
+  { icon: '/assets/06-icons/icon-wallet.svg', title: 'Pembayaran Telegram Stars', detail: 'Invoice resmi dalam XTR' },
+  { icon: '/assets/06-icons/icon-box.svg', title: 'Stok aktual', detail: 'Ketersediaan diperiksa saat checkout' },
+  { icon: '/assets/06-icons/icon-shield.svg', title: 'Payload terenkripsi', detail: 'Inventaris digital disimpan terenkripsi' },
+  { icon: '/assets/06-icons/icon-orders.svg', title: 'Status pesanan', detail: 'Riwayat dan status dapat dipantau' }
+];
 
 const GAME_LABELS = { MLBB: 'MLBB', ROBLOX: 'Roblox', FREE_FIRE: 'Free Fire', GENSHIN: 'Genshin Impact', OTHER: 'Lainnya' };
 const GAME_MARKS = { MLBB: 'ML', ROBLOX: 'R', FREE_FIRE: 'FF', GENSHIN: 'GI', OTHER: 'VC' };
@@ -129,6 +164,10 @@ export default function HomePage() {
   }, []);
 
   const sourceProducts = isTestMode ? testProducts : products;
+  const activeStoreFilter = tier !== 'ALL' ? 'TIER_' + tier : category !== 'ALL' ? 'GAME_' + category : 'ALL';
+  const activeFilterLabel = tier !== 'ALL'
+    ? (TIER_LABELS[tier] || tier) + ' Tier'
+    : category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua produk';
   const filtered = useMemo(() => sourceProducts.filter((p) =>
     (category === 'ALL' || p.game_category === category)
     && (tier === 'ALL' || p.tier === tier)
@@ -309,6 +348,33 @@ export default function HomePage() {
     }
   }
 
+  function selectStoreFilter(item) {
+    if (item.mode === 'tier') {
+      setTier(item.id);
+      setCategory('ALL');
+      return;
+    }
+    if (item.mode === 'game') {
+      setCategory(item.id);
+      setTier('ALL');
+      return;
+    }
+    setCategory('ALL');
+    setTier('ALL');
+  }
+
+  function selectCategoryTile(item) {
+    if (item.mode === 'tier') {
+      setCategory('ALL');
+      setTier(item.id);
+    } else {
+      setCategory(item.id);
+      setTier('ALL');
+    }
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById('products')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  }
+
   function closeProfile() {
     setProfileOpen(false);
     setActiveTab('home');
@@ -342,13 +408,14 @@ export default function HomePage() {
     <main className="shell">
       <header className="topbar">
         <a className="brand" href="#home" aria-label="Beranda VAULT CORE" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}>
-          <span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span>
+          <img className="brand-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" />
         </a>
         <label className="top-searchbox" aria-label="Cari katalog">
           <AppIcon name="search" />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari game, SKU, atau produk…" aria-label="Cari game, SKU, atau produk" />
+          {query && <button className="clear-search" type="button" onClick={() => setQuery('')} aria-label="Hapus pencarian">×</button>}
         </label>
-        <button className="top-profile-button" type="button" onClick={openProfile} aria-label="Buka profil"><AppIcon name="profile" /></button>
+        <button className="top-profile-button" type="button" onClick={openProfile} aria-label="Buka profil"><AppIcon name="profile" /><span>Profil</span></button>
       </header>
 
       {telegramContext === false && <aside className="browser-access-notice" role="status">
@@ -356,66 +423,75 @@ export default function HomePage() {
         <span>Halaman ini menampilkan katalog publik. Login akun, riwayat pesanan, checkout XTR, dan Dashboard Owner tersedia setelah VAULT CORE dibuka melalui Telegram Mini App.</span>
       </aside>}
 
-      <nav className="store-tabs" aria-label="Filter kategori katalog">
-        {CATEGORIES.map((item) => <button
-          key={item.id}
+      <nav className="store-tabs" aria-label="Filter tier dan kategori katalog">
+        {STORE_FILTERS.map((item) => <button
+          key={item.key}
           type="button"
-          className={'store-tab ' + (category === item.id ? 'active' : '')}
-          aria-pressed={category === item.id}
-          onClick={() => setCategory(item.id)}
+          className={'store-tab ' + (activeStoreFilter === item.key ? 'active' : '')}
+          aria-pressed={activeStoreFilter === item.key}
+          onClick={() => selectStoreFilter(item)}
         >{item.label}</button>)}
       </nav>
 
       <section className="hero" id="home">
-        <div className="hero-glow" />
-        <div className="eyebrow"><span className="pulse" /> VAULT CORE DIGITAL STORE</div>
-        <h1>Temukan produk<br /><span>gaming favorit Anda.</span></h1>
-        <p>Katalog kode digital, voucher, lisensi, dan layanan gaming. Pilih produk, periksa ketersediaan, lalu bayar melalui Telegram Stars.</p>
-        <a className="hero-cta" href="#products">Jelajahi katalog <span>↗</span></a>
-        <div className="hero-stats">
-          <div><strong>04</strong><small>Kategori game</small></div>
-          <div><strong>03</strong><small>Tingkat produk</small></div>
-          <div><strong>XTR</strong><small>Telegram Stars</small></div>
+        <div className="hero-copy">
+          <div className="eyebrow"><span className="pulse" /> VAULT CORE DIGITAL STORE</div>
+          <h1>Temukan pilihan digital<br /><span>gaming dalam satu tempat.</span></h1>
+          <p>Jelajahi kategori dan tier, periksa stok yang tersedia, lalu selesaikan pembayaran melalui invoice Telegram Stars.</p>
+          <div className="hero-actions">
+            <button className="hero-cta" type="button" onClick={() => { setCategory('ALL'); setTier('PLATINUM'); document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>Jelajahi Tier Platinum <span>↗</span></button>
+            <button className="hero-secondary" type="button" onClick={() => { setCategory('ALL'); setTier('ALL'); document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>Semua produk</button>
+          </div>
+          <div className="hero-stats">
+            <div><strong>04</strong><small>Kategori game</small></div>
+            <div><strong>04</strong><small>Tier & layanan</small></div>
+            <div><strong>XTR</strong><small>Telegram Stars</small></div>
+          </div>
+        </div>
+        <div className="hero-visual" aria-hidden="true">
+          <div className="hero-visual-glow" />
+          <img src="/assets/02-hero/hero-vaultcore.webp" alt="" fetchPriority="high" />
+          <span className="hero-visual-caption">DIGITAL GAMING STORE <b>· XTR</b></span>
         </div>
       </section>
 
       <section className="section category-section" id="catalog">
         <div className="section-heading">
-          <div><span className="eyebrow muted">JELAJAHI KATALOG</span><h2 id="categories">Kategori game populer</h2></div>
-          <span className="section-count">04 KATEGORI</span>
+          <div><span className="eyebrow muted">JELAJAHI KATALOG</span><h2 id="categories">Kategori pilihan</h2></div>
+          <span className="section-count">05 PILIHAN</span>
         </div>
-        <div className="category-grid" role="group" aria-label="Pilih kategori game">
-          {CATEGORIES.slice(1).map((item) => <button
-            key={item.id}
-            type="button"
-            className={'category-card ' + (category === item.id ? 'selected' : '') + ' cat-' + item.id.toLowerCase()}
-            aria-pressed={category === item.id}
-            onClick={() => setCategory(item.id)}
-          >
-            <span className="cat-icon">{item.mark}</span>
-            <span className="category-copy"><strong>{item.label}</strong><small>Lihat katalog</small></span>
-            <span className="cat-arrow">↗</span>
-          </button>)}
+        <div className="category-grid" role="group" aria-label="Pilih kategori atau tier unggulan">
+          {CATEGORY_TILES.map((item) => {
+            const active = item.mode === 'tier' ? tier === 'PLATINUM' : category === item.id;
+            const art = item.mode === 'tier' ? TIER_ART.PLATINUM : GAME_ART[item.id];
+            return <button
+              key={item.id}
+              type="button"
+              className={'category-card ' + (active ? 'selected' : '') + (item.mode === 'tier' ? ' cat-tier-platinum' : ' cat-' + item.id.toLowerCase())}
+              aria-pressed={active}
+              onClick={() => selectCategoryTile(item)}
+            >
+              <span className="cat-icon"><img src={art} alt="" loading="lazy" /></span>
+              <span className="category-copy"><strong>{item.label}</strong><small>{item.subtitle}</small></span>
+              <span className="cat-arrow">↗</span>
+            </button>;
+          })}
         </div>
       </section>
 
       <section className="section product-section" id="products">
         <div className="section-heading">
-          <div><span className="eyebrow muted">PILIHAN UNTUK ANDA</span><h2>Katalog produk game</h2></div>
+          <div><span className="eyebrow muted">PILIHAN UNTUK ANDA</span><h2>Katalog produk game <span className="active-filter-badge">{activeFilterLabel}</span></h2></div>
           <span className="section-count">{loading ? '—' : String(filtered.length).padStart(2, '0') + ' PRODUK'}</span>
         </div>
         {isTestMode && <div className="test-lane-notice">
           <div><strong>RUANG UJI OWNER</strong><span>Produk contoh terpisah dari katalog pelanggan. Invoice uji bernilai 1 XTR sungguhan.</span></div>
           <button type="button" onClick={() => { setIsTestMode(false); setSelectedProduct(null); setNotice('Kembali ke katalog publik. Produk uji tidak ditampilkan kepada pelanggan.'); }}>Katalog publik</button>
         </div>}
-        <div className="filters" aria-label="Filter tingkat produk">
-          {TIERS.map((item) => <button key={item.id} type="button" className={'filter-chip ' + (tier === item.id ? 'active' : '')} aria-pressed={tier === item.id} onClick={() => setTier(item.id)}>{item.label}</button>)}
-        </div>
-
         {loading ? <div className="product-grid" aria-label="Memuat katalog" aria-busy="true">
           {[0, 1, 2, 3].map((item) => <ProductSkeleton index={item} key={item} />)}
-        </div> : error ? <div className="empty-state error" role="alert"><span className="empty-icon">!</span><strong>Katalog belum tersedia</strong><p>{error}</p><button className="reset-filters" type="button" onClick={loadCatalog}>Coba muat ulang</button></div> : filtered.length === 0 ? <div className="empty-state">
-          <span className="empty-icon">⌕</span>
+        </div> : error ? <div className="empty-state error" role="alert"><img className="state-illustration" src="/assets/05-states/network-error.png" alt="" /><strong>Katalog belum tersedia</strong><p>{error}</p><button className="reset-filters" type="button" onClick={loadCatalog}>Coba muat ulang</button></div> : filtered.length === 0 ? <div className="empty-state">
+          <img className="state-illustration" src="/assets/05-states/product-not-found.png" alt="" />
           <strong>Produk tidak ditemukan</strong>
           <p>Coba kata kunci lain atau pilih filter kategori dan tier yang berbeda.</p>
           <button className="reset-filters" type="button" onClick={() => { setQuery(''); setCategory('ALL'); setTier('ALL'); }}>Reset filter</button>
@@ -427,9 +503,7 @@ export default function HomePage() {
             return <article className="product-card" key={product.id}>
               <div className="product-card-head">
                 <div className={'product-art art-' + game.toLowerCase()}>
-                  <span className="art-ring" />
-                  <span className="art-orbit" />
-                  <span className="art-monogram">{GAME_MARKS[game] || 'VC'}</span>
+                  <img src={GAME_ART[game] || GAME_ART.OTHER} alt="" loading="lazy" />
                 </div>
                 <div className="product-card-meta">
                   <span className={'tier-label ' + String(product.tier || '').toLowerCase()}>{TIER_LABELS[product.tier] || product.tier} Tier</span>
@@ -455,18 +529,19 @@ export default function HomePage() {
         </div>}
       </section>
 
-      <section className="trust-strip">
-        <div className="trust-item"><span className="trust-icon">✦</span><div><strong>Telegram Stars</strong><small>Pembayaran invoice dalam XTR</small></div></div>
-        <div className="trust-item"><span className="trust-icon">✓</span><div><strong>Harga transparan</strong><small>Harga produk tampil dalam XTR</small></div></div>
-        <div className="trust-item"><span className="trust-icon">▤</span><div><strong>Riwayat pesanan</strong><small>Pantau pesanan dari menu akun</small></div></div>
+      <section className="trust-strip" aria-label="Informasi layanan VAULT CORE">
+        {TRUST_ITEMS.map((item) => <div className="trust-item" key={item.title}>
+          <span className="trust-icon"><img src={item.icon} alt="" loading="lazy" /></span>
+          <div><strong>{item.title}</strong><small>{item.detail}</small></div>
+        </div>)}
       </section>
       <footer className="footer"><a className="brand" href="#home" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a><small>© {new Date().getFullYear()} VAULT CORE. Katalog produk digital dan layanan gaming.</small></footer>
 
       <nav className="bottom-nav" aria-label="Navigasi utama">
-        <button type="button" className={'nav-item ' + (activeTab === 'home' ? 'active' : '')} aria-current={activeTab === 'home' ? 'page' : undefined} onClick={() => navigate('home')}><AppIcon name="home" /><span>Home</span></button>
-        <button type="button" className={'nav-item ' + (activeTab === 'categories' ? 'active' : '')} aria-current={activeTab === 'categories' ? 'page' : undefined} onClick={() => navigate('categories')}><AppIcon name="categories" /><span>Categories</span></button>
-        <button type="button" className={'nav-item ' + (activeTab === 'orders' ? 'active' : '')} aria-current={activeTab === 'orders' ? 'page' : undefined} onClick={() => navigate('orders')}><AppIcon name="orders" /><span>My Orders</span></button>
-        <button type="button" className={'nav-item ' + (activeTab === 'profile' ? 'active' : '')} aria-current={activeTab === 'profile' ? 'page' : undefined} onClick={() => navigate('profile')}><AppIcon name="profile" /><span>Profile</span></button>
+        <button type="button" className={'nav-item ' + (activeTab === 'home' ? 'active' : '')} aria-current={activeTab === 'home' ? 'page' : undefined} onClick={() => navigate('home')}><AppIcon name="home" /><span>Utama</span></button>
+        <button type="button" className={'nav-item ' + (activeTab === 'categories' ? 'active' : '')} aria-current={activeTab === 'categories' ? 'page' : undefined} onClick={() => navigate('categories')}><AppIcon name="categories" /><span>Katalog</span></button>
+        <button type="button" className={'nav-item ' + (activeTab === 'orders' ? 'active' : '')} aria-current={activeTab === 'orders' ? 'page' : undefined} onClick={() => navigate('orders')}><AppIcon name="orders" /><span>Pesanan</span></button>
+        <button type="button" className={'nav-item ' + (activeTab === 'profile' ? 'active' : '')} aria-current={activeTab === 'profile' ? 'page' : undefined} onClick={() => navigate('profile')}><AppIcon name="profile" /><span>Profil</span></button>
       </nav>
 
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Tutup">×</button></div>}
@@ -474,6 +549,7 @@ export default function HomePage() {
 {selectedProduct && <div className="modal-backdrop" onClick={() => setSelectedProduct(null)}>
         <section className="product-detail-modal" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onClick={(e) => e.stopPropagation()}>
           <div className="modal-head"><div><span className="eyebrow muted">DETAIL PRODUK</span><h2 id="product-detail-title">{selectedProduct.name}</h2></div><button className="icon-button" type="button" onClick={() => setSelectedProduct(null)} aria-label="Tutup detail produk">×</button></div>
+          <div className="detail-product-art"><img src={GAME_ART[selectedProduct.game_category] || GAME_ART.OTHER} alt="" /></div>
           <div className="detail-category">{GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</div>
           <p className="detail-description">{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p>
           <div className="detail-facts">
@@ -517,7 +593,7 @@ export default function HomePage() {
               </div>
             </div>
             <span className={'order-status ' + String(order.status).toLowerCase()}>{ORDER_STATUS_LABELS[order.status] || 'Status pesanan sedang diperbarui'}</span>
-          </div>) : <div className="empty-state"><span className="empty-icon">▤</span><strong>Belum ada pesanan</strong><p>Pesanan yang dibuat melalui VAULT CORE akan muncul di sini.</p></div>}
+          </div>) : <div className="empty-state"><img className="state-illustration" src="/assets/05-states/empty-orders.png" alt="" /><strong>Belum ada pesanan</strong><p>Pesanan yang dibuat melalui VAULT CORE akan muncul di sini.</p></div>}
         </section>
       </div>}
 
