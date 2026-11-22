@@ -148,12 +148,45 @@ export default function AdminPage() {
   }
 
   async function createProduct(e) {
-    e.preventDefault(); setBusy(true);
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    const initialPayloads = stockPayload.split('\\n').map((value) => value.trim()).filter(Boolean);
     try {
-      const response = await fetch(`${API}/api/admin/products`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ ...form, salePriceXtr:Number(form.salePriceXtr), costPriceXtr:Number(form.costPriceXtr) }) });
-      const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Produk tidak dapat disimpan. Periksa kembali data produk.'));
-      setNotice(`Produk ${data.product.sku} berhasil disimpan sebagai Draf. Tambahkan stok pada langkah berikutnya.`); setStockProduct(String(data.product.id)); setSkuManual(false); setForm({ ...form, sku:'', name:suggestedName(form.gameCategory,form.tier), description:'', rightsReviewReference:'' }); await refresh(); document.getElementById('inventory-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
-    } catch(e) { setNotice(e.message); } finally { setBusy(false); }
+      const response = await fetch(`${API}/api/admin/products`, {
+        method:'POST', headers:headers(), credentials:'include',
+        body:JSON.stringify({ ...form, salePriceXtr:Number(form.salePriceXtr), costPriceXtr:Number(form.costPriceXtr) })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(apiErrorMessage(data, 'Produk tidak dapat disimpan. Periksa kembali data produk.'));
+      const productId = String(data.product.id);
+      setStockProduct(productId);
+      if (initialPayloads.length) {
+        const stockResponse = await fetch(`${API}/api/admin/products/${productId}/inventory`, {
+          method:'POST', headers:headers(), credentials:'include',
+          body:JSON.stringify({ payloads:initialPayloads })
+        });
+        const stockData = await stockResponse.json();
+        if (!stockResponse.ok) {
+          await refresh();
+          setNotice(`Produk ${data.product.sku} tersimpan sebagai Draf, tetapi stok awal belum masuk: ${apiErrorMessage(stockData, 'Periksa payload lalu tambahkan stok dari panel persediaan.')} Produk tetap tersimpan dan dapat dilanjutkan.`);
+          document.getElementById('inventory-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+          return;
+        }
+        setNotice(`Produk ${data.product.sku} dibuat sebagai Draf dan ${stockData.inserted} unit stok awal berhasil dienkripsi.`);
+        setStockPayload('');
+      } else {
+        setNotice(`Produk ${data.product.sku} dibuat sebagai Draf. Stok dapat ditambahkan sekarang atau nanti.`);
+      }
+      setSkuManual(false);
+      setForm({ ...form, sku:'', name:suggestedName(form.gameCategory,form.tier), description:'', rightsReviewReference:'' });
+      await refresh();
+      document.getElementById('inventory-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+    } catch(e) {
+      setNotice(e.message || 'Produk tidak dapat disimpan.');
+    } finally {
+      setBusy(false);
+    }
   }
   async function addStock(e) {
     e.preventDefault(); if (!stockProduct || !stockPayload.trim()) return;
@@ -231,8 +264,9 @@ export default function AdminPage() {
     <section className="owner-login-card">
       <a className="brand" href="/"><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a>
       <span className="eyebrow muted">OWNER SECURE ACCESS</span>
-      <h1>Masuk ke Dashboard Owner</h1>
-      <p>Gunakan akun Telegram yang terdaftar sebagai pemilik VAULT CORE. Tidak perlu membuat atau mengingat password baru.</p>
+      <h1>Masuk dengan Telegram</h1>
+      <p>Gunakan akun Telegram Owner yang sudah terdaftar. Telegram memverifikasi identitas Anda, lalu VAULT CORE memeriksa izin Owner secara otomatis.</p>
+      <div className="owner-login-step"><span>1</span> Pilih akun Telegram <span>2</span> Konfirmasi login <span>3</span> Dashboard terbuka</div>
       {authState === 'checking' ? <div className="owner-login-loading">Memeriksa sesi Telegram…</div> : <>
         <div id="telegram-login-widget" className="telegram-login-widget" />
         {loginBusy && <div className="owner-login-loading">Memverifikasi akun Telegram…</div>}
@@ -266,7 +300,9 @@ export default function AdminPage() {
         <label>Harga jual (XTR)<input required type="number" min="1" step="1" value={form.salePriceXtr} onChange={e=>setForm({...form,salePriceXtr:e.target.value})} /></label>
         <label>Modal (XTR)<input required type="number" min="0" step="1" value={form.costPriceXtr} onChange={e=>setForm({...form,costPriceXtr:e.target.value})} /></label>
         <label className="span-2">Referensi hak penjualan <small className="field-hint">Opsional saat menyimpan draf; diperlukan sebelum produk komersial diaktifkan</small><input value={form.rightsReviewReference} onChange={e=>setForm({...form,rightsReviewReference:e.target.value})} placeholder="Tautan atau nomor bukti otorisasi" /></label>
-        <button className="admin-primary" disabled={busy}>Simpan produk sebagai Draf</button>
+        <label className="span-2">Stok awal (opsional) <small className="field-hint">Masukkan kode digital yang sah, satu unit per baris. Data langsung dienkripsi setelah produk dibuat.</small><textarea rows="4" value={stockPayload} onChange={e=>setStockPayload(e.target.value)} placeholder="Kode voucher / redeem / lisensi, satu per baris..." /></label>
+        <div className="admin-form-hint span-2">{stockPayload.split('\\n').filter((value)=>value.trim()).length} unit stok awal siap disimpan. Produk akan tetap berstatus Draf.</div>
+        <button className="admin-primary" disabled={busy}>{busy ? 'Menyimpan produk…' : stockPayload.trim() ? 'Buat produk + simpan stok awal' : 'Buat produk sebagai Draf'}</button>
       </form>
     </section>
 
