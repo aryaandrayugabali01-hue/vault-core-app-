@@ -10,6 +10,7 @@ import { createDatabaseAdapter } from '../backend/db/pool.js';
 import { canReconcileDelivery } from '../backend/services/deliveryService.js';
 import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
 import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } from '../backend/middleware/ownerSession.js';
+import { splitInventoryPayloads } from '../frontend/src/lib/inventory.js';
 
 function signedInitData(user, token, authDate = Math.floor(Date.now() / 1000), extraParams = {}) {
   const params = new URLSearchParams({ auth_date: String(authDate), query_id: 'AAE-test', user: JSON.stringify(user), ...extraParams });
@@ -395,4 +396,14 @@ test('Owner web session is signed and cookie is HttpOnly with SameSite protectio
     if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = previousNodeEnv;
   }
+});
+
+
+test('inventory payload text splits LF and CRLF lines, trims entries, and ignores blanks', () => {
+  assert.deepEqual(
+    splitInventoryPayloads('  CODE-001  \n\nCODE-002\r\n  CODE-003 \n'),
+    ['CODE-001', 'CODE-002', 'CODE-003']
+  );
+  assert.deepEqual(splitInventoryPayloads('  \r\n\n  '), []);
+  assert.deepEqual(splitInventoryPayloads(null), []);
 });
