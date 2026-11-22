@@ -17,7 +17,10 @@ const FULFILLMENT = [
 const apiMessage = (data) => ({
   TELEGRAM_AUTH_REQUIRED:'Sesi Telegram tidak ditemukan. Masuk kembali melalui Telegram.',
   ADMIN_ACCESS_REQUIRED:'Akun Telegram ini tidak memiliki izin Owner.',
-  INVALID_PRODUCT_INPUT:'Periksa kategori, nama, metode pemenuhan, dan harga produk.',
+  INVALID_PRODUCT_INPUT:'Periksa SKU, kategori, nama, metode pemenuhan, dan harga produk.',
+  INVALID_PRODUCT_IMAGE_URL:'Gunakan URL gambar HTTPS atau path lokal /assets/ yang valid.',
+  PRODUCT_SKU_ALREADY_EXISTS:'SKU tersebut sudah digunakan produk lain.',
+  PRODUCT_REVIEW_REQUIRED_AFTER_FULFILLMENT_CHANGE:'Metode pemenuhan berubah. Simpan review CR-05 baru sebelum mengaktifkan SKU.',
   INVALID_ASSET_PAYLOAD:'Ada baris stok yang tidak sesuai format kode digital yang didukung.',
   INVALID_INVENTORY_INPUT:'Masukkan 1 sampai 100 unit stok, satu kode pada setiap baris.'
 }[data?.error] || data?.message || 'Permintaan tidak dapat diproses.');
