@@ -102,6 +102,14 @@ function OrderSkeleton() {
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
+  const [marketplaceCategories, setMarketplaceCategories] = useState([]);
+  const [marketplaceCategoryId, setMarketplaceCategoryId] = useState('ALL');
+  const [sortBy, setSortBy] = useState('NAME');
+  const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [guideCategory, setGuideCategory] = useState(null);
+  const [detailQuantity, setDetailQuantity] = useState(1);
   const [testProducts, setTestProducts] = useState([]);
   const [isTestMode, setIsTestMode] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -134,6 +142,7 @@ export default function HomePage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Katalog tidak dapat dimuat.');
       setProducts(data.products || []);
+      setMarketplaceCategories(data.categories || []);
     } catch (e) {
       setError(e.message || 'Katalog tidak dapat dimuat. Coba kembali.');
     } finally {
@@ -154,13 +163,70 @@ export default function HomePage() {
   const activeFilterLabel = tier !== 'ALL'
     ? (tier === 'SERVICE' ? 'Layanan' : (TIER_LABELS[tier] || tier) + ' Tier')
     : category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua produk';
-  const filtered = useMemo(() => sourceProducts.filter((p) =>
-    (category === 'ALL' || p.game_category === category)
-    && (tier === 'ALL' || p.tier === tier)
-    && (String(p.name || '') + ' ' + String(p.description || '') + ' ' + String(p.sku || '')).toLowerCase().includes(query.toLowerCase())
-  ), [sourceProducts, category, tier, query, isTestMode]);
+  const filtered = useMemo(() => {
+    const list = sourceProducts.filter((p) =>
+      (category === 'ALL' || p.game_category === category)
+      && (tier === 'ALL' || p.tier === tier)
+      && (marketplaceCategoryId === 'ALL' || String(p.marketplace_category_id || '') === marketplaceCategoryId)
+      && (String(p.name || '') + ' ' + String(p.description || '') + ' ' + String(p.sku || '') + ' ' + String(p.marketplace_category_name || '')).toLowerCase().includes(query.toLowerCase())
+    );
+    if (sortBy === 'PRICE_ASC') return list.sort((a,b)=>Number(a.sale_price_xtr)-Number(b.sale_price_xtr));
+    if (sortBy === 'PRICE_DESC') return list.sort((a,b)=>Number(b.sale_price_xtr)-Number(a.sale_price_xtr));
+    return list.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id'));
+  }, [sourceProducts, category, tier, marketplaceCategoryId, query, sortBy, isTestMode]);
 
-  async function buy(product) {
+  const cartLines = useMemo(() => cart.map((line) => {
+    const product = products.find((item) => Number(item.id) === Number(line.productId));
+    return product ? { ...line, product, subtotal:Number(product.sale_price_xtr) * line.quantity } : null;
+  }).filter(Boolean), [cart, products]);
+  const cartCount = cart.reduce((sum,line)=>sum+line.quantity,0);
+  const cartSubtotal = cartLines.reduce((sum,line)=>sum+line.subtotal,0);
+
+  function addToCart(product, quantity = 1) {
+    if (!product || product.is_test || !product.is_available) return;
+    const amount = Math.max(1,Math.min(5,Number(quantity)||1));
+    setCart((current) => {
+      const next=[...current];
+      const existing=next.find((item)=>Number(item.productId)===Number(product.id));
+      if (existing) existing.quantity=Math.min(5,existing.quantity+amount);
+      else next.push({productId:Number(product.id),quantity:amount});
+      return next.reduce((sum,item)=>sum+item.quantity,0)<=20 ? next : current;
+    });
+    setSelectedProduct(null);
+    setNotice('Produk ditambahkan ke keranjang. Harga dan stok akan diperiksa ulang saat checkout.');
+  }
+
+  function updateCartQuantity(productId, quantity) {
+    const value=Number(quantity);
+    setCart((current)=>current.map((item)=>Number(item.productId)===Number(productId)
+      ? {...item,quantity:Math.max(1,Math.min(5,value))}:item));
+  }
+
+  function removeCartItem(productId) {
+    setCart((current)=>current.filter((item)=>Number(item.productId)!==Number(productId)));
+  }
+
+  async function checkoutCart() {
+    const initData=getInitData();
+    if (!initData) { setNotice('Buka VAULT CORE melalui bot Telegram untuk melanjutkan pembayaran.'); return; }
+    if (!cart.length || buyingId) return;
+    setBuyingId('cart');
+    setNotice('Memeriksa harga dan stok keranjang di server…');
+    try {
+      const response=await fetch(API+'/api/orders',{
+        method:'POST',headers:{'content-type':'application/json','x-telegram-init-data':initData},
+        body:JSON.stringify({items:cart.map(({productId,quantity})=>({productId,quantity}))})
+      });
+      const data=await response.json();
+      if(!response.ok) throw new Error(data.message||'Checkout keranjang gagal dibuat.');
+      setCart([]);setCartOpen(false);
+      setNotice('Invoice Telegram Stars untuk '+data.orderNumber+' siap dibuka. Total: '+Number(data.totalXtr).toLocaleString('en-US')+' XTR.');
+      openInvoice(data.invoiceUrl,data.orderNumber);
+    } catch(error) { setNotice(error.message||'Checkout keranjang gagal.'); }
+    finally { setBuyingId(null); }
+  }
+
+  async function buy(product, quantity = 1) {
     const initData = getInitData();
     if (!initData) {
       setNotice('Untuk melanjutkan pembayaran, buka VAULT CORE melalui bot Telegram.');
@@ -172,7 +238,7 @@ export default function HomePage() {
       const response = await fetch(API + (product.is_test ? '/api/orders/test' : '/api/orders'), {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-telegram-init-data': initData },
-        body: JSON.stringify({ productId: product.id, quantity: 1 })
+        body: JSON.stringify({ productId: product.id, quantity })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Checkout gagal dibuat.');
@@ -349,6 +415,12 @@ export default function HomePage() {
     setTier('ALL');
   }
 
+  function selectMarketplaceCategory(id) {
+    setMarketplaceCategoryId(String(id));
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById('products')?.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
+  }
+
   function selectCategoryTile(item) {
     if (item.mode === 'tier') {
       setCategory('ALL');
@@ -401,6 +473,7 @@ export default function HomePage() {
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari game, SKU, atau produk…" aria-label="Cari game, SKU, atau produk" />
           {query && <button className="clear-search" type="button" onClick={() => setQuery('')} aria-label="Hapus pencarian">×</button>}
         </label>
+        <button className="top-cart-button" type="button" onClick={()=>setCartOpen(true)} aria-label={'Buka keranjang, '+cartCount+' item'}><AppIcon name="orders" /><span>Keranjang</span><b>{cartCount}</b></button>
         <button className="top-profile-button" type="button" onClick={openProfile} aria-label="Buka profil"><AppIcon name="profile" /><span>Profil</span></button>
       </header>
 
@@ -445,32 +518,42 @@ export default function HomePage() {
 
       <section className="section category-section" id="catalog">
         <div className="section-heading">
-          <div><span className="eyebrow muted">JELAJAHI KATALOG</span><h2 id="categories">Kategori pilihan</h2></div>
-          <span className="section-count">05 PILIHAN</span>
+          <div><span className="eyebrow muted">JELAJAHI KATALOG</span><h2 id="categories">Kategori produk</h2></div>
+          <span className="section-count">{marketplaceCategories.length} KATEGORI</span>
         </div>
-        <div className="category-grid" role="group" aria-label="Pilih kategori atau tier unggulan">
-          {CATEGORY_TILES.map((item) => {
-            const active = item.mode === 'tier' ? tier === 'PLATINUM' : category === item.id;
-            const art = item.mode === 'tier' ? TIER_ART.PLATINUM : GAME_ART[item.id];
-            return <button
-              key={item.id}
-              type="button"
-              className={'category-card ' + (active ? 'selected' : '') + (item.mode === 'tier' ? ' cat-tier-platinum' : ' cat-' + item.id.toLowerCase())}
-              aria-pressed={active}
-              onClick={() => selectCategoryTile(item)}
-            >
-              <span className="cat-icon"><img src={art} alt="" loading="lazy" /></span>
-              <span className="category-copy"><strong>{item.label}</strong><small>{item.subtitle}</small></span>
+        {marketplaceCategories.length ? <div className="category-grid" role="group" aria-label="Pilih kategori produk">
+          {marketplaceCategories.map((item) => (
+            <button key={item.id} type="button"
+              className={'category-card marketplace-category-card '+(marketplaceCategoryId===String(item.id)?'selected':'')}
+              aria-pressed={marketplaceCategoryId===String(item.id)}
+              onClick={()=>selectMarketplaceCategory(String(item.id))}>
+              <span className="cat-icon marketplace-category-icon">{item.icon || '◇'}</span>
+              <span className="category-copy"><strong>{item.name}</strong><small>{item.description || item.product_count+' produk tersedia'}</small></span>
               <span className="cat-arrow">↗</span>
-            </button>;
-          })}
-        </div>
+            </button>
+          ))}
+        </div> : <div className="category-empty">Kategori akan tampil setelah Owner mengelola kategori dan menghubungkan produk yang telah aktif.</div>}
       </section>
 
       <section className="section product-section" id="products">
         <div className="section-heading">
-          <div><span className="eyebrow muted">PILIHAN UNTUK ANDA</span><h2>Katalog produk game <span className="active-filter-badge">{activeFilterLabel}</span></h2></div>
+          <div><span className="eyebrow muted">PILIHAN UNTUK ANDA</span><h2>Katalog digital <span className="active-filter-badge">{activeFilterLabel}</span></h2></div>
           <span className="section-count">{loading ? '—' : String(filtered.length).padStart(2, '0') + ' PRODUK'}</span>
+        </div>
+        <div className="catalog-toolbar">
+          <label><span>Kategori</span><select value={marketplaceCategoryId} onChange={(e)=>setMarketplaceCategoryId(e.target.value)}>
+            <option value="ALL">Semua kategori</option>
+            {marketplaceCategories.map((item)=><option key={item.id} value={String(item.id)}>{item.name}</option>)}
+          </select></label>
+          <label><span>Game</span><select value={category} onChange={(e)=>setCategory(e.target.value)}>
+            <option value="ALL">Semua game</option>{Object.entries(GAME_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+          </select></label>
+          <label><span>Tipe</span><select value={tier} onChange={(e)=>setTier(e.target.value)}>
+            <option value="ALL">Semua tipe</option>{Object.entries(TIER_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+          </select></label>
+          <label><span>Urutkan</span><select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
+            <option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option>
+          </select></label>
         </div>
         {isTestMode && <div className="test-lane-notice">
           <div><strong>RUANG UJI OWNER</strong><span>Produk contoh terpisah dari katalog pelanggan. Invoice uji bernilai 1 XTR sungguhan.</span></div>
@@ -501,13 +584,13 @@ export default function HomePage() {
                 {product.is_test && <span className="product-test-badge">CONTOH UJI</span>}
               </div>
               <div className="product-content">
-                <div className="product-category">{GAME_LABELS[game] || game.replaceAll('_', ' ')}</div>
+                <div className="product-category">{product.marketplace_category_name || GAME_LABELS[game] || game.replaceAll('_', ' ')}</div>
                 <h3>{product.name}</h3>
                 <p>{product.description}</p>
                 <div className="product-bottom">
                   <div className="product-price"><small>HARGA</small><strong>{Number(product.sale_price_xtr).toLocaleString('en-US')} XTR</strong></div>
                   <button className="buy-button" type="button" disabled={buyingId === product.id || activatingId === product.id}
-                    onClick={() => isDraftTest ? activateTestProduct(product.id) : setSelectedProduct(product)}>
+                    onClick={() => { if (isDraftTest) activateTestProduct(product.id); else { setDetailQuantity(1); setSelectedProduct(product); } }}>
                     {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : 'Detail & Beli'}
                   </button>
                 </div>
@@ -536,34 +619,37 @@ export default function HomePage() {
 
 {selectedProduct && <div className="modal-backdrop" onClick={() => setSelectedProduct(null)}>
         <section className="product-detail-modal" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-head"><div><span className="eyebrow muted">DETAIL PRODUK</span><h2 id="product-detail-title">{selectedProduct.name}</h2></div><button className="icon-button" type="button" onClick={() => setSelectedProduct(null)} aria-label="Tutup detail produk">×</button></div>
-          <div className="detail-product-art"><img src={selectedProduct.image_url || GAME_ART[selectedProduct.game_category] || GAME_ART.OTHER} alt="" /></div>
-          <div className="detail-category">{GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</div>
+          <div className="modal-head"><div><span className="eyebrow muted">DETAIL PENAWARAN</span><h2 id="product-detail-title">{selectedProduct.name}</h2></div><button className="icon-button" type="button" onClick={() => setSelectedProduct(null)} aria-label="Tutup detail produk">×</button></div>
+          <div className="detail-product-art">
+            {(Array.isArray(selectedProduct.image_gallery)&&selectedProduct.image_gallery.length?selectedProduct.image_gallery:[selectedProduct.image_url||GAME_ART[selectedProduct.game_category]||GAME_ART.OTHER]).map((src,index)=><img key={src+index} src={src} alt={selectedProduct.name+' '+(index+1)} loading={index?'lazy':'eager'} />)}
+          </div>
+          <div className="detail-category">{selectedProduct.marketplace_category_name || GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</div>
           <p className="detail-description">{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p>
           <div className="detail-facts">
             <div><span>Harga</span><strong>{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
             <div><span>Stok</span><strong>{formatStock(selectedProduct)}</strong></div>
             <div><span>Pemenuhan</span><strong>{FULFILLMENT_LABELS[selectedProduct.fulfillment_type] || selectedProduct.fulfillment_type || 'Belum ditentukan'}</strong></div>
-            <div><span>Status produk</span><strong>{selectedProduct.status === 'ACTIVE' ? 'Aktif' : 'DRAFT'}</strong></div>
+            <div><span>Estimasi</span><strong>{selectedProduct.fulfillment_eta || 'Belum ditetapkan Owner'}</strong></div>
           </div>
           <div className="detail-policy">
             <strong>Ketentuan pembelian</strong>
-            <ul>
-              <li>Pembayaran dilakukan melalui invoice Telegram Stars (XTR).</li>
-              <li>Stok direservasi saat checkout selama 15 menit.</li>
-              <li>Pemenuhan dimulai setelah pembayaran berhasil diverifikasi oleh Telegram.</li>
-              <li>Estimasi waktu pemenuhan: {selectedProduct.fulfillment_eta || 'Belum ditetapkan oleh Owner.'}</li>
-            </ul>
+            <p>Pembayaran menggunakan invoice Telegram Stars (XTR). Stok diperiksa dan direservasi ulang oleh server saat checkout. Pemenuhan dimulai setelah Telegram memverifikasi pembayaran.</p>
             <strong>Ketentuan produk</strong>
             <p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p>
-            {selectedProduct.is_test && <p>Produk contoh uji internal. Jika invoice diselesaikan, Telegram akan menagihkan 1 XTR sungguhan dan payload dummy tidak dapat ditukarkan.</p>}
+            <button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Panduan Beli &amp; Tips</button>
+            {selectedProduct.is_test && <p>Produk uji internal. Invoice uji tetap menagihkan 1 XTR sungguhan.</p>}
           </div>
-          <div className="detail-actions">
+          <div className="detail-buy-row">
+            <label>Jumlah<input type="number" min="1" max="5" value={detailQuantity} onChange={(e)=>setDetailQuantity(Math.max(1,Math.min(5,Number(e.target.value)||1)))} /></label>
+            <div><small>Subtotal indikatif</small><strong>{(Number(selectedProduct.sale_price_xtr||0)*detailQuantity).toLocaleString('en-US')} XTR</strong></div>
+          </div>
+          <div className="detail-actions detail-market-actions">
             {selectedProduct.is_test && selectedProduct.status !== 'ACTIVE'
               ? <button className="buy-button" type="button" disabled={activatingId === selectedProduct.id} onClick={() => { const productId = selectedProduct.id; setSelectedProduct(null); activateTestProduct(productId); }}>Aktifkan produk ini</button>
-              : <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id} onClick={() => { const product = selectedProduct; setSelectedProduct(null); buy(product); }}>
-                  {selectedProduct.is_test ? 'Buat invoice uji · 1 XTR' : 'Lanjut ke pembayaran'}
-                </button>}
+              : <><button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available||selectedProduct.is_test} onClick={()=>addToCart(selectedProduct,detailQuantity)}>Tambah ke keranjang</button>
+                <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id} onClick={() => { const product = selectedProduct; const quantity=detailQuantity; setSelectedProduct(null); buy(product,quantity); }}>
+                  {selectedProduct.is_test ? 'Buat invoice uji · 1 XTR' : 'Beli sekarang'}
+                </button></>}
           </div>
         </section>
       </div>}
@@ -609,6 +695,33 @@ export default function HomePage() {
             <small>Ruang uji berisi produk contoh terpisah dari katalog pelanggan.</small>
             <button className="profile-orders-button" type="button" disabled={setupBusy} onClick={prepareTestProducts}>{setupBusy ? 'Menyiapkan produk uji…' : 'Buka ruang uji · 4 produk'} <span>↗</span></button>
           </div>}
+        </section>
+      </div>}
+
+      {cartOpen && <div className="modal-backdrop" onClick={()=>setCartOpen(false)}>
+        <section className="cart-modal" role="dialog" aria-modal="true" aria-labelledby="cart-title" onClick={(e)=>e.stopPropagation()}>
+          <div className="modal-head"><div><span className="eyebrow muted">RINGKASAN PESANAN</span><h2 id="cart-title">Keranjang ({cartCount})</h2></div><button className="icon-button" type="button" onClick={()=>setCartOpen(false)} aria-label="Tutup keranjang">×</button></div>
+          {cartLines.length ? <div className="cart-lines">
+            {cartLines.map((line)=><article className="cart-line" key={line.productId}>
+              <img src={line.product.image_url||GAME_ART[line.product.game_category]||GAME_ART.OTHER} alt="" />
+              <div className="cart-line-copy"><strong>{line.product.name}</strong><small>{line.product.marketplace_category_name||GAME_LABELS[line.product.game_category]||line.product.game_category} · {formatStock(line.product)}</small>
+                <div className="cart-line-controls"><button type="button" onClick={()=>updateCartQuantity(line.productId,line.quantity-1)} disabled={line.quantity<=1}>−</button><span>{line.quantity}</span><button type="button" onClick={()=>updateCartQuantity(line.productId,line.quantity+1)} disabled={line.quantity>=5}>+</button><button className="cart-remove" type="button" onClick={()=>removeCartItem(line.productId)}>Hapus</button></div>
+              </div>
+              <strong className="cart-line-price">{line.subtotal.toLocaleString('en-US')} XTR</strong>
+            </article>)}
+            <div className="cart-total"><span>Subtotal berdasarkan katalog</span><strong>{cartSubtotal.toLocaleString('en-US')} XTR</strong></div>
+            <p className="cart-disclaimer">Total akhir, harga, dan ketersediaan stok dihitung ulang oleh backend saat pesanan dibuat.</p>
+            <button className="cart-checkout-button" type="button" onClick={checkoutCart} disabled={buyingId==='cart'}>{buyingId==='cart'?'Memeriksa stok…':'Lanjut ke pembayaran · '+cartSubtotal.toLocaleString('en-US')+' XTR'}</button>
+          </div> : <div className="empty-state"><strong>Keranjang masih kosong</strong><p>Pilih produk dari katalog untuk memulai pesanan.</p><button className="reset-filters" type="button" onClick={()=>setCartOpen(false)}>Lanjut jelajahi katalog</button></div>}
+        </section>
+      </div>}
+
+      {guideOpen && <div className="modal-backdrop" onClick={()=>setGuideOpen(false)}>
+        <section className="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title" onClick={(e)=>e.stopPropagation()}>
+          <div className="modal-head"><div><span className="eyebrow muted">INFORMASI PEMBELIAN</span><h2 id="guide-title">Panduan Beli &amp; Tips</h2><small>{guideCategory?.name||'VAULT CORE'}</small></div><button className="icon-button" type="button" onClick={()=>setGuideOpen(false)} aria-label="Tutup panduan">×</button></div>
+          {guideCategory?.purchase_guide?.length ? <ol className="guide-steps">{guideCategory.purchase_guide.map((step,index)=><li key={index}><span>{index+1}</span><div><strong>{step.title}</strong><p>{step.content}</p></div></li>)}</ol> : <div className="empty-state"><strong>Panduan kategori belum tersedia</strong><p>Owner belum menambahkan langkah pembelian untuk kategori ini.</p></div>}
+          <div className="guide-security"><strong>Keamanan akun</strong><p>Jangan pernah membagikan kata sandi, OTP, kode pemulihan, atau kode login kepada siapa pun. Periksa kembali rincian produk dan jumlah sebelum membayar.</p></div>
+          <button className="cart-checkout-button" type="button" onClick={()=>setGuideOpen(false)}>Tutup panduan</button>
         </section>
       </div>}
     </main>
