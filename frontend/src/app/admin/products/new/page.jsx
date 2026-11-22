@@ -12,7 +12,7 @@ const CATEGORIES = [
 const TIERS = [['SILVER','Silver','SLV'],['GOLD','Gold','GLD'],['PLATINUM','Platinum','PLT'],['SERVICE','Layanan','SRV']];
 const FULFILLMENT = [
   ['REDEEM_CODE','Kode redeem'],['VOUCHER_CODE','Kode voucher'],['LICENSE_KEY','Kunci lisensi'],
-  ['GIFT_CODE','Kode hadiah'],['DIGITAL_FILE','Berkas digital'],['SERVICE_INSTRUCTIONS','Petunjuk layanan']
+  ['GIFT_CODE','Kode hadiah'],['DIGITAL_FILE','Berkas digital'],['SERVICE_INSTRUCTIONS','Petunjuk layanan'],['GAME_ACCOUNT_TRANSFER','Transfer akun melalui prosedur resmi']
 ];
 const apiMessage = (data) => ({
   TELEGRAM_AUTH_REQUIRED:'Sesi Telegram tidak ditemukan. Masuk kembali melalui Telegram.',
