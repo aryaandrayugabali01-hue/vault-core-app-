@@ -74,9 +74,15 @@ router.patch('/products/:id', async (req, res) => {
         message: 'Aktifkan produk contoh melalui jalur khusus ruang uji Owner.'
       });
     }
-    if (!review[0] || !review[0].rights_review_reference) {
-      return res.status(409).json({ error: 'PRODUCT_REVIEW_REFERENCE_REQUIRED' });
-    }
+    // CR-04 requires a complete, evidence-backed rights review for every
+    // commercial SKU. The current schema stores only a free-form reference,
+    // so it cannot prove the required publisher, ownership-chain, transfer,
+    // scope, reviewer, and validity checks. Keep commercial activation closed
+    // until that structured review workflow exists.
+    return res.status(409).json({
+      error: 'PRODUCT_RIGHTS_REVIEW_REQUIRED',
+      message: 'Aktivasi produk komersial menunggu pemeriksaan bukti hak penjualan lengkap sesuai CR-04.'
+    });
   }
   const assignments = columns.map((col, index) => `${col}=$${index + 1}`);
   values.push(id);
