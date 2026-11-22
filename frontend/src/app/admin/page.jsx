@@ -271,7 +271,7 @@ export default function AdminPage() {
         <div id="telegram-login-widget" className="telegram-login-widget" />
         {loginBusy && <div className="owner-login-loading">Memverifikasi akun Telegram…</div>}
         {loginMessage && <div className="owner-login-message" role="alert">{loginMessage}</div>}
-        <small>Login diverifikasi langsung oleh Telegram dan akses Owner diperiksa oleh server VAULT CORE. Jika tombol tidak tampil, hubungkan domain vaultcore.biz.id ke bot melalui @BotFather dengan perintah /setdomain.</small>
+        <small>Login diverifikasi langsung oleh Telegram dan akses Owner diperiksa oleh server VAULT CORE. Login Widget Telegram harus diizinkan oleh BotFather. Jalankan /setdomain, pilih bot VAULT CORE, lalu isi domain persis: vaultcore.biz.id. Setelah tersimpan, muat ulang halaman ini.</small>
       </>}
       <a className="owner-login-back" href="/">Kembali ke katalog</a>
     </section>
@@ -289,21 +289,9 @@ export default function AdminPage() {
       <div><small>Menunggu pembayaran</small><strong>{stats.orders.pending}</strong></div>
     </section>}
 
-    <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">LANGKAH 1 · KATALOG</span><h2>Buat produk</h2></div></div>
-      <form className="admin-form" onSubmit={createProduct}>
-        <label>SKU <small className="field-hint">Dibuat otomatis, tetap bisa diedit</small><input required value={form.sku} onChange={e=>{setSkuManual(true);setForm({...form,sku:e.target.value.toUpperCase()});}} placeholder="MLBB-GLD-001" /></label>
-        <label>Kategori game<select value={form.gameCategory} onChange={e=>{const category=e.target.value;setForm(current=>({...current,gameCategory:category,sku:skuManual?current.sku:suggestedSku(category,current.tier,products),name:current.name===suggestedName(current.gameCategory,current.tier)?suggestedName(category,current.tier):current.name}));}}><option value="MLBB">MLBB</option><option value="ROBLOX">Roblox</option><option value="FREE_FIRE">Free Fire</option><option value="GENSHIN">Genshin Impact</option><option value="OTHER">Lainnya</option></select></label>
-        <label>Tingkat produk<select value={form.tier} onChange={e=>{const tier=e.target.value;setForm(current=>({...current,tier,sku:skuManual?current.sku:suggestedSku(current.gameCategory,tier,products),name:current.name===suggestedName(current.gameCategory,current.tier)?suggestedName(current.gameCategory,tier):current.name}));}}><option value="SILVER">Silver</option><option value="GOLD">Gold</option><option value="PLATINUM">Platinum</option><option value="SERVICE">Layanan</option></select></label>
-        <label>Nama produk<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder={suggestedName(form.gameCategory,form.tier)} /></label>
-        <label className="span-2">Deskripsi<textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} rows="2" /></label>
-        <label>Metode pemenuhan<select value={form.fulfillmentType} onChange={e=>setForm({...form,fulfillmentType:e.target.value})}><option value="REDEEM_CODE">Kode penukaran</option><option value="VOUCHER_CODE">Kode voucher</option><option value="LICENSE_KEY">Kunci lisensi</option><option value="GIFT_CODE">Kode hadiah</option><option value="DIGITAL_FILE">Berkas digital</option><option value="SERVICE_INSTRUCTIONS">Petunjuk layanan</option></select></label>
-        <label>Harga jual (XTR)<input required type="number" min="1" step="1" value={form.salePriceXtr} onChange={e=>setForm({...form,salePriceXtr:e.target.value})} /></label>
-        <label>Modal (XTR)<input required type="number" min="0" step="1" value={form.costPriceXtr} onChange={e=>setForm({...form,costPriceXtr:e.target.value})} /></label>
-        <label className="span-2">Referensi hak penjualan <small className="field-hint">Opsional saat menyimpan draf; diperlukan sebelum produk komersial diaktifkan</small><input value={form.rightsReviewReference} onChange={e=>setForm({...form,rightsReviewReference:e.target.value})} placeholder="Tautan atau nomor bukti otorisasi" /></label>
-        <label className="span-2">Stok awal (opsional) <small className="field-hint">Masukkan kode digital yang sah, satu unit per baris. Data langsung dienkripsi setelah produk dibuat.</small><textarea rows="4" value={stockPayload} onChange={e=>setStockPayload(e.target.value)} placeholder="Kode voucher / redeem / lisensi, satu per baris..." /></label>
-        <div className="admin-form-hint span-2">{stockPayload.split('\\n').filter((value)=>value.trim()).length} unit stok awal siap disimpan. Produk akan tetap berstatus Draf.</div>
-        <button className="admin-primary" disabled={busy}>{busy ? 'Menyimpan produk…' : stockPayload.trim() ? 'Buat produk + simpan stok awal' : 'Buat produk sebagai Draf'}</button>
-      </form>
+    <section className="admin-panel admin-product-entry">
+      <div className="admin-section-head"><div><span className="eyebrow muted">KATALOG / INPUT PRODUK</span><h2>Tambah produk baru</h2><p>Gunakan halaman khusus untuk detail produk, harga, dan stok awal.</p></div></div>
+      <a className="admin-primary admin-product-entry-link" href="/admin/products/new">+ Input produk baru</a>
     </section>
 
     <section className="admin-panel" id="inventory-panel"><div className="admin-section-head"><div><span className="eyebrow muted">LANGKAH 2 · PERSEDIAAN</span><h2>Tambah stok digital</h2></div></div>
