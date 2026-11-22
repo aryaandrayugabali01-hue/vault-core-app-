@@ -13,6 +13,8 @@ import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
 import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } from '../backend/middleware/ownerSession.js';
 import { splitInventoryPayloads } from '../frontend/src/lib/inventory.js';
 import { isSafeProductImageUrl, normalizeProductText } from '../backend/services/productDetailsService.js';
+import { validateMarketplaceCategory, normalizeImageGallery } from '../backend/services/marketplaceCategoryService.js';
+import { normalizeCartItems } from '../backend/services/cartService.js';
 
 function signedInitData(user, token, authDate = Math.floor(Date.now() / 1000), extraParams = {}) {
   const params = new URLSearchParams({ auth_date: String(authDate), query_id: 'AAE-test', user: JSON.stringify(user), ...extraParams });
@@ -499,4 +501,32 @@ test('Owner product text values are trimmed and length-limited', () => {
   assert.equal(normalizeProductText('  Paket Gold  '), 'Paket Gold');
   assert.equal(normalizeProductText('x'.repeat(10), 5), 'xxxxx');
   assert.equal(normalizeProductText(null), '');
+});
+
+test('marketplace category guide accepts bounded Owner-authored steps', () => {
+  const result = validateMarketplaceCategory({
+    slug:'joki',name:'Joki',description:'Layanan pengerjaan game',
+    icon:'🎮',purchaseGuide:[{title:'Pilih layanan',content:'Periksa detail dan cakupan layanan.'}],
+    sortOrder:20,isActive:true
+  });
+  assert.equal(result.ok,true);
+  assert.equal(result.value.purchaseGuide.length,1);
+  assert.equal(validateMarketplaceCategory({...result.value,slug:'Invalid slug'}).ok,false);
+  assert.equal(validateMarketplaceCategory({...result.value,purchaseGuide:Array(13).fill({title:'Step',content:'Text'})}).ok,false);
+});
+
+test('product image gallery accepts only safe HTTPS or local asset images', () => {
+  assert.deepEqual(normalizeImageGallery(['https://cdn.example/a.webp','/assets/b.webp']).value,
+    ['https://cdn.example/a.webp','/assets/b.webp']);
+  assert.equal(normalizeImageGallery(['javascript:alert(1)']).ok,false);
+  assert.equal(normalizeImageGallery(Array(9).fill('/assets/a.webp')).ok,false);
+});
+
+test('cart normalization preserves legacy checkout and merges valid product lines', () => {
+  assert.deepEqual(normalizeCartItems({productId:4,quantity:2}).value.items,[{productId:4,quantity:2}]);
+  assert.deepEqual(normalizeCartItems({items:[{productId:8,quantity:1},{productId:3,quantity:2},{productId:8,quantity:2}]}).value.items,
+    [{productId:3,quantity:2},{productId:8,quantity:3}]);
+  assert.equal(normalizeCartItems({items:[{productId:2,quantity:6}]}).ok,false);
+  assert.equal(normalizeCartItems({items:Array.from({length:11},(_,i)=>({productId:i+1,quantity:1}))}).ok,false);
+  assert.equal(normalizeCartItems({items:[{productId:2,quantity:2},{productId:3,quantity:2}]},{testMode:true}).ok,false);
 });
