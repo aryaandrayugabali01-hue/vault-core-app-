@@ -508,7 +508,7 @@ export default function HomePage() {
                   <div className="product-price"><small>HARGA</small><strong>{Number(product.sale_price_xtr).toLocaleString('en-US')} XTR</strong></div>
                   <button className="buy-button" type="button" disabled={buyingId === product.id || activatingId === product.id}
                     onClick={() => isDraftTest ? activateTestProduct(product.id) : setSelectedProduct(product)}>
-                    {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : 'Lihat Detail'}
+                    {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : 'Detail & Beli'}
                   </button>
                 </div>
               </div>
