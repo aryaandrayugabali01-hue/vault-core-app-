@@ -237,7 +237,7 @@ export default function AdminPage() {
         <div id="telegram-login-widget" className="telegram-login-widget" />
         {loginBusy && <div className="owner-login-loading">Memverifikasi akun Telegram…</div>}
         {loginMessage && <div className="owner-login-message" role="alert">{loginMessage}</div>}
-        <small>Login diverifikasi langsung oleh Telegram dan akses Owner diperiksa oleh server VAULT CORE.</small>
+        <small>Login diverifikasi langsung oleh Telegram dan akses Owner diperiksa oleh server VAULT CORE. Jika tombol tidak tampil, hubungkan domain vaultcore.biz.id ke bot melalui @BotFather dengan perintah /setdomain.</small>
       </>}
       <a className="owner-login-back" href="/">Kembali ke katalog</a>
     </section>
