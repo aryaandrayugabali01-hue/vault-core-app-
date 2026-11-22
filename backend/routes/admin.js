@@ -65,8 +65,18 @@ router.patch('/products/:id', async (req, res) => {
   const columns = pairs.map(([key]) => mapping[key]).filter((col) => allowed.includes(col));
   const values = pairs.map(([key]) => req.body[key]);
   if (req.body.status === 'ACTIVE') {
-    const { rows: review } = await pool.query(`SELECT rights_review_reference FROM products WHERE id=$1`, [id]);
-    if (!review[0] || !review[0].rights_review_reference) return res.status(409).json({ error: 'PRODUCT_REVIEW_REFERENCE_REQUIRED' });
+    const { rows: review } = await pool.query(
+      `SELECT rights_review_reference,is_test FROM products WHERE id=$1`, [id]
+    );
+    if (review[0]?.is_test === true) {
+      return res.status(409).json({
+        error: 'TEST_FIXTURE_ACTIVATION_REQUIRED',
+        message: 'Aktifkan produk contoh melalui jalur khusus ruang uji Owner.'
+      });
+    }
+    if (!review[0] || !review[0].rights_review_reference) {
+      return res.status(409).json({ error: 'PRODUCT_REVIEW_REFERENCE_REQUIRED' });
+    }
   }
   const assignments = columns.map((col, index) => `${col}=$${index + 1}`);
   values.push(id);
