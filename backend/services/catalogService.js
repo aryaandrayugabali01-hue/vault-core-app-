@@ -16,3 +16,9 @@ export function isEligibleCheckoutProduct(product, { testMode = false, ownerAuth
   if (product.is_test === true) return testMode && ownerAuthorized && Number(product.sale_price_xtr) === 1;
   return !testMode;
 }
+
+
+export function canAddProductInventory(product) {
+  if (!product || product.is_test === true) return false;
+  return !['PENDING_REVIEW', 'PAUSED', 'ARCHIVED'].includes(product.status);
+}
