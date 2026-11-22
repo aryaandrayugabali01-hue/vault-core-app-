@@ -67,9 +67,10 @@ router.patch('/products/:id', async (req, res) => {
   const values = pairs.map(([key]) => req.body[key]);
   if (req.body.status === 'ACTIVE') {
     const { rows: review } = await pool.query(
-      `SELECT rights_review_reference,is_test FROM products WHERE id=$1`, [id]
+      `SELECT id,is_test FROM products WHERE id=$1`, [id]
     );
-    if (review[0]?.is_test === true) {
+    if (!review[0]) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
+    if (review[0].is_test === true) {
       return res.status(409).json({
         error: 'TEST_FIXTURE_ACTIVATION_REQUIRED',
         message: 'Aktifkan produk contoh melalui jalur khusus ruang uji Owner.'
