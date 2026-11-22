@@ -45,16 +45,20 @@ jobs:
           set -euo pipefail
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          const css = fs.readFileSync('frontend/src/app/globals.css', 'utf8');
-          const paths = [...css.matchAll(/url\(["']?\/assets\/([^"')]+)["']?\)/g)]
-            .map((match) => match[1]);
+          const sources = [
+            'frontend/src/app/globals.css',
+            'frontend/src/app/page.jsx',
+            'frontend/src/app/layout.jsx'
+          ].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
+          const paths = [...sources.matchAll(/\/assets\/([A-Za-z0-9_./-]+)/g)]
+            .map((match) => match[1].replace(/[),.;]+$/, ''));
           const missing = [...new Set(paths)].filter((asset) => !fs.existsSync('frontend/public/assets/' + asset));
-          console.log('CSS asset references checked:', paths.length);
+          console.log('Storefront asset references checked:', paths.length);
           if (missing.length) {
             console.error('Missing public assets:', missing.join(', '));
             process.exit(1);
           }
-          console.log('All CSS asset references resolve to the extracted library.');
+          console.log('All storefront asset references resolve to the extracted library.');
           NODE
 
       - name: Setup Node.js
