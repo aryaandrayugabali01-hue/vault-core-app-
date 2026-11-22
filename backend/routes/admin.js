@@ -70,14 +70,22 @@ router.post('/products', async (req, res) => {
       || !isSafeProductImageUrl(normalizedImageUrl)) {
     return res.status(400).json({ error: 'INVALID_PRODUCT_INPUT' });
   }
-  const { rows } = await pool.query(
-    `INSERT INTO products (sku, game_category, tier, name, description, fulfillment_type,
-      sale_price_xtr, cost_price_xtr, rights_review_reference, image_url, customer_terms, fulfillment_eta, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'DRAFT') RETURNING *`,
-    [normalizedSku, gameCategory, tier, String(name).trim(), normalizeProductText(description, 5000),
-      fulfillmentType, Number(salePriceXtr), Number(costPriceXtr), rightsReviewReference,
-      normalizedImageUrl, normalizeProductText(customerTerms, 5000), normalizeProductText(fulfillmentEta, 160)]
-  );
+  let rows;
+  try {
+    ({ rows } = await pool.query(
+      `INSERT INTO products (sku, game_category, tier, name, description, fulfillment_type,
+        sale_price_xtr, cost_price_xtr, rights_review_reference, image_url, customer_terms, fulfillment_eta, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'DRAFT') RETURNING *`,
+      [normalizedSku, gameCategory, tier, String(name).trim(), normalizeProductText(description, 5000),
+        fulfillmentType, Number(salePriceXtr), Number(costPriceXtr), rightsReviewReference,
+        normalizedImageUrl, normalizeProductText(customerTerms, 5000), normalizeProductText(fulfillmentEta, 160)]
+    ));
+  } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({ error:'PRODUCT_SKU_ALREADY_EXISTS', message:'SKU sudah digunakan produk lain.' });
+    }
+    throw error;
+  }
   await audit(req, 'PRODUCT_CREATED', 'PRODUCT', rows[0].id, { sku:normalizedSku });
   res.status(201).json({ product: rows[0] });
 });
