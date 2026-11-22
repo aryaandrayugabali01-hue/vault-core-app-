@@ -215,7 +215,7 @@ router.patch('/products/:id', async (req, res) => {
         if (!category.rows[0]) return res.status(400).json({error:'MARKETPLACE_CATEGORY_INVALID'});
       }
     } else if (key === 'imageGallery') {
-      const gallery = normalizeImageGallery(value);
+      const gallery = normalizeImageGallery(value, req.body?.imageUrl);
       if (!gallery.ok) return res.status(400).json({error:gallery.error});
       value = JSON.stringify(gallery.value);
     } else if (key === 'salePriceXtr' || key === 'costPriceXtr' || key === 'lowStockThreshold' || key === 'displayStockOverride') {
