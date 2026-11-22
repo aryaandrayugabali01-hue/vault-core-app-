@@ -190,21 +190,37 @@ router.patch('/products/:id', async (req, res) => {
   let fulfillmentChanged = false;
   try {
     await client.query('BEGIN');
-    const current = await client.query('SELECT id,fulfillment_type,is_test FROM products WHERE id=$1 FOR UPDATE',[id]);
+    const current = await client.query(
+      'SELECT id,sku,game_category,tier,name,description,customer_terms,fulfillment_type,is_test FROM products WHERE id=$1 FOR UPDATE',
+      [id]
+    );
     if (!current.rows[0]) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error:'PRODUCT_NOT_FOUND' });
     }
-    fulfillmentChanged = pairs.some(([key]) => key === 'fulfillmentType')
-      && req.body.fulfillmentType !== current.rows[0].fulfillment_type;
-    if (fulfillmentChanged && req.body.status === 'ACTIVE') {
+    const existing = current.rows[0];
+    const reviewRelevantColumns = {
+      sku:'sku', gameCategory:'game_category', tier:'tier', name:'name',
+      description:'description', customerTerms:'customer_terms', fulfillmentType:'fulfillment_type'
+    };
+    const reviewRelevantChange = pairs.some(([key]) => {
+      const column = reviewRelevantColumns[key];
+      if (!column) return false;
+      const nextValue = key === 'sku' ? String(req.body[key] ?? '').trim().toUpperCase()
+        : key === 'description' || key === 'customerTerms' ? normalizeProductText(req.body[key], 5000)
+        : req.body[key];
+      return String(nextValue ?? '') !== String(existing[column] ?? '');
+    });
+    const fulfillmentChanged = pairs.some(([key]) => key === 'fulfillmentType')
+      && req.body.fulfillmentType !== existing.fulfillment_type;
+    if (reviewRelevantChange && req.body.status === 'ACTIVE') {
       await client.query('ROLLBACK');
       return res.status(409).json({
-        error:'PRODUCT_REVIEW_REQUIRED_AFTER_FULFILLMENT_CHANGE',
-        message:'Perubahan metode pemenuhan memerlukan pemeriksaan CR-05 baru sebelum SKU dapat diaktifkan.'
+        error:'PRODUCT_REVIEW_REQUIRED_AFTER_DETAIL_CHANGE',
+        message:'Perubahan identitas atau ketentuan SKU memerlukan pemeriksaan CR-05 baru sebelum SKU dapat diaktifkan.'
       });
     }
-    if (fulfillmentChanged) {
+    if (reviewRelevantChange) {
       const openOrders = await client.query(
         `SELECT COUNT(DISTINCT o.id)::int AS count
          FROM order_items oi
@@ -241,8 +257,8 @@ router.patch('/products/:id', async (req, res) => {
     client.release();
   }
   if (!updated) return res.status(404).json({ error:'PRODUCT_NOT_FOUND' });
-  await audit(req, 'PRODUCT_UPDATED', 'PRODUCT', id, { ...Object.fromEntries(pairs), fulfillmentReviewReset:fulfillmentChanged });
-  res.json({ product:updated, fulfillmentReviewReset:fulfillmentChanged });
+  await audit(req, 'PRODUCT_UPDATED', 'PRODUCT', id, { ...Object.fromEntries(pairs), productReviewReset:reviewRelevantChange });
+  res.json({ product:updated, productReviewReset:reviewRelevantChange });
 });
 
 router.get('/products/:id/rights-review', async (req, res) => {
