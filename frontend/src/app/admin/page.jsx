@@ -401,7 +401,7 @@ export default function AdminPage() {
         </select></label>
         <label>Harga jual (XTR)<input required type="number" min="1" step="1" value={editForm.salePriceXtr} onChange={e=>setEditForm({...editForm,salePriceXtr:e.target.value})} /></label>
         <label>Modal (XTR)<input required type="number" min="0" step="1" value={editForm.costPriceXtr} onChange={e=>setEditForm({...editForm,costPriceXtr:e.target.value})} /></label>
-        <label className="span-2">URL gambar (HTTPS atau /assets/)<input type="url" value={editForm.imageUrl} onChange={e=>setEditForm({...editForm,imageUrl:e.target.value})} placeholder="https://.../produk.webp" /></label>
+        <label className="span-2">URL gambar (HTTPS atau /assets/)<input type="text" value={editForm.imageUrl} onChange={e=>setEditForm({...editForm,imageUrl:e.target.value})} placeholder="https://.../produk.webp" /></label>
         <label className="span-2">Ketentuan untuk pelanggan<textarea rows="3" maxLength="5000" value={editForm.customerTerms} onChange={e=>setEditForm({...editForm,customerTerms:e.target.value})} /></label>
         <label className="span-2">Estimasi waktu pemenuhan<input maxLength="160" value={editForm.fulfillmentEta} onChange={e=>setEditForm({...editForm,fulfillmentEta:e.target.value})} placeholder="Contoh: 5–15 menit setelah pembayaran" /></label>
         <div className="admin-actions"><button className="admin-primary" disabled={busy}>Simpan rincian</button><button type="button" onClick={()=>setEditingProductId('')} disabled={busy}>Batal</button></div>
