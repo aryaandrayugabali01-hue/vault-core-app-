@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS product_rights_reviews (
     OR (
       owner_attested = TRUE
       AND (
-        rights_basis IN ('OWNER_CREATED','OWNER_OWNED','SERVICE')
+        (rights_basis IN ('OWNER_CREATED','OWNER_OWNED','SERVICE') AND upper(publisher_platform)='INTERNAL_OWNER')
         OR (
           authorization_evidence_reference IS NOT NULL
           AND length(btrim(authorization_evidence_reference)) >= 3
@@ -129,7 +129,8 @@ BEGIN
             CONSTRAINT = 'products_active_requires_current_rights_review';
   END IF;
 
-  IF review.rights_basis NOT IN ('OWNER_CREATED','OWNER_OWNED','SERVICE')
+  IF (review.rights_basis NOT IN ('OWNER_CREATED','OWNER_OWNED','SERVICE')
+      OR upper(review.publisher_platform) <> 'INTERNAL_OWNER')
      AND (review.authorization_evidence_reference IS NULL
           OR length(btrim(review.authorization_evidence_reference)) < 3) THEN
     RAISE EXCEPTION 'PRODUCT_RIGHTS_AUTHORIZATION_REFERENCE_REQUIRED'
