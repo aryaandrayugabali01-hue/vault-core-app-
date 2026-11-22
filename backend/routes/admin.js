@@ -188,7 +188,6 @@ router.patch('/products/:id', async (req, res) => {
   const client = await pool.connect();
   let updated;
   let productReviewReset = false;
-  let fulfillmentChanged = false;
   try {
     await client.query('BEGIN');
     const current = await client.query(
@@ -212,8 +211,6 @@ router.patch('/products/:id', async (req, res) => {
         : req.body[key];
       return String(nextValue ?? '') !== String(existing[column] ?? '');
     });
-    fulfillmentChanged = pairs.some(([key]) => key === 'fulfillmentType')
-      && req.body.fulfillmentType !== existing.fulfillment_type;
     if (productReviewReset && req.body.status === 'ACTIVE') {
       await client.query('ROLLBACK');
       return res.status(409).json({
