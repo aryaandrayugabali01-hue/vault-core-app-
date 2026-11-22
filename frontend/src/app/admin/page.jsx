@@ -39,6 +39,20 @@ const API_ERROR_MESSAGES = {
 };
 const displayStatus = (status) => STATUS_LABELS[status] || 'Status sedang diperbarui';
 const apiErrorMessage = (data, fallback) => API_ERROR_MESSAGES[data?.error] || data?.message || fallback;
+const SKU_PREFIX = { MLBB:'MLBB', ROBLOX:'RBLX', FREE_FIRE:'FFIR', GENSHIN:'GNSH', OTHER:'OTHR' };
+const TIER_CODE = { SILVER:'SLV', GOLD:'GLD', PLATINUM:'PLT', SERVICE:'SRV' };
+const GAME_NAME = { MLBB:'Mobile Legends', ROBLOX:'Roblox', FREE_FIRE:'Free Fire', GENSHIN:'Genshin Impact', OTHER:'Produk Digital' };
+const TIER_NAME = { SILVER:'Silver', GOLD:'Gold', PLATINUM:'Platinum', SERVICE:'Layanan' };
+function suggestedSku(category, tier, products) {
+  const prefix = (SKU_PREFIX[category] || 'ITEM') + '-' + (TIER_CODE[tier] || 'STD') + '-';
+  const used = new Set(products.map((product) => String(product.sku || '').toUpperCase()));
+  let number = 1;
+  while (used.has(prefix + String(number).padStart(3, '0'))) number += 1;
+  return prefix + String(number).padStart(3, '0');
+}
+function suggestedName(category, tier) {
+  return (GAME_NAME[category] || 'Produk Digital') + ' ' + (TIER_NAME[tier] || 'Standard');
+}
 
 export default function AdminPage() {
   const [stats, setStats] = useState(null);
@@ -51,13 +65,18 @@ export default function AdminPage() {
   const [stockPayload, setStockPayload] = useState('');
   const [displayCap, setDisplayCap] = useState({});
   const [busy, setBusy] = useState(false);
+  const [authState, setAuthState] = useState('checking');
+  const [botUsername, setBotUsername] = useState('');
+  const [loginMessage, setLoginMessage] = useState('');
+  const [loginBusy, setLoginBusy] = useState(false);
+  const [skuManual, setSkuManual] = useState(false);
   const headers = () => ({ 'content-type':'application/json', 'x-telegram-init-data':getInitData() });
 
   async function refresh() {
     const [dashboard, productResponse, orderResponse] = await Promise.all([
-      fetch(`${API}/api/admin/dashboard`, { headers:headers(), cache:'no-store' }),
-      fetch(`${API}/api/admin/products`, { headers:headers(), cache:'no-store' }),
-      fetch(`${API}/api/admin/orders`, { headers:headers(), cache:'no-store' })
+      fetch(`${API}/api/admin/dashboard`, { headers:headers(), credentials:'include', cache:'no-store' }),
+      fetch(`${API}/api/admin/products`, { headers:headers(), credentials:'include', cache:'no-store' }),
+      fetch(`${API}/api/admin/orders`, { headers:headers(), credentials:'include', cache:'no-store' })
     ]);
     const dashboardData = await dashboard.json();
     const productData = await productResponse.json();
@@ -65,21 +84,82 @@ export default function AdminPage() {
     if (!dashboard.ok || !productResponse.ok || !orderResponse.ok) throw new Error(apiErrorMessage(dashboardData, '') || apiErrorMessage(productData, '') || apiErrorMessage(orderData, '') || 'Akses panel pemilik tidak dapat diverifikasi. Buka VAULT CORE melalui Telegram dengan akun pemilik.');
     setStats(dashboardData); setProducts(productData.products || []); setOrders(orderData.orders || []); setNotice('Panel pemilik berhasil terhubung.');
   }
-  useEffect(() => { refresh().catch((e) => setNotice(e.message)); }, []);
+  useEffect(() => {
+    let alive = true;
+    async function initializeOwnerAccess() {
+      try {
+        const session = await fetch(`${API}/api/owner-auth/session`, {
+          headers: { 'x-telegram-init-data': getInitData() }, credentials:'include', cache:'no-store'
+        });
+        if (session.ok) {
+          if (!alive) return;
+          setAuthState('authenticated');
+          await refresh();
+          return;
+        }
+        const config = await fetch(`${API}/api/owner-auth/config`, { credentials:'include', cache:'no-store' });
+        const data = await config.json();
+        if (!config.ok || !data.botUsername) throw new Error('Login Telegram belum dikonfigurasi pada bot VAULT CORE.');
+        if (alive) { setBotUsername(data.botUsername); setAuthState('login'); setNotice(''); }
+      } catch (error) {
+        if (alive) { setAuthState('login'); setLoginMessage(error.message || 'Login Telegram belum dapat dimuat.'); }
+      }
+    }
+    initializeOwnerAccess();
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    if (authState !== 'login' || !botUsername) return;
+    const mount = document.getElementById('telegram-login-widget');
+    if (!mount) return;
+    window.onVaultTelegramAuth = async (telegramUser) => {
+      setLoginBusy(true); setLoginMessage('');
+      try {
+        const response = await fetch(`${API}/api/owner-auth/telegram`, {
+          method:'POST', headers:{ 'content-type':'application/json' }, credentials:'include',
+          body:JSON.stringify(telegramUser)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(apiErrorMessage(data, 'Login Telegram gagal. Pastikan akun ini memiliki akses Owner.'));
+        setAuthState('authenticated'); setLoginMessage('');
+        await refresh();
+      } catch (error) { setLoginMessage(error.message || 'Login Telegram gagal.'); }
+      finally { setLoginBusy(false); }
+    };
+    const script = document.createElement('script');
+    script.async = true; script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.setAttribute('data-telegram-login', botUsername);
+    script.setAttribute('data-size', 'large'); script.setAttribute('data-userpic', 'false');
+    script.setAttribute('data-radius', '12'); script.setAttribute('data-request-access', 'write');
+    script.setAttribute('data-onauth', 'onVaultTelegramAuth(user)');
+    mount.replaceChildren(script);
+    return () => { mount.replaceChildren(); delete window.onVaultTelegramAuth; };
+  }, [authState, botUsername]);
+
+  useEffect(() => {
+    if (!skuManual) setForm((current) => ({ ...current, sku: suggestedSku(current.gameCategory, current.tier, products) }));
+  }, [products, skuManual]);
+
+  async function logoutOwner() {
+    await fetch(`${API}/api/owner-auth/logout`, { method:'POST', credentials:'include' });
+    setAuthState('login'); setNotice('');
+    setLoginMessage('Anda telah keluar dari Dashboard Owner.');
+  }
 
   async function createProduct(e) {
     e.preventDefault(); setBusy(true);
     try {
-      const response = await fetch(`${API}/api/admin/products`, { method:'POST', headers:headers(), body:JSON.stringify({ ...form, salePriceXtr:Number(form.salePriceXtr), costPriceXtr:Number(form.costPriceXtr) }) });
+      const response = await fetch(`${API}/api/admin/products`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ ...form, salePriceXtr:Number(form.salePriceXtr), costPriceXtr:Number(form.costPriceXtr) }) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Produk tidak dapat disimpan. Periksa kembali data produk.'));
-      setNotice(`Produk ${data.product.sku} berhasil disimpan dengan status Draf.`); setForm({ ...form, sku:'', name:'', description:'' }); await refresh();
+      setNotice(`Produk ${data.product.sku} berhasil disimpan sebagai Draf.`); setSkuManual(false); setForm({ ...form, sku:'', name:'', description:'', rightsReviewReference:'' }); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
   }
   async function addStock(e) {
     e.preventDefault(); if (!stockProduct || !stockPayload.trim()) return;
     setBusy(true);
     try {
-      const response = await fetch(`${API}/api/admin/products/${stockProduct}/inventory`, { method:'POST', headers:headers(), body:JSON.stringify({ payloads:stockPayload.split('\n').map(v=>v.trim()).filter(Boolean) }) });
+      const response = await fetch(`${API}/api/admin/products/${stockProduct}/inventory`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ payloads:stockPayload.split('\n').map(v=>v.trim()).filter(Boolean) }) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Stok tidak dapat ditambahkan. Periksa kembali data yang dimasukkan.'));
       setNotice(`${data.inserted} unit stok berhasil dienkripsi dan disimpan.`); setStockPayload(''); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
@@ -87,7 +167,7 @@ export default function AdminPage() {
   async function updateProduct(id, patch) {
     setBusy(true);
     try {
-      const response = await fetch(`${API}/api/admin/products/${id}`, { method:'PATCH', headers:headers(), body:JSON.stringify(patch) });
+      const response = await fetch(`${API}/api/admin/products/${id}`, { method:'PATCH', headers:headers(), credentials:'include', body:JSON.stringify(patch) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Pengaturan produk tidak dapat diperbarui.'));
       setNotice('Pengaturan produk berhasil diperbarui.'); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
@@ -108,7 +188,7 @@ export default function AdminPage() {
     setBusy(true);
     try {
       const response = await fetch(API + '/api/admin/deliveries/' + deliveryId + '/reconcile', {
-        method:'POST', headers:headers(),
+        method:'POST', headers:headers(), credentials:'include',
         body:JSON.stringify({ outcome:normalized, reason:reason.trim(), telegramMessageId:messageValue ? Number(messageValue) : null })
       });
       const data = await response.json();
@@ -120,7 +200,7 @@ export default function AdminPage() {
   async function retryDelivery(orderNumber) {
     setBusy(true);
     try {
-      const response = await fetch(`${API}/api/admin/orders/${encodeURIComponent(orderNumber)}/retry-delivery`, { method:'POST', headers:headers(), body:JSON.stringify({}) });
+      const response = await fetch(`${API}/api/admin/orders/${encodeURIComponent(orderNumber)}/retry-delivery`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({}) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Pengiriman ulang tidak dapat diproses.'));
       setNotice(`Permintaan pengiriman ulang untuk pesanan ${orderNumber} telah diproses.`); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
@@ -131,7 +211,7 @@ export default function AdminPage() {
     if (reason === null) return;
     setBusy(true);
     try {
-      const response = await fetch(`${API}/api/admin/orders/${encodeURIComponent(orderNumber)}/refund`, { method:'POST', headers:headers(), body:JSON.stringify({ reason }) });
+      const response = await fetch(`${API}/api/admin/orders/${encodeURIComponent(orderNumber)}/refund`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ reason }) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Pengembalian Telegram Stars tidak dapat diproses.'));
       setNotice(`Pengembalian Telegram Stars untuk pesanan ${orderNumber} berhasil dikonfirmasi.`); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
@@ -140,15 +220,30 @@ export default function AdminPage() {
   async function addExpense(e) {
     e.preventDefault(); setBusy(true);
     try {
-      const response = await fetch(`${API}/api/admin/expenses`, { method:'POST', headers:headers(), body:JSON.stringify({ ...expenseForm, amountXtr:Number(expenseForm.amountXtr) }) });
+      const response = await fetch(`${API}/api/admin/expenses`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ ...expenseForm, amountXtr:Number(expenseForm.amountXtr) }) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Biaya operasional tidak dapat dicatat.'));
       setExpenseForm({ category:'OPERATIONS', description:'', amountXtr:'' }); setNotice('Biaya operasional berhasil dicatat.'); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
   }
 
   const xtr = (n) => `${Number(n || 0).toLocaleString('en-US')} XTR`;
+  if (authState !== 'authenticated') return <main className="owner-login-screen">
+    <section className="owner-login-card">
+      <a className="brand" href="/"><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a>
+      <span className="eyebrow muted">OWNER SECURE ACCESS</span>
+      <h1>Masuk ke Dashboard Owner</h1>
+      <p>Gunakan akun Telegram yang terdaftar sebagai pemilik VAULT CORE. Tidak perlu membuat atau mengingat password baru.</p>
+      {authState === 'checking' ? <div className="owner-login-loading">Memeriksa sesi Telegram…</div> : <>
+        <div id="telegram-login-widget" className="telegram-login-widget" />
+        {loginBusy && <div className="owner-login-loading">Memverifikasi akun Telegram…</div>}
+        {loginMessage && <div className="owner-login-message" role="alert">{loginMessage}</div>}
+        <small>Login diverifikasi langsung oleh Telegram dan akses Owner diperiksa oleh server VAULT CORE.</small>
+      </>}
+      <a className="owner-login-back" href="/">Kembali ke katalog</a>
+    </section>
+  </main>;
   return <main className="admin-shell">
-    <header className="admin-head"><a className="brand" href="/"><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a><span className="admin-pill">PANEL PEMILIK</span></header>
+    <header className="admin-head"><a className="brand" href="/"><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a><div className="admin-head-actions"><span className="admin-pill">PANEL PEMILIK</span><button type="button" className="admin-logout" onClick={logoutOwner}>Keluar</button></div></header>
     <section className="admin-title"><span className="eyebrow muted">PANEL KONTROL / PEMILIK</span><h1>Dashboard pemilik</h1><p>Kelola katalog, stok, harga, pesanan, dan laporan usaha dalam XTR.</p></section>
     {notice && <div className="admin-notice">{notice}</div>}
     {stats && <section className="admin-stats">
@@ -162,15 +257,15 @@ export default function AdminPage() {
 
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">KATALOG</span><h2>Buat produk</h2></div></div>
       <form className="admin-form" onSubmit={createProduct}>
-        <label>SKU<input required value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} placeholder="MLBB-GOLD-001" /></label>
-        <label>Kategori game<select value={form.gameCategory} onChange={e=>setForm({...form,gameCategory:e.target.value})}><option value="MLBB">MLBB</option><option value="ROBLOX">Roblox</option><option value="FREE_FIRE">Free Fire</option><option value="GENSHIN">Genshin Impact</option><option value="OTHER">Lainnya</option></select></label>
-        <label>Tingkat produk<select value={form.tier} onChange={e=>setForm({...form,tier:e.target.value})}><option value="SILVER">Silver</option><option value="GOLD">Gold</option><option value="PLATINUM">Platinum</option><option value="SERVICE">Layanan</option></select></label>
-        <label>Nama produk<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} /></label>
+        <label>SKU <small className="field-hint">Dibuat otomatis, tetap bisa diedit</small><input required value={form.sku} onChange={e=>{setSkuManual(true);setForm({...form,sku:e.target.value.toUpperCase()});}} placeholder="MLBB-GLD-001" /></label>
+        <label>Kategori game<select value={form.gameCategory} onChange={e=>{const category=e.target.value;setForm(current=>({...current,gameCategory:category,sku:skuManual?current.sku:suggestedSku(category,current.tier,products),name:current.name===suggestedName(current.gameCategory,current.tier)?suggestedName(category,current.tier):current.name}));}}><option value="MLBB">MLBB</option><option value="ROBLOX">Roblox</option><option value="FREE_FIRE">Free Fire</option><option value="GENSHIN">Genshin Impact</option><option value="OTHER">Lainnya</option></select></label>
+        <label>Tingkat produk<select value={form.tier} onChange={e=>{const tier=e.target.value;setForm(current=>({...current,tier,sku:skuManual?current.sku:suggestedSku(current.gameCategory,tier,products),name:current.name===suggestedName(current.gameCategory,current.tier)?suggestedName(current.gameCategory,tier):current.name}));}}><option value="SILVER">Silver</option><option value="GOLD">Gold</option><option value="PLATINUM">Platinum</option><option value="SERVICE">Layanan</option></select></label>
+        <label>Nama produk<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder={suggestedName(form.gameCategory,form.tier)} /></label>
         <label className="span-2">Deskripsi<textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} rows="2" /></label>
         <label>Metode pemenuhan<select value={form.fulfillmentType} onChange={e=>setForm({...form,fulfillmentType:e.target.value})}><option value="REDEEM_CODE">Kode penukaran</option><option value="VOUCHER_CODE">Kode voucher</option><option value="LICENSE_KEY">Kunci lisensi</option><option value="GIFT_CODE">Kode hadiah</option><option value="DIGITAL_FILE">Berkas digital</option><option value="SERVICE_INSTRUCTIONS">Petunjuk layanan</option></select></label>
         <label>Harga jual (XTR)<input required type="number" min="1" step="1" value={form.salePriceXtr} onChange={e=>setForm({...form,salePriceXtr:e.target.value})} /></label>
         <label>Modal (XTR)<input required type="number" min="0" step="1" value={form.costPriceXtr} onChange={e=>setForm({...form,costPriceXtr:e.target.value})} /></label>
-        <label className="span-2">Referensi verifikasi hak penjualan<input required value={form.rightsReviewReference} onChange={e=>setForm({...form,rightsReviewReference:e.target.value})} placeholder="Nomor dokumen atau referensi hak penjualan" /></label>
+        <label className="span-2">Referensi hak penjualan <small className="field-hint">Opsional saat menyimpan draf; diperlukan sebelum produk komersial diaktifkan</small><input value={form.rightsReviewReference} onChange={e=>setForm({...form,rightsReviewReference:e.target.value})} placeholder="Tautan atau nomor bukti otorisasi" /></label>
         <button className="admin-primary" disabled={busy}>Simpan produk sebagai Draf</button>
       </form>
     </section>
