@@ -110,7 +110,8 @@ router.patch('/products/:id', async (req, res) => {
         message: 'Aktivasi memerlukan pemeriksaan internal Owner berstatus APPROVED yang lengkap dan masih berlaku.'
       });
     }
-    if (product.rights_basis && !['OWNER_CREATED','OWNER_OWNED','SERVICE'].includes(product.rights_basis)
+    if ((product.rights_basis && !['OWNER_CREATED','OWNER_OWNED','SERVICE'].includes(product.rights_basis)
+         || String(product.publisher_platform || '').toUpperCase() !== 'INTERNAL_OWNER')
         && !product.authorization_evidence_reference) {
       return res.status(409).json({ error: 'AUTHORIZATION_EVIDENCE_REFERENCE_REQUIRED' });
     }
