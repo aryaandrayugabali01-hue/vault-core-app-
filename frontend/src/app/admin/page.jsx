@@ -21,6 +21,7 @@ const API_ERROR_MESSAGES = {
   INVALID_PRODUCT_IMAGE_URL:'Gunakan URL gambar HTTPS atau path lokal /assets/ yang valid.',
   PRODUCT_SKU_ALREADY_EXISTS:'SKU tersebut sudah digunakan oleh produk lain.',
   PRODUCT_REVIEW_REQUIRED_AFTER_FULFILLMENT_CHANGE:'Metode pemenuhan berubah. Simpan review CR-05 baru sebelum mengaktifkan SKU.',
+  PRODUCT_HAS_OPEN_ORDERS:'Metode pemenuhan belum dapat diubah karena masih ada pesanan aktif untuk SKU ini. Selesaikan atau rekonsiliasi pesanan terlebih dahulu.',
   PRODUCT_REVIEW_REFERENCE_REQUIRED:'Tambahkan referensi verifikasi hak penjualan sebelum mengaktifkan produk.',
   PRODUCT_NOT_FOUND:'Produk tidak ditemukan. Muat ulang daftar produk lalu coba kembali.',
   INVALID_EXPENSE_INPUT:'Lengkapi kategori, keterangan, dan jumlah biaya operasional dengan benar.',
