@@ -38,9 +38,10 @@ export function validateRightsReviewInput(input, now = new Date()) {
   if (officialTermsUrl && !isHttpsUrl(officialTermsUrl)) errors.push('OFFICIAL_TERMS_URL_MUST_BE_HTTPS');
 
   const isInternalBasis = ['OWNER_CREATED','OWNER_OWNED','SERVICE'].includes(rightsBasis);
+  const isInternalProduct = isInternalBasis && publisherPlatform.toUpperCase() === 'INTERNAL_OWNER';
   if (reviewStatus === 'APPROVED') {
     if (!ownerAttested) errors.push('OWNER_ATTESTATION_REQUIRED');
-    if (!isInternalBasis && !authorizationEvidenceReference) errors.push('AUTHORIZATION_EVIDENCE_REFERENCE_REQUIRED');
+    if (!isInternalProduct && !authorizationEvidenceReference) errors.push('AUTHORIZATION_EVIDENCE_REFERENCE_REQUIRED');
     if (publisherPlatform.toUpperCase() !== 'INTERNAL_OWNER' && !officialTermsUrl) errors.push('OFFICIAL_TERMS_URL_REQUIRED');
   }
 
