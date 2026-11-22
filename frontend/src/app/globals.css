@@ -779,3 +779,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .admin-logout{border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:9px 13px;background:rgba(255,255,255,.04);color:inherit;font:inherit;cursor:pointer}
 .field-hint{display:block;color:var(--muted,#929bb0);font-size:11px;font-weight:400;margin:3px 0 6px}
 @media(max-width:520px){.owner-login-screen{padding:16px}.owner-login-card{padding:28px 20px}.admin-head-actions{gap:6px}.admin-logout{padding:8px 10px;font-size:12px}}
+
+
+/* Owner Telegram login and compact product-entry guidance */
+.owner-login-step{width:100%;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;color:#aeb9cc;font-size:11px;line-height:1.5}
+.owner-login-step span{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(155,133,255,.18);color:#d9d0ff;font-weight:800}
+.admin-form-hint{align-self:center;color:#92a0b6;font-size:11px;line-height:1.5;padding:0 2px}
+.owner-login-card .telegram-login-widget{width:100%;min-height:54px;padding:6px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.025)}
+@media(max-width:520px){.owner-login-step{gap:6px;font-size:10px}.admin-form-hint{font-size:10px}}
