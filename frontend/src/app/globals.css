@@ -787,3 +787,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .admin-form-hint{align-self:center;color:#92a0b6;font-size:11px;line-height:1.5;padding:0 2px}
 .owner-login-card .telegram-login-widget{width:100%;min-height:54px;padding:6px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.025)}
 @media(max-width:520px){.owner-login-step{gap:6px;font-size:10px}.admin-form-hint{font-size:10px}}
+
+
+/* Dedicated product entry page */
+.admin-product-entry .admin-section-head{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.admin-product-entry .admin-section-head p{margin:7px 0 0;color:var(--muted,#9aa3b2);font-size:13px;line-height:1.6}
+.admin-product-entry-link{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border-radius:13px;text-decoration:none;font-weight:800}
+.admin-form .admin-section-head h2{margin:5px 0 0}
+.admin-form .admin-section-head{margin:8px 0 0}
+@media(max-width:520px){.admin-product-entry-link{width:100%}}
