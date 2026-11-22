@@ -4,25 +4,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { getInitData, getTelegramWebApp, openInvoice } from '../lib/telegram';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-const CATEGORIES = [
-  { id: 'ALL', label: 'Semua produk', mark: '✦' },
-  { id: 'MLBB', label: 'MLBB', mark: '⚔' },
-  { id: 'ROBLOX', label: 'Roblox', mark: 'R' },
-  { id: 'FREE_FIRE', label: 'Free Fire', mark: '◎' },
-  { id: 'GENSHIN', label: 'Genshin Impact', mark: '✧' }
-];
-const TIERS = [
-  { id: 'ALL', label: 'Semua tingkat' },
-  { id: 'SILVER', label: 'Tier Silver' },
-  { id: 'GOLD', label: 'Tier Gold' },
-  { id: 'PLATINUM', label: 'Tier Platinum' },
-  { id: 'SERVICE', label: 'Layanan' }
-];
 const STORE_FILTERS = [
   { key: 'ALL', mode: 'all', id: 'ALL', label: 'Semua produk' },
   { key: 'TIER_SILVER', mode: 'tier', id: 'SILVER', label: '🥈 Silver' },
   { key: 'TIER_GOLD', mode: 'tier', id: 'GOLD', label: '🥇 Gold' },
   { key: 'TIER_PLATINUM', mode: 'tier', id: 'PLATINUM', label: '💎 Platinum' },
+  { key: 'TIER_SERVICE', mode: 'tier', id: 'SERVICE', label: 'Layanan' },
   { key: 'GAME_MLBB', mode: 'game', id: 'MLBB', label: '⚔ MLBB' },
   { key: 'GAME_ROBLOX', mode: 'game', id: 'ROBLOX', label: 'Roblox' },
   { key: 'GAME_FREE_FIRE', mode: 'game', id: 'FREE_FIRE', label: '◎ Free Fire' },
@@ -55,7 +42,6 @@ const TRUST_ITEMS = [
 ];
 
 const GAME_LABELS = { MLBB: 'MLBB', ROBLOX: 'Roblox', FREE_FIRE: 'Free Fire', GENSHIN: 'Genshin Impact', OTHER: 'Lainnya' };
-const GAME_MARKS = { MLBB: 'ML', ROBLOX: 'R', FREE_FIRE: 'FF', GENSHIN: 'GI', OTHER: 'VC' };
 const TIER_LABELS = { SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Platinum', SERVICE: 'Layanan' };
 const FULFILLMENT_LABELS = {
   REDEEM_CODE: 'Kode redeem', VOUCHER_CODE: 'Kode voucher', LICENSE_KEY: 'Kunci lisensi',
@@ -166,7 +152,7 @@ export default function HomePage() {
   const sourceProducts = isTestMode ? testProducts : products;
   const activeStoreFilter = tier !== 'ALL' ? 'TIER_' + tier : category !== 'ALL' ? 'GAME_' + category : 'ALL';
   const activeFilterLabel = tier !== 'ALL'
-    ? (TIER_LABELS[tier] || tier) + ' Tier'
+    ? (tier === 'SERVICE' ? 'Layanan' : (TIER_LABELS[tier] || tier) + ' Tier')
     : category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua produk';
   const filtered = useMemo(() => sourceProducts.filter((p) =>
     (category === 'ALL' || p.game_category === category)
@@ -439,8 +425,10 @@ export default function HomePage() {
           <h1>Temukan pilihan digital<br /><span>gaming dalam satu tempat.</span></h1>
           <p>Jelajahi kategori dan tier, periksa stok yang tersedia, lalu selesaikan pembayaran melalui invoice Telegram Stars.</p>
           <div className="hero-actions">
-            <button className="hero-cta" type="button" onClick={() => { setCategory('ALL'); setTier('PLATINUM'); document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>Jelajahi Tier Platinum <span>↗</span></button>
-            <button className="hero-secondary" type="button" onClick={() => { setCategory('ALL'); setTier('ALL'); document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>Semua produk</button>
+            <button className="hero-cta" type="button" onClick={() => { setCategory('ALL'); setTier('PLATINUM'); const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            document.getElementById('products')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); }}>Jelajahi Tier Platinum <span>↗</span></button>
+            <button className="hero-secondary" type="button" onClick={() => { setCategory('ALL'); setTier('ALL'); const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            document.getElementById('products')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); }}>Semua produk</button>
           </div>
           <div className="hero-stats">
             <div><strong>04</strong><small>Kategori game</small></div>
