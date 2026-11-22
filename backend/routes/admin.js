@@ -187,6 +187,7 @@ router.patch('/products/:id', async (req, res) => {
 
   const client = await pool.connect();
   let updated;
+  let productReviewReset = false;
   let fulfillmentChanged = false;
   try {
     await client.query('BEGIN');
@@ -203,7 +204,7 @@ router.patch('/products/:id', async (req, res) => {
       sku:'sku', gameCategory:'game_category', tier:'tier', name:'name',
       description:'description', customerTerms:'customer_terms', fulfillmentType:'fulfillment_type'
     };
-    const reviewRelevantChange = pairs.some(([key]) => {
+    productReviewReset = pairs.some(([key]) => {
       const column = reviewRelevantColumns[key];
       if (!column) return false;
       const nextValue = key === 'sku' ? String(req.body[key] ?? '').trim().toUpperCase()
@@ -211,16 +212,16 @@ router.patch('/products/:id', async (req, res) => {
         : req.body[key];
       return String(nextValue ?? '') !== String(existing[column] ?? '');
     });
-    const fulfillmentChanged = pairs.some(([key]) => key === 'fulfillmentType')
+    fulfillmentChanged = pairs.some(([key]) => key === 'fulfillmentType')
       && req.body.fulfillmentType !== existing.fulfillment_type;
-    if (reviewRelevantChange && req.body.status === 'ACTIVE') {
+    if (productReviewReset && req.body.status === 'ACTIVE') {
       await client.query('ROLLBACK');
       return res.status(409).json({
         error:'PRODUCT_REVIEW_REQUIRED_AFTER_DETAIL_CHANGE',
         message:'Perubahan identitas atau ketentuan SKU memerlukan pemeriksaan CR-05 baru sebelum SKU dapat diaktifkan.'
       });
     }
-    if (reviewRelevantChange) {
+    if (productReviewReset) {
       const openOrders = await client.query(
         `SELECT COUNT(DISTINCT o.id)::int AS count
          FROM order_items oi
@@ -257,8 +258,8 @@ router.patch('/products/:id', async (req, res) => {
     client.release();
   }
   if (!updated) return res.status(404).json({ error:'PRODUCT_NOT_FOUND' });
-  await audit(req, 'PRODUCT_UPDATED', 'PRODUCT', id, { ...Object.fromEntries(pairs), productReviewReset:reviewRelevantChange });
-  res.json({ product:updated, productReviewReset:reviewRelevantChange });
+  await audit(req, 'PRODUCT_UPDATED', 'PRODUCT', id, { ...Object.fromEntries(pairs), productReviewReset });
+  res.json({ product:updated, productReviewReset });
 });
 
 router.get('/products/:id/rights-review', async (req, res) => {
