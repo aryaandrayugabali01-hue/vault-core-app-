@@ -60,7 +60,7 @@ export default function AdminPage() {
   const [orders, setOrders] = useState([]);
   const [expenseForm, setExpenseForm] = useState({ category:'OPERATIONS', description:'', amountXtr:'' });
   const [notice, setNotice] = useState('Memverifikasi akses pemilik…');
-  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'' });
+  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', name:'Mobile Legends Gold', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'' });
   const [stockProduct, setStockProduct] = useState('');
   const [stockPayload, setStockPayload] = useState('');
   const [displayCap, setDisplayCap] = useState({});
@@ -152,7 +152,7 @@ export default function AdminPage() {
     try {
       const response = await fetch(`${API}/api/admin/products`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ ...form, salePriceXtr:Number(form.salePriceXtr), costPriceXtr:Number(form.costPriceXtr) }) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Produk tidak dapat disimpan. Periksa kembali data produk.'));
-      setNotice(`Produk ${data.product.sku} berhasil disimpan sebagai Draf.`); setSkuManual(false); setForm({ ...form, sku:'', name:'', description:'', rightsReviewReference:'' }); await refresh();
+      setNotice(`Produk ${data.product.sku} berhasil disimpan sebagai Draf.`); setSkuManual(false); setForm({ ...form, sku:'', name:suggestedName(form.gameCategory,form.tier), description:'', rightsReviewReference:'' }); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
   }
   async function addStock(e) {
