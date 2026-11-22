@@ -51,13 +51,16 @@ export async function createOrder(req, res, { testMode = false } = {}) {
         }))) {
       throw Object.assign(new Error('Produk tidak tersedia atau pemeriksaan internal Owner sudah kedaluwarsa.'), { status: 404 });
     }
+    const stockParams = testMode
+      ? [productId, quantity]
+      : [productId, quantity, product.current_rights_review_id];
     const { rows: stockRows } = await client.query(
       `SELECT id FROM inventory_items
        WHERE product_id=$1 AND status='AVAILABLE'
          AND reserved_order_id IS NULL AND reserved_until IS NULL
          AND ${testMode ? 'TRUE' : 'rights_review_id=$3 AND source_reference IS NOT NULL'}
        ORDER BY id LIMIT $2 FOR UPDATE SKIP LOCKED`,
-      ${testMode ? '[productId, quantity]' : '[productId, quantity, product.current_rights_review_id]'} 
+      stockParams
     );
     if (stockRows.length < quantity) throw Object.assign(new Error('Stok tidak mencukupi.'), { status: 409 });
 
