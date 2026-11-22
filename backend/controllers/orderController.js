@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { pool } from '../db/pool.js';
 import { sendStarsInvoice } from '../services/telegramApi.js';
 import { isEligibleCheckoutProduct } from '../services/catalogService.js';
+import { isRightsReviewUsable } from '../services/rightsReviewService.js';
 
 export async function createOrder(req, res, { testMode = false } = {}) {
   const productId = Number(req.body?.productId);
@@ -36,18 +37,27 @@ export async function createOrder(req, res, { testMode = false } = {}) {
     }
 
     const { rows: products } = await client.query(
-      `SELECT * FROM products WHERE id=$1 AND status='ACTIVE' AND ${testMode ? 'is_test=TRUE' : 'COALESCE(is_test,FALSE)=FALSE'} FOR UPDATE`, [productId]
+      `SELECT p.*,rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
+       FROM products p
+       LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
+       WHERE p.id=$1 AND p.status='ACTIVE' AND ${testMode ? 'p.is_test=TRUE' : 'COALESCE(p.is_test,FALSE)=FALSE'}
+       FOR UPDATE OF p`, [productId]
     );
     const product = products[0];
-    if (!isEligibleCheckoutProduct(product, { testMode, ownerAuthorized: testMode })) {
-      throw Object.assign(new Error('Produk tidak tersedia pada jalur checkout ini.'), { status: 404 });
+    if (!isEligibleCheckoutProduct(product, { testMode, ownerAuthorized: testMode })
+        || (!testMode && !isRightsReviewUsable({
+          id:product?.review_id,review_status:product?.review_status,
+          valid_until:product?.valid_until,owner_attested:product?.owner_attested
+        }))) {
+      throw Object.assign(new Error('Produk tidak tersedia atau pemeriksaan internal Owner sudah kedaluwarsa.'), { status: 404 });
     }
     const { rows: stockRows } = await client.query(
       `SELECT id FROM inventory_items
        WHERE product_id=$1 AND status='AVAILABLE'
          AND reserved_order_id IS NULL AND reserved_until IS NULL
+         AND ${testMode ? 'TRUE' : 'rights_review_id=$3 AND source_reference IS NOT NULL'}
        ORDER BY id LIMIT $2 FOR UPDATE SKIP LOCKED`,
-      [productId, quantity]
+      ${testMode ? '[productId, quantity]' : '[productId, quantity, product.current_rights_review_id]'} 
     );
     if (stockRows.length < quantity) throw Object.assign(new Error('Stok tidak mencukupi.'), { status: 409 });
 
