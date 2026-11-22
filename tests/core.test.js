@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { validateTelegramInitData } from '../backend/utils/telegram.js';
 import { encryptPayload, decryptPayload, assertAllowedDigitalPayload } from '../backend/utils/encryption.js';
-import { resolveDisplayStock, isPublicCatalogProduct, isEligibleCheckoutProduct } from '../backend/services/catalogService.js';
+import { resolveDisplayStock, isPublicCatalogProduct, isEligibleCheckoutProduct, canAddProductInventory } from '../backend/services/catalogService.js';
 import { sendStarsInvoice, refundStarPayment, telegramCall } from '../backend/services/telegramApi.js';
 import { sanitizeSuccessfulPaymentUpdate } from '../backend/utils/paymentAudit.js';
 import { createDatabaseAdapter } from '../backend/db/pool.js';
@@ -406,4 +406,14 @@ test('inventory payload text splits LF and CRLF lines, trims entries, and ignore
   );
   assert.deepEqual(splitInventoryPayloads('  \r\n\n  '), []);
   assert.deepEqual(splitInventoryPayloads(null), []);
+});
+
+
+test('inventory input is blocked for test fixtures and unreviewed catalog examples', () => {
+  assert.equal(canAddProductInventory({ status: 'DRAFT', is_test: false }), true);
+  assert.equal(canAddProductInventory({ status: 'ACTIVE', is_test: false }), true);
+  assert.equal(canAddProductInventory({ status: 'PENDING_REVIEW', is_test: false }), false);
+  assert.equal(canAddProductInventory({ status: 'PAUSED', is_test: false }), false);
+  assert.equal(canAddProductInventory({ status: 'ACTIVE', is_test: true }), false);
+  assert.equal(canAddProductInventory(null), false);
 });
