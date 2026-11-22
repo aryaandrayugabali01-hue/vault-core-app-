@@ -234,12 +234,12 @@ router.patch('/products/:id', async (req, res) => {
         await client.query('ROLLBACK');
         return res.status(409).json({
           error:'PRODUCT_HAS_OPEN_ORDERS',
-          message:'Metode pemenuhan tidak dapat diubah selama masih ada pesanan aktif untuk SKU ini. Selesaikan atau rekonsiliasi pesanan terlebih dahulu.'
+          message:'Rincian penting produk tidak dapat diubah selama masih ada pesanan aktif untuk SKU ini. Selesaikan atau rekonsiliasi pesanan terlebih dahulu.'
         });
       }
     }
     const assignments = columns.map((column, index) => `${column}=$${index + 1}`);
-    if (fulfillmentChanged && current.rows[0].is_test !== true) {
+    if (productReviewReset && current.rows[0].is_test !== true) {
       assignments.push("current_rights_review_id=NULL");
       assignments.push("status='PAUSED'");
       await client.query("UPDATE inventory_items SET status='UNAVAILABLE' WHERE product_id=$1 AND status='AVAILABLE'",[id]);
