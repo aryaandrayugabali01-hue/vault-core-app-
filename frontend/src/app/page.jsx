@@ -186,7 +186,7 @@ export default function HomePage() {
     if (!product || product.is_test || !product.is_available) return;
     const amount = Math.max(1,Math.min(5,Number(quantity)||1));
     setCart((current) => {
-      const next=[...current];
+      const next=current.map((item)=>({...item}));
       const existing=next.find((item)=>Number(item.productId)===Number(product.id));
       if (existing) existing.quantity=Math.min(5,existing.quantity+amount);
       else next.push({productId:Number(product.id),quantity:amount});
