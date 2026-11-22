@@ -9,6 +9,7 @@ import { sanitizeSuccessfulPaymentUpdate } from '../backend/utils/paymentAudit.j
 import { createDatabaseAdapter } from '../backend/db/pool.js';
 import { canReconcileDelivery } from '../backend/services/deliveryService.js';
 import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
+import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } from '../backend/middleware/ownerSession.js';
 
 function signedInitData(user, token, authDate = Math.floor(Date.now() / 1000), extraParams = {}) {
   const params = new URLSearchParams({ auth_date: String(authDate), query_id: 'AAE-test', user: JSON.stringify(user), ...extraParams });
@@ -333,4 +334,65 @@ test('request-scoped database adapter rejects DB calls after a connection failur
     adapter.requestContextMiddleware({}, {}, () => adapter.pool.query('SELECT 1')),
     /Hyperdrive connection failed/
   );
+});
+
+
+function signedTelegramLoginPayload(user, token, authDate = Math.floor(Date.now() / 1000)) {
+  const fields = { ...user, auth_date: String(authDate) };
+  const check = Object.keys(fields).sort().map((key) => key + '=' + String(fields[key])).join('\\n');
+  const secret = crypto.createHash('sha256').update(token).digest();
+  const hash = crypto.createHmac('sha256', secret).update(check).digest('hex');
+  return { ...fields, hash };
+}
+
+test('Telegram web login validates official Login Widget HMAC and fresh auth_date', () => {
+  const token = 'vault-core-widget-test-token';
+  const payload = signedTelegramLoginPayload({ id: 6888336983, first_name: 'Owner', username: 'vault_owner' }, token);
+  const previous = process.env.TELEGRAM_BOT_TOKEN;
+  process.env.TELEGRAM_BOT_TOKEN = token;
+  try {
+    const user = validateTelegramLoginPayload(payload);
+    assert.equal(user.id, '6888336983');
+    assert.equal(user.username, 'vault_owner');
+    assert.equal(user.first_name, 'Owner');
+  } finally {
+    if (previous === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = previous;
+  }
+});
+
+test('Telegram web login rejects modified signatures and expired widget data', () => {
+  const token = 'vault-core-widget-test-token';
+  const previous = process.env.TELEGRAM_BOT_TOKEN;
+  process.env.TELEGRAM_BOT_TOKEN = token;
+  try {
+    const valid = signedTelegramLoginPayload({ id: 123456, first_name: 'Customer' }, token);
+    assert.throws(() => validateTelegramLoginPayload({ ...valid, first_name: 'Attacker' }, token), /signature/i);
+    const expired = signedTelegramLoginPayload({ id: 123456 }, token, Math.floor(Date.now() / 1000) - 601);
+    assert.throws(() => validateTelegramLoginPayload(expired), /expired/i);
+  } finally {
+    if (previous === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = previous;
+  }
+});
+
+test('Owner web session is signed and cookie is HttpOnly with SameSite protection', () => {
+  const previousToken = process.env.TELEGRAM_BOT_TOKEN;
+  const previousNodeEnv = process.env.NODE_ENV;
+  process.env.TELEGRAM_BOT_TOKEN = 'vault-core-session-test-token';
+  process.env.NODE_ENV = 'production';
+  try {
+    const session = createOwnerSession({ id: 6888336983, username: 'vault_owner', first_name: 'Owner' });
+    assert.equal(session.split('.').length, 2);
+    const cookie = ownerCookieHeader(session);
+    assert.match(cookie, /HttpOnly/);
+    assert.match(cookie, /SameSite=Lax/);
+    assert.match(cookie, /Secure/);
+    assert.match(cookie, /Domain=\\.vaultcore\\.biz\\.id/);
+  } finally {
+    if (previousToken === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = previousToken;
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+  }
 });
