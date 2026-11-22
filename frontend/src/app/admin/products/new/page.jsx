@@ -20,7 +20,7 @@ const apiMessage = (data) => ({
   INVALID_PRODUCT_INPUT:'Periksa SKU, kategori, nama, metode pemenuhan, dan harga produk.',
   INVALID_PRODUCT_IMAGE_URL:'Gunakan URL gambar HTTPS atau path lokal /assets/ yang valid.',
   PRODUCT_SKU_ALREADY_EXISTS:'SKU tersebut sudah digunakan produk lain.',
-  PRODUCT_REVIEW_REQUIRED_AFTER_FULFILLMENT_CHANGE:'Metode pemenuhan berubah. Simpan review CR-05 baru sebelum mengaktifkan SKU.',
+  PRODUCT_REVIEW_REQUIRED_AFTER_DETAIL_CHANGE:'Metode pemenuhan berubah. Simpan review CR-05 baru sebelum mengaktifkan SKU.',
   PRODUCT_HAS_OPEN_ORDERS:'Metode pemenuhan belum dapat diubah karena masih ada pesanan aktif untuk SKU ini. Selesaikan atau rekonsiliasi pesanan terlebih dahulu.',
   INVALID_ASSET_PAYLOAD:'Ada baris stok yang tidak sesuai format kode digital yang didukung.',
   INVALID_INVENTORY_INPUT:'Masukkan 1 sampai 100 unit stok, satu kode pada setiap baris.'
@@ -102,7 +102,7 @@ export default function NewProductPage() {
         const data = await response.json();
         if (!response.ok) throw new Error(apiMessage(data));
         productRecord = data.product;
-        if (data.fulfillmentReviewReset) {
+        if (data.productReviewReset) {
           currentReviewStatus = '';
           setSavedReviewStatus('');
           setSavedReviewFingerprint('');
