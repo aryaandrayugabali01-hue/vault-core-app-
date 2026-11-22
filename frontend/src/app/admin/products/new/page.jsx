@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { getInitData } from '../../../../lib/telegram';
+import { splitInventoryPayloads } from '../../../../lib/inventory';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const CATEGORIES = [
@@ -84,7 +85,7 @@ export default function NewProductPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(apiMessage(data));
       productId = data.product.id;
-      const lines = stock.split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
+      const lines = splitInventoryPayloads(stock);
       if (lines.length) {
         const inventory = await fetch(API + '/api/admin/products/' + productId + '/inventory', {
           method:'POST', headers, credentials:'include', body:JSON.stringify({ payloads:lines })
@@ -138,8 +139,8 @@ export default function NewProductPage() {
         <label className="span-2">Referensi hak penjualan <small className="field-hint">Diperlukan sebelum produk komersial diaktifkan</small><input value={form.rightsReviewReference} onChange={(e)=>change('rightsReviewReference',e.target.value)} placeholder="URL atau nomor bukti otorisasi" /></label>
         <div className="span-2 admin-form-hint">Produk baru disimpan sebagai Draf. Produk tampil di katalog setelah pemeriksaan hak penjualan dan aktivasi Owner.</div>
         <div className="admin-section-head span-2"><div><span className="eyebrow muted">LANGKAH 2</span><h2>Stok awal</h2></div></div>
-        <label className="span-2">Kode digital, satu unit per baris <small className="field-hint">Stok akan dienkripsi saat disimpan. Boleh dikosongkan dan ditambahkan nanti.</small><textarea rows="6" value={stock} onChange={(e)=>setStock(e.target.value)} placeholder={'KODE-REDEEM-001\\nKODE-REDEEM-002'} /></label>
-        <div className="span-2 admin-form-hint">{stock.split(/\\r?\\n/).filter((line)=>line.trim()).length} unit stok siap disimpan.</div>
+        <label className="span-2">Kode digital, satu unit per baris <small className="field-hint">Stok akan dienkripsi saat disimpan. Boleh dikosongkan dan ditambahkan nanti.</small><textarea rows="6" value={stock} onChange={(e)=>setStock(e.target.value)} placeholder={"KODE-REDEEM-001\nKODE-REDEEM-002"} /></label>
+        <div className="span-2 admin-form-hint">{splitInventoryPayloads(stock).length} unit stok siap disimpan.</div>
         <button className="admin-primary" disabled={busy}>{busy ? 'Menyimpan…' : stock.trim() ? 'Simpan produk + stok awal' : 'Simpan produk sebagai Draf'}</button>
       </form>
     </section>
