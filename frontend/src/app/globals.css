@@ -759,3 +759,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
   .hero-visual img{animation:none!important}
   .hero-cta,.hero-secondary,.store-tab,.category-card,.product-card{transition:none!important}
 }
+.category-card.cat-mlbb,.category-card.cat-roblox,.category-card.cat-free_fire,.category-card.cat-genshin{background-image:none}
+@media(prefers-reduced-motion:reduce){
+  .category-card:hover,.category-card:active,.product-card:hover,.product-card:active{translate:none!important}
+}
