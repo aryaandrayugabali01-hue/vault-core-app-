@@ -3,7 +3,6 @@ import { pool } from '../db/pool.js';
 import { encryptPayload, assertAllowedDigitalPayload } from '../utils/encryption.js';
 import { validateRightsReviewInput, isRightsReviewUsable, canAddProductInventory } from '../services/rightsReviewService.js';
 import { isSafeProductImageUrl, normalizeProductText } from '../services/productDetailsService.js';
-import { validateMarketplaceCategory, normalizeImageGallery } from '../services/marketplaceCategoryService.js';
 import { refundStarPayment } from '../services/telegramApi.js';
 import { deliverPaidOrder, canReconcileDelivery } from '../services/deliveryService.js';
 const router = Router();
@@ -26,74 +25,6 @@ router.get('/dashboard', async (_req, res) => {
   const costXtr = Number(sales.rows[0].cost_xtr);
   res.json({ sales: sales.rows[0], inventory: inventory.rows[0], orders: orders.rows[0], expensesXtr,
     netProfitXtr: grossXtr - costXtr - expensesXtr, grossProfitXtr: grossXtr - costXtr });
-});
-
-router.get('/marketplace-categories', async (_req,res) => {
-  const { rows } = await pool.query(
-    `SELECT c.*, COUNT(p.id)::int AS product_count,
-            COUNT(p.id) FILTER (WHERE p.status='ACTIVE')::int AS active_product_count
-     FROM marketplace_categories c
-     LEFT JOIN products p ON p.marketplace_category_id=c.id
-     GROUP BY c.id ORDER BY c.sort_order,c.name`
-  );
-  res.json({ categories:rows });
-});
-
-router.post('/marketplace-categories', async (req,res) => {
-  const result = validateMarketplaceCategory(req.body ?? {});
-  if (!result.ok) return res.status(400).json({ error:'INVALID_MARKETPLACE_CATEGORY', details:result.errors });
-  const c = result.value;
-  try {
-    const { rows } = await pool.query(
-      `INSERT INTO marketplace_categories (slug,name,description,icon,purchase_guide,sort_order,is_active)
-       VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7) RETURNING *`,
-      [c.slug,c.name,c.description,c.icon,JSON.stringify(c.purchaseGuide),c.sortOrder,c.isActive]
-    );
-    await audit(req,'MARKETPLACE_CATEGORY_CREATED','MARKETPLACE_CATEGORY',rows[0].id,{slug:c.slug});
-    return res.status(201).json({category:rows[0]});
-  } catch (error) {
-    if (error.code==='23505') return res.status(409).json({error:'MARKETPLACE_CATEGORY_SLUG_EXISTS'});
-    throw error;
-  }
-});
-
-router.patch('/marketplace-categories/:id', async (req,res) => {
-  const id=Number(req.params.id);
-  if (!Number.isSafeInteger(id)||id<=0) return res.status(400).json({error:'INVALID_MARKETPLACE_CATEGORY'});
-  const current=await pool.query('SELECT * FROM marketplace_categories WHERE id=$1',[id]);
-  if (!current.rows[0]) return res.status(404).json({error:'MARKETPLACE_CATEGORY_NOT_FOUND'});
-  const existing=current.rows[0];
-  const merged={
-    slug:req.body?.slug ?? existing.slug,
-    name:req.body?.name ?? existing.name,
-    description:req.body?.description ?? existing.description,
-    icon:req.body?.icon ?? existing.icon,
-    purchaseGuide:req.body?.purchaseGuide ?? existing.purchase_guide,
-    sortOrder:req.body?.sortOrder ?? existing.sort_order,
-    isActive:req.body?.isActive ?? existing.is_active
-  };
-  const result=validateMarketplaceCategory(merged);
-  if (!result.ok) return res.status(400).json({error:'INVALID_MARKETPLACE_CATEGORY',details:result.errors});
-  const c=result.value;
-  if (!c.isActive && existing.is_active) {
-    const active=await pool.query("SELECT COUNT(*)::int AS count FROM products WHERE marketplace_category_id=$1 AND status='ACTIVE'",[id]);
-    if (Number(active.rows[0].count)>0) {
-      return res.status(409).json({error:'MARKETPLACE_CATEGORY_HAS_ACTIVE_PRODUCTS',message:'Jeda produk aktif dalam kategori ini sebelum menonaktifkan kategori.'});
-    }
-  }
-  try {
-    const {rows}=await pool.query(
-      `UPDATE marketplace_categories
-       SET slug=$1,name=$2,description=$3,icon=$4,purchase_guide=$5::jsonb,sort_order=$6,is_active=$7,updated_at=NOW()
-       WHERE id=$8 RETURNING *`,
-      [c.slug,c.name,c.description,c.icon,JSON.stringify(c.purchaseGuide),c.sortOrder,c.isActive,id]
-    );
-    await audit(req,'MARKETPLACE_CATEGORY_UPDATED','MARKETPLACE_CATEGORY',id,{slug:c.slug,isActive:c.isActive});
-    return res.json({category:rows[0]});
-  } catch (error) {
-    if (error.code==='23505') return res.status(409).json({error:'MARKETPLACE_CATEGORY_SLUG_EXISTS'});
-    throw error;
-  }
 });
 
 router.get('/products', async (_req, res) => {
@@ -123,14 +54,10 @@ router.get('/products', async (_req, res) => {
 router.post('/products', async (req, res) => {
   const { sku, gameCategory, tier, name, description = '', fulfillmentType,
     salePriceXtr, costPriceXtr = 0, rightsReviewReference = null,
-    imageUrl = null, customerTerms = '', fulfillmentEta = '', marketplaceCategoryId = null, imageGallery = [] } = req.body ?? {};
+    imageUrl = null, customerTerms = '', fulfillmentEta = '' } = req.body ?? {};
   const normalizedSku = String(sku ?? '').trim().toUpperCase();
   const normalizedImageUrl = imageUrl == null || String(imageUrl).trim() === '' ? null : String(imageUrl).trim();
-  const normalizedCategoryId = marketplaceCategoryId == null || marketplaceCategoryId === '' ? null : Number(marketplaceCategoryId);
-  const gallery = normalizeImageGallery(imageGallery, normalizedImageUrl);
-  if ((normalizedCategoryId !== null && (!Number.isSafeInteger(normalizedCategoryId) || normalizedCategoryId <= 0))
-      || !gallery.ok
-      || !/^[A-Z0-9][A-Z0-9_-]{1,79}$/.test(normalizedSku)
+  if (!/^[A-Z0-9][A-Z0-9_-]{1,79}$/.test(normalizedSku)
       || !['MLBB','ROBLOX','FREE_FIRE','GENSHIN','OTHER'].includes(gameCategory)
       || !['SILVER','GOLD','PLATINUM','SERVICE'].includes(tier)
       || String(name ?? '').trim().length < 2 || String(name).trim().length > 160
@@ -143,19 +70,15 @@ router.post('/products', async (req, res) => {
       || !isSafeProductImageUrl(normalizedImageUrl)) {
     return res.status(400).json({ error: 'INVALID_PRODUCT_INPUT' });
   }
-  if (normalizedCategoryId !== null) {
-    const category = await pool.query('SELECT id FROM marketplace_categories WHERE id=$1 AND is_active=TRUE',[normalizedCategoryId]);
-    if (!category.rows[0]) return res.status(400).json({error:'MARKETPLACE_CATEGORY_INVALID'});
-  }
   let rows;
   try {
     ({ rows } = await pool.query(
       `INSERT INTO products (sku, game_category, tier, name, description, fulfillment_type,
-        sale_price_xtr, cost_price_xtr, rights_review_reference, image_url, customer_terms, fulfillment_eta, marketplace_category_id, image_gallery, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,'DRAFT') RETURNING *`,
+        sale_price_xtr, cost_price_xtr, rights_review_reference, image_url, customer_terms, fulfillment_eta, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'DRAFT') RETURNING *`,
       [normalizedSku, gameCategory, tier, String(name).trim(), normalizeProductText(description, 5000),
         fulfillmentType, Number(salePriceXtr), Number(costPriceXtr), rightsReviewReference,
-        normalizedImageUrl, normalizeProductText(customerTerms, 5000), normalizeProductText(fulfillmentEta, 160), normalizedCategoryId, JSON.stringify(gallery.value)]
+        normalizedImageUrl, normalizeProductText(customerTerms, 5000), normalizeProductText(fulfillmentEta, 160)]
     ));
   } catch (error) {
     if (error.code === '23505') {
@@ -171,14 +94,13 @@ router.patch('/products/:id', async (req, res) => {
   const id = Number(req.params.id);
   const allowed = ['sku','game_category','tier','name','description','fulfillment_type',
     'sale_price_xtr','cost_price_xtr','low_stock_threshold','display_stock_mode',
-    'display_stock_override','status','rights_review_reference','image_url','customer_terms','fulfillment_eta','marketplace_category_id','image_gallery'];
+    'display_stock_override','status','rights_review_reference','image_url','customer_terms','fulfillment_eta'];
   const mapping = {
     sku:'sku', gameCategory:'game_category', tier:'tier', name:'name', description:'description',
     fulfillmentType:'fulfillment_type', salePriceXtr:'sale_price_xtr', costPriceXtr:'cost_price_xtr',
     lowStockThreshold:'low_stock_threshold', displayStockMode:'display_stock_mode',
     displayStockOverride:'display_stock_override', status:'status', rightsReviewReference:'rights_review_reference',
-    imageUrl:'image_url', customerTerms:'customer_terms', fulfillmentEta:'fulfillment_eta',
-    marketplaceCategoryId:'marketplace_category_id', imageGallery:'image_gallery'
+    imageUrl:'image_url', customerTerms:'customer_terms', fulfillmentEta:'fulfillment_eta'
   };
   const pairs = Object.entries(mapping).filter(([key]) => Object.hasOwn(req.body ?? {}, key));
   if (!Number.isSafeInteger(id) || id <= 0 || !pairs.length) return res.status(400).json({ error: 'INVALID_PRODUCT_UPDATE' });
@@ -206,17 +128,6 @@ router.patch('/products/:id', async (req, res) => {
     } else if (key === 'imageUrl') {
       value = value == null || String(value).trim() === '' ? null : String(value).trim();
       if (!isSafeProductImageUrl(value)) return res.status(400).json({ error:'INVALID_PRODUCT_IMAGE_URL' });
-    } else if (key === 'marketplaceCategoryId') {
-      value = value == null || value === '' ? null : Number(value);
-      if (value !== null) {
-        if (!Number.isSafeInteger(value) || value <= 0) return res.status(400).json({error:'MARKETPLACE_CATEGORY_INVALID'});
-        const category = await pool.query('SELECT id FROM marketplace_categories WHERE id=$1 AND is_active=TRUE',[value]);
-        if (!category.rows[0]) return res.status(400).json({error:'MARKETPLACE_CATEGORY_INVALID'});
-      }
-    } else if (key === 'imageGallery') {
-      const gallery = normalizeImageGallery(value);
-      if (!gallery.ok) return res.status(400).json({error:gallery.error});
-      value = JSON.stringify(gallery.value);
     } else if (key === 'salePriceXtr' || key === 'costPriceXtr' || key === 'lowStockThreshold' || key === 'displayStockOverride') {
       if (value === null && key === 'displayStockOverride') {
         // NULL restores live stock display.
@@ -280,7 +191,7 @@ router.patch('/products/:id', async (req, res) => {
   try {
     await client.query('BEGIN');
     const current = await client.query(
-      'SELECT id,sku,game_category,tier,name,description,customer_terms,fulfillment_type,marketplace_category_id,is_test FROM products WHERE id=$1 FOR UPDATE',
+      'SELECT id,sku,game_category,tier,name,description,customer_terms,fulfillment_type,is_test FROM products WHERE id=$1 FOR UPDATE',
       [id]
     );
     if (!current.rows[0]) {
@@ -289,7 +200,7 @@ router.patch('/products/:id', async (req, res) => {
     }
     const existing = current.rows[0];
     const reviewRelevantColumns = {
-      sku:'sku', gameCategory:'game_category', tier:'tier', marketplaceCategoryId:'marketplace_category_id', name:'name',
+      sku:'sku', gameCategory:'game_category', tier:'tier', name:'name',
       description:'description', customerTerms:'customer_terms', fulfillmentType:'fulfillment_type'
     };
     productReviewReset = pairs.some(([key]) => {
@@ -297,7 +208,6 @@ router.patch('/products/:id', async (req, res) => {
       if (!column) return false;
       const nextValue = key === 'sku' ? String(req.body[key] ?? '').trim().toUpperCase()
         : key === 'description' || key === 'customerTerms' ? normalizeProductText(req.body[key], 5000)
-        : key === 'marketplaceCategoryId' ? (req.body[key] == null || req.body[key] === '' ? null : Number(req.body[key]))
         : req.body[key];
       return String(nextValue ?? '') !== String(existing[column] ?? '');
     });
@@ -325,7 +235,7 @@ router.patch('/products/:id', async (req, res) => {
         });
       }
     }
-    const assignments = columns.map((column, index) => `${column}=${index + 1}${column === 'image_gallery' ? '::jsonb' : ''}`);
+    const assignments = columns.map((column, index) => `${column}=$${index + 1}`);
     if (productReviewReset && current.rows[0].is_test !== true) {
       assignments.push("current_rights_review_id=NULL");
       assignments.push("status=CASE WHEN status='ACTIVE' THEN 'PAUSED' ELSE status END");
