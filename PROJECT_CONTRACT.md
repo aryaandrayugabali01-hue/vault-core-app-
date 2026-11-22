@@ -1174,6 +1174,7 @@ Pembayaran tetap mengikuti ketentuan CR-03: transaksi produk digital di Telegram
 
 **Tanggal:** 23 November 2026  
 **Status:** Disetujui melalui instruksi tertulis pemilik di percakapan proyek.  
+**Mengubah:** Bagian 4.2, 7.2, 7.3, 25.1, 28.2, dan 28.4 sejauh mengatur alur persetujuan internal, pencatatan bukti, kewenangan katalog, dan pemenuhan. Jika terdapat pertentangan pada tata kelola internal, CR-05 yang berlaku; batas hak eksternal dan ketentuan penerbit tetap berlaku.  
 **Berlaku untuk:** katalog, formulir input produk, pemeriksaan internal, hak distribusi yang dicatat, harga, detail produk, inventaris, metode pemenuhan, pengiriman, API, database, Owner Console, audit log, dan prosedur operasional.
 
 ## 29.1 Kewenangan internal Owner
