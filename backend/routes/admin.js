@@ -281,8 +281,17 @@ router.post('/products/:id/inventory', async (req, res) => {
   if (!Number.isSafeInteger(productId) || payloads.length < 1 || payloads.length > 100) {
     return res.status(400).json({ error: 'INVALID_INVENTORY_INPUT' });
   }
-  const { rows: productRows } = await pool.query(`SELECT id FROM products WHERE id=$1`, [productId]);
-  if (!productRows[0]) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
+  const { rows: productRows } = await pool.query(
+    `SELECT id,status,is_test FROM products WHERE id=$1`, [productId]
+  );
+  const product = productRows[0];
+  if (!product) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
+  if (product.is_test === true || ['PENDING_REVIEW','PAUSED','ARCHIVED'].includes(product.status)) {
+    return res.status(409).json({
+      error: 'PRODUCT_NOT_READY_FOR_INVENTORY',
+      message: 'Stok hanya dapat ditambahkan pada produk yang sudah memenuhi syarat operasional. Produk contoh dan produk yang menunggu pemeriksaan CR-04 tidak menerima stok.'
+    });
+  }
   const client = await pool.connect();
   const inserted = [];
   try {
