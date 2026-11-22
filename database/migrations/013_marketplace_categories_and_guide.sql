@@ -41,4 +41,4 @@ CREATE INDEX idx_marketplace_categories_active_sort
 COMMENT ON COLUMN products.marketplace_category_id IS
   'Owner-selected marketplace category. NULL preserves legacy SKU until Owner assigns a category.';
 COMMENT ON COLUMN products.image_gallery IS
-  'Owner-managed HTTPS or local /assets image URLs; maximum eight gallery images.';
+  'Owner-managed HTTPS or local /assets image URLs with a maximum of eight gallery images.';
