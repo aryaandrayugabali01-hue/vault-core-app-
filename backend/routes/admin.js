@@ -52,35 +52,90 @@ router.get('/products', async (_req, res) => {
 
 router.post('/products', async (req, res) => {
   const { sku, gameCategory, tier, name, description = '', fulfillmentType,
-    salePriceXtr, costPriceXtr = 0, rightsReviewReference = null } = req.body ?? {};
-  if (!sku || !gameCategory || !tier || !name || !fulfillmentType || !Number.isSafeInteger(Number(salePriceXtr)) || Number(salePriceXtr) <= 0 || !Number.isSafeInteger(Number(costPriceXtr)) || Number(costPriceXtr) < 0) {
+    salePriceXtr, costPriceXtr = 0, rightsReviewReference = null,
+    imageUrl = null, customerTerms = '', fulfillmentEta = '' } = req.body ?? {};
+  const normalizedSku = String(sku ?? '').trim().toUpperCase();
+  const normalizedImageUrl = imageUrl == null || String(imageUrl).trim() === '' ? null : String(imageUrl).trim();
+  if (!/^[A-Z0-9][A-Z0-9_-]{1,79}$/.test(normalizedSku)
+      || !['MLBB','ROBLOX','FREE_FIRE','GENSHIN','OTHER'].includes(gameCategory)
+      || !['SILVER','GOLD','PLATINUM','SERVICE'].includes(tier)
+      || String(name ?? '').trim().length < 2 || String(name).trim().length > 160
+      || !['REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','GIFT_CODE','DIGITAL_FILE','SERVICE_INSTRUCTIONS','GAME_ACCOUNT_TRANSFER'].includes(fulfillmentType)
+      || !Number.isSafeInteger(Number(salePriceXtr)) || Number(salePriceXtr) <= 0
+      || !Number.isSafeInteger(Number(costPriceXtr)) || Number(costPriceXtr) < 0
+      || String(description ?? '').length > 5000
+      || String(customerTerms ?? '').length > 5000
+      || String(fulfillmentEta ?? '').length > 160
+      || !isSafeProductImageUrl(normalizedImageUrl)) {
     return res.status(400).json({ error: 'INVALID_PRODUCT_INPUT' });
   }
   const { rows } = await pool.query(
     `INSERT INTO products (sku, game_category, tier, name, description, fulfillment_type,
-      sale_price_xtr, cost_price_xtr, rights_review_reference, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'DRAFT') RETURNING *`,
-    [sku, gameCategory, tier, name, description, fulfillmentType, Number(salePriceXtr),
-      Number(costPriceXtr), rightsReviewReference]
+      sale_price_xtr, cost_price_xtr, rights_review_reference, image_url, customer_terms, fulfillment_eta, status)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'DRAFT') RETURNING *`,
+    [normalizedSku, gameCategory, tier, String(name).trim(), normalizeProductText(description, 5000),
+      fulfillmentType, Number(salePriceXtr), Number(costPriceXtr), rightsReviewReference,
+      normalizedImageUrl, normalizeProductText(customerTerms, 5000), normalizeProductText(fulfillmentEta, 160)]
   );
-  await audit(req, 'PRODUCT_CREATED', 'PRODUCT', rows[0].id, { sku });
+  await audit(req, 'PRODUCT_CREATED', 'PRODUCT', rows[0].id, { sku:normalizedSku });
   res.status(201).json({ product: rows[0] });
 });
 
 router.patch('/products/:id', async (req, res) => {
   const id = Number(req.params.id);
-  const allowed = ['name','description','sale_price_xtr','cost_price_xtr',
-    'low_stock_threshold','display_stock_mode','display_stock_override','status','rights_review_reference'];
+  const allowed = ['sku','game_category','tier','name','description','fulfillment_type',
+    'sale_price_xtr','cost_price_xtr','low_stock_threshold','display_stock_mode',
+    'display_stock_override','status','rights_review_reference','image_url','customer_terms','fulfillment_eta'];
   const mapping = {
-    name:'name', description:'description', salePriceXtr:'sale_price_xtr',
-    costPriceXtr:'cost_price_xtr', lowStockThreshold:'low_stock_threshold', displayStockMode:'display_stock_mode',
-    displayStockOverride:'display_stock_override', status:'status', rightsReviewReference:'rights_review_reference'
+    sku:'sku', gameCategory:'game_category', tier:'tier', name:'name', description:'description',
+    fulfillmentType:'fulfillment_type', salePriceXtr:'sale_price_xtr', costPriceXtr:'cost_price_xtr',
+    lowStockThreshold:'low_stock_threshold', displayStockMode:'display_stock_mode',
+    displayStockOverride:'display_stock_override', status:'status', rightsReviewReference:'rights_review_reference',
+    imageUrl:'image_url', customerTerms:'customer_terms', fulfillmentEta:'fulfillment_eta'
   };
   const pairs = Object.entries(mapping).filter(([key]) => Object.hasOwn(req.body ?? {}, key));
-  if (!Number.isSafeInteger(id) || !pairs.length) return res.status(400).json({ error: 'INVALID_PRODUCT_UPDATE' });
-  const columns = pairs.map(([key]) => mapping[key]).filter((col) => allowed.includes(col));
-  const values = pairs.filter(([key]) => allowed.includes(mapping[key])).map(([key]) => req.body[key]);
-  if (!columns.length || columns.length !== values.length) return res.status(400).json({ error: 'INVALID_PRODUCT_UPDATE' });
+  if (!Number.isSafeInteger(id) || id <= 0 || !pairs.length) return res.status(400).json({ error: 'INVALID_PRODUCT_UPDATE' });
+  const values = [];
+  const columns = [];
+  for (const [key, column] of pairs) {
+    let value = req.body[key];
+    if (!allowed.includes(column)) return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
+    if (key === 'sku') {
+      value = String(value ?? '').trim().toUpperCase();
+      if (!/^[A-Z0-9][A-Z0-9_-]{1,79}$/.test(value)) return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
+    } else if (key === 'gameCategory' && !['MLBB','ROBLOX','FREE_FIRE','GENSHIN','OTHER'].includes(value)) {
+      return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
+    } else if (key === 'tier' && !['SILVER','GOLD','PLATINUM','SERVICE'].includes(value)) {
+      return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
+    } else if (key === 'fulfillmentType' && !['REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','GIFT_CODE','DIGITAL_FILE','SERVICE_INSTRUCTIONS','GAME_ACCOUNT_TRANSFER'].includes(value)) {
+      return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
+    } else if (key === 'name') {
+      value = String(value ?? '').trim();
+      if (value.length < 2 || value.length > 160) return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
+    } else if (key === 'description' || key === 'customerTerms') {
+      value = normalizeProductText(value, 5000);
+    } else if (key === 'fulfillmentEta') {
+      value = normalizeProductText(value, 160);
+    } else if (key === 'imageUrl') {
+      value = value == null || String(value).trim() === '' ? null : String(value).trim();
+      if (!isSafeProductImageUrl(value)) return res.status(400).json({ error:'INVALID_PRODUCT_IMAGE_URL' });
+    } else if (key === 'salePriceXtr' || key === 'costPriceXtr' || key === 'lowStockThreshold' || key === 'displayStockOverride') {
+      if (value === null && key === 'displayStockOverride') {
+        // NULL restores live stock display.
+      } else {
+        value = Number(value);
+        if (!Number.isSafeInteger(value)
+            || (key === 'salePriceXtr' && value <= 0)
+            || (key !== 'salePriceXtr' && value < 0)) return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
+      }
+    } else if (key === 'displayStockMode' && !['EXACT_COUNT','IN_STOCK_ONLY','HIDE_COUNT'].includes(value)) {
+      return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
+    } else if (key === 'status' && !['DRAFT','PENDING_REVIEW','ACTIVE','PAUSED','ARCHIVED'].includes(value)) {
+      return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
+    }
+    columns.push(column);
+    values.push(value);
+  }
 
   if (req.body.status === 'ACTIVE') {
     const { rows } = await pool.query(
@@ -102,10 +157,8 @@ router.patch('/products/:id', async (req, res) => {
       });
     }
     if (!product.fulfillment_type || !isRightsReviewUsable({
-      id: product.review_id,
-      review_status: product.review_status,
-      valid_until: product.valid_until,
-      owner_attested: product.owner_attested
+      id: product.review_id, review_status: product.review_status,
+      valid_until: product.valid_until, owner_attested: product.owner_attested
     })) {
       return res.status(409).json({
         error: 'PRODUCT_RIGHTS_REVIEW_REQUIRED',
@@ -123,14 +176,47 @@ router.patch('/products/:id', async (req, res) => {
     }
   }
 
-  const assignments = columns.map((col, index) => `${col}=$${index + 1}`);
-  values.push(id);
-  const { rows } = await pool.query(
-    `UPDATE products SET ${assignments.join(', ')}, updated_at=NOW() WHERE id=$${values.length} RETURNING *`, values
-  );
-  if (!rows[0]) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
-  await audit(req, 'PRODUCT_UPDATED', 'PRODUCT', id, Object.fromEntries(pairs));
-  res.json({ product: rows[0] });
+  const client = await pool.connect();
+  let updated;
+  let fulfillmentChanged = false;
+  try {
+    await client.query('BEGIN');
+    const current = await client.query('SELECT id,fulfillment_type,is_test FROM products WHERE id=$1 FOR UPDATE',[id]);
+    if (!current.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error:'PRODUCT_NOT_FOUND' });
+    }
+    fulfillmentChanged = pairs.some(([key]) => key === 'fulfillmentType')
+      && req.body.fulfillmentType !== current.rows[0].fulfillment_type;
+    if (fulfillmentChanged && req.body.status === 'ACTIVE') {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error:'PRODUCT_REVIEW_REQUIRED_AFTER_FULFILLMENT_CHANGE',
+        message:'Perubahan metode pemenuhan memerlukan pemeriksaan CR-05 baru sebelum SKU dapat diaktifkan.'
+      });
+    }
+    const assignments = columns.map((column, index) => `${column}=$${index + 1}`);
+    if (fulfillmentChanged && current.rows[0].is_test !== true) {
+      assignments.push("current_rights_review_id=NULL");
+      assignments.push("status='PAUSED'");
+      await client.query("UPDATE inventory_items SET status='UNAVAILABLE' WHERE product_id=$1 AND status='AVAILABLE'",[id]);
+    }
+    values.push(id);
+    const result = await client.query(
+      `UPDATE products SET ${assignments.join(', ')}, updated_at=NOW() WHERE id=$${values.length} RETURNING *`, values
+    );
+    updated = result.rows[0];
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    if (error.code === '23505') return res.status(409).json({ error:'PRODUCT_SKU_ALREADY_EXISTS', message:'SKU sudah digunakan produk lain.' });
+    throw error;
+  } finally {
+    client.release();
+  }
+  if (!updated) return res.status(404).json({ error:'PRODUCT_NOT_FOUND' });
+  await audit(req, 'PRODUCT_UPDATED', 'PRODUCT', id, { ...Object.fromEntries(pairs), fulfillmentReviewReset:fulfillmentChanged });
+  res.json({ product:updated, fulfillmentReviewReset:fulfillmentChanged });
 });
 
 router.get('/products/:id/rights-review', async (req, res) => {
