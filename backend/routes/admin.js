@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
 import { encryptPayload, assertAllowedDigitalPayload } from '../utils/encryption.js';
+import { canAddProductInventory } from '../services/catalogService.js';
 import { refundStarPayment } from '../services/telegramApi.js';
 import { deliverPaidOrder, canReconcileDelivery } from '../services/deliveryService.js';
 const router = Router();
@@ -66,17 +67,24 @@ router.patch('/products/:id', async (req, res) => {
   const values = pairs.map(([key]) => req.body[key]);
   if (req.body.status === 'ACTIVE') {
     const { rows: review } = await pool.query(
-      `SELECT rights_review_reference,is_test FROM products WHERE id=$1`, [id]
+      `SELECT id,is_test FROM products WHERE id=$1`, [id]
     );
-    if (review[0]?.is_test === true) {
+    if (!review[0]) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
+    if (review[0].is_test === true) {
       return res.status(409).json({
         error: 'TEST_FIXTURE_ACTIVATION_REQUIRED',
         message: 'Aktifkan produk contoh melalui jalur khusus ruang uji Owner.'
       });
     }
-    if (!review[0] || !review[0].rights_review_reference) {
-      return res.status(409).json({ error: 'PRODUCT_REVIEW_REFERENCE_REQUIRED' });
-    }
+    // CR-04 requires a complete, evidence-backed rights review for every
+    // commercial SKU. The current schema stores only a free-form reference,
+    // so it cannot prove the required publisher, ownership-chain, transfer,
+    // scope, reviewer, and validity checks. Keep commercial activation closed
+    // until that structured review workflow exists.
+    return res.status(409).json({
+      error: 'PRODUCT_RIGHTS_REVIEW_REQUIRED',
+      message: 'Aktivasi produk komersial menunggu pemeriksaan bukti hak penjualan lengkap sesuai CR-04.'
+    });
   }
   const assignments = columns.map((col, index) => `${col}=$${index + 1}`);
   values.push(id);
@@ -275,8 +283,17 @@ router.post('/products/:id/inventory', async (req, res) => {
   if (!Number.isSafeInteger(productId) || payloads.length < 1 || payloads.length > 100) {
     return res.status(400).json({ error: 'INVALID_INVENTORY_INPUT' });
   }
-  const { rows: productRows } = await pool.query(`SELECT id FROM products WHERE id=$1`, [productId]);
-  if (!productRows[0]) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
+  const { rows: productRows } = await pool.query(
+    `SELECT id,status,is_test FROM products WHERE id=$1`, [productId]
+  );
+  const product = productRows[0];
+  if (!product) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
+  if (!canAddProductInventory(product)) {
+    return res.status(409).json({
+      error: 'PRODUCT_NOT_READY_FOR_INVENTORY',
+      message: 'Stok hanya dapat ditambahkan pada produk yang sudah memenuhi syarat operasional. Produk contoh dan produk yang menunggu pemeriksaan CR-04 tidak menerima stok.'
+    });
+  }
   const client = await pool.connect();
   const inserted = [];
   try {
