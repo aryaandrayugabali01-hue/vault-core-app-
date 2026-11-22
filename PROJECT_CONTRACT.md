@@ -5,8 +5,8 @@
 |---|---|
 | Nama proyek | VAULT CORE |
 | Jenis dokumen | Kontrak spesifikasi dan acuan pelaksanaan proyek |
-| Versi | 1.3 — Addendum CR-03 |
-| Tanggal dokumen | 21 November 2026 |
+| Versi | 1.4 — Addendum CR-04 |
+| Tanggal dokumen | 22 November 2026 |
 | Status | Baseline v1.2 dan CR-03 disetujui; CR-04 menetapkan pengecualian bersyarat untuk transfer akun yang diotorisasi, 22 November 2026 |
 | Model usaha | Single-Vendor Store |
 | Kanal utama | Telegram Bot dan Telegram Mini App |
