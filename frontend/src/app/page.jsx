@@ -45,7 +45,7 @@ const GAME_LABELS = { MLBB: 'MLBB', ROBLOX: 'Roblox', FREE_FIRE: 'Free Fire', GE
 const TIER_LABELS = { SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Platinum', SERVICE: 'Layanan' };
 const FULFILLMENT_LABELS = {
   REDEEM_CODE: 'Kode redeem', VOUCHER_CODE: 'Kode voucher', LICENSE_KEY: 'Kunci lisensi',
-  GIFT_CODE: 'Gift code', DIGITAL_FILE: 'File digital', SERVICE_INSTRUCTIONS: 'Instruksi layanan'
+  GIFT_CODE: 'Gift code', DIGITAL_FILE: 'File digital', SERVICE_INSTRUCTIONS: 'Instruksi layanan', GAME_ACCOUNT_TRANSFER: 'Transfer akun melalui prosedur resmi'
 };
 function formatDate(value) {
   if (!value) return '';
@@ -491,7 +491,7 @@ export default function HomePage() {
             return <article className="product-card" key={product.id}>
               <div className="product-card-head">
                 <div className={'product-art art-' + game.toLowerCase()}>
-                  <img src={GAME_ART[game] || GAME_ART.OTHER} alt="" loading="lazy" />
+                  <img src={product.image_url || GAME_ART[game] || GAME_ART.OTHER} alt="" loading="lazy" />
                 </div>
                 <div className="product-card-meta">
                   <span className={'tier-label ' + String(product.tier || '').toLowerCase()}>{TIER_LABELS[product.tier] || product.tier} Tier</span>
@@ -537,7 +537,7 @@ export default function HomePage() {
 {selectedProduct && <div className="modal-backdrop" onClick={() => setSelectedProduct(null)}>
         <section className="product-detail-modal" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onClick={(e) => e.stopPropagation()}>
           <div className="modal-head"><div><span className="eyebrow muted">DETAIL PRODUK</span><h2 id="product-detail-title">{selectedProduct.name}</h2></div><button className="icon-button" type="button" onClick={() => setSelectedProduct(null)} aria-label="Tutup detail produk">×</button></div>
-          <div className="detail-product-art"><img src={GAME_ART[selectedProduct.game_category] || GAME_ART.OTHER} alt="" /></div>
+          <div className="detail-product-art"><img src={selectedProduct.image_url || GAME_ART[selectedProduct.game_category] || GAME_ART.OTHER} alt="" /></div>
           <div className="detail-category">{GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</div>
           <p className="detail-description">{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p>
           <div className="detail-facts">
@@ -552,8 +552,10 @@ export default function HomePage() {
               <li>Pembayaran dilakukan melalui invoice Telegram Stars (XTR).</li>
               <li>Stok direservasi saat checkout selama 15 menit.</li>
               <li>Pemenuhan dimulai setelah pembayaran berhasil diverifikasi oleh Telegram.</li>
-              <li>Estimasi waktu pemenuhan belum ditetapkan pada data SKU ini.</li>
+              <li>Estimasi waktu pemenuhan: {selectedProduct.fulfillment_eta || 'Belum ditetapkan oleh Owner.'}</li>
             </ul>
+            <strong>Ketentuan produk</strong>
+            <p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p>
             {selectedProduct.is_test && <p>Produk contoh uji internal. Jika invoice diselesaikan, Telegram akan menagihkan 1 XTR sungguhan dan payload dummy tidak dapat ditukarkan.</p>}
           </div>
           <div className="detail-actions">

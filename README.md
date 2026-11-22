@@ -32,7 +32,7 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 - Database: `vault_core`
 - Default branch: `main`
 
-The connected schema was checked with the existing application tables and migrations 001–010 registered. Migration 011 adds structured Owner rights reviews, append-only review events, source-bound inventory, and database guards for product activation/inventory insertion. Migration 011 is applied to production only after the CR-05 release checks pass.
+The production database has migrations 001–012 registered. Migration 011 (CR-05) adds structured Owner rights reviews, append-only review events, source-bound inventory, and database guards. Migration 012 (CR-06) adds Owner-managed product image URL, customer terms, and fulfillment ETA fields. Both are applied to Neon production.
 
 ## Local setup
 
@@ -77,7 +77,7 @@ Owner authorization accepts either the existing `ADMIN_TELEGRAM_IDS` server-side
 - Stars refunds use a two-phase `REFUND_PENDING` state. If Telegram reports an already-refunded charge, the service checks the Stars transaction ledger before finalizing the internal status.
 - Sale price, cost, expenses, order snapshots, reports, refunds, and profit are recorded and displayed in XTR only.
 
-- The customer Profile exposes one owner-only action to create/activate four TEST-only sample products and encrypted dummy delivery payloads. This action is idempotent and seeds one available dummy inventory item per sample product. The samples appear in the customer catalog after successful setup.
+- Four TEST-only fixtures are maintained separately from commercial SKUs. The current production snapshot contains four fixture inventory items; these are dummy test payloads, not sellable commercial inventory. Completing a fixture invoice charges 1 real Telegram Star if the Owner actually pays it.
 
 ## CR-05 structured rights workflow
 
@@ -85,32 +85,48 @@ Owner authorization accepts either the existing `ADMIN_TELEGRAM_IDS` server-side
 - Reviewer identity and review time are set server-side. Review revisions and status transitions are retained in an append-only event history.
 - Catalog, activation, inventory insertion, order creation, Telegram pre-checkout, and delivery recheck the current review and its expiry.
 - Every commercial stock unit stores its source reference and the exact review ID that approved it. Expired or superseded review records block new sales and delivery.
-- File uploads are not enabled because the existing Cloudflare account has R2 disabled. The current workflow stores evidence URLs/document references; it does not claim binary attachments are uploaded.
+- File uploads are not enabled because the existing Cloudflare account has R2 disabled. The workflow stores evidence URLs/document references. CR-06 product images use a validated public HTTPS URL or an existing local /assets/ path; binary image uploads are not enabled.
 
 ## Current implementation status
 
-Production infrastructure was deployed successfully in run `44902626165`. The latest owner onboarding and one-tap test setup changes are tracked by subsequent CI/production workflow runs; consult GitHub Actions for the current head SHA and deployment result. It passed secret and Cloudflare preflight, backend/core tests, frontend build, both Worker deployments, API health with Neon database connection, gateway upstream configuration, custom-domain/DNS/TLS checks for root/www/api, and Telegram webhook read-back.
+Production infrastructure is deployed from commit e315e2f4c28b37583b87b4dd0cdb68881c196385 in run 45056388433, which completed successfully. That production version includes CR-05. The CR-06 application changes are tracked in PR #6; CI passed, but the CR-06 UI/API changes are not live until the PR is merged and the existing production workflow succeeds.
 
-Implemented in source and CI-validated: Telegram `initData` authentication, catalog API, order creation/reservation with owning order IDs, single pre-checkout claim per order, Stars invoice generation, successful-payment verification/idempotency, encrypted inventory, ambiguous-delivery review/reconciliation, two-phase Stars refund recovery, `/paysupport`, owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console.
+Implemented in the deployed application: Telegram initData authentication, catalog API, order reservation, Telegram Stars invoice generation, successful-payment verification/idempotency, encrypted inventory, delivery recovery/reconciliation, two-phase Stars refund recovery, /paysupport, Owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console. CR-05 review enforcement is active across catalog, activation, inventory insertion, order creation, Telegram pre-checkout, and delivery.
 
-Live production infrastructure is deployed, but sales readiness is still gated by actual catalog setup and acceptance tests. A Neon audit after migration 006 found **4 TEST-only products in DRAFT, 0 inventory items, 0 orders, and 0 transactions**. Migration 007 adds database-backed owner provisioning so the verified owner can run the one-tap setup from Profile. The four samples remain DRAFT until that action is successfully run. No commercial SKU has been approved or activated. Live XTR payment, refund, fulfilment, IDOR, backup/restore, production rate-limit, and Owner UAT tests remain pending.
+Latest production data snapshot (23 November 2026):
 
+| Entity | Production state |
+|---|---:|
+| Total products | 16 |
+| Commercial products | 12, all PENDING_REVIEW |
+| Commercial products active | 0 |
+| Owner rights reviews recorded | 0 |
+| TEST-only fixtures | 4 |
+| Inventory items | 4, TEST-only dummy units |
+| Orders | 0 |
+| Transactions | 0 |
+
+No commercial SKU has an approved current rights review, no commercial inventory has been sourced or added, and no live order or transaction exists. Accordingly, the public commercial catalog has no sellable SKU until Owner completes the relevant product details, records a valid CR-05 review, approves the SKU, and adds source-bound inventory.
+
+CR-06 adds full Owner editing of product identity/details, price and cost, fulfillment method, product image reference, customer terms, and estimated fulfillment time. The storefront reads the Owner-authored image/terms/ETA. Changing fulfillment method pauses the SKU, clears the current review pointer, and makes prior available stock unavailable pending a new review. The change is covered by tests and frontend/API build validation in PR #6.
+
+Live customer XTR payment/refund/fulfillment acceptance, IDOR/admin authorization review, backup/restore, production rate-limit verification, and Owner UAT/release approval are still pending.
 ## Production deployment
 
-- Frontend Worker: `vault-core-web`.
-- API Worker: `vault-core-api`, connected to Neon through Hyperdrive `vault-core-neon`.
-- Existing gateway: `vault-core-gateway`; `WEB_ORIGIN` and `API_ORIGIN` secrets are installed.
-- Custom domains are attached to the existing gateway: `vaultcore.biz.id`, `www.vaultcore.biz.id`, and `api.vaultcore.biz.id`.
-- Cloudflare DNS records for all three hosts are configured and proxied.
-- Production Telegram webhook: `https://api.vaultcore.biz.id/api/telegram/webhook`; configuration and `getWebhookInfo` read-back passed in the production workflow.
-- Production run: [44902626165](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44902626165), attempt 1, **SUCCESS**.
-
+- Frontend Worker: vault-core-web.
+- API Worker: vault-core-api, connected to Neon through Hyperdrive vault-core-neon.
+- Existing gateway: vault-core-gateway; WEB_ORIGIN and API_ORIGIN secrets are installed.
+- Custom domains: vaultcore.biz.id, www.vaultcore.biz.id, and api.vaultcore.biz.id.
+- Production Telegram webhook: https://api.vaultcore.biz.id/api/telegram/webhook; configuration and getWebhookInfo read-back passed in deployment run 45056388433.
+- Latest confirmed production source: e315e2f4c28b37583b87b4dd0cdb68881c196385; run 45056388433, SUCCESS.
+- Neon migrations 001–012 are registered. Migration 012 is additive and does not alter existing SKU prices, statuses, or inventory.
 ## Remaining launch gates
 
-1. Create and review the first sellable SKUs, record each rights-review reference, set sale and cost amounts in XTR, then add encrypted sellable inventory.
-2. Run end-to-end Owner and customer acceptance: Mini App authentication, catalog, order, XTR invoice, pre-checkout validation, successful payment, exactly-once delivery, refund/recovery, and support.
+1. Owner completes accurate details for each intended commercial SKU, records the actual source/authorization basis and official terms where applicable, attests the review, and adds encrypted inventory with a valid source reference. No product is activated automatically.
+2. Run a controlled end-to-end acceptance with Owner/customer accounts: Mini App authentication, catalog, order, Telegram XTR invoice, pre-checkout validation, successful-payment verification, exactly-once delivery, refund/recovery, and support.
 3. Complete IDOR/admin authorization review, backup/restore test, production rate-limit review, and record Owner UAT plus explicit release approval.
 
+Binary evidence/image uploads remain unavailable while R2 is disabled; use valid document references and public HTTPS or existing /assets/ image paths.
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs workspace installation, automated tests, and the Next.js production build on pushes to `main`/`develop` and pull requests to `main`.

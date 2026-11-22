@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getInitData } from '../../lib/telegram';
+import { splitInventoryPayloads } from '../../lib/inventory';
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 const GAME_LABELS = { MLBB:'MLBB', ROBLOX:'Roblox', FREE_FIRE:'Free Fire', GENSHIN:'Genshin Impact', OTHER:'Lainnya' };
@@ -17,6 +18,10 @@ const API_ERROR_MESSAGES = {
   ADMIN_ACCESS_REQUIRED:'Akses ditolak. Gunakan akun Telegram pemilik VAULT CORE.',
   INVALID_PRODUCT_INPUT:'Periksa kembali SKU, kategori, tingkat produk, metode pemenuhan, dan harga.',
   INVALID_PRODUCT_UPDATE:'Perubahan produk belum lengkap atau tidak valid. Periksa kembali data yang akan disimpan.',
+  INVALID_PRODUCT_IMAGE_URL:'Gunakan URL gambar HTTPS atau path lokal /assets/ yang valid.',
+  PRODUCT_SKU_ALREADY_EXISTS:'SKU tersebut sudah digunakan oleh produk lain.',
+  PRODUCT_REVIEW_REQUIRED_AFTER_DETAIL_CHANGE:'Metode pemenuhan berubah. Simpan review CR-05 baru sebelum mengaktifkan SKU.',
+  PRODUCT_HAS_OPEN_ORDERS:'Metode pemenuhan belum dapat diubah karena masih ada pesanan aktif untuk SKU ini. Selesaikan atau rekonsiliasi pesanan terlebih dahulu.',
   PRODUCT_REVIEW_REFERENCE_REQUIRED:'Tambahkan referensi verifikasi hak penjualan sebelum mengaktifkan produk.',
   PRODUCT_NOT_FOUND:'Produk tidak ditemukan. Muat ulang daftar produk lalu coba kembali.',
   INVALID_EXPENSE_INPUT:'Lengkapi kategori, keterangan, dan jumlah biaya operasional dengan benar.',
@@ -39,28 +44,12 @@ const API_ERROR_MESSAGES = {
 };
 const displayStatus = (status) => STATUS_LABELS[status] || 'Status sedang diperbarui';
 const apiErrorMessage = (data, fallback) => API_ERROR_MESSAGES[data?.error] || data?.message || fallback;
-const SKU_PREFIX = { MLBB:'MLBB', ROBLOX:'RBLX', FREE_FIRE:'FFIR', GENSHIN:'GNSH', OTHER:'OTHR' };
-const TIER_CODE = { SILVER:'SLV', GOLD:'GLD', PLATINUM:'PLT', SERVICE:'SRV' };
-const GAME_NAME = { MLBB:'Mobile Legends', ROBLOX:'Roblox', FREE_FIRE:'Free Fire', GENSHIN:'Genshin Impact', OTHER:'Produk Digital' };
-const TIER_NAME = { SILVER:'Silver', GOLD:'Gold', PLATINUM:'Platinum', SERVICE:'Layanan' };
-function suggestedSku(category, tier, products) {
-  const prefix = (SKU_PREFIX[category] || 'ITEM') + '-' + (TIER_CODE[tier] || 'STD') + '-';
-  const used = new Set(products.map((product) => String(product.sku || '').toUpperCase()));
-  let number = 1;
-  while (used.has(prefix + String(number).padStart(3, '0'))) number += 1;
-  return prefix + String(number).padStart(3, '0');
-}
-function suggestedName(category, tier) {
-  return (GAME_NAME[category] || 'Produk Digital') + ' ' + (TIER_NAME[tier] || 'Standard');
-}
-
 export default function AdminPage() {
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [expenseForm, setExpenseForm] = useState({ category:'OPERATIONS', description:'', amountXtr:'' });
   const [notice, setNotice] = useState('Memverifikasi akses pemilik…');
-  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', name:'Mobile Legends Gold', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'' });
   const [stockProduct, setStockProduct] = useState('');
   const [stockPayload, setStockPayload] = useState('');
   const [stockSourceReference, setStockSourceReference] = useState('');
@@ -69,12 +58,13 @@ export default function AdminPage() {
   const [rightsEvents, setRightsEvents] = useState([]);
   const [rightsForm, setRightsForm] = useState({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
   const [displayCap, setDisplayCap] = useState({});
+  const [editingProductId, setEditingProductId] = useState('');
+  const [editForm, setEditForm] = useState({ sku:'', gameCategory:'MLBB', tier:'SILVER', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', imageUrl:'', customerTerms:'', fulfillmentEta:'' });
   const [busy, setBusy] = useState(false);
   const [authState, setAuthState] = useState('checking');
   const [botUsername, setBotUsername] = useState('');
   const [loginMessage, setLoginMessage] = useState('');
   const [loginBusy, setLoginBusy] = useState(false);
-  const [skuManual, setSkuManual] = useState(false);
   const headers = () => ({ 'content-type':'application/json', 'x-telegram-init-data':getInitData() });
 
   async function refresh() {
@@ -155,56 +145,61 @@ export default function AdminPage() {
     setLoginMessage('Anda telah keluar dari Dashboard Owner.');
   }
 
-  async function createProduct(e) {
-    e.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    const initialPayloads = stockPayload.split('\\n').map((value) => value.trim()).filter(Boolean);
-    try {
-      const response = await fetch(`${API}/api/admin/products`, {
-        method:'POST', headers:headers(), credentials:'include',
-        body:JSON.stringify({ ...form, salePriceXtr:Number(form.salePriceXtr), costPriceXtr:Number(form.costPriceXtr) })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(apiErrorMessage(data, 'Produk tidak dapat disimpan. Periksa kembali data produk.'));
-      const productId = String(data.product.id);
-      setStockProduct(productId);
-      if (initialPayloads.length) {
-        const stockResponse = await fetch(`${API}/api/admin/products/${productId}/inventory`, {
-          method:'POST', headers:headers(), credentials:'include',
-          body:JSON.stringify({ payloads:initialPayloads })
-        });
-        const stockData = await stockResponse.json();
-        if (!stockResponse.ok) {
-          await refresh();
-          setNotice(`Produk ${data.product.sku} tersimpan sebagai Draf, tetapi stok awal belum masuk: ${apiErrorMessage(stockData, 'Periksa payload lalu tambahkan stok dari panel persediaan.')} Produk tetap tersimpan dan dapat dilanjutkan.`);
-          document.getElementById('inventory-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
-          return;
-        }
-        setNotice(`Produk ${data.product.sku} dibuat sebagai Draf dan ${stockData.inserted} unit stok awal berhasil dienkripsi.`);
-        setStockPayload('');
-      } else {
-        setNotice(`Produk ${data.product.sku} dibuat sebagai Draf. Stok dapat ditambahkan sekarang atau nanti.`);
-      }
-      setSkuManual(false);
-      setForm({ ...form, sku:'', name:suggestedName(form.gameCategory,form.tier), description:'', rightsReviewReference:'' });
-      await refresh();
-      document.getElementById('inventory-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
-    } catch(e) {
-      setNotice(e.message || 'Produk tidak dapat disimpan.');
-    } finally {
-      setBusy(false);
-    }
-  }
   async function addStock(e) {
     e.preventDefault(); if (!stockProduct || !stockPayload.trim()) return;
     setBusy(true);
     try {
-      const response = await fetch(`${API}/api/admin/products/${stockProduct}/inventory`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ payloads:stockPayload.split('\n').map(v=>v.trim()).filter(Boolean), sourceReference:stockSourceReference }) });
+      const response = await fetch(`${API}/api/admin/products/${stockProduct}/inventory`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ payloads:splitInventoryPayloads(stockPayload), sourceReference:stockSourceReference }) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Stok tidak dapat ditambahkan. Periksa kembali data yang dimasukkan.'));
       setNotice(`${data.inserted} unit stok berhasil dienkripsi dan dikaitkan ke pemeriksaan Owner.`); setStockPayload(''); setStockSourceReference(''); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
   }
+  function startEditProduct(product) {
+    setEditingProductId(String(product.id));
+    setEditForm({
+      sku:product.sku || '',
+      gameCategory:product.game_category || 'OTHER',
+      tier:product.tier || 'SILVER',
+      name:product.name || '',
+      description:product.description || '',
+      fulfillmentType:product.fulfillment_type || 'REDEEM_CODE',
+      salePriceXtr:String(product.sale_price_xtr ?? ''),
+      costPriceXtr:String(product.cost_price_xtr ?? '0'),
+      imageUrl:product.image_url || '',
+      customerTerms:product.customer_terms || '',
+      fulfillmentEta:product.fulfillment_eta || ''
+    });
+    document.getElementById('product-edit-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  async function saveProductDetails(event) {
+    event.preventDefault();
+    if (!editingProductId || busy) return;
+    setBusy(true);
+    try {
+      const response = await fetch(`${API}/api/admin/products/${editingProductId}`, {
+        method:'PATCH', headers:headers(), credentials:'include',
+        body:JSON.stringify({
+          ...editForm,
+          sku:String(editForm.sku).trim().toUpperCase(),
+          salePriceXtr:Number(editForm.salePriceXtr),
+          costPriceXtr:Number(editForm.costPriceXtr)
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(apiErrorMessage(data, 'Detail produk tidak dapat disimpan.'));
+      setNotice(data.productReviewReset
+        ? 'Detail penting produk berubah. SKU dijeda bila sebelumnya aktif, stok tersedia dinonaktifkan, dan review CR-05 baru wajib dibuat.'
+        : 'Detail produk berhasil diperbarui.');
+      setEditingProductId('');
+      await refresh();
+    } catch (error) {
+      setNotice(error.message || 'Detail produk tidak dapat disimpan.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function loadRightsHistory(productId) {
     if (!productId) { setRightsHistory([]); setRightsEvents([]); return; }
     try {
@@ -339,6 +334,26 @@ export default function AdminPage() {
       <a className="admin-primary admin-product-entry-link" href="/admin/products/new">+ Input produk baru</a>
     </section>
 
+    {editingProductId && <section className="admin-panel" id="product-edit-panel">
+      <div className="admin-section-head"><div><span className="eyebrow muted">OWNER / EDIT SKU</span><h2>Edit rincian produk</h2><p>Perubahan disimpan ke SKU yang dipilih. Metode pemenuhan baru memerlukan review ulang.</p></div></div>
+      <form className="admin-form" onSubmit={saveProductDetails}>
+        <label>SKU<input required value={editForm.sku} onChange={e=>setEditForm({...editForm,sku:e.target.value.toUpperCase()})} /></label>
+        <label>Kategori<select value={editForm.gameCategory} onChange={e=>setEditForm({...editForm,gameCategory:e.target.value})}>{Object.entries(GAME_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label>Tier<select value={editForm.tier} onChange={e=>setEditForm({...editForm,tier:e.target.value})}>{Object.entries(TIER_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label>Nama produk<input required maxLength="160" value={editForm.name} onChange={e=>setEditForm({...editForm,name:e.target.value})} /></label>
+        <label className="span-2">Deskripsi produk<textarea rows="3" maxLength="5000" value={editForm.description} onChange={e=>setEditForm({...editForm,description:e.target.value})} /></label>
+        <label>Metode pemenuhan<select value={editForm.fulfillmentType} onChange={e=>setEditForm({...editForm,fulfillmentType:e.target.value})}>
+          <option value="REDEEM_CODE">Kode redeem</option><option value="VOUCHER_CODE">Kode voucher</option><option value="LICENSE_KEY">Kunci lisensi</option><option value="GIFT_CODE">Kode hadiah</option><option value="DIGITAL_FILE">Berkas digital</option><option value="SERVICE_INSTRUCTIONS">Petunjuk layanan</option><option value="GAME_ACCOUNT_TRANSFER">Transfer akun melalui prosedur resmi</option>
+        </select></label>
+        <label>Harga jual (XTR)<input required type="number" min="1" step="1" value={editForm.salePriceXtr} onChange={e=>setEditForm({...editForm,salePriceXtr:e.target.value})} /></label>
+        <label>Modal (XTR)<input required type="number" min="0" step="1" value={editForm.costPriceXtr} onChange={e=>setEditForm({...editForm,costPriceXtr:e.target.value})} /></label>
+        <label className="span-2">URL gambar (HTTPS atau /assets/)<input type="text" value={editForm.imageUrl} onChange={e=>setEditForm({...editForm,imageUrl:e.target.value})} placeholder="https://.../produk.webp" /></label>
+        <label className="span-2">Ketentuan untuk pelanggan<textarea rows="3" maxLength="5000" value={editForm.customerTerms} onChange={e=>setEditForm({...editForm,customerTerms:e.target.value})} /></label>
+        <label className="span-2">Estimasi waktu pemenuhan<input maxLength="160" value={editForm.fulfillmentEta} onChange={e=>setEditForm({...editForm,fulfillmentEta:e.target.value})} placeholder="Contoh: 5–15 menit setelah pembayaran" /></label>
+        <div className="admin-actions"><button className="admin-primary" disabled={busy}>Simpan rincian</button><button type="button" onClick={()=>setEditingProductId('')} disabled={busy}>Batal</button></div>
+      </form>
+    </section>}
+
     <section className="admin-panel" id="inventory-panel"><div className="admin-section-head"><div><span className="eyebrow muted">LANGKAH 2 · PERSEDIAAN</span><h2>Tambah stok digital</h2></div></div>
       <form className="admin-form" onSubmit={addStock}>
         <label className="span-2">Produk<select required value={stockProduct} onChange={e=>setStockProduct(e.target.value)}><option value="">Pilih produk yang siap menerima stok</option>{products.filter(p=>['DRAFT','PENDING_REVIEW','ACTIVE'].includes(p.status) && p.rights_review_usable && !p.is_test).map(p=><option key={p.id} value={p.id}>{p.sku} · {p.name}</option>)}</select></label>
@@ -350,7 +365,7 @@ export default function AdminPage() {
 
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">PENGELOLAAN STOK</span><h2>Produk dan tampilan stok</h2></div></div>
       <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Produk</th><th>Harga jual (XTR)</th><th>Modal (XTR)</th><th>Stok aktual</th><th>Batas tampilan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
-      {products.map(p=><tr key={p.id}><td><strong>{p.name} {p.is_test ? <span className="test-product-label">CONTOH UJI</span> : p.status==='PENDING_REVIEW' ? <span className="catalog-example-label">CONTOH KATALOG</span> : null}</strong><small>{p.sku} · {GAME_LABELS[p.game_category] || p.game_category} / {TIER_LABELS[p.tier] || p.tier}</small><details className="admin-product-details"><summary>Detail lengkap</summary><div><p>{p.description || 'Deskripsi belum diisi.'}</p><small>Metode: {p.fulfillment_type || 'BELUM DIKETAHUI'} · Review internal: {p.rights_review_status || 'BELUM ADA'} · Berlaku sampai: {p.rights_valid_until ? new Date(p.rights_valid_until).toLocaleDateString('id-ID') : 'BELUM DIKETAHUI'} · Referensi lama: {p.rights_review_reference || '—'} · Stok aktual: {p.actual_stock} · Status: {displayStatus(p.status)}</small></div></details></td><td>{xtr(p.sale_price_xtr)}</td><td>{xtr(p.cost_price_xtr)}</td><td>{p.actual_stock}</td><td><input className="cap-input" type="number" min="0" value={displayCap[p.id] ?? p.display_stock_override ?? ''} placeholder="Aktual" onChange={e=>setDisplayCap({...displayCap,[p.id]:e.target.value})}/></td><td><span className={`admin-status ${p.status.toLowerCase()}`}>{displayStatus(p.status)}</span></td><td><div className="admin-actions"><button onClick={()=>updateProduct(p.id,{displayStockOverride:displayCap[p.id]==='' ? null : Number(displayCap[p.id])})} disabled={busy}>Simpan batas</button>{p.is_test ? <button disabled title="Fixture hanya dapat diaktifkan melalui ruang uji Owner">Ruang uji Owner</button> : p.status==='ACTIVE' ? <button onClick={()=>updateProduct(p.id,{status:'PAUSED'})} disabled={busy}>Jeda</button> : p.rights_review_usable && p.fulfillment_type ? <button onClick={()=>updateProduct(p.id,{status:'ACTIVE'})} disabled={busy}>Aktifkan</button> : <button onClick={()=>{setRightsProductId(String(p.id));document.getElementById('rights-review-panel')?.scrollIntoView({behavior:'smooth',block:'start'});}} disabled={busy}>Periksa CR-05</button>}</div></td></tr>)}
+      {products.map(p=><tr key={p.id}><td><strong>{p.name} {p.is_test ? <span className="test-product-label">CONTOH UJI</span> : p.status==='PENDING_REVIEW' ? <span className="catalog-example-label">CONTOH KATALOG</span> : null}</strong><small>{p.sku} · {GAME_LABELS[p.game_category] || p.game_category} / {TIER_LABELS[p.tier] || p.tier}</small><details className="admin-product-details"><summary>Detail lengkap</summary><div><p>{p.description || 'Deskripsi belum diisi.'}</p><small>Metode: {p.fulfillment_type || 'BELUM DIKETAHUI'} · Review internal: {p.rights_review_status || 'BELUM ADA'} · Berlaku sampai: {p.rights_valid_until ? new Date(p.rights_valid_until).toLocaleDateString('id-ID') : 'BELUM DIKETAHUI'} · Referensi lama: {p.rights_review_reference || '—'} · Stok aktual: {p.actual_stock} · Status: {displayStatus(p.status)}</small></div></details></td><td>{xtr(p.sale_price_xtr)}</td><td>{xtr(p.cost_price_xtr)}</td><td>{p.actual_stock}</td><td><input className="cap-input" type="number" min="0" value={displayCap[p.id] ?? p.display_stock_override ?? ''} placeholder="Aktual" onChange={e=>setDisplayCap({...displayCap,[p.id]:e.target.value})}/></td><td><span className={`admin-status ${p.status.toLowerCase()}`}>{displayStatus(p.status)}</span></td><td><div className="admin-actions"><button onClick={()=>updateProduct(p.id,{displayStockOverride:displayCap[p.id]==='' ? null : Number(displayCap[p.id])})} disabled={busy}>Simpan batas</button>{!p.is_test && <button onClick={()=>startEditProduct(p)} disabled={busy}>Edit detail</button>}{p.is_test ? <button disabled title="Fixture hanya dapat diaktifkan melalui ruang uji Owner">Ruang uji Owner</button> : p.status==='ACTIVE' ? <button onClick={()=>updateProduct(p.id,{status:'PAUSED'})} disabled={busy}>Jeda</button> : p.rights_review_usable && p.fulfillment_type ? <button onClick={()=>updateProduct(p.id,{status:'ACTIVE'})} disabled={busy}>Aktifkan</button> : <button onClick={()=>{setRightsProductId(String(p.id));document.getElementById('rights-review-panel')?.scrollIntoView({behavior:'smooth',block:'start'});}} disabled={busy}>Periksa CR-05</button>}</div></td></tr>)}
       {!products.length && <tr><td colSpan="7" className="table-empty">Belum ada produk dibuat.</td></tr>}
       </tbody></table></div>
       <p className="admin-footnote">Batas tampilan hanya membatasi angka yang ditampilkan. Sistem tetap menghitung dan memeriksa stok tersedia aktual saat checkout.</p><p className="admin-footnote">Produk komersial menerima stok hanya setelah pemeriksaan internal Owner APPROVED dan masih berlaku. Setiap batch stok wajib memiliki referensi sumber.</p>

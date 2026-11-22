@@ -17,7 +17,11 @@ const FULFILLMENT = [
 const apiMessage = (data) => ({
   TELEGRAM_AUTH_REQUIRED:'Sesi Telegram tidak ditemukan. Masuk kembali melalui Telegram.',
   ADMIN_ACCESS_REQUIRED:'Akun Telegram ini tidak memiliki izin Owner.',
-  INVALID_PRODUCT_INPUT:'Periksa kategori, nama, metode pemenuhan, dan harga produk.',
+  INVALID_PRODUCT_INPUT:'Periksa SKU, kategori, nama, metode pemenuhan, dan harga produk.',
+  INVALID_PRODUCT_IMAGE_URL:'Gunakan URL gambar HTTPS atau path lokal /assets/ yang valid.',
+  PRODUCT_SKU_ALREADY_EXISTS:'SKU tersebut sudah digunakan produk lain.',
+  PRODUCT_REVIEW_REQUIRED_AFTER_DETAIL_CHANGE:'Metode pemenuhan berubah. Simpan review CR-05 baru sebelum mengaktifkan SKU.',
+  PRODUCT_HAS_OPEN_ORDERS:'Metode pemenuhan belum dapat diubah karena masih ada pesanan aktif untuk SKU ini. Selesaikan atau rekonsiliasi pesanan terlebih dahulu.',
   INVALID_ASSET_PAYLOAD:'Ada baris stok yang tidak sesuai format kode digital yang didukung.',
   INVALID_INVENTORY_INPUT:'Masukkan 1 sampai 100 unit stok, satu kode pada setiap baris.'
 }[data?.error] || data?.message || 'Permintaan tidak dapat diproses.');
@@ -32,7 +36,7 @@ function nextSku(category, tier, products) {
 
 export default function NewProductPage() {
   const [products, setProducts] = useState([]);
-  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'' });
+  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'', imageUrl:'', customerTerms:'', fulfillmentEta:'' });
   const [stock, setStock] = useState('');
   const [stockSourceReference, setStockSourceReference] = useState('');
   const [rightsForm, setRightsForm] = useState({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
@@ -41,6 +45,9 @@ export default function NewProductPage() {
   const [ready, setReady] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [savedProductId, setSavedProductId] = useState('');
+  const [savedReviewFingerprint, setSavedReviewFingerprint] = useState('');
+  const [savedReviewStatus, setSavedReviewStatus] = useState('');
 
   const headers = useMemo(() => ({ 'content-type':'application/json', 'x-telegram-init-data':getInitData() }), []);
 
@@ -78,59 +85,94 @@ export default function NewProductPage() {
     event.preventDefault();
     if (busy) return;
     setBusy(true); setError(''); setNotice('');
-    let productId = null;
+    let productId = savedProductId || '';
+    let productRecord = null;
+    let currentReviewStatus = savedReviewStatus;
     try {
-      const response = await fetch(API + '/api/admin/products', {
-        method:'POST', headers, credentials:'include',
-        body:JSON.stringify({ ...form, salePriceXtr:Number(form.salePriceXtr), costPriceXtr:Number(form.costPriceXtr) })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(apiMessage(data));
-      productId = data.product.id;
+      const productPayload = {
+        ...form,
+        sku:String(form.sku).trim().toUpperCase(),
+        salePriceXtr:Number(form.salePriceXtr),
+        costPriceXtr:Number(form.costPriceXtr)
+      };
+      if (productId) {
+        const response = await fetch(API + '/api/admin/products/' + productId, {
+          method:'PATCH', headers, credentials:'include', body:JSON.stringify(productPayload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(apiMessage(data));
+        productRecord = data.product;
+        if (data.productReviewReset) {
+          currentReviewStatus = '';
+          setSavedReviewStatus('');
+          setSavedReviewFingerprint('');
+        }
+      } else {
+        const response = await fetch(API + '/api/admin/products', {
+          method:'POST', headers, credentials:'include', body:JSON.stringify(productPayload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(apiMessage(data));
+        productRecord = data.product;
+        productId = String(data.product.id);
+        setSavedProductId(productId);
+      }
 
       const reviewReady = Boolean(
         rightsForm.rightsBasis && rightsForm.publisherPlatform.trim()
         && rightsForm.chainOfTitle.trim() && rightsForm.transferMethod.trim()
         && rightsForm.region.trim() && rightsForm.validUntil
       );
-      let approved = false;
-      if (reviewReady) {
+      const reviewFingerprint = JSON.stringify(rightsForm);
+      if (reviewReady && reviewFingerprint !== savedReviewFingerprint) {
         const reviewResponse = await fetch(API + '/api/admin/products/' + productId + '/rights-review', {
           method:'POST', headers, credentials:'include', body:JSON.stringify(rightsForm)
         });
         const reviewData = await reviewResponse.json();
         if (!reviewResponse.ok) throw new Error(apiMessage(reviewData));
-        approved = reviewData.review?.review_status === 'APPROVED';
-        setNotice('Produk ' + data.product.sku + ' tersimpan. Pemeriksaan Owner: ' + reviewData.review.review_status + '.');
-      } else {
-        setNotice('Produk ' + data.product.sku + ' tersimpan sebagai Draf. Lengkapi pemeriksaan CR-05 sebelum menambah stok atau mengaktifkan produk.');
+        currentReviewStatus = reviewData.review?.review_status || 'PENDING';
+        setSavedReviewFingerprint(reviewFingerprint);
+        setSavedReviewStatus(currentReviewStatus);
       }
 
       const lines = splitInventoryPayloads(stock);
-      if (lines.length && approved && stockSourceReference.trim()) {
+      if (lines.length && currentReviewStatus !== 'APPROVED') {
+        setNotice('SKU ' + productRecord.sku + ' sudah tersimpan sebagai Draf. Stok tetap tersimpan di formulir. Selesaikan pemeriksaan Owner dengan status APPROVED sebelum melanjutkan.');
+        return;
+      }
+      if (lines.length && !stockSourceReference.trim()) {
+        setNotice('SKU ' + productRecord.sku + ' sudah tersimpan. Isi referensi sumber/vendor untuk melanjutkan penyimpanan ' + lines.length + ' unit stok.');
+        return;
+      }
+      if (lines.length) {
         const inventory = await fetch(API + '/api/admin/products/' + productId + '/inventory', {
           method:'POST', headers, credentials:'include',
           body:JSON.stringify({ payloads:lines, sourceReference:stockSourceReference })
         });
         const inventoryData = await inventory.json();
-        if (!inventory.ok) {
-          setNotice('Produk dan pemeriksaan Owner tersimpan, tetapi stok belum masuk: ' + apiMessage(inventoryData));
-        } else {
-          setNotice('Produk, pemeriksaan Owner, dan ' + inventoryData.inserted + ' unit stok terenkripsi berhasil disimpan.');
-        }
-      } else if (lines.length) {
-        setNotice('Produk tersimpan. Stok belum ditambahkan karena pemeriksaan belum APPROVED atau referensi sumber belum lengkap. Tambahkan stok setelah syarat terpenuhi.');
+        if (!inventory.ok) throw new Error(apiMessage(inventoryData));
+        setNotice('Produk, pemeriksaan Owner, dan ' + inventoryData.inserted + ' unit stok terenkripsi berhasil disimpan.');
+      } else {
+        setNotice('SKU ' + productRecord.sku + ' tersimpan sebagai Draf. Pemeriksaan dan persediaan dapat dilanjutkan dari Dashboard Owner.');
       }
 
-      setProducts((current) => [...current, data.product]);
+      setProducts((current) => current.some((item) => String(item.id) === String(productId))
+        ? current.map((item) => String(item.id) === String(productId) ? { ...item, ...productRecord } : item)
+        : [...current, productRecord]);
+      setSavedProductId('');
+      setSavedReviewFingerprint('');
+      setSavedReviewStatus('');
       setManualSku(false);
       setStock('');
       setStockSourceReference('');
-      setForm({ sku:'', gameCategory:form.gameCategory, tier:form.tier, name:'', description:'', fulfillmentType:form.fulfillmentType, salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'' });
+      setForm({ sku:'', gameCategory:form.gameCategory, tier:form.tier, name:'', description:'', fulfillmentType:form.fulfillmentType, salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'', imageUrl:'', customerTerms:'', fulfillmentEta:'' });
       setRightsForm({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
     } catch (e) {
-      if (productId) setNotice('Produk sudah tersimpan sebagai Draf, tetapi tahap pemeriksaan/stok belum selesai: ' + e.message);
-      else setError(e.message || 'Produk tidak dapat dibuat.');
+      if (productId) {
+        setNotice('SKU ' + productId + ' sudah tersimpan. Perbaikan/pemeriksaan belum selesai: ' + e.message + '. Formulir dipertahankan agar dapat dilanjutkan tanpa membuat SKU duplikat.');
+      } else {
+        setError(e.message || 'Produk tidak dapat dibuat.');
+      }
     } finally {
       setBusy(false);
     }
@@ -149,6 +191,7 @@ export default function NewProductPage() {
       <p>Isi informasi produk, tentukan harga, lalu tambahkan stok digital dalam satu proses.</p>
     </section>
     {notice && <div className="admin-notice" role="status">{notice}</div>}
+    {savedProductId && <div className="admin-form-hint">Melanjutkan SKU tersimpan #{savedProductId}. Pengiriman ulang formulir memperbarui SKU yang sama, bukan membuat produk baru.</div>}
     {error && <div className="owner-login-message" role="alert">{error}</div>}
     <section className="admin-panel">
       <div className="admin-section-head"><div><span className="eyebrow muted">LANGKAH 1</span><h2>Informasi produk</h2></div></div>
@@ -159,6 +202,9 @@ export default function NewProductPage() {
         <label>Nama produk<input required maxLength="160" value={form.name} onChange={(e)=>change('name',e.target.value)} placeholder="Nama yang tampil di katalog" /></label>
         <label className="span-2">Deskripsi produk<textarea rows="4" value={form.description} onChange={(e)=>change('description',e.target.value)} placeholder="Jelaskan isi produk, manfaat, ketentuan, dan cara pemenuhan." /></label>
         <label>Metode pemenuhan<select value={form.fulfillmentType} onChange={(e)=>change('fulfillmentType',e.target.value)}>{FULFILLMENT.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label className="span-2">URL gambar produk <small className="field-hint">HTTPS publik atau file lokal /assets/</small><input type="text" value={form.imageUrl} onChange={(e)=>change('imageUrl',e.target.value)} placeholder="https://.../produk.webp" /></label>
+        <label className="span-2">Ketentuan produk untuk pelanggan<textarea rows="3" maxLength="5000" value={form.customerTerms} onChange={(e)=>change('customerTerms',e.target.value)} placeholder="Isi paket, syarat penggunaan, wilayah, masa berlaku, dan batasan produk." /></label>
+        <label className="span-2">Estimasi waktu pemenuhan<input maxLength="160" value={form.fulfillmentEta} onChange={(e)=>change('fulfillmentEta',e.target.value)} placeholder="Contoh: 5–15 menit setelah pembayaran terverifikasi" /></label>
         <label>Harga jual (XTR)<input required type="number" min="1" step="1" value={form.salePriceXtr} onChange={(e)=>change('salePriceXtr',e.target.value)} /></label>
         <label>Modal (XTR)<input required type="number" min="0" step="1" value={form.costPriceXtr} onChange={(e)=>change('costPriceXtr',e.target.value)} /></label>
         <label className="span-2">Referensi hak lama (opsional) <small className="field-hint">Catatan bebas ini bukan pengganti pemeriksaan CR-05</small><input value={form.rightsReviewReference} onChange={(e)=>change('rightsReviewReference',e.target.value)} placeholder="URL atau nomor referensi terdahulu" /></label>
@@ -179,7 +225,7 @@ export default function NewProductPage() {
         <label className="span-2">Referensi sumber/vendor atau asal internal Owner<input value={stockSourceReference} onChange={e=>setStockSourceReference(e.target.value)} placeholder="Nomor dokumen / ID asal stok" /></label>
         <label className="span-2">Kode digital, satu unit per baris <small className="field-hint">Stok hanya disimpan jika pemeriksaan internal Owner berstatus APPROVED.</small><textarea rows="6" value={stock} onChange={(e)=>setStock(e.target.value)} placeholder={"KODE-REDEEM-001\nKODE-REDEEM-002"} /></label>
         <div className="span-2 admin-form-hint">{splitInventoryPayloads(stock).length} unit stok siap disimpan.</div>
-        <button className="admin-primary" disabled={busy}>{busy ? 'Menyimpan…' : stock.trim() ? 'Simpan produk + stok awal' : 'Simpan produk sebagai Draf'}</button>
+        <button className="admin-primary" disabled={busy}>{busy ? 'Menyimpan…' : savedProductId ? 'Lanjutkan penyimpanan SKU' : stock.trim() ? 'Simpan produk + stok awal' : 'Simpan produk sebagai Draf'}</button>
       </form>
     </section>
   </main>;

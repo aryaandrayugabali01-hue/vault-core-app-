@@ -12,6 +12,7 @@ import { canReconcileDelivery } from '../backend/services/deliveryService.js';
 import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
 import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } from '../backend/middleware/ownerSession.js';
 import { splitInventoryPayloads } from '../frontend/src/lib/inventory.js';
+import { isSafeProductImageUrl, normalizeProductText } from '../backend/services/productDetailsService.js';
 
 function signedInitData(user, token, authDate = Math.floor(Date.now() / 1000), extraParams = {}) {
   const params = new URLSearchParams({ auth_date: String(authDate), query_id: 'AAE-test', user: JSON.stringify(user), ...extraParams });
@@ -481,4 +482,21 @@ test('rights review validity expires at its date and inventory must use the curr
   assert.equal(canAddProductInventory({ ...product,is_test:true }, review, now), false);
   assert.equal(canAddProductInventory({ ...product,status:'PAUSED' }, review, now), false);
   assert.equal(isRightsReviewUsable({ ...review,valid_until:'2026-11-23T11:59:59.000Z' }, now), false);
+});
+
+
+test('Owner product images accept HTTPS and local assets while rejecting unsafe schemes and paths', () => {
+  assert.equal(isSafeProductImageUrl('https://cdn.example.com/catalog/product.webp'), true);
+  assert.equal(isSafeProductImageUrl('/assets/products/mlbb.webp'), true);
+  assert.equal(isSafeProductImageUrl('http://cdn.example.com/product.webp'), false);
+  assert.equal(isSafeProductImageUrl('javascript:alert(1)'), false);
+  assert.equal(isSafeProductImageUrl('/assets/../secrets.env'), false);
+  assert.equal(isSafeProductImageUrl('//external.example/image.png'), false);
+  assert.equal(isSafeProductImageUrl(''), true);
+});
+
+test('Owner product text values are trimmed and length-limited', () => {
+  assert.equal(normalizeProductText('  Paket Gold  '), 'Paket Gold');
+  assert.equal(normalizeProductText('x'.repeat(10), 5), 'xxxxx');
+  assert.equal(normalizeProductText(null), '');
 });
