@@ -189,7 +189,7 @@ export default function AdminPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(apiErrorMessage(data, 'Detail produk tidak dapat disimpan.'));
       setNotice(data.productReviewReset
-        ? 'Detail produk disimpan. Metode pemenuhan berubah, sehingga SKU dijeda dan harus menjalani review CR-05 baru.'
+        ? 'Detail penting produk berubah. SKU dijeda bila sebelumnya aktif, stok tersedia dinonaktifkan, dan review CR-05 baru wajib dibuat.'
         : 'Detail produk berhasil diperbarui.');
       setEditingProductId('');
       await refresh();
