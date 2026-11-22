@@ -14,6 +14,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Extract the committed VAULT CORE visual asset library
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s frontend/VAULT_CORE_ASSET_LIBRARY_v1.0.zip
+          mkdir -p frontend/public/assets
+          echo "VAULT CORE asset archive inventory:"
+          unzip -Z1 frontend/VAULT_CORE_ASSET_LIBRARY_v1.0.zip | sort
+          unzip -oq frontend/VAULT_CORE_ASSET_LIBRARY_v1.0.zip -d frontend/public/assets
+          echo "Extracted public asset inventory:"
+          find frontend/public/assets -type f -printf '%P (%s bytes)\\n' | sort
+          test -n "$(find frontend/public/assets -type f -print -quit)"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
