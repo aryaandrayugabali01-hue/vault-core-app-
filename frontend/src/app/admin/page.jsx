@@ -131,7 +131,7 @@ export default function AdminPage() {
     script.async = true; script.src = 'https://telegram.org/js/telegram-widget.js?22';
     script.setAttribute('data-telegram-login', botUsername);
     script.setAttribute('data-size', 'large'); script.setAttribute('data-userpic', 'false');
-    script.setAttribute('data-radius', '12'); script.setAttribute('data-request-access', 'write');
+    script.setAttribute('data-radius', '12');
     script.setAttribute('data-onauth', 'onVaultTelegramAuth(user)');
     mount.replaceChildren(script);
     return () => { mount.replaceChildren(); delete window.onVaultTelegramAuth; };
