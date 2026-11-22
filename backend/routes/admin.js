@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
 import { encryptPayload, assertAllowedDigitalPayload } from '../utils/encryption.js';
-import { canAddProductInventory } from '../services/catalogService.js';
+import { validateRightsReviewInput, isRightsReviewUsable, canAddProductInventory } from '../services/rightsReviewService.js';
 import { refundStarPayment } from '../services/telegramApi.js';
 import { deliverPaidOrder, canReconcileDelivery } from '../services/deliveryService.js';
 const router = Router();
@@ -28,11 +28,24 @@ router.get('/dashboard', async (_req, res) => {
 
 router.get('/products', async (_req, res) => {
   const { rows } = await pool.query(
-    `SELECT p.*, COUNT(i.id) FILTER (WHERE i.status='AVAILABLE')::int AS actual_stock
-     FROM products p LEFT JOIN inventory_items i ON i.product_id=p.id
-     GROUP BY p.id ORDER BY p.created_at DESC`
+    `SELECT p.*, rr.review_status AS rights_review_status,
+            rr.valid_until AS rights_valid_until, rr.reviewed_at AS rights_reviewed_at,
+            rr.rights_basis, rr.publisher_platform,
+            COUNT(i.id) FILTER (WHERE i.status='AVAILABLE'
+              AND i.rights_review_id=p.current_rights_review_id
+              AND i.source_reference IS NOT NULL)::int AS actual_stock
+     FROM products p
+     LEFT JOIN product_rights_reviews rr
+       ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
+     LEFT JOIN inventory_items i ON i.product_id=p.id
+     GROUP BY p.id,rr.id ORDER BY p.created_at DESC`
   );
-  res.json({ products: rows });
+  const products = rows.map((product) => ({
+    ...product,
+    rights_review_usable: product.rights_review_status === 'APPROVED'
+      && product.rights_valid_until && new Date(product.rights_valid_until) > new Date()
+  }));
+  res.json({ products });
 });
 
 router.post('/products', async (req, res) => {
@@ -64,28 +77,49 @@ router.patch('/products/:id', async (req, res) => {
   const pairs = Object.entries(mapping).filter(([key]) => Object.hasOwn(req.body ?? {}, key));
   if (!Number.isSafeInteger(id) || !pairs.length) return res.status(400).json({ error: 'INVALID_PRODUCT_UPDATE' });
   const columns = pairs.map(([key]) => mapping[key]).filter((col) => allowed.includes(col));
-  const values = pairs.map(([key]) => req.body[key]);
+  const values = pairs.filter(([key]) => allowed.includes(mapping[key])).map(([key]) => req.body[key]);
+  if (!columns.length || columns.length !== values.length) return res.status(400).json({ error: 'INVALID_PRODUCT_UPDATE' });
+
   if (req.body.status === 'ACTIVE') {
-    const { rows: review } = await pool.query(
-      `SELECT id,is_test FROM products WHERE id=$1`, [id]
+    const { rows } = await pool.query(
+      `SELECT p.id,p.is_test,p.fulfillment_type,p.current_rights_review_id,
+              rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested,
+              rr.rights_basis,rr.publisher_platform,rr.official_terms_url,
+              rr.authorization_evidence_reference,rr.chain_of_title,rr.transfer_method,rr.region
+       FROM products p LEFT JOIN product_rights_reviews rr
+         ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
+       WHERE p.id=$1`,
+      [id]
     );
-    if (!review[0]) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
-    if (review[0].is_test === true) {
+    const product = rows[0];
+    if (!product) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
+    if (product.is_test === true) {
       return res.status(409).json({
         error: 'TEST_FIXTURE_ACTIVATION_REQUIRED',
         message: 'Aktifkan produk contoh melalui jalur khusus ruang uji Owner.'
       });
     }
-    // CR-04 requires a complete, evidence-backed rights review for every
-    // commercial SKU. The current schema stores only a free-form reference,
-    // so it cannot prove the required publisher, ownership-chain, transfer,
-    // scope, reviewer, and validity checks. Keep commercial activation closed
-    // until that structured review workflow exists.
-    return res.status(409).json({
-      error: 'PRODUCT_RIGHTS_REVIEW_REQUIRED',
-      message: 'Aktivasi produk komersial menunggu pemeriksaan bukti hak penjualan lengkap sesuai CR-04.'
-    });
+    if (!product.fulfillment_type || !isRightsReviewUsable({
+      id: product.review_id,
+      review_status: product.review_status,
+      valid_until: product.valid_until,
+      owner_attested: product.owner_attested
+    })) {
+      return res.status(409).json({
+        error: 'PRODUCT_RIGHTS_REVIEW_REQUIRED',
+        message: 'Aktivasi memerlukan pemeriksaan internal Owner berstatus APPROVED yang lengkap dan masih berlaku.'
+      });
+    }
+    if (product.rights_basis && !['OWNER_CREATED','OWNER_OWNED','SERVICE'].includes(product.rights_basis)
+        && !product.authorization_evidence_reference) {
+      return res.status(409).json({ error: 'AUTHORIZATION_EVIDENCE_REFERENCE_REQUIRED' });
+    }
+    if (String(product.publisher_platform || '').toUpperCase() !== 'INTERNAL_OWNER'
+        && !product.official_terms_url) {
+      return res.status(409).json({ error: 'OFFICIAL_TERMS_URL_REQUIRED' });
+    }
   }
+
   const assignments = columns.map((col, index) => `${col}=$${index + 1}`);
   values.push(id);
   const { rows } = await pool.query(
@@ -94,6 +128,109 @@ router.patch('/products/:id', async (req, res) => {
   if (!rows[0]) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
   await audit(req, 'PRODUCT_UPDATED', 'PRODUCT', id, Object.fromEntries(pairs));
   res.json({ product: rows[0] });
+});
+
+router.get('/products/:id/rights-review', async (req, res) => {
+  const productId = Number(req.params.id);
+  if (!Number.isSafeInteger(productId) || productId <= 0) return res.status(400).json({ error: 'INVALID_PRODUCT_ID' });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows: productRows } = await client.query(
+      'SELECT id,sku,is_test,status,current_rights_review_id FROM products WHERE id=$1 FOR UPDATE',
+      [productId]
+    );
+    const product = productRows[0];
+    if (!product) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' }); }
+
+    if (product.current_rights_review_id) {
+      const { rows: expired } = await client.query(
+        `UPDATE product_rights_reviews
+         SET review_status='EXPIRED'
+         WHERE id=$1 AND product_id=$2 AND review_status='APPROVED' AND valid_until <= NOW()
+         RETURNING id,review_status`,
+        [product.current_rights_review_id, productId]
+      );
+      if (expired.length) {
+        await client.query(
+          `INSERT INTO product_rights_review_events
+           (product_id,rights_review_id,event_type,previous_status,new_status,actor_telegram_user_id,metadata)
+           VALUES ($1,$2,'REVIEW_EXPIRED','APPROVED','EXPIRED',$3,$4)`,
+          [productId, expired[0].id, String(req.telegramUser.id), JSON.stringify({ reason:'VALID_UNTIL_REACHED' })]
+        );
+        await client.query("UPDATE products SET status='PAUSED',updated_at=NOW() WHERE id=$1 AND status='ACTIVE'", [productId]);
+        await client.query("UPDATE inventory_items SET status='UNAVAILABLE' WHERE product_id=$1 AND status='AVAILABLE'", [productId]);
+        await audit(req, 'PRODUCT_RIGHTS_REVIEW_EXPIRED', 'PRODUCT', productId, { reviewId: expired[0].id });
+      }
+    }
+    await client.query('COMMIT');
+    const [{ rows: history }, { rows: events }] = await Promise.all([
+      pool.query('SELECT * FROM product_rights_reviews WHERE product_id=$1 ORDER BY reviewed_at DESC,id DESC LIMIT 50',[productId]),
+      pool.query('SELECT * FROM product_rights_review_events WHERE product_id=$1 ORDER BY created_at DESC,id DESC LIMIT 100',[productId])
+    ]);
+    res.json({ product, history, events });
+  } catch (error) {
+    try { await client.query('ROLLBACK'); } catch {}
+    console.error('[rights-review-history]', error.message);
+    res.status(500).json({ error:'RIGHTS_REVIEW_HISTORY_FAILED' });
+  } finally { client.release(); }
+});
+
+router.post('/products/:id/rights-review', async (req, res) => {
+  const productId = Number(req.params.id);
+  if (!Number.isSafeInteger(productId) || productId <= 0) return res.status(400).json({ error:'INVALID_PRODUCT_ID' });
+  const validation = validateRightsReviewInput(req.body ?? {});
+  if (!validation.ok) return res.status(400).json({ error:'INVALID_RIGHTS_REVIEW_INPUT', details:validation.errors });
+  const review = validation.value;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows: productRows } = await client.query(
+      'SELECT id,sku,is_test,status,current_rights_review_id FROM products WHERE id=$1 FOR UPDATE',
+      [productId]
+    );
+    const product = productRows[0];
+    if (!product) { await client.query('ROLLBACK'); return res.status(404).json({ error:'PRODUCT_NOT_FOUND' }); }
+    if (product.is_test === true) { await client.query('ROLLBACK'); return res.status(409).json({ error:'TEST_FIXTURE_RIGHTS_REVIEW_NOT_REQUIRED' }); }
+
+    const previous = product.current_rights_review_id
+      ? await client.query('SELECT review_status FROM product_rights_reviews WHERE id=$1 AND product_id=$2',[product.current_rights_review_id,productId])
+      : { rows:[] };
+    const previousStatus = previous.rows[0]?.review_status ?? null;
+    const { rows } = await client.query(
+      `INSERT INTO product_rights_reviews (
+         product_id,rights_basis,publisher_platform,official_terms_url,authorization_evidence_reference,
+         chain_of_title,transfer_method,region,reviewer_telegram_user_id,valid_until,
+         review_status,review_notes,owner_attested
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+      [productId,review.rightsBasis,review.publisherPlatform,review.officialTermsUrl,
+       review.authorizationEvidenceReference,review.chainOfTitle,review.transferMethod,
+       review.region,String(req.telegramUser.id),review.validUntil,review.reviewStatus,
+       review.reviewNotes,review.ownerAttested]
+    );
+    const created = rows[0];
+    await client.query(
+      'UPDATE products SET current_rights_review_id=$2,updated_at=NOW(),status=CASE WHEN $3 <> \'APPROVED\' AND status=\'ACTIVE\' THEN \'PAUSED\' ELSE status END WHERE id=$1',
+      [productId,created.id,created.review_status]
+    );
+    if (created.review_status !== 'APPROVED') {
+      await client.query("UPDATE inventory_items SET status='UNAVAILABLE' WHERE product_id=$1 AND status='AVAILABLE'",[productId]);
+    }
+    await client.query(
+      `INSERT INTO product_rights_review_events
+       (product_id,rights_review_id,event_type,previous_status,new_status,actor_telegram_user_id,metadata)
+       VALUES ($1,$2,'OWNER_REVIEW_RECORDED',$3,$4,$5,$6)`,
+      [productId,created.id,previousStatus,created.review_status,String(req.telegramUser.id),
+       JSON.stringify({ rightsBasis:created.rights_basis, publisherPlatform:created.publisher_platform, validUntil:created.valid_until })]
+    );
+    await client.query('COMMIT');
+    await audit(req,'PRODUCT_RIGHTS_REVIEW_RECORDED','PRODUCT',productId,{ reviewId:created.id,status:created.review_status });
+    res.status(201).json({ review:created, message:'Pemeriksaan internal Owner tersimpan. Produk tidak diaktifkan otomatis.' });
+  } catch (error) {
+    try { await client.query('ROLLBACK'); } catch {}
+    console.error('[rights-review-save]', error.message);
+    res.status(500).json({ error:'RIGHTS_REVIEW_SAVE_FAILED', message:'Pemeriksaan hak tidak dapat disimpan saat ini.' });
+  } finally { client.release(); }
 });
 
 router.get('/test-fixtures', async (_req, res) => {
@@ -274,6 +411,7 @@ router.get('/inventory', async (_req, res) => {
 
 router.post('/products/:id/inventory', async (req, res) => {
   const productId = Number(req.params.id);
+  const sourceReference = String(req.body?.sourceReference ?? '').trim().slice(0,2000);
   let payloads;
   try {
     payloads = (Array.isArray(req.body?.payloads) ? req.body.payloads : [req.body?.payload]).map(assertAllowedDigitalPayload);
@@ -283,17 +421,29 @@ router.post('/products/:id/inventory', async (req, res) => {
   if (!Number.isSafeInteger(productId) || payloads.length < 1 || payloads.length > 100) {
     return res.status(400).json({ error: 'INVALID_INVENTORY_INPUT' });
   }
+  if (sourceReference.length < 3) {
+    return res.status(400).json({ error:'INVENTORY_SOURCE_REFERENCE_REQUIRED', message:'Isi referensi sumber/vendor atau asal internal Owner untuk batch stok ini.' });
+  }
+
   const { rows: productRows } = await pool.query(
-    `SELECT id,status,is_test FROM products WHERE id=$1`, [productId]
+    `SELECT p.id,p.status,p.is_test,p.current_rights_review_id,
+            rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
+     FROM products p LEFT JOIN product_rights_reviews rr
+       ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
+     WHERE p.id=$1`, [productId]
   );
   const product = productRows[0];
   if (!product) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
-  if (!canAddProductInventory(product)) {
+  if (!canAddProductInventory(product, {
+    id:product.review_id,review_status:product.review_status,
+    valid_until:product.valid_until,owner_attested:product.owner_attested
+  })) {
     return res.status(409).json({
-      error: 'PRODUCT_NOT_READY_FOR_INVENTORY',
-      message: 'Stok hanya dapat ditambahkan pada produk yang sudah memenuhi syarat operasional. Produk contoh dan produk yang menunggu pemeriksaan CR-04 tidak menerima stok.'
+      error: 'PRODUCT_RIGHTS_REVIEW_REQUIRED',
+      message: 'Stok komersial hanya dapat ditambahkan setelah pemeriksaan internal Owner APPROVED dan masih berlaku.'
     });
   }
+
   const client = await pool.connect();
   const inserted = [];
   try {
@@ -301,9 +451,11 @@ router.post('/products/:id/inventory', async (req, res) => {
     for (const payload of payloads) {
       const encrypted = encryptPayload(payload);
       const { rows } = await client.query(
-        `INSERT INTO inventory_items (product_id, payload_ciphertext, payload_nonce, payload_tag)
-         VALUES ($1,$2,$3,$4) RETURNING id,status,created_at`,
-        [productId, encrypted.payload_ciphertext, encrypted.payload_nonce, encrypted.payload_tag]
+        `INSERT INTO inventory_items
+          (product_id,payload_ciphertext,payload_nonce,payload_tag,rights_review_id,source_reference)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id,status,created_at,rights_review_id,source_reference`,
+        [productId,encrypted.payload_ciphertext,encrypted.payload_nonce,encrypted.payload_tag,
+         product.current_rights_review_id,sourceReference]
       );
       inserted.push(rows[0]);
     }
@@ -312,8 +464,8 @@ router.post('/products/:id/inventory', async (req, res) => {
     await client.query('ROLLBACK');
     throw error;
   } finally { client.release(); }
-  await audit(req, 'INVENTORY_ADDED', 'PRODUCT', productId, { count: inserted.length });
-  res.status(201).json({ inserted: inserted.length, items: inserted });
+  await audit(req,'INVENTORY_ADDED','PRODUCT',productId,{ count:inserted.length, sourceReference, rightsReviewId:product.current_rights_review_id });
+  res.status(201).json({ inserted:inserted.length, items:inserted });
 });
 
 router.post('/orders/:orderNumber/refund', async (req, res) => {
