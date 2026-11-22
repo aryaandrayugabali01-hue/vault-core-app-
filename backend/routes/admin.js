@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
 import { encryptPayload, assertAllowedDigitalPayload } from '../utils/encryption.js';
+import { canAddProductInventory } from '../services/catalogService.js';
 import { refundStarPayment } from '../services/telegramApi.js';
 import { deliverPaidOrder, canReconcileDelivery } from '../services/deliveryService.js';
 const router = Router();
@@ -286,7 +287,7 @@ router.post('/products/:id/inventory', async (req, res) => {
   );
   const product = productRows[0];
   if (!product) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
-  if (product.is_test === true || ['PENDING_REVIEW','PAUSED','ARCHIVED'].includes(product.status)) {
+  if (!canAddProductInventory(product)) {
     return res.status(409).json({
       error: 'PRODUCT_NOT_READY_FOR_INVENTORY',
       message: 'Stok hanya dapat ditambahkan pada produk yang sudah memenuhi syarat operasional. Produk contoh dan produk yang menunggu pemeriksaan CR-04 tidak menerima stok.'
