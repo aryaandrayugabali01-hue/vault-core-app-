@@ -7,7 +7,7 @@
 | Jenis dokumen | Kontrak spesifikasi dan acuan pelaksanaan proyek |
 | Versi | 1.3 — Addendum CR-03 |
 | Tanggal dokumen | 21 November 2026 |
-| Status | Baseline v1.2 disetujui; Addendum CR-03 XTR-only disetujui melalui instruksi pemilik, 21 November 2026 |
+| Status | Baseline v1.2 dan CR-03 disetujui; CR-04 menetapkan pengecualian bersyarat untuk transfer akun yang diotorisasi, 22 November 2026 |
 | Model usaha | Single-Vendor Store |
 | Kanal utama | Telegram Bot dan Telegram Mini App |
 | Domain rencana | `vaultcore.biz.id` (belum dikonfirmasi kepemilikannya dan konfigurasi DNS-nya) |
@@ -16,7 +16,7 @@
 >
 > **Rekaman persetujuan pemilik:** Status v1.2 CR-02 ditetapkan DISETUJUI berdasarkan instruksi tertulis pemilik proyek. Addendum CR-03 pada Bagian 27 disetujui melalui instruksi eksplisit pemilik pada 21 November 2026. Nama legal dan sertifikat tanda tangan elektronik formal tidak tercantum dalam rekaman percakapan.
 >
-> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan produk fixture uji internal melalui CR-03. Pengiriman kredensial akun game, penerimaan pembayaran XTR melalui alamat wallet manual, dan angka stok publik yang sengaja berbeda dari stok aktual tidak dimasukkan. Alternatif operasional yang dapat diterapkan dijelaskan dalam Bagian 25 dan menggantikan ketentuan lama apabila terdapat perbedaan.
+> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan produk fixture uji internal melalui CR-03. v1.4 melalui CR-04 memperjelas bahwa data akses akun game hanya dapat diproses untuk transfer yang secara resmi diizinkan penerbit dan didukung bukti hak transfer; ketentuan pembayaran XTR dan stok tetap berlaku. Alternatif operasional yang dapat diterapkan dijelaskan dalam Bagian 25 dan menggantikan ketentuan lama apabila terdapat perbedaan.
 
 ---
 
@@ -1092,3 +1092,80 @@ File unggahan kredensial_sku_produk.csv berisi 24 entri berupa paket Email:Passw
 ---
 
 **Akhir dokumen — VAULT CORE Project Contract v1.3 (CR-03).**
+
+
+
+# 28. Addendum CR-04 — Dukungan Bersyarat untuk Transfer Akun Game yang Diotorisasi
+
+**Tanggal:** 22 November 2026  
+**Status:** Perubahan ruang lingkup diminta dan disetujui pemilik melalui instruksi tertulis untuk merevisi kontrak.  
+**Mengubah:** Bagian 3.3, 7.6, 25.1, 26.1, dan 27.3 sepanjang terdapat pertentangan. Ketentuan lain tetap berlaku.
+
+## 28.1 Keputusan ruang lingkup
+
+VAULT CORE dapat mendukung katalog dan pemenuhan produk berupa akun game hanya apabila transfer atau penjualan akun tersebut secara tegas diperbolehkan oleh penerbit/platform yang bersangkutan, dan pemilik toko dapat membuktikan hak untuk menjual serta memindahkan akun itu kepada pembeli.
+
+Dengan ketentuan tersebut, larangan mutlak terhadap seluruh format Email:Password di bagian terdahulu diubah menjadi pembatasan berbasis otorisasi. Format kredensial bukan bukti bahwa suatu transaksi diizinkan. Pernyataan vendor seperti “Internal Vendor Verified” saja tidak memenuhi syarat bukti.
+
+## 28.2 Syarat wajib sebelum SKU akun diaktifkan
+
+Setiap SKU dan sumber stok wajib memiliki catatan pemeriksaan yang memuat:
+
+1. Game, penerbit, wilayah, dan jenis akun yang akan dialihkan.
+2. Tautan ketentuan resmi penerbit/platform yang berlaku pada tanggal pemeriksaan.
+3. Bukti tertulis dari penerbit atau program transfer resmi yang secara jelas mengizinkan penjualan/pengalihan akun, jika ketentuan publik tidak secara eksplisit mengizinkannya.
+4. Bukti rantai kepemilikan dan kewenangan vendor untuk menjual serta mengalihkan setiap akun.
+5. Prosedur transfer resmi, batasan wilayah, dan kewajiban pengungkapan kepada pembeli.
+6. Tanggal pemeriksaan, identitas pemeriksa, hasil, serta masa berlaku bukti.
+
+Jika ketentuan penerbit melarang jual-beli atau pengalihan akun, atau bukti otorisasi tidak tersedia, SKU terkait tetap PENDING_REVIEW/PAUSED dan tidak boleh dijual atau dikirim. Persetujuan pemilik toko tidak mengesampingkan ketentuan penerbit, hukum, atau aturan platform.
+
+## 28.3 Tipe pemenuhan dan perlindungan data
+
+Untuk SKU yang lolos Bagian 28.2, sistem dapat menambahkan tipe pemenuhan GAME_ACCOUNT_TRANSFER melalui perubahan skema dan validasi backend yang terpisah. Payload akun wajib:
+
+- Dienkripsi dengan enkripsi kuat di sisi server saat disimpan dan saat dikirim melalui kanal yang aman.
+- Tidak dicatat dalam log, analytics, error trace, atau daftar inventaris biasa.
+- Hanya dapat diakses oleh layanan delivery setelah pembayaran valid dan order memenuhi syarat.
+- Memiliki audit log untuk akses, perubahan, pembatalan, dan pengiriman.
+- Dihapus atau dinonaktifkan sesuai kebijakan retensi setelah transfer selesai, sepanjang kewajiban audit dan hukum mengizinkan.
+- Tidak mencakup email pribadi vendor, password email, cookie, session token, OTP, recovery code, atau kredensial lain yang tidak diperlukan dan tidak secara sah dapat dialihkan.
+
+Sistem tidak boleh mengambil alih akun, melewati autentikasi, mengubah kepemilikan tanpa prosedur resmi, atau membantu menghindari mekanisme keamanan penerbit. Bila transfer resmi tidak membutuhkan pengiriman password, sistem wajib menggunakan metode transfer resmi tersebut.
+
+## 28.4 Status produk dan inventaris
+
+- SKU baru bertipe akun dimulai sebagai DRAFT atau PENDING_REVIEW.
+- Produk hanya dapat menjadi ACTIVE setelah bukti pada Bagian 28.2 diverifikasi Owner dan pemeriksaan teknis selesai.
+- Setiap unit inventaris harus memiliki referensi sumber/vendor dan status pemeriksaan yang dapat diaudit.
+- Stok yang bukti hak transfernya kedaluwarsa, dicabut, atau diperselisihkan otomatis tidak dapat dijual sampai pemeriksaan ulang selesai.
+- Pengujian menggunakan data dummy yang jelas tidak dapat digunakan untuk login atau mengambil alih akun. Kredensial akun sungguhan tidak boleh dipakai sebagai fixture UAT.
+
+## 28.5 Penerapan terhadap katalog yang diajukan
+
+Daftar MLBB, Roblox/Blox Fruit, Free Fire, dan Genshin Impact yang diajukan pemilik dapat dicatat sebagai kandidat katalog, bukan otomatis disetujui untuk penjualan. Status kelayakan masing-masing game/SKU saat Addendum ini dibuat adalah belum diketahui dan wajib diverifikasi berdasarkan bukti penerbit yang berlaku.
+
+Referensi vendor internal saja tidak membuktikan bahwa penerbit mengizinkan penjualan atau transfer akun. Jika suatu penerbit melarangnya, kategori akun game tersebut tidak dapat diaktifkan di VAULT CORE.
+
+## 28.6 Pekerjaan implementasi lanjutan
+
+Persetujuan perubahan kontrak ini tidak berarti kode produksi sudah mendukung tipe baru. Sebelum impor inventaris atau transaksi komersial, implementasi harus melalui:
+1. Review kebijakan dan bukti transfer per game/SKU.
+2. Perubahan enum/schema, validasi payload, enkripsi, kontrol akses, audit log, dan alur delivery.
+3. Uji keamanan dengan fixture non-login, lalu UAT Owner.
+
+Pembayaran tetap mengikuti ketentuan CR-03: transaksi produk digital di Telegram menggunakan invoice Telegram Stars (XTR) resmi. Tidak ada perubahan pada aturan pembayaran, pencatatan XTR, atau sumber stok aktual.
+
+## 28.7 Rekaman persetujuan
+
+| Informasi | Nilai |
+|---|---|
+| Perubahan yang diminta | Mengubah kontrak agar mendukung katalog akun game dan format kredensial secara bersyarat |
+| Keputusan | Disetujui sebagai ruang lingkup bersyarat sesuai Bagian 28.1–28.6 |
+| Tanggal instruksi | 22 November 2026 |
+| Bukti persetujuan | Instruksi tertulis pemilik melalui percakapan proyek |
+| Nama legal/tanda tangan elektronik formal | Belum tercatat |
+
+---
+
+**Akhir dokumen — VAULT CORE Project Contract v1.4 (CR-04).**
