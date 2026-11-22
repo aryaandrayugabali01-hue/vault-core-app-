@@ -204,6 +204,23 @@ router.patch('/products/:id', async (req, res) => {
         message:'Perubahan metode pemenuhan memerlukan pemeriksaan CR-05 baru sebelum SKU dapat diaktifkan.'
       });
     }
+    if (fulfillmentChanged) {
+      const openOrders = await client.query(
+        `SELECT COUNT(DISTINCT o.id)::int AS count
+         FROM order_items oi
+         JOIN orders o ON o.id=oi.order_id
+         WHERE oi.product_id=$1
+           AND o.status IN ('PENDING_PAYMENT','PAID','FULFILLING','REFUND_PENDING')`,
+        [id]
+      );
+      if (Number(openOrders.rows[0]?.count ?? 0) > 0) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({
+          error:'PRODUCT_HAS_OPEN_ORDERS',
+          message:'Metode pemenuhan tidak dapat diubah selama masih ada pesanan aktif untuk SKU ini. Selesaikan atau rekonsiliasi pesanan terlebih dahulu.'
+        });
+      }
+    }
     const assignments = columns.map((column, index) => `${column}=$${index + 1}`);
     if (fulfillmentChanged && current.rows[0].is_test !== true) {
       assignments.push("current_rights_review_id=NULL");
