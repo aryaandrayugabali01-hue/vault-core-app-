@@ -14,7 +14,7 @@
 
 > **Kedudukan dokumen.** Dokumen ini menjadi acuan ruang lingkup, arsitektur, perilaku sistem, dan kriteria penerimaan VAULT CORE. Dokumen ini bukan pendapat hukum atau pengganti kontrak jasa profesional yang ditandatangani para pihak. Perubahan terhadap ruang lingkup atau perilaku yang telah disetujui harus dicatat sebagai revisi dokumen atau change request.
 >
-> **Rekaman persetujuan pemilik:** Status v1.2 CR-02 ditetapkan DISETUJUI berdasarkan instruksi tertulis pemilik proyek. Addendum CR-03 pada Bagian 27 disetujui melalui instruksi eksplisit pemilik pada 21 November 2026. Nama legal dan sertifikat tanda tangan elektronik formal tidak tercantum dalam rekaman percakapan.
+> **Rekaman persetujuan pemilik:** Status v1.2 CR-02 ditetapkan DISETUJUI berdasarkan instruksi tertulis pemilik proyek. Addendum CR-03 pada Bagian 27 disetujui melalui instruksi eksplisit pemilik pada 21 November 2026. Addendum CR-04 disetujui melalui instruksi tertulis pemilik pada 22 November 2026. Nama legal dan sertifikat tanda tangan elektronik formal tidak tercantum dalam rekaman percakapan.
 >
 > **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan produk fixture uji internal melalui CR-03. v1.4 melalui CR-04 memperjelas bahwa data akses akun game hanya dapat diproses untuk transfer yang secara resmi diizinkan penerbit dan didukung bukti hak transfer; ketentuan pembayaran XTR dan stok tetap berlaku. Alternatif operasional yang dapat diterapkan dijelaskan dalam Bagian 25 dan menggantikan ketentuan lama apabila terdapat perbedaan.
 
@@ -1091,7 +1091,7 @@ File unggahan kredensial_sku_produk.csv berisi 24 entri berupa paket Email:Passw
 
 ---
 
-**Akhir dokumen — VAULT CORE Project Contract v1.3 (CR-03).**
+**Akhir baseline historis v1.3 (CR-03); ketentuan terbaru untuk transfer akun game ditetapkan dalam Addendum CR-04 di Bagian 28.**
 
 
 
