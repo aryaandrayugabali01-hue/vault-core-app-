@@ -162,7 +162,7 @@ export default function AdminPage() {
     e.preventDefault();
     if (busy) return;
     setBusy(true);
-    const initialPayloads = stockPayload.split('\\n').map((value) => value.trim()).filter(Boolean);
+    const initialPayloads = splitInventoryPayloads(stockPayload);
     try {
       const response = await fetch(`${API}/api/admin/products`, {
         method:'POST', headers:headers(), credentials:'include',
@@ -203,7 +203,7 @@ export default function AdminPage() {
     e.preventDefault(); if (!stockProduct || !stockPayload.trim()) return;
     setBusy(true);
     try {
-      const response = await fetch(`${API}/api/admin/products/${stockProduct}/inventory`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ payloads:stockPayload.split('\n').map(v=>v.trim()).filter(Boolean), sourceReference:stockSourceReference }) });
+      const response = await fetch(`${API}/api/admin/products/${stockProduct}/inventory`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ payloads:splitInventoryPayloads(stockPayload), sourceReference:stockSourceReference }) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Stok tidak dapat ditambahkan. Periksa kembali data yang dimasukkan.'));
       setNotice(`${data.inserted} unit stok berhasil dienkripsi dan dikaitkan ke pemeriksaan Owner.`); setStockPayload(''); setStockSourceReference(''); await refresh();
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
