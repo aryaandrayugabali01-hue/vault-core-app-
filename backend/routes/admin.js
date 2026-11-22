@@ -166,6 +166,11 @@ router.post('/test-fixtures/:id/activate', async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    // Lock the complete fixture set in a stable order so concurrent Owner
+    // activations cannot leave more than one fixture ACTIVE.
+    await client.query(
+      'SELECT id FROM products WHERE is_test=TRUE ORDER BY id FOR UPDATE'
+    );
     const { rows } = await client.query(
       'SELECT id,sku,status,is_test FROM products WHERE id=$1 FOR UPDATE', [productId]
     );
@@ -186,6 +191,23 @@ router.post('/test-fixtures/:id/activate', async (req, res) => {
       if (product.status !== 'DRAFT') {
         await client.query('ROLLBACK');
         return res.status(409).json({ error: 'TEST_PRODUCT_NOT_DRAFT', message: 'Hanya produk uji berstatus DRAFT yang dapat diaktifkan.' });
+      }
+      const { rows: deactivated } = await client.query(
+        `UPDATE products SET status='DRAFT',updated_at=NOW()
+         WHERE is_test=TRUE AND status='ACTIVE' AND id<>$1
+         RETURNING id,sku`,
+        [productId]
+      );
+      if (deactivated.length) {
+        await client.query(
+          `INSERT INTO admin_audit_logs (actor_telegram_user_id,action,entity_type,entity_id,metadata)
+           VALUES ($1,'TEST_FIXTURE_DEACTIVATED','PRODUCT','BATCH',$2)`,
+          [String(req.telegramUser.id), JSON.stringify({
+            skus: deactivated.map((item) => item.sku),
+            activatedSku: product.sku,
+            reason: 'SINGLE_ACTIVE_TEST_FIXTURE'
+          })]
+        );
       }
       await client.query("UPDATE products SET status='ACTIVE',updated_at=NOW() WHERE id=$1 AND is_test=TRUE", [productId]);
       await client.query(
