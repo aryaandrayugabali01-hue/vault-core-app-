@@ -248,6 +248,29 @@ jobs:
           echo "$gateway_health" | jq -e '.routes.apiConfigured == true and .routes.frontendConfigured == true' >/dev/null
           echo "Root, www, api, TLS, and both gateway origins are responding."
 
+      - name: Verify storefront artwork is publicly served
+        shell: bash
+        run: |
+          set -euo pipefail
+          assets=(
+            "/assets/01-brand/vaultcore-horizontal.svg"
+            "/assets/02-hero/hero-vaultcore-loop.webp"
+            "/assets/03-categories/category-mlbb.png"
+            "/assets/03-categories/category-roblox.png"
+            "/assets/03-categories/category-free-fire.png"
+            "/assets/03-categories/category-genshin.png"
+            "/assets/04-tiers/tier-platinum.png"
+            "/assets/05-states/empty-orders.png"
+          )
+          for asset in "${assets[@]}"; do
+            status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "https://vaultcore.biz.id${asset}")"
+            if [[ "$status" != "200" ]]; then
+              echo "::error::Storefront asset failed: $asset (HTTP $status)"
+              exit 1
+            fi
+            echo "OK $asset"
+          done
+
       - name: Configure Telegram production webhook
         run: npm run setup:webhook
 
