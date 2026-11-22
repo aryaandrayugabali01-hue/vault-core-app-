@@ -152,7 +152,7 @@ export default function AdminPage() {
     try {
       const response = await fetch(`${API}/api/admin/products`, { method:'POST', headers:headers(), credentials:'include', body:JSON.stringify({ ...form, salePriceXtr:Number(form.salePriceXtr), costPriceXtr:Number(form.costPriceXtr) }) });
       const data = await response.json(); if (!response.ok) throw new Error(apiErrorMessage(data, 'Produk tidak dapat disimpan. Periksa kembali data produk.'));
-      setNotice(`Produk ${data.product.sku} berhasil disimpan sebagai Draf.`); setSkuManual(false); setForm({ ...form, sku:'', name:suggestedName(form.gameCategory,form.tier), description:'', rightsReviewReference:'' }); await refresh();
+      setNotice(`Produk ${data.product.sku} berhasil disimpan sebagai Draf. Tambahkan stok pada langkah berikutnya.`); setStockProduct(String(data.product.id)); setSkuManual(false); setForm({ ...form, sku:'', name:suggestedName(form.gameCategory,form.tier), description:'', rightsReviewReference:'' }); await refresh(); document.getElementById('inventory-panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
   }
   async function addStock(e) {
@@ -255,7 +255,7 @@ export default function AdminPage() {
       <div><small>Menunggu pembayaran</small><strong>{stats.orders.pending}</strong></div>
     </section>}
 
-    <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">KATALOG</span><h2>Buat produk</h2></div></div>
+    <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">LANGKAH 1 · KATALOG</span><h2>Buat produk</h2></div></div>
       <form className="admin-form" onSubmit={createProduct}>
         <label>SKU <small className="field-hint">Dibuat otomatis, tetap bisa diedit</small><input required value={form.sku} onChange={e=>{setSkuManual(true);setForm({...form,sku:e.target.value.toUpperCase()});}} placeholder="MLBB-GLD-001" /></label>
         <label>Kategori game<select value={form.gameCategory} onChange={e=>{const category=e.target.value;setForm(current=>({...current,gameCategory:category,sku:skuManual?current.sku:suggestedSku(category,current.tier,products),name:current.name===suggestedName(current.gameCategory,current.tier)?suggestedName(category,current.tier):current.name}));}}><option value="MLBB">MLBB</option><option value="ROBLOX">Roblox</option><option value="FREE_FIRE">Free Fire</option><option value="GENSHIN">Genshin Impact</option><option value="OTHER">Lainnya</option></select></label>
@@ -270,7 +270,7 @@ export default function AdminPage() {
       </form>
     </section>
 
-    <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">PERSEDIAAN</span><h2>Tambah stok digital</h2></div></div>
+    <section className="admin-panel" id="inventory-panel"><div className="admin-section-head"><div><span className="eyebrow muted">LANGKAH 2 · PERSEDIAAN</span><h2>Tambah stok digital</h2></div></div>
       <form className="admin-form" onSubmit={addStock}>
         <label className="span-2">Produk<select required value={stockProduct} onChange={e=>setStockProduct(e.target.value)}><option value="">Pilih produk</option>{products.map(p=><option key={p.id} value={p.id}>{p.sku} · {p.name}</option>)}</select></label>
         <label className="span-2">Satu unit per baris<textarea required rows="5" value={stockPayload} onChange={e=>setStockPayload(e.target.value)} placeholder="Masukkan kode voucher, lisensi, atau kode penukaran satu per baris." /></label>
