@@ -89,7 +89,7 @@ Owner authorization accepts either the existing `ADMIN_TELEGRAM_IDS` server-side
 
 ## Current implementation status
 
-Production infrastructure is deployed from commit e315e2f4c28b37583b87b4dd0cdb68881c196385 in run 45056388433, which completed successfully. That production version includes CR-05. The CR-06 application changes are tracked in PR #6; CI passed, but the CR-06 UI/API changes are not live until the PR is merged and the existing production workflow succeeds.
+Production infrastructure is deployed from commit b3dc38a37b8ed7df44dc6ad7e2812d2e533c1e70 in run 45058882018, which completed SUCCESS. This release includes CR-05 and CR-06. PR #6 was merged; CI run 45058785912 and the full production deployment passed.
 
 Implemented in the deployed application: Telegram initData authentication, catalog API, order reservation, Telegram Stars invoice generation, successful-payment verification/idempotency, encrypted inventory, delivery recovery/reconciliation, two-phase Stars refund recovery, /paysupport, Owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console. CR-05 review enforcement is active across catalog, activation, inventory insertion, order creation, Telegram pre-checkout, and delivery.
 
@@ -108,7 +108,7 @@ Latest production data snapshot (23 November 2026):
 
 No commercial SKU has an approved current rights review, no commercial inventory has been sourced or added, and no live order or transaction exists. Accordingly, the public commercial catalog has no sellable SKU until Owner completes the relevant product details, records a valid CR-05 review, approves the SKU, and adds source-bound inventory.
 
-CR-06 adds full Owner editing of product identity/details, price and cost, fulfillment method, product image reference, customer terms, and estimated fulfillment time. The storefront reads the Owner-authored image/terms/ETA. Changing fulfillment method pauses the SKU, clears the current review pointer, and makes prior available stock unavailable pending a new review. The change is covered by tests and frontend/API build validation in PR #6.
+CR-06 is live in production. Owner can edit SKU identity, category, tier, name, description, XTR price/cost, fulfillment method, product image reference, customer purchase terms, and expected fulfillment time. The storefront displays Owner-managed image/terms/ETA. A material change to SKU identity, category, tier, name, description, customer terms, or fulfillment method clears the current rights review and makes available stock unavailable; an ACTIVE SKU is paused. Such changes are blocked while any PENDING_PAYMENT, PAID, FULFILLING, or REFUND_PENDING order exists. Owner must record a fresh CR-05 review before resuming commercial sale.
 
 Live customer XTR payment/refund/fulfillment acceptance, IDOR/admin authorization review, backup/restore, production rate-limit verification, and Owner UAT/release approval are still pending.
 ## Production deployment
@@ -118,7 +118,7 @@ Live customer XTR payment/refund/fulfillment acceptance, IDOR/admin authorizatio
 - Existing gateway: vault-core-gateway; WEB_ORIGIN and API_ORIGIN secrets are installed.
 - Custom domains: vaultcore.biz.id, www.vaultcore.biz.id, and api.vaultcore.biz.id.
 - Production Telegram webhook: https://api.vaultcore.biz.id/api/telegram/webhook; configuration and getWebhookInfo read-back passed in deployment run 45056388433.
-- Latest confirmed production source: e315e2f4c28b37583b87b4dd0cdb68881c196385; run 45056388433, SUCCESS.
+- Latest confirmed production source: b3dc38a37b8ed7df44dc6ad7e2812d2e533c1e70; run 45058882018, SUCCESS.
 - Neon migrations 001–012 are registered. Migration 012 is additive and does not alter existing SKU prices, statuses, or inventory.
 ## Remaining launch gates
 
