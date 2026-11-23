@@ -34,12 +34,21 @@ test('storefront and Owner branding use the supplied VAULT CORE logo and mapped 
   for (const page of [dashboard, catalog, owner]) assert.ok(page.includes(logo), 'Every surface must use the supplied VAULT CORE logo');
   assert.doesNotMatch(catalog + owner, /brand-mark[^>]*>V</);
   assert.doesNotMatch(dashboard + catalog, /GAME_MARKS|g\.mark/);
-  for (const asset of ['category-mlbb.png','category-roblox.png','category-free-fire.png','category-genshin.png']) {
-    assert.ok(catalog.includes('/assets/03-categories/' + asset), 'Catalog must use the matching game asset: ' + asset);
+  const itemkuGameLogos = [
+    'https://d1x91p7vw3vuq8.cloudfront.net/game/2024109/rcks2r0xntbibkh7gf72p.png',
+    'https://d1x91p7vw3vuq8.cloudfront.net/game/2025124/vhyvvmjoekra0kyu3a2af4.svg',
+    'https://d1x91p7vw3vuq8.cloudfront.net/game/2024711/93cu2pbsceeiior5v9yc2q.png',
+    'https://d1x91p7vw3vuq8.cloudfront.net/game/2025118/z9t30wkd81lxiwmaio40v.webp'
+  ];
+  for (const asset of itemkuGameLogos) {
+    assert.ok(catalog.includes(asset), 'Catalog must use an exact game image URL referenced by the uploaded Itemku ZIP: ' + asset);
+    assert.ok(dashboard.includes(asset), 'Dashboard must use the exact Itemku game image URL: ' + asset);
   }
-  for (const asset of ['category-mlbb.png','category-roblox.png','category-free-fire.png','category-genshin.png']) {
-    assert.ok(dashboard.includes('/assets/03-categories/' + asset), 'Missing game artwork mapping: ' + asset);
-  }
+  assert.match(catalog, /game-category-logo/);
+  assert.match(catalog, /product-photo-image/);
+  assert.match(dashboard, /product-category-logo/);
+  assert.match(styles, /\.dashboard-game-art img\\{[^}]*object-fit:contain!important/);
+  assert.match(styles, /\.dashboard-featured-card>img\.product-category-logo\\{[^}]*object-fit:contain!important/);
   for (const icon of ['icon-wallet.svg','icon-shield.svg','icon-orders.svg']) {
     assert.ok(dashboard.includes('/assets/06-icons/' + icon), 'Missing matching trust icon: ' + icon);
   }
