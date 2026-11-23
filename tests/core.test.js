@@ -33,15 +33,15 @@ test('storefront and Owner branding use the supplied VAULT CORE logo and mapped 
   const logo = '/assets/01-brand/vaultcore-horizontal.svg';
   for (const page of [dashboard, catalog, owner]) assert.ok(page.includes(logo), 'Every surface must use the supplied VAULT CORE logo');
   assert.doesNotMatch(catalog + owner, /brand-mark[^>]*>V</);
-  assert.doesNotMatch(dashboard, /GAME_MARKS|g\\.mark/);
+  assert.doesNotMatch(dashboard, /GAME_MARKS|g\.mark/);
   for (const asset of ['category-mlbb.png','category-roblox.png','category-free-fire.png','category-genshin.png']) {
     assert.ok(dashboard.includes('/assets/03-categories/' + asset), 'Missing game artwork mapping: ' + asset);
   }
   for (const icon of ['icon-wallet.svg','icon-shield.svg','icon-orders.svg']) {
     assert.ok(dashboard.includes('/assets/06-icons/' + icon), 'Missing matching trust icon: ' + icon);
   }
-  assert.match(styles, /\\.game-tab-icon\\{[^}]*background:transparent/);
-  assert.match(styles, /\\.product-art-brand img\\{[^}]*object-fit:contain/);
+  assert.match(styles, /\.game-tab-icon\{[^}]*background:transparent/);
+  assert.match(styles, /\.product-art-brand img\{[^}]*object-fit:contain/);
 });
 
 test('public catalog declares Telegram Mini App as the only transaction channel', () => {
