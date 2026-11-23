@@ -607,53 +607,44 @@ align-items:flex-start
 .brand-logo{display:block;width:clamp(112px,15vw,148px);height:auto;max-height:36px;object-fit:contain;object-position:left center}
 .clear-search{width:28px;height:28px;flex:0 0 28px;display:grid;place-items:center;border:0;border-radius:50%;background:rgba(255,255,255,.07);color:#c8c8ce;font-size:18px;cursor:pointer}
 .top-profile-button{
-width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.08);border-radius:50%;background:#1e1f22;color:#d9d9dd;cursor:pointer;transition:background .18s,border-color .18s,transform .18s;
-min-width:43px;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 13px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:#1e1f22;color:#d5d5da;font-size:10px;font-weight:750;cursor:pointer;transition:background .18s,border-color .18s
+  min-width:43px;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 13px;
+  border:1px solid rgba(255,255,255,.09);border-radius:999px;background:#1e1f22;color:#d5d5da;
+  font-size:10px;font-weight:750;cursor:pointer;transition:background .18s,border-color .18s
 }
 .top-profile-button:hover{
-border-color:rgba(1,135,95,.6);background:#282a2d;
-background:#282a2d;border-color:rgba(1,135,95,.4)
+  background:#282a2d;border-color:rgba(1,135,95,.4)
 }
 .top-profile-button svg{width:19px;height:19px}
 .store-tabs{
-display:flex;align-items:center;gap:8px;margin:0 -16px;padding:12px 16px 13px;
+  display:flex;align-items:center;gap:8px;margin:0 -13px;padding:13px 13px 14px;
   overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;
-  border-bottom:1px solid rgba(255,255,255,.045);
-display:flex;align-items:center;gap:8px;margin:0 -13px;padding:13px 13px 14px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;border-bottom:1px solid rgba(255,255,255,.045)
+  border-bottom:1px solid rgba(255,255,255,.045)
 }
 .store-tabs::-webkit-scrollbar{
-display:none;
-display:none
+  display:none
 }
 .store-tab{
-min-height:34px;flex:0 0 auto;padding:0 15px;border:1px solid rgba(255,255,255,.075);border-radius:999px;
-  background:#1e1f22;color:#c2c2c7;font-size:10px;font-weight:700;white-space:nowrap;cursor:pointer;
-  transition:background .18s,color .18s,border-color .18s,transform .18s;
-min-height:37px;flex:0 0 auto;padding:0 16px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:#1e1f22;color:#c3c3ca;font-size:10px;font-weight:700;white-space:nowrap;cursor:pointer;transition:background .18s,border-color .18s,color .18s,transform .18s
+  min-height:37px;flex:0 0 auto;padding:0 16px;border:1px solid rgba(255,255,255,.08);border-radius:999px;
+  background:#1e1f22;color:#c3c3ca;font-size:10px;font-weight:700;white-space:nowrap;cursor:pointer;
+  transition:background .18s,border-color .18s,color .18s,transform .18s
 }
 .store-tab:hover{background:#282a2d;border-color:rgba(1,135,95,.35);color:#fff}
 .store-tab.active{border-color:#01875f;background:#01875f;color:#fff;box-shadow:0 5px 16px rgba(1,135,95,.2)}
 .hero{
-position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;overflow:hidden;;
-border-color:rgba(167,139,250,.2);;
-min-height:270px;margin:23px 0 38px;padding:clamp(23px,4vw,38px);border:1px solid rgba(1,135,95,.28);
-  border-radius:25px;background:radial-gradient(ellipse at 90% 15%,rgba(0,230,118,.19),transparent 37%),
-  linear-gradient(112deg,#101d1a 0%,#10251f 48%,#121c1a 100%);box-shadow:0 18px 55px rgba(0,0,0,.22);
-animation-delay:.05s;
-background-image:
-    linear-gradient(90deg,rgba(7,11,18,.94) 0%,rgba(7,11,18,.76) 46%,rgba(7,11,18,.48) 100%),
-    url('/assets/02-hero/hero-vaultcore-loop.webp');
-  background-position:center;
-  background-size:cover;;
-display:grid;grid-template-columns:minmax(0,1.1fr) minmax(220px,.8fr);align-items:center;gap:clamp(12px,3vw,35px);min-height:310px;margin:22px 0 42px;padding:clamp(23px,4vw,42px);border-radius:28px
+  position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(220px,.8fr);
+  align-items:center;gap:clamp(12px,3vw,35px);min-height:310px;margin:22px 0 42px;padding:clamp(23px,4vw,42px);
+  overflow:hidden;border:1px solid rgba(1,135,95,.28);border-radius:28px;background-color:#111720;
+  background-image:linear-gradient(90deg,rgba(7,11,18,.94) 0%,rgba(7,11,18,.76) 46%,rgba(7,11,18,.48) 100%),url('/assets/02-hero/hero-vaultcore-loop.webp');
+  background-position:center;background-size:cover;background-repeat:no-repeat;
+  box-shadow:0 18px 55px rgba(0,0,0,.22);animation-delay:.05s
 }
 .hero-copy{position:relative;z-index:2;min-width:0}
 .hero h1{max-width:650px;font-size:clamp(30px,5vw,54px);line-height:1.05;letter-spacing:-.055em}
 .hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
 .hero-cta{
-display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-weight:800;transition:transform .18s,box-shadow .18s;
-min-height:42px;gap:17px;margin-top:13px;padding:0 17px;border:1px solid rgba(0,230,118,.25);border-radius:12px;background:#01875f;box-shadow:0 8px 22px rgba(1,135,95,.22);color:#fff;font-size:11px;
-margin-top:0;min-height:44px;padding:0 17px;border-radius:12px
+  display:inline-flex;align-items:center;justify-content:center;gap:17px;margin-top:0;min-height:44px;padding:0 17px;
+  border:1px solid rgba(0,230,118,.25);border-radius:12px;background:#01875f;box-shadow:0 8px 22px rgba(1,135,95,.22);
+  color:#fff;font-size:11px;font-weight:800;text-decoration:none;transition:transform .18s,box-shadow .18s
 }
 .hero-secondary{min-height:44px;padding:0 16px;border:1px solid rgba(255,255,255,.13);border-radius:12px;background:rgba(40,42,45,.85);color:#e3e3e7;font-size:11px;font-weight:750;cursor:pointer;transition:background .18s,border-color .18s}
 .hero-secondary:hover{background:#34363a;border-color:rgba(255,255,255,.23)}
@@ -673,41 +664,31 @@ animation-delay:.18s;
 margin-top:36px
 }
 .category-grid{
-padding:2px 2px 9px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
-display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;;
-grid-template-columns:repeat(2,minmax(0,1fr));gap:12px
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;
+  padding:2px 2px 9px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;scroll-snap-type:x proximity
 }
 .category-card{
-position:relative;overflow:hidden;color:#f3f4fa;text-align:left;cursor:pointer;;
-width:auto;flex:0 0 auto;scroll-snap-align:start;
-min-width:0;min-height:76px;display:flex;align-items:center;gap:11px;padding:12px;
-  border:1px solid rgba(255,255,255,.075);border-radius:17px;background:#1e1f22;
-  box-shadow:0 5px 16px rgba(0,0,0,.13);transition:transform .2s,border-color .2s,background .2s,box-shadow .2s;
-animation:vc-rise-in .55s cubic-bezier(.2,.75,.25,1) both;
-background-position:center;
-  background-size:cover;
-  background-repeat:no-repeat;;
-min-height:100px;display:flex;align-items:center;gap:13px;padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:17px;background:#1e1f22;background-image:none;box-shadow:0 7px 22px rgba(0,0,0,.16);text-align:left
+  position:relative;min-width:0;min-height:100px;display:flex;align-items:center;gap:13px;padding:14px;
+  overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:17px;background:#1e1f22;background-image:none;
+  background-position:center;background-size:cover;background-repeat:no-repeat;
+  box-shadow:0 7px 22px rgba(0,0,0,.16);transition:transform .2s,border-color .2s,background .2s,box-shadow .2s;
+  animation:vc-rise-in .55s cubic-bezier(.2,.75,.25,1) both;color:#f3f4fa;text-align:left;cursor:pointer
 }
 .category-card:hover{background:#24262a;border-color:rgba(1,135,95,.42);box-shadow:0 13px 28px rgba(0,0,0,.26)}
 .category-card.selected{background:#1e2c26;border-color:rgba(1,135,95,.75);box-shadow:0 0 0 1px rgba(1,135,95,.2),0 12px 28px rgba(0,0,0,.2)}
 .cat-icon{
-letter-spacing:-.6px;
-width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.1);
-  border-radius:13px;background:linear-gradient(145deg,#235e50,#183d34);color:#baf8dc;font-size:18px;font-weight:900;
-width:59px;height:59px;flex:0 0 59px;display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#282a2d;font-size:0
+  width:59px;height:59px;flex:0 0 59px;display:grid;place-items:center;overflow:hidden;
+  border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#282a2d;font-size:0
 }
 .cat-icon img{display:block;width:100%;height:100%;object-fit:cover}
 .category-copy{
-min-width:0;display:grid;gap:4px;text-align:left;
-min-width:0;display:grid;gap:5px
+  min-width:0;display:grid;gap:5px;text-align:left
 }
 .category-copy strong{font-size:12px;line-height:1.3}
 .category-copy small{color:#92939b;font-size:9px}
 .cat-arrow{
-right:15px;bottom:14px;;
-position:static;margin-left:auto;color:#60dca8;font-size:15px;
-right:13px;bottom:12px;color:#72deb1
+  position:static;margin-left:auto;color:#72deb1;font-size:15px
 }
 .cat-tier-platinum .cat-icon{background:linear-gradient(140deg,#506477,#202b36)}
 .product-section{
@@ -716,10 +697,8 @@ margin-top:37px
 }
 .active-filter-badge{display:inline-flex;align-items:center;vertical-align:middle;margin-left:5px;padding:4px 8px;border:1px solid rgba(1,135,95,.24);border-radius:999px;background:rgba(1,135,95,.13);color:#76e4b5;font-size:8px;font-weight:800;letter-spacing:0}
 .product-art{
-min-width:0;align-items:center;justify-content:center;border-bottom:1px solid rgba(255,255,255,.07);isolation:isolate;
-position:relative;width:58px;height:58px;min-height:58px;flex:0 0 58px;display:grid;place-items:center;
-  overflow:hidden;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:linear-gradient(145deg,#2665a2,#263a69);
-width:76px;height:76px;min-height:76px;flex-basis:76px;border-radius:17px;background:#282a2d
+  position:relative;isolation:isolate;min-width:0;width:76px;height:76px;min-height:76px;flex:0 0 76px;
+  display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12);border-radius:17px;background:#282a2d
 }
 .product-art img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
 .product-art::before{
@@ -732,36 +711,31 @@ min-width:0;min-height:58px;display:flex;flex:1;flex-direction:column;align-item
 min-height:76px
 }
 .product-card{
-overflow:hidden;;
-position:relative;min-width:0;min-height:0;display:flex;flex-direction:column;justify-content:space-between;
-  padding:15px;border:1px solid rgba(255,255,255,.075);border-radius:19px;background:#1e1f22;
+  position:relative;min-width:0;min-height:0;display:flex;flex-direction:column;justify-content:space-between;
+  overflow:hidden;padding:15px;border:1px solid rgba(255,255,255,.075);border-radius:18px;background:#1e1f22;
   box-shadow:0 7px 22px rgba(0,0,0,.19);transition:transform .22s,border-color .2s,background .2s,box-shadow .2s;
-animation:vc-rise-in .6s cubic-bezier(.2,.75,.25,1) both;
-border-radius:18px
+  animation:vc-rise-in .6s cubic-bezier(.2,.75,.25,1) both
 }
 .product-card:hover{translate:0 -3px;transform:none}
 .product-card:active{translate:0 1px;transform:none}
 .category-card:hover{translate:0 -2px;transform:none}
 .category-card:active{translate:0 1px;transform:none}
 .trust-strip{
-align-items:center;;
-margin-top:15px;border-color:rgba(126,224,179,.18);;
-display:grid;grid-template-columns:1fr;gap:12px;margin:19px 0 9px;padding:16px;
-  border:1px solid rgba(255,255,255,.075);border-radius:18px;background:linear-gradient(120deg,#1e1f22,#24262a);
-animation-delay:.42s;
-grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:24px 0 12px;padding:19px
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:13px;
+  margin:24px 0 12px;padding:19px;border:1px solid rgba(255,255,255,.075);border-radius:18px;
+  background:linear-gradient(120deg,#1e1f22,#24262a);animation-delay:.42s
 }
 .trust-icon{
-width:39px;height:39px;flex:0 0 39px;display:grid;place-items:center;border:1px solid rgba(0,214,138,.12);border-radius:12px;background:rgba(1,135,95,.14);color:#72e4b5;font-size:17px;font-weight:900;
-width:42px;height:42px;flex-basis:42px
+  width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;
+  border:1px solid rgba(0,214,138,.12);border-radius:12px;background:rgba(1,135,95,.14);
+  color:#72e4b5;font-size:17px;font-weight:900
 }
 .trust-icon img{display:block;width:23px;height:23px;object-fit:contain}
 .state-illustration{width:min(160px,45vw);height:auto;max-height:112px;object-fit:contain;margin:0 auto 6px;display:block}
 .empty-state{
-display:grid;justify-items:center;align-content:center;gap:9px;padding:28px 18px;text-align:center;font-size:12px;
-border-color:rgba(255,255,255,.14);;
-min-height:170px;border:1px solid rgba(255,255,255,.075);border-radius:18px;background:#1e1f22;color:#e6e6e8;
-gap:10px;padding:24px
+  min-height:170px;display:grid;justify-items:center;align-content:center;gap:10px;padding:24px;
+  border:1px solid rgba(255,255,255,.075);border-radius:18px;background:#1e1f22;color:#e6e6e8;
+  text-align:center;font-size:12px
 }
 .detail-product-art{width:100%;height:150px;display:flex;align-items:center;justify-content:center;margin:8px 0 13px;overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:17px;background:#16181a}
 .detail-product-art img{display:block;width:100%;height:100%;object-fit:cover;opacity:.94}
@@ -1217,3 +1191,24 @@ gap:10px;padding:24px
   .dashboard-stat-grid small{font-size:7px}
   .dashboard-game-art{height:96px}
 }
+
+
+/* VAULT CORE image-led canvas and Owner surfaces. */
+body{
+  background-color:#0b111a;
+  background-image:linear-gradient(180deg,rgba(8,12,19,.90),rgba(8,12,19,.96)),url('/assets/02-hero/hero-vaultcore-loop.webp');
+  background-size:cover;background-position:center top;background-attachment:fixed;
+}
+.admin-panel{
+  background-image:linear-gradient(145deg,rgba(18,25,37,.91),rgba(13,19,29,.95)),url('/assets/03-categories/category-other.png');
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+}
+.owner-login-card{
+  background-image:linear-gradient(145deg,rgba(18,22,34,.84),rgba(18,22,34,.95)),url('/assets/02-hero/hero-vaultcore-loop.webp');
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+}
+.marketplace-category-admin-row{
+  background-image:linear-gradient(100deg,rgba(12,18,28,.88),rgba(12,18,28,.96)),url('/assets/03-categories/category-other.png');
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+}
+@media(max-width:760px){body{background-attachment:scroll}}
