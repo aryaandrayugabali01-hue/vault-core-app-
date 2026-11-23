@@ -35,6 +35,7 @@ router.get('/', async (_req, res) => {
   const products = rows.map((product) => {
     const actual = Number(product.sellable_stock);
     const purchaseable = product.status === 'ACTIVE'
+      && Number.isSafeInteger(Number(product.sale_price_xtr)) && Number(product.sale_price_xtr) > 1
       && product.fulfillment_type !== null
       && product.rights_review_status === 'APPROVED'
       && product.rights_owner_attested === true

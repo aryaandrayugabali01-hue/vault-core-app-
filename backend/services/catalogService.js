@@ -14,7 +14,8 @@ export function isPublicCatalogProduct(product) {
 export function isEligibleCheckoutProduct(product, { testMode = false, ownerAuthorized = false } = {}) {
   if (!product || product.status !== 'ACTIVE') return false;
   if (product.is_test === true) return testMode && ownerAuthorized && Number(product.sale_price_xtr) === 1;
-  return !testMode;
+  // 1 XTR is reserved for the Owner-only TEST fixture lane, never a commercial price.
+  return !testMode && Number.isSafeInteger(Number(product.sale_price_xtr)) && Number(product.sale_price_xtr) > 1;
 }
 
 
