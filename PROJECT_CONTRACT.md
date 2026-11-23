@@ -1261,3 +1261,51 @@ CR-05 tidak mengaktifkan SKU komersial secara otomatis dan tidak mengubah harga,
 ---
 
 **Akhir dokumen — VAULT CORE Project Contract v1.5 (CR-05).**
+
+
+# 30. Addendum — Import Katalog Produk Game dari Workbook Owner
+
+**Tanggal:** 23 November 2026  
+**Sumber data:** `Katalog_Produk_Game_Unofficial.xlsx` yang diberikan Owner.  
+**Ruang lingkup:** 16 listing katalog, rentang harga IDR, metode penyerahan, spesifikasi, ketentuan pembeli, kategori, dan SOP transaksi.
+
+## 30.1 Data yang diimpor
+
+Sebanyak 16 listing telah dimasukkan ke database produksi:
+
+- Mobile Legends: 4 listing (`ML-001` sampai `ML-004`).
+- Roblox: 4 listing (`RBX-001` sampai `RBX-004`).
+- Free Fire: 4 listing (`FF-001` sampai `FF-004`).
+- Genshin Impact: 4 listing (`GI-001` sampai `GI-004`).
+
+Rincian nama, deskripsi, subkategori sumber, metode penyerahan, rentang harga minimum/maksimum IDR, serta ketentuan pembeli mengikuti workbook. SOP lima tahap transaksi juga disimpan pada panduan kategori.
+
+## 30.2 Tanggung jawab Owner
+
+Owner menyatakan bahwa pemeriksaan sumber produk, ketepatan penawaran, kewenangan vendor, hak distribusi/transfer, ketentuan penerbit, wilayah, dan metode pemenuhan merupakan tanggung jawab Owner. VAULT CORE mencatat keputusan internal Owner, menyediakan validasi, kontrol transaksi, dan jejak audit.
+
+Pernyataan tanggung jawab Owner tidak dengan sendirinya menjadi bukti kepemilikan atau otorisasi pihak penerbit. Dasar hak dan bukti eksternal yang diwajibkan CR-05 tetap dicatat secara jujur sesuai keadaan tiap SKU. Sistem tidak boleh menandai bukti yang belum diberikan sebagai sudah diverifikasi.
+
+## 30.3 Harga dan status transaksi
+
+- Rentang harga pada workbook adalah IDR dan ditampilkan sebagai rentang indikatif.
+- Workbook tidak memberikan harga checkout Telegram Stars (XTR) final per SKU.
+- Nilai teknis `sale_price_xtr=1` pada 16 record adalah placeholder database, bukan harga jual, tidak ditampilkan sebagai harga komersial, dan tidak membuat SKU dapat dibeli.
+- Seluruh 16 listing tetap `PENDING_REVIEW`, tidak memiliki stok komersial, dan tidak dapat di-checkout atau dikirim.
+- Harga checkout XTR, modal, sumber/vendor, hak, masa berlaku review, dan stok komersial harus ditetapkan Owner sebelum aktivasi.
+
+## 30.4 Kategori Mobile Legends
+
+Navigasi MLBB menyediakan empat tab: Akun, Skin, Gift Hero, dan Gift Item. Workbook memuat listing Akun dan Gift Skin; tidak ada produk yang secara eksplisit masuk Gift Hero atau Gift Item. Kategori tanpa produk tetap ditampilkan sebagai kategori kosong. Listing Squad Verified tetap dicatat sebagai Asset Transfer sesuai istilah sumber dan tidak dipaksakan menjadi Gift Hero/Gift Item.
+
+## 30.5 Uji transaksi
+
+Uji checkout tetap memakai empat fixture internal `TEST ONLY`, terpisah dari 16 listing komersial. Fixture memakai payload non-redeemable dan hanya satu fixture dapat diaktifkan pada satu waktu. Invoice uji bernilai 1 XTR dan merupakan pembayaran Telegram Stars sungguhan bila diselesaikan. Tidak ada transaksi uji yang dijalankan sebagai bagian dari import ini.
+
+## 30.6 Kriteria penerimaan
+
+- 16 listing tersimpan dan terbaca melalui endpoint katalog publik sebagai pratinjau.
+- Produk pratinjau dapat dibuka untuk melihat detail, tetapi tombol pembelian/keranjang terkunci.
+- Harga rentang IDR ditampilkan tanpa menganggapnya sebagai harga checkout XTR.
+- Semua listing tetap `PENDING_REVIEW` dengan stok komersial nol.
+- Fixture uji tetap terpisah dari listing komersial.
