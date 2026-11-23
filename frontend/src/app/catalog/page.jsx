@@ -37,6 +37,7 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('id-ID');
 }
 function formatStock(product) {
+  if (product.status === 'PENDING_REVIEW') return 'Menunggu pemeriksaan';
   if (product.display_stock === null) return product.is_available ? 'Tersedia' : 'Stok habis';
   if (typeof product.display_stock === 'number') return product.display_stock > 0 ? 'Tersedia · ' + product.display_stock + ' unit' : 'Stok habis';
   return product.display_stock === 'OUT_OF_STOCK' ? 'Stok habis' : 'Tersedia';
@@ -163,12 +164,11 @@ export default function HomePage() {
   }, [sourceProducts]);
   const activeFilterLabel = category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua game';
   const selectedGame = gameTabs.find((item) => item.id === category) || null;
-  const gameMarketplaceCategories = useMemo(() => marketplaceCategories.filter((item) =>
-    sourceProducts.some((product) =>
-      (category === 'ALL' || product.game_category === category)
-      && String(product.marketplace_category_id || '') === String(item.id)
-    )
-  ), [marketplaceCategories, sourceProducts, category]);
+  const gameMarketplaceCategories = useMemo(() => marketplaceCategories.filter((item) => {
+    if (category === 'ALL') return true;
+    const prefix = category.toLowerCase().replaceAll('_','-') + '-';
+    return String(item.slug || '').startsWith(prefix);
+  }), [marketplaceCategories, category]);
   const availableTiers = useMemo(() => {
     const present = new Set(sourceProducts
       .filter((product) => (category === 'ALL' || product.game_category === category)
@@ -545,7 +545,7 @@ export default function HomePage() {
                   <img src={product.image_url || GAME_ART[game] || GAME_ART.OTHER} alt="" loading="lazy" />
                 </div>
                 <div className="product-card-meta">
-                  <span className={'tier-label ' + String(product.tier || '').toLowerCase()}>{TIER_LABELS[product.tier] || product.tier} Tier</span>
+                  <span className={'tier-label ' + String(product.tier || '').toLowerCase()}>{product.tier === 'SERVICE' ? 'Katalog' : (TIER_LABELS[product.tier] || product.tier) + ' Tier'}</span>
                   <span className="product-sku">{product.sku}</span>
                   <span className="stock-label"><span className="stock-dot" />{product.catalog_status_label || stockText}</span>
                 </div>
