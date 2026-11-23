@@ -157,9 +157,11 @@ test('display stock override caps but cannot inflate actual inventory', () => {
 
 
 test('test fixtures are never visible through the public catalog policy', () => {
-  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false }), true);
-  assert.equal(isPublicCatalogProduct({ status: 'DRAFT', is_test: false }), false);
-  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: true }), false);
+  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false, sale_price_xtr: 2 }), true);
+  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false, sale_price_xtr: 1 }), false);
+  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false }), false);
+  assert.equal(isPublicCatalogProduct({ status: 'DRAFT', is_test: false, sale_price_xtr: 2 }), false);
+  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: true, sale_price_xtr: 2 }), false);
 });
 
 test('public catalog excludes pending-review and placeholder-priced commercial products', () => {
