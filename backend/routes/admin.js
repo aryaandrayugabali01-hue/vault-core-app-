@@ -154,7 +154,7 @@ router.post('/products', async (req, res) => {
       || !['SILVER','GOLD','PLATINUM','SERVICE'].includes(tier)
       || String(name ?? '').trim().length < 2 || String(name).trim().length > 160
       || !['REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','GIFT_CODE','DIGITAL_FILE','SERVICE_INSTRUCTIONS','GAME_ACCOUNT_TRANSFER'].includes(fulfillmentType)
-      || !Number.isSafeInteger(Number(salePriceXtr)) || Number(salePriceXtr) <= 0
+      || !Number.isSafeInteger(Number(salePriceXtr)) || Number(salePriceXtr) <= 1
       || !Number.isSafeInteger(Number(costPriceXtr)) || Number(costPriceXtr) < 0
       || String(description ?? '').length > 5000
       || String(customerTerms ?? '').length > 5000
@@ -246,7 +246,7 @@ router.patch('/products/:id', async (req, res) => {
       } else {
         value = Number(value);
         if (!Number.isSafeInteger(value)
-            || (key === 'salePriceXtr' && value <= 0)
+            || (key === 'salePriceXtr' && value <= 1)
             || (key !== 'salePriceXtr' && value < 0)) return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
       }
     } else if (key === 'displayStockMode' && !['EXACT_COUNT','IN_STOCK_ONLY','HIDE_COUNT'].includes(value)) {
@@ -260,7 +260,7 @@ router.patch('/products/:id', async (req, res) => {
 
   if (req.body.status === 'ACTIVE') {
     const { rows } = await pool.query(
-      `SELECT p.id,p.is_test,p.fulfillment_type,p.current_rights_review_id,
+      `SELECT p.id,p.is_test,p.fulfillment_type,p.sale_price_xtr,p.current_rights_review_id,
               rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested,
               rr.rights_basis,rr.publisher_platform,rr.official_terms_url,
               rr.authorization_evidence_reference,rr.chain_of_title,rr.transfer_method,rr.region
@@ -275,6 +275,12 @@ router.patch('/products/:id', async (req, res) => {
       return res.status(409).json({
         error: 'TEST_FIXTURE_ACTIVATION_REQUIRED',
         message: 'Aktifkan produk contoh melalui jalur khusus ruang uji Owner.'
+      });
+    }
+    if (!Number.isSafeInteger(Number(product.sale_price_xtr)) || Number(product.sale_price_xtr) <= 1) {
+      return res.status(409).json({
+        error:'PRODUCT_XTR_PRICE_REQUIRED',
+        message:'Harga checkout komersial harus ditetapkan di atas 1 XTR sebelum aktivasi.'
       });
     }
     if (!product.fulfillment_type || !isRightsReviewUsable({

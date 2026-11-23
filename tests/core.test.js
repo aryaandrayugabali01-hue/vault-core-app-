@@ -157,15 +157,36 @@ test('display stock override caps but cannot inflate actual inventory', () => {
 
 
 test('test fixtures are never visible through the public catalog policy', () => {
-  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false }), true);
-  assert.equal(isPublicCatalogProduct({ status: 'DRAFT', is_test: false }), false);
-  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: true }), false);
+  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false, sale_price_xtr: 2 }), true);
+  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false, sale_price_xtr: 1 }), false);
+  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false }), false);
+  assert.equal(isPublicCatalogProduct({ status: 'DRAFT', is_test: false, sale_price_xtr: 2 }), false);
+  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: true, sale_price_xtr: 2 }), false);
+});
+
+test('public catalog excludes pending-review and placeholder-priced commercial products', () => {
+  const route = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
+  assert.match(route, /p\.status='ACTIVE'/);
+  assert.doesNotMatch(route, /p\.status='PENDING_REVIEW'/);
+  assert.match(route, /p\.sale_price_xtr > 1/);
+  assert.match(route, /rr\.review_status='APPROVED'/);
+  assert.match(route, /rr\.owner_attested=TRUE/);
+  assert.match(route, /rr\.valid_until>NOW\(\)/);
+});
+
+test('customer catalog displays product prices only in Telegram Stars XTR', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(page, /formatIdrRange|price_min_idr|price_max_idr|Referensi pasar/);
+  assert.match(page, /sale_price_xtr\)[^\n]*XTR/);
 });
 
 test('test products require the Owner-only test checkout lane', () => {
-  const commercial = { status: 'ACTIVE', is_test: false };
+  const commercial = { status: 'ACTIVE', is_test: false, sale_price_xtr: 2 };
   const fixture = { status: 'ACTIVE', is_test: true, sale_price_xtr: 1 };
   assert.equal(isEligibleCheckoutProduct(commercial), true);
+  assert.equal(isEligibleCheckoutProduct({ ...commercial, sale_price_xtr: 1 }), false);
+  assert.equal(isEligibleCheckoutProduct({ ...commercial, sale_price_xtr: 0 }), false);
+  assert.equal(isEligibleCheckoutProduct({ ...commercial, sale_price_xtr: undefined }), false);
   assert.equal(isEligibleCheckoutProduct(fixture), false);
   assert.equal(isEligibleCheckoutProduct(fixture, { testMode: true, ownerAuthorized: false }), false);
   assert.equal(isEligibleCheckoutProduct(fixture, { testMode: true, ownerAuthorized: true }), true);
@@ -642,7 +663,9 @@ test('customer catalog hides private price, ownership and XTR conversion metadat
     xtr_conversion_source:'Internal reference',
     price_note:'Internal calculation',
     cost_price_status:'OWNER_SET_ZERO',
-    owner_attestation_ref:'INTERNAL-REF'
+    owner_attestation_ref:'INTERNAL-REF',
+    price_min_idr:100000,
+    price_max_idr:200000
   });
   assert.deepEqual(visible, [
     ['kode_produk','ML-001'],

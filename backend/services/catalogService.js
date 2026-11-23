@@ -8,13 +8,19 @@ export function resolveDisplayStock({ actualStock, mode = 'EXACT_COUNT', overrid
 
 
 export function isPublicCatalogProduct(product) {
-  return product?.status === 'ACTIVE' && product?.is_test !== true;
+  return product?.status === 'ACTIVE'
+    && product?.is_test !== true
+    && Number.isSafeInteger(Number(product?.sale_price_xtr))
+    && Number(product.sale_price_xtr) > 1;
 }
 
 export function isEligibleCheckoutProduct(product, { testMode = false, ownerAuthorized = false } = {}) {
   if (!product || product.status !== 'ACTIVE') return false;
   if (product.is_test === true) return testMode && ownerAuthorized && Number(product.sale_price_xtr) === 1;
-  return !testMode;
+  // 1 XTR is reserved for Owner-only TEST fixtures, never commercial products.
+  return !testMode
+    && Number.isSafeInteger(Number(product.sale_price_xtr))
+    && Number(product.sale_price_xtr) > 1;
 }
 
 

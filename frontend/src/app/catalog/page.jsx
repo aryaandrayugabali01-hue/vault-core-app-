@@ -27,13 +27,6 @@ function formatDate(value) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('id-ID');
 }
-function formatIdrRange(attributes = {}) {
-  const min = Number(attributes.price_min_idr || 0);
-  const max = Number(attributes.price_max_idr || 0);
-  if (!min || !max) return '';
-  const format = (value) => 'Rp ' + value.toLocaleString('id-ID');
-  return min === max ? format(min) : format(min) + ' – ' + format(max);
-}
 const ORDER_STATUS_LABELS = {
   PENDING_PAYMENT: 'Menunggu pembayaran',
   PAID: 'Pembayaran diterima',
@@ -538,7 +531,7 @@ export default function HomePage() {
                 <h3>{product.name}</h3>
                 <p>{product.description}</p>
                 <div className="product-bottom">
-                  <div className="product-price"><small>HARGA JUAL</small><strong>{Number(product.sale_price_xtr).toLocaleString('en-US')} XTR</strong>{formatIdrRange(product.attributes) ? <small>Referensi pasar: {formatIdrRange(product.attributes)}</small> : null}</div>
+                  <div className="product-price"><small>HARGA JUAL</small><strong>{Number(product.sale_price_xtr).toLocaleString('en-US')} XTR</strong></div>
                   <button className="buy-button" type="button" disabled={buyingId === product.id || activatingId === product.id}
                     onClick={() => { if (isDraftTest) activateTestProduct(product.id); else { setDetailQuantity(1); setSelectedProduct(product); } }}>
                     {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : product.is_purchaseable ? 'Detail & Beli' : 'Lihat Detail'}
