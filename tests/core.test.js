@@ -32,6 +32,9 @@ test('public catalog declares Telegram Mini App as the only transaction channel'
   assert.match(page, /invoice resmi Telegram Stars \(XTR\)/);
   assert.doesNotMatch(page, /Rekber|Escrow|transfer bank|direct transfer/i);
   assert.match(page, /if \(!initData\)/);
+  assert.match(page, /telegramContext && <>[\s\S]*top-cart-button/);
+  assert.match(page, /telegramContext && <nav className="bottom-nav"/);
+  assert.match(page, /telegramContext && <button className="detail-secondary-button"/);
 });
 
 test('expired pending orders are atomically cancelled, unreserved, and hidden from stock counts', async () => {
