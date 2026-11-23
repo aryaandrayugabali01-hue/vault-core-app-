@@ -12,7 +12,8 @@ import { canReconcileDelivery } from '../backend/services/deliveryService.js';
 import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
 import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } from '../backend/middleware/ownerSession.js';
 import { splitInventoryPayloads } from '../frontend/src/lib/inventory.js';
-import { isSafeProductImageUrl, normalizeProductText } from '../backend/services/productDetailsService.js';
+import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes } from '../backend/services/productDetailsService.js';
+import { parseProductAttributesText, formatProductAttributesText } from '../frontend/src/lib/product-attributes.js';
 import { validateMarketplaceCategory, normalizeImageGallery } from '../backend/services/marketplaceCategoryService.js';
 import { normalizeCartItems } from '../backend/services/cartService.js';
 
@@ -520,6 +521,26 @@ test('product image gallery accepts only safe HTTPS or local asset images', () =
     ['https://cdn.example/a.webp','/assets/b.webp']);
   assert.equal(normalizeImageGallery(['javascript:alert(1)']).ok,false);
   assert.equal(normalizeImageGallery(Array(9).fill('/assets/a.webp')).ok,false);
+});
+
+test('Owner product attributes are normalized and bounded for marketplace filters', () => {
+  const normalized = normalizeProductAttributes({ Server:' Asia ', Rank:' Mythic ', Level:75 });
+  assert.equal(normalized.ok, true);
+  assert.deepEqual(normalized.value, { Level:'75', Rank:'Mythic', Server:'Asia' });
+  assert.equal(normalizeProductAttributes(['Rank','Mythic']).ok, false);
+  assert.equal(normalizeProductAttributes({ Rank:'Mythic', rank:'Epic' }).ok, false);
+  assert.equal(normalizeProductAttributes(Object.fromEntries([['constructor','unsafe']])).ok, false);
+  assert.equal(normalizeProductAttributes({ Detail:'x'.repeat(161) }).ok, false);
+  assert.equal(normalizeProductAttributes(Object.fromEntries(Array.from({length:25},(_,i)=>['Key'+i,'Value']))).ok, false);
+});
+
+test('Owner product attribute editor parses and formats one Key|Value pair per line', () => {
+  const parsed = parseProductAttributesText('Rank|Mythic\nServer|Asia\nLevel|75');
+  assert.equal(parsed.ok, true);
+  assert.deepEqual({...parsed.value}, { Rank:'Mythic', Server:'Asia', Level:'75' });
+  assert.equal(parseProductAttributesText('Rank Mythic').ok, false);
+  assert.equal(parseProductAttributesText('Rank|Mythic\nrank|Epic').ok, false);
+  assert.equal(formatProductAttributesText({ Rank:'Mythic', Server:'Asia' }), 'Rank|Mythic\nServer|Asia');
 });
 
 test('cart normalization preserves legacy checkout and merges valid product lines', () => {

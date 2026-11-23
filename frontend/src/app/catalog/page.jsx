@@ -4,30 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { getInitData, getTelegramWebApp, openInvoice } from '../../lib/telegram';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-const GAME_TABS = [
-  {id:'MLBB',label:'Mobile Legends',short:'MLBB',mark:'⚔',icon:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024109%2Frcks2r0xntbibkh7gf72p.png&w=148&q=75'},
-  {id:'ROBLOX',label:'Roblox',short:'ROBLOX',mark:'R',icon:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025124%2Fvhyvvmjoekra0kyu3a2af4.svg&w=148&q=75'},
-  {id:'FREE_FIRE',label:'Free Fire',short:'FREE FIRE',mark:'◎',icon:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024711%2F93cu2pbsceeiior5v9yc2q.png&w=148&q=75'},
-  {id:'GENSHIN',label:'Genshin Impact',short:'GENSHIN',mark:'✧',icon:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025118%2Fz9t30wkd81lxiwmaio40v.webp&w=148&q=75'}
-];
-const CATEGORY_TILES = [
-  { id: 'MLBB', label: 'Mobile Legends', subtitle: 'Kategori game', mode: 'game', mark: '⚔' },
-  { id: 'ROBLOX', label: 'Roblox', subtitle: 'Kategori game', mode: 'game', mark: 'R' },
-  { id: 'FREE_FIRE', label: 'Free Fire', subtitle: 'Kategori game', mode: 'game', mark: '◎' },
-  { id: 'GENSHIN', label: 'Genshin Impact', subtitle: 'Kategori game', mode: 'game', mark: '✧' },
-  { id: 'PLATINUM', label: 'Tier Platinum', subtitle: 'Koleksi premium', mode: 'tier', mark: '💎' }
-];
-const MLBB_SUBCATEGORIES = [
-  {id:'ACCOUNT',label:'Akun',match:/\b(akun|account)\b/i},
-  {id:'SKIN',label:'Skin',match:/\bskin\b/i},
-  {id:'GIFT_HERO',label:'Gift Hero',match:/gift[\s_-]*hero|hadiah[\s_-]*hero/i},
-  {id:'GIFT_ITEM',label:'Gift Item',match:/gift[\s_-]*item|hadiah[\s_-]*item/i}
-];
+const GAME_ORDER = ['MLBB','ROBLOX','FREE_FIRE','GENSHIN','OTHER'];
+const GAME_MARKS = { MLBB:'⚔', ROBLOX:'R', FREE_FIRE:'◎', GENSHIN:'✧', OTHER:'◇' };
 const GAME_ART = {
-  MLBB: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024109%2Frcks2r0xntbibkh7gf72p.png&w=148&q=75',
-  ROBLOX: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025124%2Fvhyvvmjoekra0kyu3a2af4.svg&w=148&q=75',
-  FREE_FIRE: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024711%2F93cu2pbsceeiior5v9yc2q.png&w=148&q=75',
-  GENSHIN: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025118%2Fz9t30wkd81lxiwmaio40v.webp&w=148&q=75',
+  MLBB: '/assets/03-categories/category-mlbb.png',
+  ROBLOX: '/assets/03-categories/category-roblox.png',
+  FREE_FIRE: '/assets/03-categories/category-free-fire.png',
+  GENSHIN: '/assets/03-categories/category-genshin.png',
   OTHER: '/assets/03-categories/category-other.png'
 };
 const TIER_ART = {
@@ -48,13 +31,6 @@ const FULFILLMENT_LABELS = {
   REDEEM_CODE: 'Kode redeem', VOUCHER_CODE: 'Kode voucher', LICENSE_KEY: 'Kunci lisensi',
   GIFT_CODE: 'Gift code', DIGITAL_FILE: 'File digital', SERVICE_INSTRUCTIONS: 'Instruksi layanan', GAME_ACCOUNT_TRANSFER: 'Transfer akun melalui prosedur resmi'
 };
-function matchesMlbbSubcategory(product, subcategory) {
-  if (subcategory === 'ALL') return true;
-  const rule = MLBB_SUBCATEGORIES.find((item) => item.id === subcategory);
-  if (!rule) return true;
-  const text = [product.marketplace_category_name, product.name, product.description, product.sku].filter(Boolean).join(' ');
-  return rule.match.test(text);
-}
 function formatDate(value) {
   if (!value) return '';
   const date = new Date(value);
@@ -112,7 +88,7 @@ export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [marketplaceCategories, setMarketplaceCategories] = useState([]);
   const [marketplaceCategoryId, setMarketplaceCategoryId] = useState('ALL');
-  const [mlbbSubcategory, setMlbbSubcategory] = useState('ALL');
+  const [attributeFilters, setAttributeFilters] = useState({});
   const [sortBy, setSortBy] = useState('NAME');
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -123,7 +99,7 @@ export default function HomePage() {
   const [isTestMode, setIsTestMode] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activatingId, setActivatingId] = useState(null);
-  const [category, setCategory] = useState('MLBB');
+  const [category, setCategory] = useState('ALL');
   const [tier, setTier] = useState('ALL');
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -168,23 +144,61 @@ export default function HomePage() {
   }, []);
 
   const sourceProducts = isTestMode ? testProducts : products;
-  const activeFilterLabel = category === 'MLBB' && mlbbSubcategory !== 'ALL' ? (MLBB_SUBCATEGORIES.find((item)=>item.id===mlbbSubcategory)?.label || 'Mobile Legends') : category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua game';
-  const selectedGame = GAME_TABS.find((item)=>item.id===category) || GAME_TABS[0];
-  const gameMarketplaceCategories = useMemo(()=>marketplaceCategories.filter((item)=>
-    sourceProducts.some((product)=>product.game_category===category && String(product.marketplace_category_id||'')===String(item.id))
-  ),[marketplaceCategories,sourceProducts,category]);
+  const gameTabs = useMemo(() => {
+    const present = new Set(sourceProducts.map((product) => product.game_category).filter(Boolean));
+    return GAME_ORDER.filter((id) => present.has(id)).map((id) => ({
+      id,
+      label: GAME_LABELS[id] || id.replaceAll('_', ' '),
+      short: id === 'FREE_FIRE' ? 'FREE FIRE' : (id === 'OTHER' ? 'LAINNYA' : id),
+      mark: GAME_MARKS[id] || '◇',
+      icon: GAME_ART[id] || GAME_ART.OTHER
+    }));
+  }, [sourceProducts]);
+  const activeFilterLabel = category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua game';
+  const selectedGame = gameTabs.find((item) => item.id === category) || null;
+  const gameMarketplaceCategories = useMemo(() => marketplaceCategories.filter((item) =>
+    sourceProducts.some((product) =>
+      (category === 'ALL' || product.game_category === category)
+      && String(product.marketplace_category_id || '') === String(item.id)
+    )
+  ), [marketplaceCategories, sourceProducts, category]);
+  const availableTiers = useMemo(() => {
+    const present = new Set(sourceProducts
+      .filter((product) => (category === 'ALL' || product.game_category === category)
+        && (marketplaceCategoryId === 'ALL' || String(product.marketplace_category_id || '') === marketplaceCategoryId))
+      .map((product) => product.tier));
+    return Object.entries(TIER_LABELS).filter(([value]) => present.has(value));
+  }, [sourceProducts, category, marketplaceCategoryId]);
+  const attributeFacets = useMemo(() => {
+    const productsForFacets = sourceProducts.filter((product) =>
+      (category === 'ALL' || product.game_category === category)
+      && (marketplaceCategoryId === 'ALL' || String(product.marketplace_category_id || '') === marketplaceCategoryId)
+    );
+    const valuesByKey = new Map();
+    for (const product of productsForFacets) {
+      const attributes = product.attributes && typeof product.attributes === 'object' && !Array.isArray(product.attributes) ? product.attributes : {};
+      for (const [key, rawValue] of Object.entries(attributes)) {
+        const value = String(rawValue ?? '').trim();
+        if (!value) continue;
+        if (!valuesByKey.has(key)) valuesByKey.set(key, new Set());
+        valuesByKey.get(key).add(value);
+      }
+    }
+    return [...valuesByKey.entries()].sort(([a],[b]) => a.localeCompare(b, 'id'))
+      .map(([key, values]) => ({ key, values:[...values].sort((a,b)=>a.localeCompare(b,'id')) }));
+  }, [sourceProducts, category, marketplaceCategoryId]);
   const filtered = useMemo(() => {
     const list = sourceProducts.filter((p) =>
       (category === 'ALL' || p.game_category === category)
-      && (category !== 'MLBB' || matchesMlbbSubcategory(p, mlbbSubcategory))
       && (tier === 'ALL' || p.tier === tier)
       && (marketplaceCategoryId === 'ALL' || String(p.marketplace_category_id || '') === marketplaceCategoryId)
+      && Object.entries(attributeFilters).every(([key, value]) => !value || String(p.attributes?.[key] ?? '') === value)
       && (String(p.name || '') + ' ' + String(p.description || '') + ' ' + String(p.sku || '') + ' ' + String(p.marketplace_category_name || '')).toLowerCase().includes(query.toLowerCase())
     );
     if (sortBy === 'PRICE_ASC') return list.sort((a,b)=>Number(a.sale_price_xtr)-Number(b.sale_price_xtr));
     if (sortBy === 'PRICE_DESC') return list.sort((a,b)=>Number(b.sale_price_xtr)-Number(a.sale_price_xtr));
     return list.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id'));
-  }, [sourceProducts, category, mlbbSubcategory, tier, marketplaceCategoryId, query, sortBy, isTestMode]);
+  }, [sourceProducts, category, tier, marketplaceCategoryId, attributeFilters, query, sortBy, isTestMode]);
 
   const cartLines = useMemo(() => cart.map((line) => {
     const product = products.find((item) => Number(item.id) === Number(line.productId));
@@ -411,37 +425,12 @@ export default function HomePage() {
     }
   }
 
-  function selectStoreFilter(item) {
-    if (item.mode === 'tier') {
-      setTier(item.id);
-      setCategory('ALL');
-      return;
-    }
-    if (item.mode === 'game') {
-      setCategory(item.id);
-      setTier('ALL');
-      return;
-    }
-    setCategory('ALL');
-    setTier('ALL');
-  }
-
   function selectMarketplaceCategory(id) {
     setMarketplaceCategoryId(String(id));
+    setTier('ALL');
+    setAttributeFilters({});
     const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     document.getElementById('products')?.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
-  }
-
-  function selectCategoryTile(item) {
-    if (item.mode === 'tier') {
-      setCategory('ALL');
-      setTier(item.id);
-    } else {
-      setCategory(item.id);
-      setTier('ALL');
-    }
-    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    document.getElementById('products')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
   }
 
   function closeProfile() {
@@ -496,21 +485,21 @@ export default function HomePage() {
       <section className="marketplace-game-nav" id="home">
         <div className="marketplace-game-heading">
           <span className="eyebrow muted">VAULT CORE · DIGITAL GAME STORE</span>
-          <h1>{selectedGame.label}</h1>
+          <h1>{selectedGame?.label || 'Semua game'}</h1>
           <p>Pilih jenis produk, buka detail penawaran, lalu lanjutkan ke pembayaran Telegram Stars.</p>
         </div>
         <nav className="marketplace-game-tabs" aria-label="Pilih game">
-          {GAME_TABS.map((game)=><button key={game.id} type="button" className={category===game.id?'active':''} aria-pressed={category===game.id} onClick={()=>{setCategory(game.id);setTier('ALL');setMarketplaceCategoryId('ALL');setMlbbSubcategory('ALL');setQuery('');}}>
+          <button type="button" className={category === 'ALL' ? 'active' : ''} aria-pressed={category === 'ALL'} onClick={() => { setCategory('ALL'); setTier('ALL'); setMarketplaceCategoryId('ALL'); setAttributeFilters({}); setQuery(''); }}>Semua game</button>
+          {gameTabs.map((game) => <button key={game.id} type="button" className={category === game.id ? 'active' : ''} aria-pressed={category === game.id} onClick={() => { setCategory(game.id); setTier('ALL'); setMarketplaceCategoryId('ALL'); setAttributeFilters({}); setQuery(''); }}>
             <img className="game-tab-icon" src={game.icon} alt="" loading="lazy" />{game.short}
           </button>)}
+          {!gameTabs.length && !loading && <span className="marketplace-no-categories">Game akan tampil setelah tersedia produk aktif.</span>}
         </nav>
-        {category === 'MLBB' ? <nav className="marketplace-category-nav mlbb-subcategory-nav" id="categories" aria-label="Subkategori Mobile Legends">
-          {MLBB_SUBCATEGORIES.map((item)=><button key={item.id} type="button" className={mlbbSubcategory===item.id?'active':''} aria-pressed={mlbbSubcategory===item.id} onClick={()=>{setMlbbSubcategory(item.id);setMarketplaceCategoryId('ALL');}}>{item.label}</button>)}
-        </nav> : <div className="marketplace-category-nav" id="categories">
-          <button type="button" className={marketplaceCategoryId==='ALL'?'active':''} onClick={()=>selectMarketplaceCategory('ALL')}>Semua</button>
-          {gameMarketplaceCategories.map((item)=><button key={item.id} type="button" className={marketplaceCategoryId===String(item.id)?'active':''} onClick={()=>selectMarketplaceCategory(String(item.id))}><span>{item.icon||'◇'}</span>{item.name}</button>)}
-          {!gameMarketplaceCategories.length&&!loading&&<span className="marketplace-no-categories">Kategori game ini akan tampil setelah Owner menghubungkan produk aktif.</span>}
-        </div>}
+        <nav className={'marketplace-category-nav' + (category === 'MLBB' ? ' mlbb-subcategory-nav' : '')} id="categories" aria-label="Kategori produk">
+          <button type="button" className={marketplaceCategoryId === 'ALL' ? 'active' : ''} onClick={() => selectMarketplaceCategory('ALL')}>Semua</button>
+          {gameMarketplaceCategories.map((item) => <button key={item.id} type="button" className={marketplaceCategoryId === String(item.id) ? 'active' : ''} onClick={() => selectMarketplaceCategory(String(item.id))}><span>{item.icon || '◇'}</span>{item.name}</button>)}
+          {!gameMarketplaceCategories.length && !loading && <span className="marketplace-no-categories">Kategori akan tampil setelah Owner menghubungkan produk aktif.</span>}
+        </nav>
       </section>
 
       <section className="section product-section" id="products">
@@ -520,8 +509,9 @@ export default function HomePage() {
         </div>
         <div className="catalog-toolbar marketplace-toolbar">
           <label><span>Tipe produk</span><select value={tier} onChange={(e)=>setTier(e.target.value)}>
-            <option value="ALL">Semua tipe</option>{Object.entries(TIER_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+            <option value="ALL">Semua tipe</option>{availableTiers.map(([value,label])=><option key={value} value={value}>{label}</option>)}
           </select></label>
+          {attributeFacets.map((facet) => <label key={facet.key}><span>{facet.key}</span><select value={attributeFilters[facet.key] || ''} onChange={(e)=>setAttributeFilters((current)=>({...current,[facet.key]:e.target.value}))}><option value="">Semua {facet.key.toLowerCase()}</option>{facet.values.map((value)=><option value={value} key={value}>{value}</option>)}</select></label>)}
           <label><span>Urutkan</span><select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
             <option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option>
           </select></label>
@@ -536,7 +526,7 @@ export default function HomePage() {
           <img className="state-illustration" src="/assets/05-states/product-not-found.png" alt="" />
           <strong>Produk tidak ditemukan</strong>
           <p>Coba kata kunci lain atau pilih filter kategori dan tier yang berbeda.</p>
-          <button className="reset-filters" type="button" onClick={() => { setQuery(''); setCategory('ALL'); setTier('ALL'); }}>Reset filter</button>
+          <button className="reset-filters" type="button" onClick={() => { setQuery(''); setCategory('ALL'); setTier('ALL'); setMarketplaceCategoryId('ALL'); setAttributeFilters({}); }}>Reset filter</button>
         </div> : <div className="product-grid">
           {filtered.map((product) => {
             const game = product.game_category || 'OTHER';
@@ -597,13 +587,14 @@ export default function HomePage() {
           </div>
           <div className="marketplace-detail-body">
             <div className="marketplace-detail-title-row"><div><span className="detail-category">{selectedProduct.marketplace_category_name || GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</span><h3>{selectedProduct.name}</h3></div><strong className="marketplace-detail-price">{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
-            <div className="marketplace-store-trust"><span className="store-shield">✓</span><div><strong>VAULT CORE Store</strong><small>Penawaran dikelola melalui katalog resmi VAULT CORE</small></div><span className="store-verified">TERVERIFIKASI</span></div>
+            <div className="marketplace-store-trust"><div><strong>VAULT CORE Store</strong><small>Produk dikelola oleh Owner VAULT CORE</small></div></div>
             <div className="marketplace-detail-stats">
               <div><span>Stok</span><strong>{formatStock(selectedProduct)}</strong></div>
               <div><span>Minimum beli</span><strong>1 unit</strong></div>
               <div><span>Pemenuhan</span><strong>{FULFILLMENT_LABELS[selectedProduct.fulfillment_type] || selectedProduct.fulfillment_type || 'Belum ditentukan'}</strong></div>
               <div><span>Estimasi</span><strong>{selectedProduct.fulfillment_eta || 'Belum ditetapkan Owner'}</strong></div>
             </div>
+            {selectedProduct.attributes && typeof selectedProduct.attributes === 'object' && !Array.isArray(selectedProduct.attributes) && Object.keys(selectedProduct.attributes).length > 0 && <section className="marketplace-detail-section"><h3>Spesifikasi Produk</h3><dl className="marketplace-attributes">{Object.entries(selectedProduct.attributes).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></section>}
             <section className="marketplace-detail-section"><h3>Deskripsi Produk</h3><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
             <section className="marketplace-detail-section"><h3>Ketentuan Produk</h3><p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p></section>
             <section className="marketplace-detail-section marketplace-guide-link"><button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Cara Beli &amp; Tips <span>›</span></button></section>
