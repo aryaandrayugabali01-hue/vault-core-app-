@@ -4,6 +4,7 @@ import { sendStarsInvoice } from '../services/telegramApi.js';
 import { isEligibleCheckoutProduct } from '../services/catalogService.js';
 import { isRightsReviewUsable } from '../services/rightsReviewService.js';
 import { normalizeCartItems } from '../services/cartService.js';
+import { releaseExpiredPendingOrders } from '../services/reservationService.js';
 
 export async function createOrder(req, res, { testMode = false } = {}) {
   const normalized = normalizeCartItems(req.body ?? {}, { testMode });
@@ -14,26 +15,7 @@ export async function createOrder(req, res, { testMode = false } = {}) {
   let order;
   try {
     await client.query('BEGIN');
-    const { rows: expiredOrders } = await client.query(
-      `UPDATE orders SET status='CANCELLED'
-       WHERE status='PENDING_PAYMENT' AND created_at < NOW() - INTERVAL '15 minutes'
-       RETURNING id`
-    );
-    const expiredIds = expiredOrders.map((item) => item.id);
-    if (expiredIds.length) {
-      await client.query(
-        `UPDATE deliveries
-         SET status='REVOKED', last_error='Payment window expired; reservation released.'
-         WHERE order_id = ANY($1::bigint[]) AND status IN ('PENDING','READY','FAILED','REVIEW_REQUIRED')`,
-        [expiredIds]
-      );
-      await client.query(
-        `UPDATE inventory_items
-         SET status='AVAILABLE', reserved_order_id=NULL, reserved_until=NULL
-         WHERE status='RESERVED' AND reserved_order_id = ANY($1::bigint[])`,
-        [expiredIds]
-      );
-    }
+    await releaseExpiredPendingOrders(client);
 
     const ids = cartItems.map((item) => item.productId);
     const { rows: products } = await client.query(
@@ -156,6 +138,7 @@ export async function createOrder(req, res, { testMode = false } = {}) {
 }
 
 export async function getMyOrders(req, res) {
+  await releaseExpiredPendingOrders();
   const { rows } = await pool.query(
     `SELECT o.order_number, o.status, o.total_xtr, o.created_at, o.paid_at, o.fulfilled_at,
             COALESCE(json_agg(json_build_object('name', oi.product_name_snapshot, 'quantity', oi.quantity))
