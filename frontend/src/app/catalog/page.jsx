@@ -17,6 +17,12 @@ const CATEGORY_TILES = [
   { id: 'GENSHIN', label: 'Genshin Impact', subtitle: 'Kategori game', mode: 'game', mark: '✧' },
   { id: 'PLATINUM', label: 'Tier Platinum', subtitle: 'Koleksi premium', mode: 'tier', mark: '💎' }
 ];
+const MLBB_SUBCATEGORIES = [
+  {id:'ACCOUNT',label:'Akun',match:/\b(akun|account)\b/i},
+  {id:'SKIN',label:'Skin',match:/\bskin\b/i},
+  {id:'GIFT_HERO',label:'Gift Hero',match:/gift[\s_-]*hero|hadiah[\s_-]*hero/i},
+  {id:'GIFT_ITEM',label:'Gift Item',match:/gift[\s_-]*item|hadiah[\s_-]*item/i}
+];
 const GAME_ART = {
   MLBB: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024109%2Frcks2r0xntbibkh7gf72p.png&w=148&q=75',
   ROBLOX: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025124%2Fvhyvvmjoekra0kyu3a2af4.svg&w=148&q=75',
@@ -42,6 +48,13 @@ const FULFILLMENT_LABELS = {
   REDEEM_CODE: 'Kode redeem', VOUCHER_CODE: 'Kode voucher', LICENSE_KEY: 'Kunci lisensi',
   GIFT_CODE: 'Gift code', DIGITAL_FILE: 'File digital', SERVICE_INSTRUCTIONS: 'Instruksi layanan', GAME_ACCOUNT_TRANSFER: 'Transfer akun melalui prosedur resmi'
 };
+function matchesMlbbSubcategory(product, subcategory) {
+  if (subcategory === 'ALL') return true;
+  const rule = MLBB_SUBCATEGORIES.find((item) => item.id === subcategory);
+  if (!rule) return true;
+  const text = [product.marketplace_category_name, product.name, product.description, product.sku].filter(Boolean).join(' ');
+  return rule.match.test(text);
+}
 function formatDate(value) {
   if (!value) return '';
   const date = new Date(value);
@@ -99,6 +112,7 @@ export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [marketplaceCategories, setMarketplaceCategories] = useState([]);
   const [marketplaceCategoryId, setMarketplaceCategoryId] = useState('ALL');
+  const [mlbbSubcategory, setMlbbSubcategory] = useState('ALL');
   const [sortBy, setSortBy] = useState('NAME');
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -154,7 +168,7 @@ export default function HomePage() {
   }, []);
 
   const sourceProducts = isTestMode ? testProducts : products;
-  const activeFilterLabel = category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua game';
+  const activeFilterLabel = category === 'MLBB' && mlbbSubcategory !== 'ALL' ? (MLBB_SUBCATEGORIES.find((item)=>item.id===mlbbSubcategory)?.label || 'Mobile Legends') : category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua game';
   const selectedGame = GAME_TABS.find((item)=>item.id===category) || GAME_TABS[0];
   const gameMarketplaceCategories = useMemo(()=>marketplaceCategories.filter((item)=>
     sourceProducts.some((product)=>product.game_category===category && String(product.marketplace_category_id||'')===String(item.id))
@@ -162,6 +176,7 @@ export default function HomePage() {
   const filtered = useMemo(() => {
     const list = sourceProducts.filter((p) =>
       (category === 'ALL' || p.game_category === category)
+      && (category !== 'MLBB' || matchesMlbbSubcategory(p, mlbbSubcategory))
       && (tier === 'ALL' || p.tier === tier)
       && (marketplaceCategoryId === 'ALL' || String(p.marketplace_category_id || '') === marketplaceCategoryId)
       && (String(p.name || '') + ' ' + String(p.description || '') + ' ' + String(p.sku || '') + ' ' + String(p.marketplace_category_name || '')).toLowerCase().includes(query.toLowerCase())
@@ -169,7 +184,7 @@ export default function HomePage() {
     if (sortBy === 'PRICE_ASC') return list.sort((a,b)=>Number(a.sale_price_xtr)-Number(b.sale_price_xtr));
     if (sortBy === 'PRICE_DESC') return list.sort((a,b)=>Number(b.sale_price_xtr)-Number(a.sale_price_xtr));
     return list.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id'));
-  }, [sourceProducts, category, tier, marketplaceCategoryId, query, sortBy, isTestMode]);
+  }, [sourceProducts, category, mlbbSubcategory, tier, marketplaceCategoryId, query, sortBy, isTestMode]);
 
   const cartLines = useMemo(() => cart.map((line) => {
     const product = products.find((item) => Number(item.id) === Number(line.productId));
@@ -485,17 +500,17 @@ export default function HomePage() {
           <p>Pilih jenis produk, buka detail penawaran, lalu lanjutkan ke pembayaran Telegram Stars.</p>
         </div>
         <nav className="marketplace-game-tabs" aria-label="Pilih game">
-          {GAME_TABS.map((game)=><button key={game.id} type="button" className={category===game.id?'active':''} aria-pressed={category===game.id} onClick={()=>{setCategory(game.id);setTier('ALL');setMarketplaceCategoryId('ALL');setQuery('');}}>
+          {GAME_TABS.map((game)=><button key={game.id} type="button" className={category===game.id?'active':''} aria-pressed={category===game.id} onClick={()=>{setCategory(game.id);setTier('ALL');setMarketplaceCategoryId('ALL');setMlbbSubcategory('ALL');setQuery('');}}>
             <img className="game-tab-icon" src={game.icon} alt="" loading="lazy" />{game.short}
           </button>)}
         </nav>
-        <div className="marketplace-category-nav" id="categories">
+        {category === 'MLBB' ? <nav className="marketplace-category-nav mlbb-subcategory-nav" id="categories" aria-label="Subkategori Mobile Legends">
+          {MLBB_SUBCATEGORIES.map((item)=><button key={item.id} type="button" className={mlbbSubcategory===item.id?'active':''} aria-pressed={mlbbSubcategory===item.id} onClick={()=>{setMlbbSubcategory(item.id);setMarketplaceCategoryId('ALL');}}>{item.label}</button>)}
+        </nav> : <div className="marketplace-category-nav" id="categories">
           <button type="button" className={marketplaceCategoryId==='ALL'?'active':''} onClick={()=>selectMarketplaceCategory('ALL')}>Semua</button>
-          {gameMarketplaceCategories.map((item)=><button key={item.id} type="button" className={marketplaceCategoryId===String(item.id)?'active':''} onClick={()=>selectMarketplaceCategory(String(item.id))}>
-            <span>{item.icon||'◇'}</span>{item.name}
-          </button>)}
+          {gameMarketplaceCategories.map((item)=><button key={item.id} type="button" className={marketplaceCategoryId===String(item.id)?'active':''} onClick={()=>selectMarketplaceCategory(String(item.id))}><span>{item.icon||'◇'}</span>{item.name}</button>)}
           {!gameMarketplaceCategories.length&&!loading&&<span className="marketplace-no-categories">Kategori game ini akan tampil setelah Owner menghubungkan produk aktif.</span>}
-        </div>
+        </div>}
       </section>
 
       <section className="section product-section" id="products">
