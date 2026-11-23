@@ -38,7 +38,7 @@ test('expired pending orders are atomically cancelled, unreserved, and hidden fr
   assert.match(statement, /status='PENDING_PAYMENT'[\s\S]*INTERVAL '15 minutes'/);
   assert.match(statement, /UPDATE deliveries[\s\S]*status='REVOKED'/);
   assert.match(statement, /UPDATE inventory_items[\s\S]*status='AVAILABLE'/);
-  assert.match(statement, /reserved_order_id IS NOT NULL/);
+  assert.ok(statement.includes('reserved_order_id IN (SELECT id FROM expired_orders)'));
 });
 
 function signedInitData(user, token, authDate = Math.floor(Date.now() / 1000), extraParams = {}) {
