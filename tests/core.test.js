@@ -22,7 +22,7 @@ import { releaseExpiredPendingOrders } from '../backend/services/reservationServ
 
 test('Owner dashboard has no stale product-form effect references', () => {
   const ownerPage = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(ownerPage, /\\b(?:skuManual|setForm|suggestedSku)\\b/);
+  assert.doesNotMatch(ownerPage, /\b(?:skuManual|setForm|suggestedSku)\b/);
 });
 
 test('expired pending orders are atomically cancelled, unreserved, and hidden from stock counts', async () => {
@@ -35,9 +35,9 @@ test('expired pending orders are atomically cancelled, unreserved, and hidden fr
   };
   const result = await releaseExpiredPendingOrders(db);
   assert.deepEqual(result, { expired_orders: 2, revoked_deliveries: 2, released_inventory: 2 });
-  assert.match(statement, /status='PENDING_PAYMENT'[\\s\\S]*INTERVAL '15 minutes'/);
-  assert.match(statement, /UPDATE deliveries[\\s\\S]*status='REVOKED'/);
-  assert.match(statement, /UPDATE inventory_items[\\s\\S]*status='AVAILABLE'/);
+  assert.match(statement, /status='PENDING_PAYMENT'[\s\S]*INTERVAL '15 minutes'/);
+  assert.match(statement, /UPDATE deliveries[\s\S]*status='REVOKED'/);
+  assert.match(statement, /UPDATE inventory_items[\s\S]*status='AVAILABLE'/);
   assert.match(statement, /reserved_order_id IS NOT NULL/);
 });
 
