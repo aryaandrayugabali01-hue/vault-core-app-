@@ -1143,3 +1143,13 @@ gap:10px;padding:24px
 .marketplace-attributes>div{min-width:0;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#171f2c;padding:10px 12px}
 .marketplace-attributes dt{margin:0;color:#9aa6b8;font-size:11px;font-weight:650;letter-spacing:.02em}
 .marketplace-attributes dd{margin:5px 0 0;color:#f4f5fa;font-size:13px;font-weight:750;overflow-wrap:anywhere}
+
+/* Owner catalog preview and IDR range presentation */
+.product-card .stock-label{color:#a9b5c8}
+.product-card .product-price strong{font-size:clamp(14px,3.2vw,17px);line-height:1.35}
+.product-card .product-price small{color:#8d9bb0}
+.marketplace-detail-price{color:#8ce6bd!important;font-size:clamp(18px,4vw,24px)}
+.marketplace-detail-policy{border:1px solid rgba(0,214,138,.18);border-radius:14px;padding:14px;background:#17222d}
+.marketplace-detail-policy strong{color:#8ce6bd}
+.marketplace-detail-policy p{color:#aab5c5}
+.marketplace-category-nav button{position:relative}
