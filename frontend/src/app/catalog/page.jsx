@@ -557,7 +557,7 @@ export default function HomePage() {
                 <p>{product.description}</p>
                 <div className="product-bottom">
                   <div className="product-price"><small>{formatIdrRange(product.attributes) ? 'RENTANG HARGA' : 'HARGA'}</small><strong>{formatIdrRange(product.attributes) || (Number(product.sale_price_xtr).toLocaleString('en-US') + ' XTR')}</strong></div>
-                  <button className="buy-button" type="button" disabled={buyingId === product.id || activatingId === product.id || (!product.is_purchaseable && !isDraftTest)}
+                  <button className="buy-button" type="button" disabled={buyingId === product.id || activatingId === product.id}
                     onClick={() => { if (isDraftTest) activateTestProduct(product.id); else { setDetailQuantity(1); setSelectedProduct(product); } }}>
                     {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : product.is_purchaseable ? 'Detail & Beli' : 'Lihat Detail'}
                   </button>
