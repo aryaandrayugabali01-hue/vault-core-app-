@@ -593,7 +593,7 @@ export default function HomePage() {
           </div>
           <div className="marketplace-detail-body">
             <div className="marketplace-detail-title-row"><div><span className="detail-category">{selectedProduct.marketplace_category_name || GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</span><h3>{selectedProduct.name}</h3></div><strong className="marketplace-detail-price">{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
-            <div className="marketplace-store-trust"><span className="store-shield">✓</span><div><strong>VAULT CORE Store</strong><small>Penawaran dikelola melalui katalog resmi VAULT CORE</small></div><span className="store-verified">TERVERIFIKASI</span></div>
+            <div className="marketplace-store-trust"><span className="store-shield">✓</span><div><strong>VAULT CORE Store</strong><small>Produk dikelola langsung melalui katalog internal VAULT CORE</small></div></div>
             <div className="marketplace-detail-stats">
               <div><span>Stok</span><strong>{formatStock(selectedProduct)}</strong></div>
               <div><span>Minimum beli</span><strong>1 unit</strong></div>
