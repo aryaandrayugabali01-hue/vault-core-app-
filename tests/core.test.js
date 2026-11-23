@@ -30,8 +30,14 @@ test('storefront and Owner branding use the supplied VAULT CORE logo and mapped 
   const catalog = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   const owner = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const marketplace = readFileSync(new URL('../frontend/src/lib/marketplace.js', import.meta.url), 'utf8');
   const logo = '/assets/01-brand/vaultcore-horizontal.svg';
   for (const page of [dashboard, catalog, owner]) assert.ok(page.includes(logo), 'Every surface must use the supplied VAULT CORE logo');
+  assert.ok(dashboard.includes("from '../lib/marketplace.js'"));
+  assert.ok(catalog.includes("from '../../lib/marketplace.js'"));
+  assert.ok(owner.includes("from '../../lib/marketplace.js'"));
+  assert.ok(marketplace.includes('export const GAME_BACKGROUNDS'));
+  assert.ok(marketplace.includes('export const GAME_ART'));
   assert.doesNotMatch(catalog + owner, /brand-mark[^>]*>V</);
   assert.doesNotMatch(dashboard + catalog, /GAME_MARKS|g\.mark/);
   const itemkuGameLogos = [
@@ -41,9 +47,10 @@ test('storefront and Owner branding use the supplied VAULT CORE logo and mapped 
     'https://d1x91p7vw3vuq8.cloudfront.net/game/2025118/z9t30wkd81lxiwmaio40v.webp'
   ];
   for (const asset of itemkuGameLogos) {
-    assert.ok(catalog.includes(asset), 'Catalog must use an exact game image URL referenced by the uploaded Itemku ZIP: ' + asset);
-    assert.ok(dashboard.includes(asset), 'Dashboard must use the exact Itemku game image URL: ' + asset);
+    assert.ok(marketplace.includes(asset), 'The shared marketplace module must preserve the exact supplied game image URL: ' + asset);
   }
+  assert.doesNotMatch(dashboard + catalog, /https:\/\/d1x91p7vw3vuq8\.cloudfront\.net\/game\//);
+  assert.doesNotMatch(dashboard + catalog, /const GAME_ART/);
   assert.match(catalog, /game-category-logo/);
   assert.match(catalog, /product-photo-image/);
   assert.match(dashboard, /product-category-logo/);
@@ -53,7 +60,14 @@ test('storefront and Owner branding use the supplied VAULT CORE logo and mapped 
     assert.ok(dashboard.includes('/assets/06-icons/' + icon), 'Missing matching trust icon: ' + icon);
   }
   assert.match(styles, /\.game-tab-icon\{[^}]*background:transparent/);
-  assert.match(styles, /\.product-art-brand img\{[^}]*object-fit:contain/);
+  assert.match(styles, /\.product-art\.product-art-brand img\{[^}]*object-fit:contain/);
+  assert.match(styles, /\.dashboard-hero\{[\s\S]*?url\('\/assets\/02-hero\/hero-vaultcore-loop\.webp'\)/);
+  assert.match(styles, /\.marketplace-game-nav\{[\s\S]*?var\(--marketplace-background/);
+  assert.match(styles, /\.dashboard-game-art\{[\s\S]*?var\(--game-background/);
+  assert.match(styles, /\.product-art\.product-art-brand\{[\s\S]*?var\(--game-background/);
+  assert.ok(dashboard.includes('GAME_BACKGROUNDS[g.id]'));
+  assert.ok(catalog.includes('GAME_BACKGROUNDS[category]'));
+  assert.ok(catalog.includes('GAME_BACKGROUNDS[game]'));
 });
 
 test('public catalog declares Telegram Mini App as the only transaction channel', () => {

@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { getInitData } from '../../../../lib/telegram';
 import { splitInventoryPayloads } from '../../../../lib/inventory';
 import { parseProductAttributesText } from '../../../../lib/product-attributes';
+import { GAME_NAMES } from '../../../../lib/marketplace.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const CATEGORIES = [
-  ['MLBB','Mobile Legends','MLBB'],['ROBLOX','Roblox','RBLX'],
-  ['FREE_FIRE','Free Fire','FFIR'],['GENSHIN','Genshin Impact','GNSH'],['OTHER','Lainnya','OTHR']
+  ['MLBB',GAME_NAMES.MLBB,'MLBB'],['ROBLOX',GAME_NAMES.ROBLOX,'RBLX'],
+  ['FREE_FIRE',GAME_NAMES.FREE_FIRE,'FFIR'],['GENSHIN',GAME_NAMES.GENSHIN,'GNSH'],['OTHER',GAME_NAMES.OTHER,'OTHR']
 ];
 const TIERS = [['SILVER','Silver','SLV'],['GOLD','Gold','GLD'],['PLATINUM','Platinum','PLT'],['SERVICE','Layanan','SRV']];
 const FULFILLMENT = [

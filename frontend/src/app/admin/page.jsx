@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { getInitData } from '../../lib/telegram';
+import { GAME_LABELS } from '../../lib/marketplace.js';
 import { splitInventoryPayloads } from '../../lib/inventory';
 import { parseProductAttributesText, formatProductAttributesText } from '../../lib/product-attributes';
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
-const GAME_LABELS = { MLBB:'MLBB', ROBLOX:'Roblox', FREE_FIRE:'Free Fire', GENSHIN:'Genshin Impact', OTHER:'Lainnya' };
 const TIER_LABELS = { SILVER:'Silver', GOLD:'Gold', PLATINUM:'Platinum', SERVICE:'Layanan' };
 const STATUS_LABELS = {
   DRAFT:'Draf', PENDING_REVIEW:'Menunggu pemeriksaan', ACTIVE:'Aktif', PAUSED:'Dijeda', ARCHIVED:'Diarsipkan',
