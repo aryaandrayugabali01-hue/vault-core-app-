@@ -954,3 +954,112 @@ gap:10px;padding:24px
 .marketplace-category-admin-status.paused{background:rgba(255,255,255,.08);color:#adb4c2}
 .admin-error{border-color:rgba(235,90,90,.35);color:#ffc1c1}
 @media(max-width:520px){.admin-entry-actions{display:grid}.admin-entry-actions>*{width:100%}.marketplace-category-admin-row{grid-template-columns:38px minmax(0,1fr);gap:9px}.marketplace-category-admin-icon{width:38px;height:38px}.marketplace-category-admin-row>.admin-secondary-link{grid-column:2;justify-self:start}}
+
+/* Itemku-style four-game marketplace flow */
+.marketplace-game-nav{margin:0 -16px 18px;background:#fff;color:#202124;border-bottom:1px solid #e4e6eb}
+.marketplace-game-heading{padding:23px 18px 14px}
+.marketplace-game-heading .eyebrow{color:#818895;font-size:10px;letter-spacing:.09em}
+.marketplace-game-heading h1{margin:5px 0 4px;color:#202124;font-size:27px;letter-spacing:-.04em}
+.marketplace-game-heading p{margin:0;color:#747b86;font-size:12px;line-height:1.5}
+.marketplace-game-tabs,.marketplace-category-nav{display:flex;align-items:center;gap:22px;padding:0 18px;overflow-x:auto;scrollbar-width:none;white-space:nowrap}
+.marketplace-game-tabs::-webkit-scrollbar,.marketplace-category-nav::-webkit-scrollbar{display:none}
+.marketplace-game-tabs button,.marketplace-category-nav button{position:relative;flex:0 0 auto;min-height:49px;padding:0 2px;border:0;background:transparent;color:#8b9098;font-size:14px;font-weight:700;cursor:pointer}
+.marketplace-game-tabs button span,.marketplace-category-nav button span{margin-right:7px}
+.marketplace-game-tabs button.active,.marketplace-category-nav button.active{color:#202124}
+.marketplace-game-tabs button.active:after{position:absolute;right:0;bottom:0;left:0;height:3px;border-radius:4px 4px 0 0;background:#347df0;content:""}
+.marketplace-category-nav{gap:25px;min-height:52px;background:#fff;border-top:1px solid #f1f2f4}
+.marketplace-category-nav button{min-height:52px;font-size:13px}
+.marketplace-category-nav button.active{color:#347df0}
+.marketplace-no-categories{flex:0 0 auto;color:#8a909a;font-size:11px}
+.product-section{margin-top:0;padding:16px 14px 24px;background:#eef1f6}
+.product-section .section-heading{align-items:center}
+.product-section .section-heading h2{color:#292d33;font-size:18px}
+.product-section .eyebrow{color:#828996}
+.product-section .section-count{color:#68707c}
+.marketplace-toolbar{grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:14px}
+.marketplace-toolbar label{background:#fff;border-color:#dfe3e9}
+.marketplace-toolbar label span{color:#858b95}
+.marketplace-toolbar select{color:#363b43}
+.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.product-card{display:flex;min-width:0;flex-direction:column;overflow:hidden;padding:0;border:1px solid #e2e5ea;border-radius:15px;background:#fff;color:#202124;box-shadow:0 2px 7px rgba(22,33,52,.06)}
+.product-card:hover{background:#fff;border-color:#c9d6ea;box-shadow:0 6px 18px rgba(22,33,52,.1)}
+.product-card-head{display:block;margin:0;padding:0}
+.product-art{width:100%;height:auto;min-height:0;aspect-ratio:16/9;border:0;border-radius:0;background:#e9edf3}
+.product-art img{width:100%;height:100%;object-fit:cover}
+.product-card-meta{position:absolute;right:8px;bottom:8px;left:8px;display:flex;min-height:0;flex-direction:row;justify-content:space-between;gap:5px;padding:0}
+.tier-label,.product-sku{display:none}
+.stock-label{padding:4px 7px;border-radius:999px;background:rgba(255,255,255,.94);color:#4c5665;font-size:9px}
+.stock-dot{display:none}
+.product-content{padding:12px 12px 13px}
+.product-category{margin:0 0 5px;color:#8a9099;font-size:10px}
+.product-card h3{display:-webkit-box;min-height:36px;margin:0 0 8px;overflow:hidden;color:#202124;font-size:13px;line-height:1.45;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.product-card p{display:none}
+.product-bottom{display:flex;flex-direction:column;align-items:stretch;gap:9px;margin-top:auto;padding-top:8px}
+.product-price small{display:none}
+.product-bottom strong{color:#ef6900;font-size:16px;font-weight:850}
+.product-bottom .buy-button{width:100%;min-height:37px;border-radius:9px;background:#f36b00;color:#fff;font-size:11px}
+.marketplace-detail-backdrop{align-items:flex-end;padding:0;background:rgba(0,0,0,.58)}
+.marketplace-detail-modal{width:min(100%,760px);max-height:94dvh;margin:0;padding:0;overflow:auto;border:0;border-radius:25px 25px 0 0;background:#fff;color:#202124;box-shadow:0 -10px 50px rgba(0,0,0,.24)}
+.marketplace-sheet-grip{width:64px;height:5px;margin:9px auto 0;border-radius:99px;background:#c4c7cc}
+.marketplace-detail-head{position:sticky;top:0;z-index:3;margin:0;padding:14px 17px;background:#fff;border-bottom:1px solid #edf0f3}
+.marketplace-detail-head h2{margin:2px 0 0;color:#202124;font-size:16px;line-height:1.35}
+.marketplace-detail-head .eyebrow{color:#858b95;font-size:9px}
+.marketplace-detail-head .icon-button{width:36px;height:36px;border:0;background:#f1f2f4;color:#4a5059}
+.marketplace-detail-gallery{display:flex;gap:8px;width:100%;height:245px;padding:0 0 8px;overflow-x:auto;scroll-snap-type:x mandatory;background:#f1f3f6}
+.marketplace-detail-gallery img{flex:0 0 100%;width:100%;height:100%;object-fit:contain;scroll-snap-align:center;background:#e7eaf0}
+.marketplace-detail-body{padding:16px 17px calc(22px + env(safe-area-inset-bottom,0px))}
+.marketplace-detail-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.marketplace-detail-title-row h3{margin:4px 0 0;color:#202124;font-size:18px;line-height:1.35}
+.marketplace-detail-title-row .detail-category{color:#78808c;font-size:10px}
+.marketplace-detail-price{flex:0 0 auto;padding-top:18px;color:#ed6800;font-size:21px}
+.marketplace-store-trust{display:flex;align-items:center;gap:10px;margin:17px 0;padding:12px;border:1px solid #e1e5eb;border-radius:13px}
+.store-shield{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#eaf3ff;color:#2877e8;font-size:20px;font-weight:900}
+.marketplace-store-trust>div{display:grid;gap:3px;min-width:0}
+.marketplace-store-trust strong{font-size:13px}
+.marketplace-store-trust small{color:#7e8793;font-size:10px;line-height:1.4}
+.store-verified{margin-left:auto;color:#16885d;font-size:8px;font-weight:900;white-space:nowrap}
+.marketplace-detail-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px;padding:12px;border:1px solid #e1e5eb;border-radius:13px}
+.marketplace-detail-stats>div{display:flex;justify-content:space-between;gap:8px;padding:8px 0}
+.marketplace-detail-stats span{color:#818995;font-size:11px}
+.marketplace-detail-stats strong{color:#202124;font-size:11px;text-align:right}
+.marketplace-detail-section{padding:16px 0;border-bottom:1px solid #edf0f3}
+.marketplace-detail-section h3{margin:0 0 8px;color:#202124;font-size:15px}
+.marketplace-detail-section p{margin:0;color:#4d5560;font-size:13px;line-height:1.65;white-space:pre-line}
+.marketplace-guide-link{padding:0}
+.marketplace-guide-link .guide-open-button{display:flex;width:100%;justify-content:space-between;padding:15px 0;border:0;background:transparent;color:#2878e8;text-align:left;font-size:14px}
+.marketplace-detail-policy{margin:15px 0;padding:13px;border-radius:12px;background:#f1f2f4}
+.marketplace-detail-policy strong{color:#936d00;font-size:12px}
+.marketplace-detail-policy p{margin:5px 0 0;color:#626872;font-size:11px;line-height:1.55}
+.marketplace-quantity-row{align-items:center}
+.marketplace-quantity-row label{display:grid;gap:7px;color:#626872;font-size:12px}
+.marketplace-quantity-control{display:flex;align-items:center;overflow:hidden;border:1px solid #dfe3e8;border-radius:10px}
+.marketplace-quantity-control button{width:38px;height:37px;border:0;background:#f0f1f3;color:#333;font-size:20px}
+.marketplace-quantity-control button:disabled{color:#aeb4bd}
+.marketplace-quantity-control strong{min-width:40px;text-align:center;color:#202124}
+.marketplace-quantity-row>div{display:grid;gap:4px;text-align:right}
+.marketplace-quantity-row small{color:#8a9099;font-size:10px}
+.marketplace-quantity-row>div strong{color:#ef6900;font-size:18px}
+.marketplace-detail-actions{position:sticky;bottom:-22px;display:grid;grid-template-columns:1fr 2fr;gap:10px;margin:0 -17px -22px;padding:13px 17px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid #e7e9ed;background:rgba(255,255,255,.97)}
+.marketplace-detail-actions .detail-secondary-button,.marketplace-detail-actions .buy-button{min-height:49px;border-radius:11px;font-size:13px}
+.marketplace-detail-actions .buy-button{background:#f36b00}
+.marketplace-detail-actions .detail-secondary-button{border:1px solid #f36b00;background:#fff;color:#ed6800}
+@media(max-width:520px){
+ .marketplace-game-nav{margin-right:-13px;margin-left:-13px}
+ .marketplace-game-heading{padding:17px 14px 10px}
+ .marketplace-game-heading h1{font-size:23px}
+ .marketplace-game-tabs,.marketplace-category-nav{gap:20px;padding-right:14px;padding-left:14px}
+ .marketplace-game-tabs button{font-size:12px}
+ .marketplace-category-nav button{font-size:12px}
+ .product-section{margin-right:-13px;margin-left:-13px;padding:14px 13px 24px}
+ .product-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+ .product-card{padding:0;border-radius:13px}
+ .product-content{padding:10px}
+ .product-card h3{min-height:35px;font-size:12px}
+ .product-bottom strong{font-size:14px}
+ .marketplace-detail-modal{max-height:95dvh}
+ .marketplace-detail-gallery{height:205px}
+ .marketplace-detail-title-row h3{font-size:16px}
+ .marketplace-detail-price{font-size:18px}
+ .marketplace-store-trust{gap:8px}
+ .store-verified{font-size:7px}
+}
