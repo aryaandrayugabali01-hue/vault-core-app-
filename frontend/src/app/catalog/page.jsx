@@ -20,7 +20,7 @@ const TIER_ART = {
   PLATINUM: '/assets/04-tiers/tier-platinum.png'
 };
 const TRUST_ITEMS = [
-  { icon: '/assets/06-icons/icon-wallet.svg', title: 'Pembayaran Telegram Stars', detail: 'Invoice resmi dalam XTR' },
+  { icon: '/assets/06-icons/icon-wallet.svg', title: 'Transaksi via Telegram Mini App', detail: 'Checkout dan invoice resmi Telegram Stars · XTR' },
   { icon: '/assets/06-icons/icon-shield.svg', title: 'Payload terenkripsi', detail: 'Inventaris digital disimpan terenkripsi' },
   { icon: '/assets/06-icons/icon-orders.svg', title: 'Status pesanan', detail: 'Riwayat dan status dapat dipantau' }
 ];
@@ -234,7 +234,7 @@ export default function HomePage() {
 
   async function checkoutCart() {
     const initData=getInitData();
-    if (!initData) { setNotice('Buka VAULT CORE melalui bot Telegram untuk melanjutkan pembayaran.'); return; }
+    if (!initData) { setNotice('Transaksi hanya tersedia di VAULT CORE Telegram Mini App. Buka aplikasi melalui bot Telegram untuk checkout dan pembayaran XTR.'); return; }
     if (!cart.length || buyingId) return;
     setBuyingId('cart');
     setNotice('Memeriksa harga dan stok keranjang di server…');
@@ -255,7 +255,7 @@ export default function HomePage() {
   async function buy(product, quantity = 1) {
     const initData = getInitData();
     if (!initData) {
-      setNotice('Untuk melanjutkan pembayaran, buka VAULT CORE melalui bot Telegram.');
+      setNotice('Transaksi hanya tersedia di VAULT CORE Telegram Mini App. Buka aplikasi melalui bot Telegram untuk checkout dan pembayaran XTR.');
       return;
     }
     setBuyingId(product.id);
@@ -479,15 +479,15 @@ export default function HomePage() {
       </header>
 
       {telegramContext === false && <aside className="browser-access-notice" role="status">
-        <strong>Akses akun melalui Telegram</strong>
-        <span>Halaman ini menampilkan katalog publik. Login akun, riwayat pesanan, checkout XTR, dan Dashboard Owner tersedia setelah VAULT CORE dibuka melalui Telegram Mini App.</span>
+        <strong>Transaksi hanya melalui Telegram Mini App</strong>
+        <span>Website ini hanya untuk melihat katalog dan detail produk. Untuk membuat pesanan, membayar dengan invoice resmi Telegram Stars (XTR), dan memantau pesanan, buka VAULT CORE melalui bot Telegram.</span>
       </aside>}
 
       <section className="marketplace-game-nav" id="home">
         <div className="marketplace-game-heading">
           <span className="eyebrow muted">VAULT CORE · DIGITAL GAME STORE</span>
           <h1>{selectedGame?.label || 'Semua game'}</h1>
-          <p>Pilih jenis produk, buka detail penawaran, lalu lanjutkan ke pembayaran Telegram Stars.</p>
+          <p>Jelajahi produk di katalog. Seluruh checkout, pembayaran XTR, dan pemantauan pesanan dilakukan hanya melalui VAULT CORE Telegram Mini App.</p>
         </div>
         <nav className="marketplace-game-tabs" aria-label="Pilih game">
           <button type="button" className={category === 'ALL' ? 'active' : ''} aria-pressed={category === 'ALL'} onClick={() => { setCategory('ALL'); setTier('ALL'); setMarketplaceCategoryId('ALL'); setAttributeFilters({}); setQuery(''); }}>Semua game</button>
@@ -595,7 +595,7 @@ export default function HomePage() {
             <section className="marketplace-detail-section"><h3>Deskripsi Produk</h3><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
             <section className="marketplace-detail-section"><h3>Ketentuan Produk</h3><p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p></section>
             <section className="marketplace-detail-section marketplace-guide-link"><button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Cara Beli &amp; Tips <span>›</span></button></section>
-            <div className="marketplace-detail-policy"><strong>{selectedProduct.is_purchaseable ? 'Perlindungan transaksi' : 'Status katalog'}</strong><p>{selectedProduct.is_purchaseable ? 'Pembayaran menggunakan invoice Telegram Stars (XTR). Harga dan stok diperiksa ulang oleh server saat checkout. Pemenuhan dimulai setelah Telegram mengonfirmasi pembayaran.' : 'Produk tercatat di katalog VAULT CORE, tetapi belum dapat dibeli karena pemeriksaan CR-05 dan stok komersial belum tersedia.'}</p></div>
+            <div className="marketplace-detail-policy"><strong>{selectedProduct.is_purchaseable ? 'Perlindungan transaksi' : 'Status katalog'}</strong><p>{selectedProduct.is_purchaseable ? 'Seluruh transaksi hanya diproses di VAULT CORE Telegram Mini App menggunakan invoice resmi Telegram Stars (XTR). Harga dan stok diperiksa ulang oleh server. Pesanan diproses setelah Telegram mengonfirmasi pembayaran.' : 'Produk tercatat di katalog VAULT CORE, tetapi belum dapat dibeli karena pemeriksaan CR-05 dan stok komersial belum tersedia.'}</p></div>
             {selectedProduct.is_purchaseable || selectedProduct.is_test ? <div className="detail-buy-row marketplace-quantity-row">
               <label>Jumlah pembelian<div className="marketplace-quantity-control"><button type="button" disabled={detailQuantity<=1} onClick={()=>setDetailQuantity(Math.max(1,detailQuantity-1))}>−</button><strong>{detailQuantity}</strong><button type="button" disabled={detailQuantity>=5} onClick={()=>setDetailQuantity(Math.min(5,detailQuantity+1))}>+</button></div></label>
               <div><small>Subtotal indikatif</small><strong>{(Number(selectedProduct.sale_price_xtr||0)*detailQuantity).toLocaleString('en-US')} XTR</strong></div>
