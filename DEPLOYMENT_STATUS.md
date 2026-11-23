@@ -1,21 +1,19 @@
 # VAULT CORE — Deployment Status
 
-**Updated:** 2026-11-23 (16 commercial SKUs activated, XTR pricing, Owner manual fulfillment)
+**Updated:** 2026-11-23 (production audit fixes deployed, 16 commercial SKUs active, XTR pricing, Owner manual fulfillment)
 
 ## Current production snapshot — 23 November 2026
 
-- Latest production source: `af6516c71e7ee8d0a7745fc9e6ac4567756f3526`.
-- Production deployment: [run 45193828313](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45193828313), **SUCCESS**. API/frontend Workers, Neon health, gateway upstreams, root/www/API domains, storefront artwork, Telegram webhook read-back, and TEST fixture checks passed.
-- Latest CI: [run 45193828516](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45193828516), **SUCCESS**. Backend/core tests, frontend build, asset verification, and API Worker dry-run passed.
-- Neon production read-back: 16 commercial products, all 16 ACTIVE; 16 current Owner-attested APPROVED CR-05 reviews; 16 available commercial inventory slots (exactly one per SKU); 4 TEST-only inventory rows; 17 active marketplace categories; 0 orders; 0 transactions; 0 deliveries.
-- All 16 commercial prices are saved in XTR. Cost price is 0 XTR per SKU per Owner instruction. Reference conversion is Rp375 per XTR with whole-XTR ceiling; total reference is Rp38,359,090 / 102,297 XTR.
-- Each commercial inventory slot uses the explicit `VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:` source marker and stores no customer-facing code or credentials. The API detects this marker, sends a payment acknowledgement after successful Stars payment, and holds delivery at `REVIEW_REQUIRED` for Owner manual fulfillment. Owner must deliver the actual product through the SKU's listed method and then reconcile `DELIVERED`; only then is inventory marked SOLD and the order FULFILLED.
-- Owner's 23 November 2026 declaration is recorded under `VC-OWNER-ATTESTATION-20261123-01`. Owner declared that source, distribution, and transfer requirements are fulfilled and accepts responsibility; supporting records remain in Owner custody and were not uploaded to this task or independently inspected. The database status is internal Owner attestation, not independent verification or a publisher certificate.
-- Dashboard commercial KPIs exclude TEST fixtures, so four TEST inventory rows do not inflate commercial stock or sales.
-- Customer catalog and Owner dashboard both display XTR sale prices; IDR market data is shown as reference. Owner dashboard displays 0 XTR modal rather than “Belum diisi”.
-- Production checkout is enabled for all 16 commercial SKUs at the catalog/order API level. No customer order/payment has yet been recorded; actual paid customer UAT, Owner manual delivery, refund acceptance, IDOR/admin authorization review, backup/restore, and production rate-limit verification remain outstanding.
-- Application remains deployed on the existing `vault-core-web`, `vault-core-api`, and `vault-core-gateway` Workers. No replacement project, repository, Worker, bot, or database was created.
-
+- Latest production source: `8876ea58a945d21b82b0ef00a3cae419d2f2b216`.
+- Production deployment: [run 45199182854](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45199182854), **SUCCESS**. API/frontend Workers, secrets, Neon health, gateway upstreams, root/www/API domains, storefront artwork, Telegram webhook read-back, and TEST fixture checks passed.
+- Latest CI: [run 45199182726](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45199182726), **SUCCESS**. 41/41 backend/core tests passed; frontend production build, asset verification, and API Worker dry-run passed.
+- Neon production read-back (23 November 2026): 16 commercial products, all 16 ACTIVE; 16 current Owner-attested APPROVED CR-05 reviews; 16 available commercial manual-fulfillment slots; 0 reserved commercial slots; 4 TEST-only inventory rows; 17 active marketplace categories; 1 cancelled unpaid Owner test checkout; 0 transactions; 1 revoked delivery.
+- All 16 commercial sale prices remain saved in XTR and cost price is 0 XTR per SKU per Owner instruction. Reference conversion used to establish the price was Rp375 per XTR with whole-XTR ceiling; total reference Rp38,359,090 / 102,297 XTR. The two displayed product attribute keys for conversion reference date and IDR-per-Star rate have been deleted; technical conversion details are filtered from customer-facing specifications.
+- Each commercial inventory slot uses `VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:` and stores no customer-facing code or credentials. After verified Stars payment, the customer receives a payment acknowledgement and the order enters `REVIEW_REQUIRED` for Owner manual fulfillment. Owner delivers the actual product through the SKU's listed method and reconciles `DELIVERED`; only then does inventory become SOLD and the order FULFILLED.
+- The Owner's declaration remains recorded under `VC-OWNER-ATTESTATION-20261123-01`. Supporting source/authorization documents remain Owner-held and were not independently inspected; the database status is internal Owner attestation, not independent verification or a publisher certificate.
+- Production audit fixes: stale Owner-page effect removed; unpaid reservation expiry centralized and invoked on catalog/history/Owner dashboard/product/order/checkout access; customer-facing Store/Owner attribution and stock-count labels removed; internal pricing and XTR-conversion metadata removed from product specification output.
+- The stale unpaid Owner checkout for FF-001 (1,494 XTR) was verified at age 1,034 seconds, with no pre-checkout ID and no transaction. It was cancelled after expiry, its delivery was revoked, and its stock reservation was released. Final read-back confirms 16 AVAILABLE and 0 RESERVED commercial slots.
+- Paid customer UAT, actual Owner manual delivery UAT, refund acceptance, IDOR/admin authorization review, backup/restore, and production rate-limit verification remain outstanding.
 **The detailed sections below are retained as historical deployment evidence. Where older numbers or run IDs conflict with this snapshot, this snapshot is authoritative.**
 ## Connected infrastructure
 
