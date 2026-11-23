@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { pool } from '../db/pool.js';
 import { encryptPayload, assertAllowedDigitalPayload } from '../utils/encryption.js';
 import { validateRightsReviewInput, isRightsReviewUsable, canAddProductInventory } from '../services/rightsReviewService.js';
-import { isSafeProductImageUrl, normalizeProductText } from '../services/productDetailsService.js';
+import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes } from '../services/productDetailsService.js';
 import { validateMarketplaceCategory, normalizeImageGallery } from '../services/marketplaceCategoryService.js';
 import { refundStarPayment } from '../services/telegramApi.js';
 import { deliverPaidOrder, canReconcileDelivery } from '../services/deliveryService.js';
@@ -124,13 +124,14 @@ router.get('/products', async (_req, res) => {
 router.post('/products', async (req, res) => {
   const { sku, gameCategory, tier, name, description = '', fulfillmentType,
     salePriceXtr, costPriceXtr = 0, rightsReviewReference = null,
-    imageUrl = null, customerTerms = '', fulfillmentEta = '', marketplaceCategoryId = null, imageGallery = [] } = req.body ?? {};
+    imageUrl = null, customerTerms = '', fulfillmentEta = '', marketplaceCategoryId = null, imageGallery = [], attributes = {} } = req.body ?? {};
   const normalizedSku = String(sku ?? '').trim().toUpperCase();
   const normalizedImageUrl = imageUrl == null || String(imageUrl).trim() === '' ? null : String(imageUrl).trim();
   const normalizedCategoryId = marketplaceCategoryId == null || marketplaceCategoryId === '' ? null : Number(marketplaceCategoryId);
   const gallery = normalizeImageGallery(imageGallery, normalizedImageUrl);
+  const productAttributes = normalizeProductAttributes(attributes);
   if ((normalizedCategoryId !== null && (!Number.isSafeInteger(normalizedCategoryId) || normalizedCategoryId <= 0))
-      || !gallery.ok
+      || !gallery.ok || !productAttributes.ok
       || !/^[A-Z0-9][A-Z0-9_-]{1,79}$/.test(normalizedSku)
       || !['MLBB','ROBLOX','FREE_FIRE','GENSHIN','OTHER'].includes(gameCategory)
       || !['SILVER','GOLD','PLATINUM','SERVICE'].includes(tier)
@@ -152,11 +153,11 @@ router.post('/products', async (req, res) => {
   try {
     ({ rows } = await pool.query(
       `INSERT INTO products (sku, game_category, tier, name, description, fulfillment_type,
-        sale_price_xtr, cost_price_xtr, rights_review_reference, image_url, customer_terms, fulfillment_eta, marketplace_category_id, image_gallery, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,'DRAFT') RETURNING *`,
+        sale_price_xtr, cost_price_xtr, rights_review_reference, image_url, customer_terms, fulfillment_eta, marketplace_category_id, image_gallery, attributes, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15::jsonb,'DRAFT') RETURNING *`,
       [normalizedSku, gameCategory, tier, String(name).trim(), normalizeProductText(description, 5000),
         fulfillmentType, Number(salePriceXtr), Number(costPriceXtr), rightsReviewReference,
-        normalizedImageUrl, normalizeProductText(customerTerms, 5000), normalizeProductText(fulfillmentEta, 160), normalizedCategoryId, JSON.stringify(gallery.value)]
+        normalizedImageUrl, normalizeProductText(customerTerms, 5000), normalizeProductText(fulfillmentEta, 160), normalizedCategoryId, JSON.stringify(gallery.value), JSON.stringify(productAttributes.value)]
     ));
   } catch (error) {
     if (error.code === '23505') {
@@ -172,14 +173,14 @@ router.patch('/products/:id', async (req, res) => {
   const id = Number(req.params.id);
   const allowed = ['sku','game_category','tier','name','description','fulfillment_type',
     'sale_price_xtr','cost_price_xtr','low_stock_threshold','display_stock_mode',
-    'display_stock_override','status','rights_review_reference','image_url','customer_terms','fulfillment_eta','marketplace_category_id','image_gallery'];
+    'display_stock_override','status','rights_review_reference','image_url','customer_terms','fulfillment_eta','marketplace_category_id','image_gallery','attributes'];
   const mapping = {
     sku:'sku', gameCategory:'game_category', tier:'tier', name:'name', description:'description',
     fulfillmentType:'fulfillment_type', salePriceXtr:'sale_price_xtr', costPriceXtr:'cost_price_xtr',
     lowStockThreshold:'low_stock_threshold', displayStockMode:'display_stock_mode',
     displayStockOverride:'display_stock_override', status:'status', rightsReviewReference:'rights_review_reference',
     imageUrl:'image_url', customerTerms:'customer_terms', fulfillmentEta:'fulfillment_eta',
-    marketplaceCategoryId:'marketplace_category_id', imageGallery:'image_gallery'
+    marketplaceCategoryId:'marketplace_category_id', imageGallery:'image_gallery', attributes:'attributes'
   };
   const pairs = Object.entries(mapping).filter(([key]) => Object.hasOwn(req.body ?? {}, key));
   if (!Number.isSafeInteger(id) || id <= 0 || !pairs.length) return res.status(400).json({ error: 'INVALID_PRODUCT_UPDATE' });
@@ -218,6 +219,10 @@ router.patch('/products/:id', async (req, res) => {
       const gallery = normalizeImageGallery(value, req.body?.imageUrl);
       if (!gallery.ok) return res.status(400).json({error:gallery.error});
       value = JSON.stringify(gallery.value);
+    } else if (key === 'attributes') {
+      const result = normalizeProductAttributes(value);
+      if (!result.ok) return res.status(400).json({ error:result.error });
+      value = JSON.stringify(result.value);
     } else if (key === 'salePriceXtr' || key === 'costPriceXtr' || key === 'lowStockThreshold' || key === 'displayStockOverride') {
       if (value === null && key === 'displayStockOverride') {
         // NULL restores live stock display.
@@ -281,7 +286,7 @@ router.patch('/products/:id', async (req, res) => {
   try {
     await client.query('BEGIN');
     const current = await client.query(
-      'SELECT id,sku,game_category,tier,name,description,customer_terms,fulfillment_type,marketplace_category_id,is_test FROM products WHERE id=$1 FOR UPDATE',
+      'SELECT id,sku,game_category,tier,name,description,customer_terms,fulfillment_type,marketplace_category_id,attributes,is_test FROM products WHERE id=$1 FOR UPDATE',
       [id]
     );
     if (!current.rows[0]) {
@@ -291,7 +296,7 @@ router.patch('/products/:id', async (req, res) => {
     const existing = current.rows[0];
     const reviewRelevantColumns = {
       sku:'sku', gameCategory:'game_category', tier:'tier', marketplaceCategoryId:'marketplace_category_id', name:'name',
-      description:'description', customerTerms:'customer_terms', fulfillmentType:'fulfillment_type'
+      description:'description', customerTerms:'customer_terms', fulfillmentType:'fulfillment_type', attributes:'attributes'
     };
     productReviewReset = pairs.some(([key]) => {
       const column = reviewRelevantColumns[key];
@@ -299,8 +304,10 @@ router.patch('/products/:id', async (req, res) => {
       const nextValue = key === 'sku' ? String(req.body[key] ?? '').trim().toUpperCase()
         : key === 'description' || key === 'customerTerms' ? normalizeProductText(req.body[key], 5000)
         : key === 'marketplaceCategoryId' ? (req.body[key] == null || req.body[key] === '' ? null : Number(req.body[key]))
+        : key === 'attributes' ? JSON.stringify(normalizeProductAttributes(req.body[key]).value)
         : req.body[key];
-      return String(nextValue ?? '') !== String(existing[column] ?? '');
+      const existingValue = key === 'attributes' ? JSON.stringify(normalizeProductAttributes(existing[column]).value) : existing[column];
+      return String(nextValue ?? '') !== String(existingValue ?? '');
     });
     if (productReviewReset && req.body.status === 'ACTIVE') {
       await client.query('ROLLBACK');
@@ -326,7 +333,7 @@ router.patch('/products/:id', async (req, res) => {
         });
       }
     }
-    const assignments = columns.map((column, index) => `${column}=${index + 1}${column === 'image_gallery' ? '::jsonb' : ''}`);
+    const assignments = columns.map((column, index) => `${column}=${index + 1}${['image_gallery','attributes'].includes(column) ? '::jsonb' : ''}`);
     if (productReviewReset && current.rows[0].is_test !== true) {
       assignments.push("current_rights_review_id=NULL");
       assignments.push("status=CASE WHEN status='ACTIVE' THEN 'PAUSED' ELSE status END");

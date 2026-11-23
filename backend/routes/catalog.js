@@ -7,7 +7,7 @@ router.get('/', async (_req, res) => {
   const { rows } = await pool.query(
     `SELECT p.id, p.status, p.sku, p.game_category, p.tier, p.name, p.description,
             p.fulfillment_type, p.sale_price_xtr, p.is_test,
-            p.image_url, p.image_gallery, p.customer_terms, p.fulfillment_eta,
+            p.image_url, p.image_gallery, p.attributes, p.customer_terms, p.fulfillment_eta,
             p.marketplace_category_id, c.slug AS marketplace_category_slug,
             c.name AS marketplace_category_name, c.description AS marketplace_category_description,
             c.icon AS marketplace_category_icon, c.purchase_guide,
