@@ -1,22 +1,20 @@
 # VAULT CORE — Deployment Status
 
-**Updated:** 2026-11-23 (CR-08 marketplace attributes, Mini App startup recovery, and production rollout)
+**Updated:** 2026-11-23 (16 commercial SKUs activated, XTR pricing, Owner manual fulfillment)
 
 ## Current production snapshot — 23 November 2026
 
-- Latest production source: `3495d5cc20f7ae525a7222be3d7739ef3fa686fc`; merged PR #14.
-- Production deployment: [run 45183635248](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45183635248), **SUCCESS**. All production steps passed: API/frontend Workers, Neon health, existing gateway upstreams, root/www/API domain checks, public artwork, Telegram webhook read-back, and encrypted Owner TEST fixture verification.
-- Latest CI: [run 45183023193](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45183023193), **SUCCESS**. Asset validation, backend/core tests, Mini App build, and API Worker dry-run passed.
-- Neon migrations 001–014 are registered. CR-05 migration 011, CR-06 migration 012, marketplace category/guide migration 013, and additive CR-08 migration 014 are applied. Migration 014 SHA-256: `522670f518cb781b323726b4ac4d6d7c043ede859c50a496cc4bae0311e34bdb`.
-- Migration 014 adds Owner-managed `products.attributes` JSONB, a bounded object constraint (maximum 24 key/value pairs), and a GIN index. Existing 16 product rows were preserved with default empty objects; the checksum is registered in `schema_migrations`.
-- Current database facts: 16 products total; 12 commercial SKUs pending review; 0 active commercial SKUs; 0 CR-05 rights reviews; 0 marketplace categories; 0 sellable commercial inventory; 4 TEST inventory rows; 0 orders; 0 transactions; 0 deliveries.
-- No product, category, commercial stock, order, payment, transaction, or delivery data was fabricated. TEST fixtures remain non-commercial and excluded from the public catalog.
-- Marketplace navigation, category/tier/attribute filters, product specifications, Owner attribute editors, and purchase guide/gallery form corrections are deployed. Category filters are sourced from Owner-managed database records, not hard-coded sample tabs.
-- Root Mini App now calls Telegram WebApp `ready()` and `expand()`; dashboard API errors are displayed rather than silently treated as an empty catalog. Existing local VAULT CORE artwork is used instead of external Itemku image-proxy links.
-- CR-05 and CR-06 business rules, Telegram Stars XTR checkout, stock reservation, payment verification, and fulfillment controls were preserved.
-- Production infrastructure checks passed, but manual Telegram Android session/UAT and live customer XTR payment/refund/delivery acceptance remain unverified. The exact runtime cause of the original Android screenshot has not been isolated from a live device session; the missing root-route Telegram readiness signal was a concrete startup defect and has been corrected.
-- Sales readiness remains gated: Owner must create/activate real marketplace categories, complete per-SKU details and CR-05 reviews, add source-bound commercial stock, and complete controlled payment/refund/delivery and security/recovery acceptance.
-- Product ratings and sales totals are not shown unless corresponding source data exists. Binary file/evidence upload remains unavailable while Cloudflare R2 is not enabled; product images currently use HTTPS or existing local `/assets/` paths.
+- Latest production source: `af6516c71e7ee8d0a7745fc9e6ac4567756f3526`.
+- Production deployment: [run 45193828313](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45193828313), **SUCCESS**. API/frontend Workers, Neon health, gateway upstreams, root/www/API domains, storefront artwork, Telegram webhook read-back, and TEST fixture checks passed.
+- Latest CI: [run 45193828516](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45193828516), **SUCCESS**. Backend/core tests, frontend build, asset verification, and API Worker dry-run passed.
+- Neon production read-back: 16 commercial products, all 16 ACTIVE; 16 current Owner-attested APPROVED CR-05 reviews; 16 available commercial inventory slots (exactly one per SKU); 4 TEST-only inventory rows; 17 active marketplace categories; 0 orders; 0 transactions; 0 deliveries.
+- All 16 commercial prices are saved in XTR. Cost price is 0 XTR per SKU per Owner instruction. Reference conversion is Rp375 per XTR with whole-XTR ceiling; total reference is Rp38,359,090 / 102,297 XTR.
+- Each commercial inventory slot uses the explicit `VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:` source marker and stores no customer-facing code or credentials. The API detects this marker, sends a payment acknowledgement after successful Stars payment, and holds delivery at `REVIEW_REQUIRED` for Owner manual fulfillment. Owner must deliver the actual product through the SKU's listed method and then reconcile `DELIVERED`; only then is inventory marked SOLD and the order FULFILLED.
+- Owner's 23 November 2026 declaration is recorded under `VC-OWNER-ATTESTATION-20261123-01`. Owner declared that source, distribution, and transfer requirements are fulfilled and accepts responsibility; supporting records remain in Owner custody and were not uploaded to this task or independently inspected. The database status is internal Owner attestation, not independent verification or a publisher certificate.
+- Dashboard commercial KPIs exclude TEST fixtures, so four TEST inventory rows do not inflate commercial stock or sales.
+- Customer catalog and Owner dashboard both display XTR sale prices; IDR market data is shown as reference. Owner dashboard displays 0 XTR modal rather than “Belum diisi”.
+- Production checkout is enabled for all 16 commercial SKUs at the catalog/order API level. No customer order/payment has yet been recorded; actual paid customer UAT, Owner manual delivery, refund acceptance, IDOR/admin authorization review, backup/restore, and production rate-limit verification remain outstanding.
+- Application remains deployed on the existing `vault-core-web`, `vault-core-api`, and `vault-core-gateway` Workers. No replacement project, repository, Worker, bot, or database was created.
 
 **The detailed sections below are retained as historical deployment evidence. Where older numbers or run IDs conflict with this snapshot, this snapshot is authoritative.**
 ## Connected infrastructure
