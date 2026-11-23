@@ -41,6 +41,13 @@ function formatStock(product) {
   if (typeof product.display_stock === 'number') return product.display_stock > 0 ? 'Tersedia · ' + product.display_stock + ' unit' : 'Stok habis';
   return product.display_stock === 'OUT_OF_STOCK' ? 'Stok habis' : 'Tersedia';
 }
+function formatIdrRange(attributes = {}) {
+  const min = Number(attributes.price_min_idr || 0);
+  const max = Number(attributes.price_max_idr || 0);
+  if (!min || !max) return '';
+  const format = (value) => 'Rp ' + value.toLocaleString('id-ID');
+  return min === max ? format(min) : format(min) + ' – ' + format(max);
+}
 const ORDER_STATUS_LABELS = {
   PENDING_PAYMENT: 'Menunggu pembayaran',
   PAID: 'Pembayaran diterima',
@@ -540,7 +547,7 @@ export default function HomePage() {
                 <div className="product-card-meta">
                   <span className={'tier-label ' + String(product.tier || '').toLowerCase()}>{TIER_LABELS[product.tier] || product.tier} Tier</span>
                   <span className="product-sku">{product.sku}</span>
-                  <span className="stock-label"><span className="stock-dot" />{stockText}</span>
+                  <span className="stock-label"><span className="stock-dot" />{product.catalog_status_label || stockText}</span>
                 </div>
                 {product.is_test && <span className="product-test-badge">CONTOH UJI</span>}
               </div>
@@ -549,10 +556,10 @@ export default function HomePage() {
                 <h3>{product.name}</h3>
                 <p>{product.description}</p>
                 <div className="product-bottom">
-                  <div className="product-price"><small>HARGA</small><strong>{Number(product.sale_price_xtr).toLocaleString('en-US')} XTR</strong></div>
-                  <button className="buy-button" type="button" disabled={buyingId === product.id || activatingId === product.id}
+                  <div className="product-price"><small>{formatIdrRange(product.attributes) ? 'RENTANG HARGA' : 'HARGA'}</small><strong>{formatIdrRange(product.attributes) || (Number(product.sale_price_xtr).toLocaleString('en-US') + ' XTR')}</strong></div>
+                  <button className="buy-button" type="button" disabled={buyingId === product.id || activatingId === product.id || (!product.is_purchaseable && !isDraftTest)}
                     onClick={() => { if (isDraftTest) activateTestProduct(product.id); else { setDetailQuantity(1); setSelectedProduct(product); } }}>
-                    {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : 'Detail & Beli'}
+                    {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : product.is_purchaseable ? 'Detail & Beli' : 'Lihat Detail'}
                   </button>
                 </div>
               </div>
@@ -586,7 +593,7 @@ export default function HomePage() {
             {(Array.isArray(selectedProduct.image_gallery)&&selectedProduct.image_gallery.length?selectedProduct.image_gallery:[selectedProduct.image_url||GAME_ART[selectedProduct.game_category]||GAME_ART.OTHER]).map((src,index)=><img key={src+index} src={src} alt={selectedProduct.name+' '+(index+1)} loading={index?'lazy':'eager'} />)}
           </div>
           <div className="marketplace-detail-body">
-            <div className="marketplace-detail-title-row"><div><span className="detail-category">{selectedProduct.marketplace_category_name || GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</span><h3>{selectedProduct.name}</h3></div><strong className="marketplace-detail-price">{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
+            <div className="marketplace-detail-title-row"><div><span className="detail-category">{selectedProduct.marketplace_category_name || GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</span><h3>{selectedProduct.name}</h3></div><strong className="marketplace-detail-price">{formatIdrRange(selectedProduct.attributes) || (Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US') + ' XTR')}</strong></div>
             <div className="marketplace-store-trust"><div><strong>VAULT CORE Store</strong><small>Produk dikelola oleh Owner VAULT CORE</small></div></div>
             <div className="marketplace-detail-stats">
               <div><span>Stok</span><strong>{formatStock(selectedProduct)}</strong></div>
@@ -598,15 +605,15 @@ export default function HomePage() {
             <section className="marketplace-detail-section"><h3>Deskripsi Produk</h3><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
             <section className="marketplace-detail-section"><h3>Ketentuan Produk</h3><p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p></section>
             <section className="marketplace-detail-section marketplace-guide-link"><button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Cara Beli &amp; Tips <span>›</span></button></section>
-            <div className="marketplace-detail-policy"><strong>Perlindungan transaksi</strong><p>Pembayaran menggunakan invoice Telegram Stars (XTR). Harga dan stok diperiksa ulang oleh server saat checkout. Pemenuhan dimulai setelah Telegram mengonfirmasi pembayaran.</p></div>
-            <div className="detail-buy-row marketplace-quantity-row">
+            <div className="marketplace-detail-policy"><strong>{selectedProduct.is_purchaseable ? 'Perlindungan transaksi' : 'Status katalog'}</strong><p>{selectedProduct.is_purchaseable ? 'Pembayaran menggunakan invoice Telegram Stars (XTR). Harga dan stok diperiksa ulang oleh server saat checkout. Pemenuhan dimulai setelah Telegram mengonfirmasi pembayaran.' : 'Produk sudah tercatat di katalog VAULT CORE. Penawaran komersial menunggu pemeriksaan Owner, penetapan harga transaksi XTR, dan ketersediaan inventaris. Produk ini belum dapat dibeli.'}</p></div>
+            {selectedProduct.is_purchaseable || selectedProduct.is_test ? <div className="detail-buy-row marketplace-quantity-row">
               <label>Jumlah pembelian<div className="marketplace-quantity-control"><button type="button" disabled={detailQuantity<=1} onClick={()=>setDetailQuantity(Math.max(1,detailQuantity-1))}>−</button><strong>{detailQuantity}</strong><button type="button" disabled={detailQuantity>=5} onClick={()=>setDetailQuantity(Math.min(5,detailQuantity+1))}>+</button></div></label>
               <div><small>Subtotal indikatif</small><strong>{(Number(selectedProduct.sale_price_xtr||0)*detailQuantity).toLocaleString('en-US')} XTR</strong></div>
-            </div>
+            </div> : null}
             <div className="marketplace-detail-actions">
-              <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available||selectedProduct.is_test} onClick={()=>addToCart(selectedProduct,detailQuantity)}>+ Keranjang</button>
-              <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || selectedProduct.is_test} onClick={() => { const product = selectedProduct; const quantity=detailQuantity; setSelectedProduct(null); buy(product,quantity); }}>
-                {buyingId === selectedProduct.id ? 'Menyiapkan…' : 'Beli sekarang'}
+              <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available||selectedProduct.is_test||!selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,detailQuantity)}>+ Keranjang</button>
+              <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || selectedProduct.is_test || !selectedProduct.is_purchaseable} onClick={() => { const product = selectedProduct; const quantity=detailQuantity; setSelectedProduct(null); buy(product,quantity); }}>
+                {buyingId === selectedProduct.id ? 'Menyiapkan…' : selectedProduct.is_purchaseable ? 'Beli sekarang' : 'Belum tersedia'}
               </button>
             </div>
           </div>
