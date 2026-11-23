@@ -317,7 +317,7 @@ export default function AdminPage() {
   };
   if (authState !== 'authenticated') return <main className="owner-login-screen">
     <section className="owner-login-card">
-      <a className="brand" href="/"><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a>
+      <a className="brand" href="/" aria-label="VAULT CORE"><img className="brand-logo owner-brand-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /></a>
       <span className="eyebrow muted">OWNER SECURE ACCESS</span>
       <h1>Masuk dengan Telegram</h1>
       <p>Gunakan akun Telegram Owner yang sudah terdaftar. Telegram memverifikasi identitas Anda, lalu VAULT CORE memeriksa izin Owner secara otomatis.</p>
@@ -332,7 +332,7 @@ export default function AdminPage() {
     </section>
   </main>;
   return <main className="admin-shell">
-    <header className="admin-head"><a className="brand" href="/"><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a><div className="admin-head-actions"><span className="admin-pill">PANEL PEMILIK</span><button type="button" className="admin-logout" onClick={logoutOwner}>Keluar</button></div></header>
+    <header className="admin-head"><a className="brand" href="/" aria-label="VAULT CORE"><img className="brand-logo owner-brand-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /></a><div className="admin-head-actions"><span className="admin-pill">PANEL PEMILIK</span><button type="button" className="admin-logout" onClick={logoutOwner}>Keluar</button></div></header>
     <section className="admin-title"><span className="eyebrow muted">PANEL KONTROL / PEMILIK</span><h1>Dashboard pemilik</h1><p>Kelola katalog, stok, harga, pesanan, dan laporan usaha dalam XTR.</p></section>
     {notice && <div className="admin-notice">{notice}</div>}
     {stats && <section className="admin-stats">
