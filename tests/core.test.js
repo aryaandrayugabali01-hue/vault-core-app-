@@ -25,6 +25,15 @@ test('Owner dashboard has no stale product-form effect references', () => {
   assert.doesNotMatch(ownerPage, /\b(?:skuManual|setForm|suggestedSku)\b/);
 });
 
+test('public catalog declares Telegram Mini App as the only transaction channel', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  assert.match(page, /Seluruh checkout, pembayaran XTR, dan pemantauan pesanan dilakukan hanya melalui VAULT CORE Telegram Mini App/);
+  assert.match(page, /Transaksi hanya tersedia di VAULT CORE Telegram Mini App/);
+  assert.match(page, /invoice resmi Telegram Stars \(XTR\)/);
+  assert.doesNotMatch(page, /Rekber|Escrow|transfer bank|direct transfer/i);
+  assert.match(page, /if \(!initData\)/);
+});
+
 test('expired pending orders are atomically cancelled, unreserved, and hidden from stock counts', async () => {
   let statement = '';
   const db = {
