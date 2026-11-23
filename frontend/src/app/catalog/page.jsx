@@ -474,8 +474,8 @@ export default function HomePage() {
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari game, SKU, atau produk…" aria-label="Cari game, SKU, atau produk" />
           {query && <button className="clear-search" type="button" onClick={() => setQuery('')} aria-label="Hapus pencarian">×</button>}
         </label>
-        <button className="top-cart-button" type="button" onClick={()=>setCartOpen(true)} aria-label={'Buka keranjang, '+cartCount+' item'}><AppIcon name="orders" /><span>Keranjang</span><b>{cartCount}</b></button>
-        <button className="top-profile-button" type="button" onClick={openProfile} aria-label="Buka profil"><AppIcon name="profile" /><span>Profil</span></button>
+        {telegramContext && <><button className="top-cart-button" type="button" onClick={()=>setCartOpen(true)} aria-label={'Buka keranjang, '+cartCount+' item'}><AppIcon name="orders" /><span>Keranjang</span><b>{cartCount}</b></button>
+        <button className="top-profile-button" type="button" onClick={openProfile} aria-label="Buka profil"><AppIcon name="profile" /><span>Profil</span></button></>}
       </header>
 
       {telegramContext === false && <aside className="browser-access-notice" role="status">
@@ -568,12 +568,12 @@ export default function HomePage() {
       </section>
       <footer className="footer"><a className="brand" href="/" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a><small>© {new Date().getFullYear()} VAULT CORE. Katalog produk digital dan layanan gaming.</small></footer>
 
-      <nav className="bottom-nav" aria-label="Navigasi utama">
+      {telegramContext && <nav className="bottom-nav" aria-label="Navigasi utama">
         <button type="button" className="nav-item" onClick={() => window.location.assign('/')}><AppIcon name="home" /><span>Dashboard</span></button>
         <button type="button" className={'nav-item ' + (activeTab === 'categories' ? 'active' : '')} aria-current={activeTab === 'categories' ? 'page' : undefined} onClick={() => navigate('categories')}><AppIcon name="categories" /><span>Katalog</span></button>
         <button type="button" className={'nav-item ' + (activeTab === 'orders' ? 'active' : '')} aria-current={activeTab === 'orders' ? 'page' : undefined} onClick={() => navigate('orders')}><AppIcon name="orders" /><span>Pesanan</span></button>
         <button type="button" className={'nav-item ' + (activeTab === 'profile' ? 'active' : '')} aria-current={activeTab === 'profile' ? 'page' : undefined} onClick={() => navigate('profile')}><AppIcon name="profile" /><span>Profil</span></button>
-      </nav>
+      </nav>}
 
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Tutup">×</button></div>}
 
@@ -601,9 +601,9 @@ export default function HomePage() {
               <div><small>Subtotal indikatif</small><strong>{(Number(selectedProduct.sale_price_xtr||0)*detailQuantity).toLocaleString('en-US')} XTR</strong></div>
             </div> : null}
             <div className="marketplace-detail-actions">
-              <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available||selectedProduct.is_test||!selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,detailQuantity)}>+ Keranjang</button>
+              {telegramContext && <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available||selectedProduct.is_test||!selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,detailQuantity)}>+ Keranjang</button>}
               <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || selectedProduct.is_test || !selectedProduct.is_purchaseable} onClick={() => { const product = selectedProduct; const quantity=detailQuantity; setSelectedProduct(null); buy(product,quantity); }}>
-                {buyingId === selectedProduct.id ? 'Menyiapkan…' : selectedProduct.is_purchaseable ? 'Beli sekarang' : 'Belum tersedia'}
+                {buyingId === selectedProduct.id ? 'Menyiapkan…' : !telegramContext ? 'Lanjutkan di Telegram' : selectedProduct.is_purchaseable ? 'Beli sekarang' : 'Belum tersedia'}
               </button>
             </div>
           </div>
