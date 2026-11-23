@@ -6,11 +6,12 @@ import { getCustomerVisibleProductAttributes } from '../../lib/product-attribute
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const GAME_ORDER = ['MLBB','ROBLOX','FREE_FIRE','GENSHIN','OTHER'];
+// Original game logo asset URLs referenced by the supplied Itemku homepage ZIP.
 const GAME_ART = {
-  MLBB: '/assets/03-categories/category-mlbb.png',
-  ROBLOX: '/assets/03-categories/category-roblox.png',
-  FREE_FIRE: '/assets/03-categories/category-free-fire.png',
-  GENSHIN: '/assets/03-categories/category-genshin.png',
+  MLBB: 'https://d1x91p7vw3vuq8.cloudfront.net/game/2024109/rcks2r0xntbibkh7gf72p.png',
+  ROBLOX: 'https://d1x91p7vw3vuq8.cloudfront.net/game/2025124/vhyvvmjoekra0kyu3a2af4.svg',
+  FREE_FIRE: 'https://d1x91p7vw3vuq8.cloudfront.net/game/2024711/93cu2pbsceeiior5v9yc2q.png',
+  GENSHIN: 'https://d1x91p7vw3vuq8.cloudfront.net/game/2025118/z9t30wkd81lxiwmaio40v.webp',
   OTHER: '/assets/03-categories/category-other.png'
 };
 const TIER_ART = {
@@ -533,7 +534,7 @@ export default function HomePage() {
             return <article className="product-card" key={product.id}>
               <div className="product-card-head">
                 <div className={'product-art ' + (product.image_url ? 'product-art-photo' : 'product-art-brand') + ' art-' + game.toLowerCase()}>
-                  <img src={product.image_url || GAME_ART[game] || GAME_ART.OTHER} alt="" loading="lazy" />
+                  <img className={product.image_url ? "product-photo-image" : "game-category-logo"} src={product.image_url || GAME_ART[game] || GAME_ART.OTHER} alt={product.image_url ? product.name : (GAME_LABELS[game] || "Game") + " logo"} loading="lazy" />
                 </div>
                 <div className="product-card-meta">
                   <span className={'tier-label ' + String(product.tier || '').toLowerCase()}>{product.tier === 'SERVICE' ? 'Katalog' : (TIER_LABELS[product.tier] || product.tier) + ' Tier'}</span>
@@ -657,7 +658,7 @@ export default function HomePage() {
           <div className="modal-head"><div><span className="eyebrow muted">RINGKASAN PESANAN</span><h2 id="cart-title">Keranjang ({cartCount})</h2></div><button className="icon-button" type="button" onClick={()=>setCartOpen(false)} aria-label="Tutup keranjang">×</button></div>
           {cartLines.length ? <div className="cart-lines">
             {cartLines.map((line)=><article className="cart-line" key={line.productId}>
-              <img src={line.product.image_url||GAME_ART[line.product.game_category]||GAME_ART.OTHER} alt="" />
+              <img className={line.product.image_url ? "cart-product-photo" : "cart-game-logo"} src={line.product.image_url||GAME_ART[line.product.game_category]||GAME_ART.OTHER} alt="" />
               <div className="cart-line-copy"><strong>{line.product.name}</strong><small>{line.product.marketplace_category_name||GAME_LABELS[line.product.game_category]||line.product.game_category}</small>
                 <div className="cart-line-controls"><button type="button" onClick={()=>updateCartQuantity(line.productId,line.quantity-1)} disabled={line.quantity<=1}>−</button><span>{line.quantity}</span><button type="button" onClick={()=>updateCartQuantity(line.productId,line.quantity+1)} disabled={line.quantity>=5}>+</button><button className="cart-remove" type="button" onClick={()=>removeCartItem(line.productId)}>Hapus</button></div>
               </div>
