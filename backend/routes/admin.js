@@ -9,7 +9,7 @@ import { deliverPaidOrder, canReconcileDelivery } from '../services/deliveryServ
 const router = Router();
 
 router.get('/dashboard', async (_req, res) => {
-  const [sales, inventory, orders, expenses] = await Promise.all([
+  const [sales, inventory, orders, expenses, catalog] = await Promise.all([
     pool.query(`SELECT COUNT(*)::int AS paid_orders, COALESCE(SUM(total_xtr),0)::bigint AS gross_xtr,
       COALESCE(SUM(total_cost_xtr),0)::bigint AS cost_xtr
       FROM orders WHERE status IN ('PAID','FULFILLING','FULFILLED','REFUND_PENDING')`),
@@ -19,12 +19,18 @@ router.get('/dashboard', async (_req, res) => {
     pool.query(`SELECT COUNT(*) FILTER (WHERE status='PENDING_PAYMENT')::int AS pending,
       COUNT(*) FILTER (WHERE status='FULFILLED')::int AS fulfilled,
       COUNT(*) FILTER (WHERE status='REFUND_PENDING')::int AS refund_pending FROM orders`),
-    pool.query(`SELECT COALESCE(SUM(amount_xtr),0)::bigint AS expenses_xtr FROM operating_expenses`)
+    pool.query(`SELECT COALESCE(SUM(amount_xtr),0)::bigint AS expenses_xtr FROM operating_expenses`),
+    pool.query(`SELECT COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE)::int AS total_products,
+      COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='ACTIVE')::int AS active_products,
+      COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='PENDING_REVIEW')::int AS pending_review_products,
+      COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status IN ('DRAFT','PAUSED'))::int AS paused_or_draft_products
+      FROM products`)
   ]);
   const expensesXtr = Number(expenses.rows[0].expenses_xtr);
   const grossXtr = Number(sales.rows[0].gross_xtr);
   const costXtr = Number(sales.rows[0].cost_xtr);
-  res.json({ sales: sales.rows[0], inventory: inventory.rows[0], orders: orders.rows[0], expensesXtr,
+  res.json({ sales: sales.rows[0], inventory: inventory.rows[0], orders: orders.rows[0],
+    catalog: catalog.rows[0], expensesXtr,
     netProfitXtr: grossXtr - costXtr - expensesXtr, grossProfitXtr: grossXtr - costXtr });
 });
 
