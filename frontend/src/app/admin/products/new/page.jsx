@@ -97,7 +97,7 @@ export default function NewProductPage() {
         ...form,
         sku:String(form.sku).trim().toUpperCase(),
         marketplaceCategoryId:form.marketplaceCategoryId || null,
-        imageGallery:String(form.imageGalleryText || '').split(/\\r?\\n/).map((value)=>value.trim()).filter(Boolean),
+        imageGallery:String(form.imageGalleryText || '').split(/\r?\n/).map((value)=>value.trim()).filter(Boolean),
         salePriceXtr:Number(form.salePriceXtr),
         costPriceXtr:Number(form.costPriceXtr)
       };
@@ -210,7 +210,7 @@ export default function NewProductPage() {
         <label className="span-2">Deskripsi produk<textarea rows="4" value={form.description} onChange={(e)=>change('description',e.target.value)} placeholder="Jelaskan isi produk, manfaat, ketentuan, dan cara pemenuhan." /></label>
         <label>Metode pemenuhan<select value={form.fulfillmentType} onChange={(e)=>change('fulfillmentType',e.target.value)}>{FULFILLMENT.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
         <label className="span-2">URL gambar utama <small className="field-hint">HTTPS publik atau file lokal /assets/</small><input type="text" value={form.imageUrl} onChange={(e)=>change('imageUrl',e.target.value)} placeholder="https://.../produk.webp" /></label>
-        <label className="span-2">Galeri gambar, satu URL per baris<textarea rows="3" value={form.imageGalleryText} onChange={(e)=>change('imageGalleryText',e.target.value)} placeholder={'https://cdn.../gambar-1.webp\\nhttps://cdn.../gambar-2.webp'} /></label>
+        <label className="span-2">Galeri gambar, satu URL per baris<textarea rows="3" value={form.imageGalleryText} onChange={(e)=>change('imageGalleryText',e.target.value)} placeholder={'https://cdn.../gambar-1.webp\nhttps://cdn.../gambar-2.webp'} /></label>
         <label className="span-2">Ketentuan produk untuk pelanggan<textarea rows="3" maxLength="5000" value={form.customerTerms} onChange={(e)=>change('customerTerms',e.target.value)} placeholder="Isi paket, syarat penggunaan, wilayah, masa berlaku, dan batasan produk." /></label>
         <label className="span-2">Estimasi waktu pemenuhan<input maxLength="160" value={form.fulfillmentEta} onChange={(e)=>change('fulfillmentEta',e.target.value)} placeholder="Contoh: 5–15 menit setelah pembayaran terverifikasi" /></label>
         <label>Harga jual (XTR)<input required type="number" min="1" step="1" value={form.salePriceXtr} onChange={(e)=>change('salePriceXtr',e.target.value)} /></label>
