@@ -13,7 +13,7 @@
 - Gateway `WEB_ORIGIN` and `API_ORIGIN` secrets are installed.
 - Custom domains `vaultcore.biz.id`, `www.vaultcore.biz.id`, and `api.vaultcore.biz.id` are attached to the existing `vault-core-gateway`; public DNS/TLS, API health, and gateway-origin checks passed.
 - Telegram webhook was configured to `https://api.vaultcore.biz.id/api/telegram/webhook`; `getWebhookInfo` read-back passed.
-- Neon catalog import `008_catalog_sku_import.sql` completed: 12 commercial SKUs are present across MLBB, Roblox, Free Fire, and Genshin Impact. All 12 remain `PENDING_REVIEW`; fulfillment type and descriptions are intentionally unset because the source catalog did not provide them. No sellable inventory was added, so none of these products is public or checkout-eligible. Existing internal test fixtures remain separate (`is_test=true`).
+- Neon catalog import `015_owner_game_catalog_import.sql` completed: 16 Owner-provided listings are present across MLBB, Roblox, Free Fire, and Genshin Impact. Their source descriptions, fulfillment methods, buyer terms, IDR price ranges, category guides, and five-step transaction SOP are stored. All 16 remain `PENDING_REVIEW`, with zero commercial stock and no final XTR checkout price; they are public catalog previews only and cannot be purchased. The four internal test fixtures remain separate (`is_test=true`), with one active fixture at a time and a real 1 XTR Telegram Stars test invoice.
 - The production deployment workflow supports manual `workflow_dispatch` and a restricted `main` push trigger for changes to the API Worker entrypoint or deployment workflow. Keep the five repository secrets current.
 
 ## Repository secrets required
