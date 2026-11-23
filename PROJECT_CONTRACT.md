@@ -1309,3 +1309,42 @@ Uji checkout tetap memakai empat fixture internal `TEST ONLY`, terpisah dari 16 
 - Harga rentang IDR ditampilkan tanpa menganggapnya sebagai harga checkout XTR.
 - Semua listing tetap `PENDING_REVIEW` dengan stok komersial nol.
 - Fixture uji tetap terpisah dari listing komersial.
+
+
+# 31. Addendum CR-09 — Harga XTR, modal Owner, dan checkout komersial
+
+**Tanggal:** 23 November 2026  
+**Dasar instruksi:** Owner secara eksplisit menetapkan modal 0 XTR, menyatakan persyaratan sumber/hak distribusi/transfer terpenuhi, dan menegaskan tanggung jawab sumber serta hak distribusi berada pada Owner.  
+**Implementasi:** 16 SKU komersial pada daftar katalog produksi.
+
+## 31.1 Persetujuan internal Owner
+
+- Keenam belas SKU memiliki catatan pemeriksaan CR-05 `APPROVED`, `owner_attested=true`, reviewer Owner ID Telegram yang terdaftar, timestamp server, masa review sampai 23 November 2027, dan event append-only.
+- Referensi deklarasi Owner: `VC-OWNER-ATTESTATION-20261123-01`.
+- Catatan menyatakan dokumen sumber/otorisasi pendukung berada dalam arsip Owner dan tidak diserahkan pada sesi implementasi. Dengan demikian status adalah persetujuan internal berbasis attestation Owner, bukan verifikasi independen atau sertifikat dari penerbit.
+- Referensi Terms resmi penerbit dicatat per platform. Ketentuan penerbit tetap berlaku dan tidak diubah oleh persetujuan internal Owner.
+
+## 31.2 Modal dan harga checkout
+
+- Modal `cost_price_xtr` untuk seluruh 16 SKU ditetapkan Owner sebesar **0 XTR**.
+- Harga jual `sale_price_xtr` ditetapkan dari harga pasar IDR dalam workbook menggunakan referensi **Rp375 per XTR**, dibulatkan ke atas ke bilangan XTR bulat.
+- Jumlah referensi katalog: Rp38.359.090 atau 102.297 XTR untuk 16 listing.
+- Referensi konversi hanya untuk penetapan harga katalog; harga konsumen aktual Telegram dapat berubah menurut platform, wilayah, pajak, atau penyedia pembayaran.
+
+## 31.3 Checkout dan persediaan
+
+- Seluruh 16 SKU berstatus `ACTIVE` dengan tepat satu unit stok tersedia per SKU dan referensi sumber yang terhubung ke pemeriksaan hak saat ini.
+- Slot `OWNER_MANUAL_FULFILLMENT` adalah kapasitas pemenuhan yang disediakan Owner, bukan kode redeem atau kredensial dummy.
+- Setelah Telegram mengonfirmasi pembayaran XTR, aplikasi mengirimkan acknowledgement dan menahan delivery pada `REVIEW_REQUIRED`.
+- Owner menyerahkan produk aktual melalui metode yang tercantum untuk SKU, kemudian mengonfirmasi status `DELIVERED` di Owner Console. Setelah rekonsiliasi, inventaris menjadi `SOLD` dan order menjadi `FULFILLED`.
+- Jika produk tidak dapat diserahkan, Owner menggunakan alur refund Stars yang tersedia atau menahan order untuk rekonsiliasi.
+- Dashboard komersial mengecualikan fixture TEST sehingga metrik persediaan/penjualan komersial tidak tercampur dengan empat stok uji.
+
+## 31.4 Status penerimaan
+
+- 16 SKU aktif dan dapat membuat invoice Telegram Stars XTR.
+- 16/16 slot stok tersedia, satu per SKU.
+- Modal 0 XTR pada seluruh SKU.
+- 17 kategori marketplace aktif.
+- Pada saat addendum ini dicatat, belum ada order, transaksi, atau delivery pelanggan produksi; uji pembayaran pelanggan dan pengiriman manual aktual masih perlu dilakukan.
+
