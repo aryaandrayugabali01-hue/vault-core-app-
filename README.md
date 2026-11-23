@@ -4,7 +4,7 @@ Single-vendor Telegram Mini App store for transferable digital products, voucher
 
 ## Source of truth
 
-Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current contract revision: **v1.5 (CR-05)**. See Section 29 for Owner authority over the internal product lifecycle, structured rights-review records, inventory sourcing, and fulfillment. Section 28's external rights and platform constraints remain applicable. Owner approval was recorded in writing through the project conversation on 21 November 2026; see Section 26.6. Formal legal name/e-signature certificate details are not recorded.
+Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current baseline: **Project Contract v1.5 (CR-05), supplemented by Addendum CR-09**. See Section 29 for Owner authority over the internal product lifecycle, structured rights-review records, inventory sourcing, and fulfillment. Section 28's external rights and platform constraints remain applicable. Owner approval was recorded in writing through the project conversation on 21 November 2026; see Section 26.6. Formal legal name/e-signature certificate details are not recorded.
 
 ## Project documents
 
@@ -125,11 +125,13 @@ Telegram XTR invoice creation and pre-checkout protections are enabled in produc
 - Production Telegram webhook: https://api.vaultcore.biz.id/api/telegram/webhook; configuration and getWebhookInfo read-back passed in deployment run 45056388433.
 - Latest confirmed production source: b3dc38a37b8ed7df44dc6ad7e2812d2e533c1e70; run 45058882018, SUCCESS.
 - Neon migrations 001–012 are registered. Migration 012 is additive and does not alter existing SKU prices, statuses, or inventory.
-## Remaining launch gates
+## Remaining production acceptance gates
 
-1. Owner completes accurate details for each intended commercial SKU, records the actual source/authorization basis and official terms where applicable, attests the review, and adds encrypted inventory with a valid source reference. No product is activated automatically.
-2. Run a controlled end-to-end acceptance with Owner/customer accounts: Mini App authentication, catalog, order, Telegram XTR invoice, pre-checkout validation, successful-payment verification, exactly-once delivery, refund/recovery, and support.
+1. Run a controlled end-to-end acceptance with separate Owner and customer accounts: Telegram authentication, public catalog, single-item and cart checkout, XTR invoice, pre-checkout validation, successful-payment verification, payment acknowledgement, and Owner manual fulfillment reconciliation.
+2. Verify refund/recovery using a controlled paid test order, including Telegram refund confirmation, database ledger finalization, and safe handling of ambiguous outcomes.
 3. Complete IDOR/admin authorization review, backup/restore test, production rate-limit review, and record Owner UAT plus explicit release approval.
+
+The 16 imported commercial SKUs are already ACTIVE with current Owner-attested reviews and one available manual-fulfillment capacity slot each. Their supporting rights/source documents remain Owner-held and have not been independently inspected in this implementation session. TEST fixtures remain separate from commercial stock.
 
 Binary evidence/image uploads remain unavailable while R2 is disabled; use valid document references and public HTTPS or existing /assets/ image paths.
 ## Continuous integration
