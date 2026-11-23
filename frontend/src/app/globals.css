@@ -1120,11 +1120,6 @@ gap:10px;padding:24px
   .marketplace-detail-actions{grid-template-columns:1fr 1.25fr}
 }
 
-/* Owner catalog preview and IDR range presentation */
-.product-card .stock-label{color:#a9b5c8}
-.product-card .product-price strong{font-size:clamp(14px,3.2vw,17px);line-height:1.35}
-.product-card .product-price small{color:#8d9bb0}
-
 /* Premium dashboard uses the same local visual library as the catalog. */
 .dashboard-shell{width:min(100%,1120px);min-height:100vh;margin:0 auto;padding:0 22px calc(105px + env(safe-area-inset-bottom,0px));color:#f7f7f7}
 .dashboard-topbar{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08)}
