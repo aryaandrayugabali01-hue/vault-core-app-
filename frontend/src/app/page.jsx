@@ -2,10 +2,10 @@
 import {useEffect,useState} from 'react';
 const API=process.env.NEXT_PUBLIC_API_BASE_URL||'';
 const GAMES=[
-{id:'MLBB',name:'Mobile Legends',mark:'⚔',image:'/assets/03-categories/category-mlbb.png',desc:'Akun, top up, skin, dan layanan'},
-{id:'ROBLOX',name:'Roblox',mark:'R',image:'/assets/03-categories/category-roblox.png',desc:'Robux, akun, dan item pilihan'},
-{id:'FREE_FIRE',name:'Free Fire',mark:'◎',image:'/assets/03-categories/category-free-fire.png',desc:'Akun, diamond, dan item game'},
-{id:'GENSHIN',name:'Genshin Impact',mark:'✧',image:'/assets/03-categories/category-genshin.png',desc:'Akun, crystal, dan layanan'}
+{id:'MLBB',name:'Mobile Legends',mark:'⚔',image:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024109%2Frcks2r0xntbibkh7gf72p.png&w=148&q=75',desc:'Akun, top up, skin, dan layanan'},
+{id:'ROBLOX',name:'Roblox',mark:'R',image:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025124%2Fvhyvvmjoekra0kyu3a2af4.svg&w=148&q=75',desc:'Robux, akun, dan item pilihan'},
+{id:'FREE_FIRE',name:'Free Fire',mark:'◎',image:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024711%2F93cu2pbsceeiior5v9yc2q.png&w=148&q=75',desc:'Akun, diamond, dan item game'},
+{id:'GENSHIN',name:'Genshin Impact',mark:'✧',image:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025118%2Fz9t30wkd81lxiwmaio40v.webp&w=148&q=75',desc:'Akun, crystal, dan layanan'}
 ];
 export default function DashboardPage(){
 const [products,setProducts]=useState([]),[categories,setCategories]=useState([]),[loading,setLoading]=useState(true);

@@ -1081,3 +1081,14 @@ gap:10px;padding:24px
 .dashboard-bottom-nav{position:fixed;z-index:50;right:0;bottom:0;left:0;display:flex;justify-content:center;gap:clamp(24px,8vw,80px);padding:11px 14px calc(11px + env(safe-area-inset-bottom,0px));border-top:1px solid rgba(255,255,255,.09);background:rgba(15,18,25,.94);backdrop-filter:blur(18px)}.dashboard-bottom-nav a{display:grid;justify-items:center;gap:4px;min-width:55px;color:#8290a4;text-decoration:none;font-size:18px}.dashboard-bottom-nav a span{font-size:9px;font-weight:750}.dashboard-bottom-nav a.active{color:#78e2b7}
 @media(max-width:760px){.dashboard-shell{padding-right:15px;padding-left:15px}.dashboard-topbar{height:65px}.dashboard-hero{grid-template-columns:1fr;gap:0;min-height:0;margin:17px 0 29px;padding:24px 21px 12px;border-radius:21px}.dashboard-hero h1{max-width:460px;font-size:clamp(32px,9vw,43px)}.dashboard-hero p{font-size:11px}.dashboard-hero-art{height:175px;margin-top:4px}.dashboard-hero-art img{max-height:185px;max-width:310px}.dashboard-overview{grid-template-columns:1fr;gap:14px;margin-bottom:30px}.dashboard-stat-grid>div{padding:11px}.dashboard-stat-grid strong{font-size:19px}.dashboard-game-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.dashboard-game-art{height:105px}.dashboard-game-copy{padding:11px}.dashboard-game-copy strong{font-size:11px}.dashboard-featured-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.dashboard-featured-card>img{height:100px}.dashboard-trust{grid-template-columns:1fr;gap:8px;margin:30px 0 22px}.dashboard-footer{padding-bottom:8px}}
 @media(max-width:390px){.dashboard-stat-grid{gap:6px}.dashboard-stat-grid>div{padding:9px}.dashboard-stat-grid span{font-size:8px}.dashboard-stat-grid small{font-size:7px}.dashboard-game-art{height:91px}}
+
+/* Itemku reference assets and category/product presentation */
+.game-tab-icon{width:25px;height:25px;object-fit:contain;vertical-align:middle;margin-right:8px;border-radius:7px;background:#fff;padding:2px}
+.marketplace-game-tabs button{display:inline-flex;align-items:center;gap:1px}
+.marketplace-game-tabs button.active .game-tab-icon{box-shadow:0 0 0 2px rgba(44,119,210,.16)}
+.dashboard-game-art{display:grid;place-items:center;background:linear-gradient(145deg,#f5f7fa,#e8edf4)}
+.dashboard-game-art img{width:100%;height:100%;padding:18px;object-fit:contain;opacity:1}
+.dashboard-game-art span{background:#202124;color:#fff}
+.product-art img{object-fit:cover}
+.marketplace-game-nav{border-radius:0 0 14px 14px}
+@media(min-width:960px){.marketplace-game-nav{margin-right:-24px;margin-left:-24px}.marketplace-game-heading,.marketplace-game-tabs,.marketplace-category-nav{padding-right:24px;padding-left:24px}}
