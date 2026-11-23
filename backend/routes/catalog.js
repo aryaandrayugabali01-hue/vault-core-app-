@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
 import { resolveDisplayStock } from '../services/catalogService.js';
+import { releaseExpiredPendingOrders } from '../services/reservationService.js';
 const router = Router();
 
 router.get('/', async (_req, res) => {
+  await releaseExpiredPendingOrders();
   const { rows } = await pool.query(
     `SELECT p.id, p.status, p.sku, p.game_category, p.tier, p.name, p.description,
             p.fulfillment_type, p.sale_price_xtr, p.is_test,
