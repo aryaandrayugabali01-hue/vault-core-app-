@@ -8,7 +8,7 @@ import { validateRightsReviewInput, isRightsReviewUsable, canAddProductInventory
 import { sendStarsInvoice, refundStarPayment, telegramCall } from '../backend/services/telegramApi.js';
 import { sanitizeSuccessfulPaymentUpdate } from '../backend/utils/paymentAudit.js';
 import { createDatabaseAdapter } from '../backend/db/pool.js';
-import { canReconcileDelivery } from '../backend/services/deliveryService.js';
+import { canReconcileDelivery, isOwnerManualFulfillmentSource } from '../backend/services/deliveryService.js';
 import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
 import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } from '../backend/middleware/ownerSession.js';
 import { splitInventoryPayloads } from '../frontend/src/lib/inventory.js';
@@ -112,6 +112,12 @@ test('rate limiter skips malformed Cloudflare IP metadata and uses a valid fallb
     }),
     'ip:198.51.100.22'
   );
+});
+
+test('owner manual fulfillment slots are recognized only by their explicit source marker', () => {
+  assert.equal(isOwnerManualFulfillmentSource('VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:OWNER_ATTESTED'), true);
+  assert.equal(isOwnerManualFulfillmentSource('ordinary vendor invoice reference'), false);
+  assert.equal(isOwnerManualFulfillmentSource(null), false);
 });
 
 test('manual delivery reconciliation is blocked for refund and terminal order states', () => {
