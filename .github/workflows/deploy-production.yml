@@ -71,7 +71,7 @@ jobs:
           test -s "$public_dir/04-tiers/tier-platinum.png"
           cat "$public_dir/README.md"
           cat "$public_dir/asset-manifest.json"
-      - name: Verify every CSS asset URL resolves
+      - name: Verify all storefront logos and image assets resolve
         shell: bash
         run: |
           set -euo pipefail
@@ -80,6 +80,8 @@ jobs:
           const sources = [
             'frontend/src/app/globals.css',
             'frontend/src/app/page.jsx',
+            'frontend/src/app/catalog/page.jsx',
+            'frontend/src/app/admin/page.jsx',
             'frontend/src/app/layout.jsx'
           ].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
           const paths = [...sources.matchAll(/\/assets\/([A-Za-z0-9_./-]+)/g)]
@@ -103,11 +105,30 @@ jobs:
           mkdir -p /tmp/vault-core-asset-library frontend/public/assets
           unzip -q "$archive" -d /tmp/vault-core-asset-library
           source_dir="/tmp/vault-core-asset-library/VAULT_CORE_ASSETS"
-          test -s "$source_dir/02-hero/hero-vaultcore-loop.webp"
-          test -s "$source_dir/03-categories/category-mlbb.png"
+          required_assets=(
+            "01-brand/vaultcore-horizontal.svg"
+            "01-brand/favicon.svg"
+            "01-brand/favicon.png"
+            "01-brand/pwa-icon-192.png"
+            "02-hero/hero-vaultcore-loop.webp"
+            "03-categories/category-mlbb.png"
+            "03-categories/category-roblox.png"
+            "03-categories/category-free-fire.png"
+            "03-categories/category-genshin.png"
+            "03-categories/category-other.png"
+            "06-icons/icon-wallet.svg"
+            "06-icons/icon-shield.svg"
+            "06-icons/icon-orders.svg"
+            "09-social/og-cover-1200x630.jpg"
+          )
+          for asset in "${required_assets[@]}"; do
+            test -s "$source_dir/$asset" || { echo "::error::Missing required asset: $asset"; exit 1; }
+          done
           cp -a "$source_dir/." frontend/public/assets/
-          test -s frontend/public/assets/02-hero/hero-vaultcore-loop.webp
-          echo "VAULT CORE visual assets extracted and verified for production build."
+          for asset in "${required_assets[@]}"; do
+            test -s "frontend/public/assets/$asset" || { echo "::error::Asset copy failed: $asset"; exit 1; }
+          done
+          echo "Brand logo, game category images, trust icons, favicon, PWA and social cover extracted and verified."
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
