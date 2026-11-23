@@ -17,7 +17,6 @@ const TRUST_ITEMS = [
   { icon: '/assets/06-icons/icon-orders.svg', title: 'Status pesanan', detail: 'Riwayat dan status dapat dipantau' }
 ];
 
-const GAME_LABELS = { MLBB: 'MLBB', ROBLOX: 'Roblox', FREE_FIRE: 'Free Fire', GENSHIN: 'Genshin Impact', OTHER: 'Lainnya' };
 const TIER_LABELS = { SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Platinum', SERVICE: 'Layanan' };
 const FULFILLMENT_LABELS = {
   REDEEM_CODE: 'Kode redeem', VOUCHER_CODE: 'Kode voucher', LICENSE_KEY: 'Kunci lisensi',
