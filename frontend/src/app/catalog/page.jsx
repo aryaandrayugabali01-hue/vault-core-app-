@@ -5,10 +5,10 @@ import { getInitData, getTelegramWebApp, openInvoice } from '../../lib/telegram'
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const GAME_TABS = [
-  {id:'MLBB',label:'Mobile Legends',short:'MLBB',mark:'⚔'},
-  {id:'ROBLOX',label:'Roblox',short:'ROBLOX',mark:'R'},
-  {id:'FREE_FIRE',label:'Free Fire',short:'FREE FIRE',mark:'◎'},
-  {id:'GENSHIN',label:'Genshin Impact',short:'GENSHIN',mark:'✧'}
+  {id:'MLBB',label:'Mobile Legends',short:'MLBB',mark:'⚔',icon:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024109%2Frcks2r0xntbibkh7gf72p.png&w=148&q=75'},
+  {id:'ROBLOX',label:'Roblox',short:'ROBLOX',mark:'R',icon:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025124%2Fvhyvvmjoekra0kyu3a2af4.svg&w=148&q=75'},
+  {id:'FREE_FIRE',label:'Free Fire',short:'FREE FIRE',mark:'◎',icon:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024711%2F93cu2pbsceeiior5v9yc2q.png&w=148&q=75'},
+  {id:'GENSHIN',label:'Genshin Impact',short:'GENSHIN',mark:'✧',icon:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025118%2Fz9t30wkd81lxiwmaio40v.webp&w=148&q=75'}
 ];
 const CATEGORY_TILES = [
   { id: 'MLBB', label: 'Mobile Legends', subtitle: 'Kategori game', mode: 'game', mark: '⚔' },
@@ -18,10 +18,10 @@ const CATEGORY_TILES = [
   { id: 'PLATINUM', label: 'Tier Platinum', subtitle: 'Koleksi premium', mode: 'tier', mark: '💎' }
 ];
 const GAME_ART = {
-  MLBB: '/assets/03-categories/category-mlbb.png',
-  ROBLOX: '/assets/03-categories/category-roblox.png',
-  FREE_FIRE: '/assets/03-categories/category-free-fire.png',
-  GENSHIN: '/assets/03-categories/category-genshin.png',
+  MLBB: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024109%2Frcks2r0xntbibkh7gf72p.png&w=148&q=75',
+  ROBLOX: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025124%2Fvhyvvmjoekra0kyu3a2af4.svg&w=148&q=75',
+  FREE_FIRE: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024711%2F93cu2pbsceeiior5v9yc2q.png&w=148&q=75',
+  GENSHIN: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025118%2Fz9t30wkd81lxiwmaio40v.webp&w=148&q=75',
   OTHER: '/assets/03-categories/category-other.png'
 };
 const TIER_ART = {
@@ -486,7 +486,7 @@ export default function HomePage() {
         </div>
         <nav className="marketplace-game-tabs" aria-label="Pilih game">
           {GAME_TABS.map((game)=><button key={game.id} type="button" className={category===game.id?'active':''} aria-pressed={category===game.id} onClick={()=>{setCategory(game.id);setTier('ALL');setMarketplaceCategoryId('ALL');setQuery('');}}>
-            <span>{game.mark}</span>{game.short}
+            <img className="game-tab-icon" src={game.icon} alt="" loading="lazy" />{game.short}
           </button>)}
         </nav>
         <div className="marketplace-category-nav" id="categories">
