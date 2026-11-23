@@ -35,11 +35,11 @@ export function normalizeProductAttributes(value = {}) {
     if (typeof rawValue !== 'string' && typeof rawValue !== 'number' && typeof rawValue !== 'boolean') {
       return { ok:false, error:'INVALID_PRODUCT_ATTRIBUTES' };
     }
-    const key = String(rawKey).trim().replace(/\\s+/g, ' ');
+    const key = String(rawKey).trim().replace(/\s+/g, ' ');
     const text = String(rawValue).trim();
     const folded = key.toLocaleLowerCase('en');
     if (key.length < 2 || key.length > 40 || text.length < 1 || text.length > 160
-        || /[\\u0000-\\u001f\\u007f]/.test(key + text)
+        || /[\u0000-\u001f\u007f]/.test(key + text)
         || ['__proto__','prototype','constructor'].includes(folded) || seen.has(folded)) {
       return { ok:false, error:'INVALID_PRODUCT_ATTRIBUTES' };
     }
