@@ -535,12 +535,12 @@ test('Owner product attributes are normalized and bounded for marketplace filter
 });
 
 test('Owner product attribute editor parses and formats one Key|Value pair per line', () => {
-  const parsed = parseProductAttributesText('Rank|Mythic\\nServer|Asia\\nLevel|75');
+  const parsed = parseProductAttributesText('Rank|Mythic\nServer|Asia\nLevel|75');
   assert.equal(parsed.ok, true);
   assert.deepEqual({...parsed.value}, { Rank:'Mythic', Server:'Asia', Level:'75' });
   assert.equal(parseProductAttributesText('Rank Mythic').ok, false);
-  assert.equal(parseProductAttributesText('Rank|Mythic\\nrank|Epic').ok, false);
-  assert.equal(formatProductAttributesText({ Rank:'Mythic', Server:'Asia' }), 'Rank|Mythic\\nServer|Asia');
+  assert.equal(parseProductAttributesText('Rank|Mythic\nrank|Epic').ok, false);
+  assert.equal(formatProductAttributesText({ Rank:'Mythic', Server:'Asia' }), 'Rank|Mythic\nServer|Asia');
 });
 
 test('cart normalization preserves legacy checkout and merges valid product lines', () => {
