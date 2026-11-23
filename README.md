@@ -26,7 +26,9 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 
 - The authoritative visual asset package is `frontend/VAULT_CORE_ASSET_LIBRARY_v1.0.zip`; CI and production build extract it into `frontend/public/assets/`.
 - The dashboard, catalog header/footer, and Owner login/dashboard all use the same supplied brand file: `/assets/01-brand/vaultcore-horizontal.svg`.
-- Game artwork uses its matching asset mapping: `category-mlbb.png`, `category-roblox.png`, `category-free-fire.png`, and `category-genshin.png`. Product-specific `image_url` takes precedence over the category fallback.
+- The four primary game logos use the exact image URLs referenced by the supplied Itemku ZIPs: Mobile Legends, Roblox, Garena Free Fire, and Genshin Impact. Product-specific `image_url` takes precedence over the game-logo fallback.
+- Those logo URLs are hosted by Itemku's CloudFront image domain because the downloaded ZIPs contain the page HTML/URL references, not local binary copies of those remote image files. CI and production deployment check that all four image URLs return HTTP 200.
+- Logo-style category fallbacks render with `object-fit: contain`; seller-provided/product-specific photographs keep `object-fit: cover`.
 - The dashboard trust strip uses the package's `icon-wallet.svg`, `icon-shield.svg`, and `icon-orders.svg`. Game glyph overlays and fabricated text wordmarks have been removed.
 - CI checks asset references in the dashboard, catalog, Owner page, layout, and global CSS, and verifies the brand logo, category art, trust icons, favicon, PWA icon, hero image, and social cover exist in the extracted package.
 
