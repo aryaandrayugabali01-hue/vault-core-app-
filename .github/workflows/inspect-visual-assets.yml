@@ -18,6 +18,9 @@ jobs:
       - name: Checkout existing repository
         uses: actions/checkout@v4
 
+      - name: Install image inspection tools
+        run: python -m pip install --disable-pip-version-check --quiet pillow cairosvg
+
       - name: Extract original asset library and create visual index
         shell: bash
         run: |
@@ -30,51 +33,40 @@ jobs:
           unzip -q "$archive" -d /tmp/vault-core-original-assets
           python - <<'PY'
           from pathlib import Path
-          from PIL import Image, ImageOps, ImageDraw, ImageFont
-          import hashlib, json, math, shutil
+          from PIL import Image, ImageDraw
+          import cairosvg, hashlib, io, json, math, shutil
           root = Path('/tmp/vault-core-original-assets')
           out = Path('/tmp/vault-core-asset-review')
           extensions = {'.png','.jpg','.jpeg','.webp','.gif','.svg','.ico'}
           files = sorted(p for p in root.rglob('*') if p.is_file() and p.suffix.lower() in extensions)
-          records = []
-          thumbs = []
+          records, thumbs = [], []
           for path in files:
               raw = path.read_bytes()
-              rec = {
-                  'path': str(path.relative_to(root)),
-                  'extension': path.suffix.lower(),
-                  'bytes': len(raw),
-                  'sha256': hashlib.sha256(raw).hexdigest()
-              }
-              if path.suffix.lower() == '.svg':
-                  text = raw.decode('utf-8', errors='replace')
-                  import re
-                  w = re.search(r'width=["\']([^"\']+)', text)
-                  h = re.search(r'height=["\']([^"\']+)', text)
-                  rec['svg_width'] = w.group(1) if w else None
-                  rec['svg_height'] = h.group(1) if h else None
-              else:
-                  try:
+              rec = {'path': str(path.relative_to(root)), 'extension': path.suffix.lower(),
+                     'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
+              try:
+                  if path.suffix.lower() == '.svg':
+                      im = Image.open(io.BytesIO(cairosvg.svg2png(bytestring=raw, output_width=380))).convert('RGBA')
+                      rec['format'] = 'SVG'
+                  else:
                       im = Image.open(path).convert('RGBA')
-                      rec['width'], rec['height'] = im.size
-                      im.thumbnail((190, 135))
-                      tile = Image.new('RGB', (220, 184), '#171b24')
-                      bg = Image.new('RGBA', im.size, (255,255,255,0))
-                      bg.alpha_composite(im)
-                      preview = Image.new('RGBA', im.size, '#252c39')
-                      preview.alpha_composite(bg)
-                      preview.thumbnail((190,135))
-                      tile.paste(preview.convert('RGB'), ((220-preview.width)//2, 5+(135-preview.height)//2))
-                      draw = ImageDraw.Draw(tile)
-                      label = str(path.relative_to(root))
-                      while draw.textbbox((0,0), label)[2] > 206 and len(label) > 18:
-                          label = '…' + label[-(len(label)-2):]
-                      draw.text((7,145), label, fill='#ffffff')
-                      thumbs.append(tile)
-                  except Exception as exc:
-                      rec['image_error'] = str(exc)
+                      rec['format'] = Image.open(path).format
+                  rec['width'], rec['height'] = im.size
+                  im.thumbnail((190, 135))
+                  tile = Image.new('RGB', (220, 184), '#171b24')
+                  preview = Image.new('RGBA', im.size, '#252c39')
+                  preview.alpha_composite(im)
+                  preview.thumbnail((190,135))
+                  tile.paste(preview.convert('RGB'), ((220-preview.width)//2, 5+(135-preview.height)//2))
+                  draw = ImageDraw.Draw(tile)
+                  label = str(path.relative_to(root))
+                  while draw.textbbox((0,0), label)[2] > 206 and len(label) > 18:
+                      label = '…' + label[2:]
+                  draw.text((7,145), label, fill='#ffffff')
+                  thumbs.append(tile)
+              except Exception as exc:
+                  rec['image_error'] = str(exc)
               records.append(rec)
-              # Preserve every original visual asset for the next build step.
               dest = out / path.relative_to(root)
               dest.parent.mkdir(parents=True, exist_ok=True)
               shutil.copy2(path, dest)
@@ -86,9 +78,9 @@ jobs:
               sheet.paste(tile, ((i%cols)*220, (i//cols)*184))
           sheet.save(out / 'asset-contact-sheet.jpg', quality=92)
           print(f'Original visual assets indexed: {len(records)}')
-          print(f'Raster preview tiles: {len(thumbs)}')
+          print(f'Raster/vector preview tiles: {len(thumbs)}')
           for rec in records:
-              print(f"{rec['path']} | {rec.get('width','SVG')}x{rec.get('height','')} | {rec['bytes']} bytes")
+              print(f"{rec['path']} | {rec.get('width','?')}x{rec.get('height','?')} | {rec['bytes']} bytes")
           PY
 
       - name: Upload original asset files and contact sheet for visual review
