@@ -24,3 +24,24 @@ export function formatProductAttributesText(attributes) {
   if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) return '';
   return Object.entries(attributes).map(([key, value]) => `${key}|${value}`).join('\n');
 }
+
+const HIDDEN_CUSTOMER_PRODUCT_ATTRIBUTE_KEYS = new Set([
+  'xtr_price',
+  'price_note',
+  'price_currency',
+  'price_min_idr',
+  'price_max_idr',
+  'cost_price_note',
+  'cost_price_status',
+  'fulfillment_mode',
+  'owner_attestation_ref',
+  'authorization_evidence_status'
+]);
+
+export function getCustomerVisibleProductAttributes(attributes) {
+  if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) return [];
+  return Object.entries(attributes).filter(([key]) =>
+    !HIDDEN_CUSTOMER_PRODUCT_ATTRIBUTE_KEYS.has(key)
+    && !key.startsWith('xtr_conversion_')
+  );
+}
