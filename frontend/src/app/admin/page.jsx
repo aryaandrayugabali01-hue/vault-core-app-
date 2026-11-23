@@ -139,10 +139,6 @@ export default function AdminPage() {
     return () => { mount.replaceChildren(); delete window.onVaultTelegramAuth; };
   }, [authState, botUsername]);
 
-  useEffect(() => {
-    if (!skuManual) setForm((current) => ({ ...current, sku: suggestedSku(current.gameCategory, current.tier, products) }));
-  }, [products, skuManual]);
-
   async function logoutOwner() {
     await fetch(`${API}/api/owner-auth/logout`, { method:'POST', credentials:'include' });
     setAuthState('login'); setNotice('');
