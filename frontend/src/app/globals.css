@@ -1097,3 +1097,44 @@ gap:10px;padding:24px
 /* Remove the light placeholder surface behind game artwork on the dashboard. */
 .dashboard-game-art{background:linear-gradient(145deg,#171e29,#111720)!important}
 .dashboard-game-art img{background:transparent!important}
+
+/* VAULT CORE dark marketplace theme and Mobile Legends subcategory tabs */
+.marketplace-game-nav{background:#131820!important;color:#f3f5fa!important;border-color:rgba(255,255,255,.08)!important}
+.marketplace-game-heading h1{color:#f4f5fa!important}
+.marketplace-game-heading p,.marketplace-game-heading .eyebrow{color:#8995a9!important}
+.marketplace-game-tabs button{color:#8995a9!important}
+.marketplace-game-tabs button.active,.marketplace-category-nav button.active{color:#78e2b7!important}
+.marketplace-game-tabs button.active:after{background:#00d68a!important}
+.marketplace-category-nav{background:#151c27!important;border-color:rgba(255,255,255,.08)!important}
+.marketplace-category-nav button{color:#a6b0c0!important}
+.marketplace-category-nav button.active:after{position:absolute;right:0;bottom:0;left:0;height:3px;border-radius:4px 4px 0 0;background:#00d68a;content:""}
+.mlbb-subcategory-nav{gap:clamp(22px,6vw,38px);min-height:54px}
+.mlbb-subcategory-nav button{font-size:14px;font-weight:750}
+.product-section{background:#10151e!important;color:#f3f5fa!important}
+.product-section .section-heading h2{color:#f3f5fa!important}
+.product-section .eyebrow,.product-section .section-count{color:#8995a9!important}
+.marketplace-toolbar label{background:#171e29!important;border-color:rgba(255,255,255,.12)!important}
+.marketplace-toolbar label span{color:#8995a9!important}
+.marketplace-toolbar select{background:#111720!important;color:#eef1f7!important;border-color:rgba(255,255,255,.12)!important}
+.product-card{background:linear-gradient(145deg,#1b2230,#111720)!important;color:#f4f5fa!important;border-color:rgba(255,255,255,.09)!important;box-shadow:0 7px 20px rgba(0,0,0,.2)!important}
+.product-card:hover{background:#202a39!important;border-color:rgba(0,214,138,.3)!important}
+.product-card h3{color:#f4f5fa!important}
+.product-category{color:#8f9bad!important}
+.product-bottom strong{color:#78e2b7!important}
+.product-bottom .buy-button{background:linear-gradient(135deg,#00d68a,#00a96d)!important;color:#06170f!important}
+.product-art{background:#171e29!important}
+.marketplace-detail-modal{background:#111720!important;color:#f4f5fa!important}
+.marketplace-detail-head{background:#151d29!important;border-color:rgba(255,255,255,.08)!important}
+.marketplace-detail-head h2,.marketplace-detail-title-row h3,.marketplace-detail-section h3,.marketplace-store-trust strong,.marketplace-detail-stats strong{color:#f4f5fa!important}
+.marketplace-detail-head .icon-button{background:#252d3a!important;color:#f4f5fa!important}
+.marketplace-detail-gallery,.marketplace-detail-gallery img{background:#0e141d!important}
+.marketplace-detail-title-row .detail-category,.marketplace-detail-stats span,.marketplace-detail-section p,.marketplace-store-trust small{color:#9aa6b8!important}
+.marketplace-store-trust,.marketplace-detail-stats{border-color:rgba(255,255,255,.1)!important;background:#171f2c!important}
+.marketplace-detail-policy{background:#1b2634!important}
+.marketplace-detail-policy strong{color:#8fe5bd!important}
+.marketplace-detail-policy p{color:#a8b2c2!important}
+.marketplace-detail-section{border-color:rgba(255,255,255,.08)!important}
+.marketplace-detail-actions{background:rgba(17,23,32,.97)!important;border-color:rgba(255,255,255,.1)!important}
+.marketplace-detail-actions .detail-secondary-button{background:#182333!important;color:#78e2b7!important;border-color:rgba(0,214,138,.4)!important}
+.marketplace-detail-actions .buy-button{background:linear-gradient(135deg,#00d68a,#00a96d)!important;color:#06170f!important}
+@media(max-width:520px){.mlbb-subcategory-nav{gap:clamp(24px,7vw,36px)}.mlbb-subcategory-nav button{font-size:13px}}
