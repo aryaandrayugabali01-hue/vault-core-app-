@@ -10,8 +10,7 @@ BEGIN
       ADD CONSTRAINT products_attributes_object_check
       CHECK (
         jsonb_typeof(attributes)='object'
-        AND jsonb_object_length(attributes)<=24
-        AND pg_column_size(attributes)<=4096
+        AND jsonb_array_length(jsonb_path_query_array(attributes, '$.*'))<=24
       );
   END IF;
 END $$;
