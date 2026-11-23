@@ -4,24 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { getInitData, getTelegramWebApp, openInvoice } from '../../lib/telegram';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-const GAME_TABS = [
-  {id:'MLBB',label:'Mobile Legends',short:'MLBB',mark:'⚔',icon:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024109%2Frcks2r0xntbibkh7gf72p.png&w=148&q=75'},
-  {id:'ROBLOX',label:'Roblox',short:'ROBLOX',mark:'R',icon:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025124%2Fvhyvvmjoekra0kyu3a2af4.svg&w=148&q=75'},
-  {id:'FREE_FIRE',label:'Free Fire',short:'FREE FIRE',mark:'◎',icon:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024711%2F93cu2pbsceeiior5v9yc2q.png&w=148&q=75'},
-  {id:'GENSHIN',label:'Genshin Impact',short:'GENSHIN',mark:'✧',icon:'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025118%2Fz9t30wkd81lxiwmaio40v.webp&w=148&q=75'}
-];
-const CATEGORY_TILES = [
-  { id: 'MLBB', label: 'Mobile Legends', subtitle: 'Kategori game', mode: 'game', mark: '⚔' },
-  { id: 'ROBLOX', label: 'Roblox', subtitle: 'Kategori game', mode: 'game', mark: 'R' },
-  { id: 'FREE_FIRE', label: 'Free Fire', subtitle: 'Kategori game', mode: 'game', mark: '◎' },
-  { id: 'GENSHIN', label: 'Genshin Impact', subtitle: 'Kategori game', mode: 'game', mark: '✧' },
-  { id: 'PLATINUM', label: 'Tier Platinum', subtitle: 'Koleksi premium', mode: 'tier', mark: '💎' }
-];
+const GAME_ORDER = ['MLBB','ROBLOX','FREE_FIRE','GENSHIN','OTHER'];
+const GAME_MARKS = { MLBB:'⚔', ROBLOX:'R', FREE_FIRE:'◎', GENSHIN:'✧', OTHER:'◇' };
 const GAME_ART = {
-  MLBB: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024109%2Frcks2r0xntbibkh7gf72p.png&w=148&q=75',
-  ROBLOX: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025124%2Fvhyvvmjoekra0kyu3a2af4.svg&w=148&q=75',
-  FREE_FIRE: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2024711%2F93cu2pbsceeiior5v9yc2q.png&w=148&q=75',
-  GENSHIN: 'https://imgop.itemku.com?url=https%3A%2F%2Fd1x91p7vw3vuq8.cloudfront.net%2Fgame%2F2025118%2Fz9t30wkd81lxiwmaio40v.webp&w=148&q=75',
+  MLBB: '/assets/03-categories/category-mlbb.png',
+  ROBLOX: '/assets/03-categories/category-roblox.png',
+  FREE_FIRE: '/assets/03-categories/category-free-fire.png',
+  GENSHIN: '/assets/03-categories/category-genshin.png',
   OTHER: '/assets/03-categories/category-other.png'
 };
 const TIER_ART = {
@@ -109,7 +98,7 @@ export default function HomePage() {
   const [isTestMode, setIsTestMode] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activatingId, setActivatingId] = useState(null);
-  const [category, setCategory] = useState('MLBB');
+  const [category, setCategory] = useState('ALL');
   const [tier, setTier] = useState('ALL');
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -154,11 +143,31 @@ export default function HomePage() {
   }, []);
 
   const sourceProducts = isTestMode ? testProducts : products;
+  const gameTabs = useMemo(() => {
+    const present = new Set(sourceProducts.map((product) => product.game_category).filter(Boolean));
+    return GAME_ORDER.filter((id) => present.has(id)).map((id) => ({
+      id,
+      label: GAME_LABELS[id] || id.replaceAll('_', ' '),
+      short: id === 'FREE_FIRE' ? 'FREE FIRE' : (id === 'OTHER' ? 'LAINNYA' : id),
+      mark: GAME_MARKS[id] || '◇',
+      icon: GAME_ART[id] || GAME_ART.OTHER
+    }));
+  }, [sourceProducts]);
   const activeFilterLabel = category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua game';
-  const selectedGame = GAME_TABS.find((item)=>item.id===category) || GAME_TABS[0];
-  const gameMarketplaceCategories = useMemo(()=>marketplaceCategories.filter((item)=>
-    sourceProducts.some((product)=>product.game_category===category && String(product.marketplace_category_id||'')===String(item.id))
-  ),[marketplaceCategories,sourceProducts,category]);
+  const selectedGame = gameTabs.find((item) => item.id === category) || null;
+  const gameMarketplaceCategories = useMemo(() => marketplaceCategories.filter((item) =>
+    sourceProducts.some((product) =>
+      (category === 'ALL' || product.game_category === category)
+      && String(product.marketplace_category_id || '') === String(item.id)
+    )
+  ), [marketplaceCategories, sourceProducts, category]);
+  const availableTiers = useMemo(() => {
+    const present = new Set(sourceProducts
+      .filter((product) => (category === 'ALL' || product.game_category === category)
+        && (marketplaceCategoryId === 'ALL' || String(product.marketplace_category_id || '') === marketplaceCategoryId))
+      .map((product) => product.tier));
+    return Object.entries(TIER_LABELS).filter(([value]) => present.has(value));
+  }, [sourceProducts, category, marketplaceCategoryId]);
   const filtered = useMemo(() => {
     const list = sourceProducts.filter((p) =>
       (category === 'ALL' || p.game_category === category)
@@ -481,13 +490,15 @@ export default function HomePage() {
       <section className="marketplace-game-nav" id="home">
         <div className="marketplace-game-heading">
           <span className="eyebrow muted">VAULT CORE · DIGITAL GAME STORE</span>
-          <h1>{selectedGame.label}</h1>
+          <h1>{selectedGame?.label || 'Semua game'}</h1>
           <p>Pilih jenis produk, buka detail penawaran, lalu lanjutkan ke pembayaran Telegram Stars.</p>
         </div>
         <nav className="marketplace-game-tabs" aria-label="Pilih game">
-          {GAME_TABS.map((game)=><button key={game.id} type="button" className={category===game.id?'active':''} aria-pressed={category===game.id} onClick={()=>{setCategory(game.id);setTier('ALL');setMarketplaceCategoryId('ALL');setQuery('');}}>
+          <button type="button" className={category === 'ALL' ? 'active' : ''} aria-pressed={category === 'ALL'} onClick={() => { setCategory('ALL'); setTier('ALL'); setMarketplaceCategoryId('ALL'); setQuery(''); }}>Semua game</button>
+          {gameTabs.map((game) => <button key={game.id} type="button" className={category === game.id ? 'active' : ''} aria-pressed={category === game.id} onClick={() => { setCategory(game.id); setTier('ALL'); setMarketplaceCategoryId('ALL'); setQuery(''); }}>
             <img className="game-tab-icon" src={game.icon} alt="" loading="lazy" />{game.short}
           </button>)}
+          {!gameTabs.length && !loading && <span className="marketplace-no-categories">Game akan tampil setelah tersedia produk aktif.</span>}
         </nav>
         <div className="marketplace-category-nav" id="categories">
           <button type="button" className={marketplaceCategoryId==='ALL'?'active':''} onClick={()=>selectMarketplaceCategory('ALL')}>Semua</button>
@@ -505,7 +516,7 @@ export default function HomePage() {
         </div>
         <div className="catalog-toolbar marketplace-toolbar">
           <label><span>Tipe produk</span><select value={tier} onChange={(e)=>setTier(e.target.value)}>
-            <option value="ALL">Semua tipe</option>{Object.entries(TIER_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+            <option value="ALL">Semua tipe</option>{availableTiers.map(([value,label])=><option key={value} value={value}>{label}</option>)}
           </select></label>
           <label><span>Urutkan</span><select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
             <option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option>
@@ -521,7 +532,7 @@ export default function HomePage() {
           <img className="state-illustration" src="/assets/05-states/product-not-found.png" alt="" />
           <strong>Produk tidak ditemukan</strong>
           <p>Coba kata kunci lain atau pilih filter kategori dan tier yang berbeda.</p>
-          <button className="reset-filters" type="button" onClick={() => { setQuery(''); setCategory('ALL'); setTier('ALL'); }}>Reset filter</button>
+          <button className="reset-filters" type="button" onClick={() => { setQuery(''); setCategory('ALL'); setTier('ALL'); setMarketplaceCategoryId('ALL'); }}>Reset filter</button>
         </div> : <div className="product-grid">
           {filtered.map((product) => {
             const game = product.game_category || 'OTHER';
