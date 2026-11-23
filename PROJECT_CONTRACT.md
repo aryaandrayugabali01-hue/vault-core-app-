@@ -1348,3 +1348,51 @@ Uji checkout tetap memakai empat fixture internal `TEST ONLY`, terpisah dari 16 
 - 17 kategori marketplace aktif.
 - Pada saat addendum ini dicatat, belum ada order, transaksi, atau delivery pelanggan produksi; uji pembayaran pelanggan dan pengiriman manual aktual masih perlu dilakukan.
 
+
+
+# 32. Addendum CR-10 — Kanal Transaksi Tunggal Telegram Mini App
+
+**Tanggal:** 23 November 2026  
+**Keputusan Owner:** Seluruh transaksi VAULT CORE wajib dilakukan melalui VAULT CORE Telegram Mini App dengan pembayaran Telegram Stars (`XTR`). Website publik hanya berfungsi sebagai katalog dan halaman detail penawaran.
+
+## 32.1 Batas fungsi website publik
+
+- Website publik boleh menampilkan kategori, produk, spesifikasi, ketentuan, harga dalam XTR, dan panduan pembelian.
+- Website publik bukan kanal pembuatan pesanan, checkout, pembayaran, penerimaan dana, atau konfirmasi transaksi.
+- Customer diarahkan membuka VAULT CORE melalui bot Telegram untuk melanjutkan pembelian.
+
+## 32.2 Kanal transaksi resmi
+
+- Customer membuat pesanan hanya di VAULT CORE Telegram Mini App dengan identitas Telegram yang tervalidasi.
+- Backend membuat invoice resmi Telegram Stars Bot API dengan mata uang `XTR`.
+- `successful_payment` yang tervalidasi server adalah satu-satunya bukti pembayaran yang mengubah pesanan menjadi PAID.
+- Harga, jumlah, ketersediaan stok, dan total akhir diperiksa ulang oleh backend ketika pesanan dibuat dan sebelum pre-checkout disetujui.
+- Status, riwayat pesanan, dan informasi pemenuhan ditampilkan melalui Mini App.
+
+## 32.3 Metode yang tidak diterima
+
+VAULT CORE tidak menyediakan atau mengakui pembayaran melalui Rekber/Escrow pihak ketiga, transfer bank, transfer langsung ke Owner/penjual, pembayaran ke rekening pribadi, alamat wallet XTR manual, atau metode pembayaran di luar invoice resmi Telegram Stars. Instruksi pembayaran di luar Mini App tidak dapat dianggap sebagai transaksi VAULT CORE.
+
+## 32.4 Alur pembelian dan pemenuhan
+
+1. Customer membaca spesifikasi dan ketentuan pada katalog.
+2. Customer membuka Mini App melalui bot Telegram, memilih produk, dan membuat pesanan.
+3. Backend memvalidasi harga dan stok, lalu mengeluarkan invoice Telegram Stars XTR.
+4. Telegram mengirimkan successful_payment; backend memvalidasi dan mencatat pembayaran secara idempoten.
+5. Customer memantau status di menu Pesanan. Pemenuhan dilakukan sesuai metode produk setelah pembayaran terverifikasi; status akhir dicatat oleh sistem.
+6. Kendala pembayaran diarahkan ke jalur bantuan pembayaran Telegram (`/paysupport`).
+
+## 32.5 Panduan pembelian katalog
+
+Panduan kategori tidak boleh memuat instruksi Rekber, transfer bank, direct transfer, pencairan dana penjual, takeover akun, atau metode transaksi pihak ketiga. Seluruh kategori menggunakan instruksi yang konsisten: pemeriksaan detail produk, checkout di Telegram Mini App, pembayaran invoice XTR, dan pemantauan status/pemenuhan melalui Mini App. Customer tidak boleh diminta membagikan password, OTP, kode pemulihan, atau kredensial autentikasi.
+
+## 32.6 Kriteria penerimaan
+
+- Katalog web hanya menampilkan produk dan detail; seluruh transaksi dilakukan di Telegram Mini App.
+- Tidak ada panduan Rekber/Escrow atau transfer di seluruh kategori aktif.
+- Invoice pembayaran menggunakan mata uang XTR resmi Telegram.
+- Order hanya berubah menjadi PAID setelah successful_payment terverifikasi server.
+- Riwayat dan status transaksi customer tersedia melalui Mini App.
+- UI, panduan kategori, README, dan kontrak menyampaikan aturan yang sama.
+
+---
