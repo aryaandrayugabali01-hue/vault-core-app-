@@ -14,7 +14,7 @@ import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
 import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } from '../backend/middleware/ownerSession.js';
 import { splitInventoryPayloads } from '../frontend/src/lib/inventory.js';
 import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes } from '../backend/services/productDetailsService.js';
-import { parseProductAttributesText, formatProductAttributesText } from '../frontend/src/lib/product-attributes.js';
+import { parseProductAttributesText, formatProductAttributesText, getCustomerVisibleProductAttributes } from '../frontend/src/lib/product-attributes.js';
 import { validateMarketplaceCategory, normalizeImageGallery } from '../backend/services/marketplaceCategoryService.js';
 import { normalizeCartItems } from '../backend/services/cartService.js';
 import { releaseExpiredPendingOrders } from '../backend/services/reservationService.js';
@@ -562,6 +562,26 @@ test('Owner product attributes are normalized and bounded for marketplace filter
   assert.equal(normalizeProductAttributes(Object.fromEntries([['constructor','unsafe']])).ok, false);
   assert.equal(normalizeProductAttributes({ Detail:'x'.repeat(161) }).ok, false);
   assert.equal(normalizeProductAttributes(Object.fromEntries(Array.from({length:25},(_,i)=>['Key'+i,'Value']))).ok, false);
+});
+
+test('customer catalog hides private price, ownership and XTR conversion metadata', () => {
+  const visible = getCustomerVisibleProductAttributes({
+    kode_produk:'ML-001',
+    subkategori:'Akun Collector',
+    metode_penyerahan:'Transfer resmi',
+    xtr_price:2000,
+    xtr_conversion_reference_date:'2026-11-23',
+    xtr_conversion_rate_idr_per_star:375,
+    xtr_conversion_source:'Internal reference',
+    price_note:'Internal calculation',
+    cost_price_status:'OWNER_SET_ZERO',
+    owner_attestation_ref:'INTERNAL-REF'
+  });
+  assert.deepEqual(visible, [
+    ['kode_produk','ML-001'],
+    ['subkategori','Akun Collector'],
+    ['metode_penyerahan','Transfer resmi']
+  ]);
 });
 
 test('Owner product attribute editor parses and formats one Key|Value pair per line', () => {
