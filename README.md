@@ -22,6 +22,16 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 - Payments: official Telegram Stars invoice (`XTR`) for digital goods/services inside Telegram
 - Digital inventory: AES-256-GCM encrypted payloads
 
+## Visual asset source of truth
+
+- The authoritative visual asset package is `frontend/VAULT_CORE_ASSET_LIBRARY_v1.0.zip`; CI and production build extract it into `frontend/public/assets/`.
+- The dashboard, catalog header/footer, and Owner login/dashboard all use the same supplied brand file: `/assets/01-brand/vaultcore-horizontal.svg`.
+- Game artwork uses its matching asset mapping: `category-mlbb.png`, `category-roblox.png`, `category-free-fire.png`, and `category-genshin.png`. Product-specific `image_url` takes precedence over the category fallback.
+- The dashboard trust strip uses the package's `icon-wallet.svg`, `icon-shield.svg`, and `icon-orders.svg`. Game glyph overlays and fabricated text wordmarks have been removed.
+- CI checks asset references in the dashboard, catalog, Owner page, layout, and global CSS, and verifies the brand logo, category art, trust icons, favicon, PWA icon, hero image, and social cover exist in the extracted package.
+
+Latest production visual update: source commit `a5fc2b925e66e70a7742d9f40248308670d94ec0`; Cloudflare Worker `vault-core-web` deployment `6aa5dd9f-5adc-4797-871e-00378a209d9f`, version `909566df-0a56-4c3c-b2ac-8701b64eb068`, serving 100% traffic.
+
 ## Connected database
 
 - Provider: Neon
