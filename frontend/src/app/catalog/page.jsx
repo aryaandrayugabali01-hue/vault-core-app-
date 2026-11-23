@@ -88,6 +88,7 @@ export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [marketplaceCategories, setMarketplaceCategories] = useState([]);
   const [marketplaceCategoryId, setMarketplaceCategoryId] = useState('ALL');
+  const [attributeFilters, setAttributeFilters] = useState({});
   const [sortBy, setSortBy] = useState('NAME');
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -168,17 +169,36 @@ export default function HomePage() {
       .map((product) => product.tier));
     return Object.entries(TIER_LABELS).filter(([value]) => present.has(value));
   }, [sourceProducts, category, marketplaceCategoryId]);
+  const attributeFacets = useMemo(() => {
+    const productsForFacets = sourceProducts.filter((product) =>
+      (category === 'ALL' || product.game_category === category)
+      && (marketplaceCategoryId === 'ALL' || String(product.marketplace_category_id || '') === marketplaceCategoryId)
+    );
+    const valuesByKey = new Map();
+    for (const product of productsForFacets) {
+      const attributes = product.attributes && typeof product.attributes === 'object' && !Array.isArray(product.attributes) ? product.attributes : {};
+      for (const [key, rawValue] of Object.entries(attributes)) {
+        const value = String(rawValue ?? '').trim();
+        if (!value) continue;
+        if (!valuesByKey.has(key)) valuesByKey.set(key, new Set());
+        valuesByKey.get(key).add(value);
+      }
+    }
+    return [...valuesByKey.entries()].sort(([a],[b]) => a.localeCompare(b, 'id'))
+      .map(([key, values]) => ({ key, values:[...values].sort((a,b)=>a.localeCompare(b,'id')) }));
+  }, [sourceProducts, category, marketplaceCategoryId]);
   const filtered = useMemo(() => {
     const list = sourceProducts.filter((p) =>
       (category === 'ALL' || p.game_category === category)
       && (tier === 'ALL' || p.tier === tier)
       && (marketplaceCategoryId === 'ALL' || String(p.marketplace_category_id || '') === marketplaceCategoryId)
+      && Object.entries(attributeFilters).every(([key, value]) => !value || String(p.attributes?.[key] ?? '') === value)
       && (String(p.name || '') + ' ' + String(p.description || '') + ' ' + String(p.sku || '') + ' ' + String(p.marketplace_category_name || '')).toLowerCase().includes(query.toLowerCase())
     );
     if (sortBy === 'PRICE_ASC') return list.sort((a,b)=>Number(a.sale_price_xtr)-Number(b.sale_price_xtr));
     if (sortBy === 'PRICE_DESC') return list.sort((a,b)=>Number(b.sale_price_xtr)-Number(a.sale_price_xtr));
     return list.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id'));
-  }, [sourceProducts, category, tier, marketplaceCategoryId, query, sortBy, isTestMode]);
+  }, [sourceProducts, category, tier, marketplaceCategoryId, attributeFilters, query, sortBy, isTestMode]);
 
   const cartLines = useMemo(() => cart.map((line) => {
     const product = products.find((item) => Number(item.id) === Number(line.productId));
@@ -408,6 +428,7 @@ export default function HomePage() {
   function selectMarketplaceCategory(id) {
     setMarketplaceCategoryId(String(id));
     setTier('ALL');
+    setAttributeFilters({});
     const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     document.getElementById('products')?.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
   }
@@ -468,8 +489,8 @@ export default function HomePage() {
           <p>Pilih jenis produk, buka detail penawaran, lalu lanjutkan ke pembayaran Telegram Stars.</p>
         </div>
         <nav className="marketplace-game-tabs" aria-label="Pilih game">
-          <button type="button" className={category === 'ALL' ? 'active' : ''} aria-pressed={category === 'ALL'} onClick={() => { setCategory('ALL'); setTier('ALL'); setMarketplaceCategoryId('ALL'); setQuery(''); }}>Semua game</button>
-          {gameTabs.map((game) => <button key={game.id} type="button" className={category === game.id ? 'active' : ''} aria-pressed={category === game.id} onClick={() => { setCategory(game.id); setTier('ALL'); setMarketplaceCategoryId('ALL'); setQuery(''); }}>
+          <button type="button" className={category === 'ALL' ? 'active' : ''} aria-pressed={category === 'ALL'} onClick={() => { setCategory('ALL'); setTier('ALL'); setMarketplaceCategoryId('ALL'); setAttributeFilters({}); setQuery(''); }}>Semua game</button>
+          {gameTabs.map((game) => <button key={game.id} type="button" className={category === game.id ? 'active' : ''} aria-pressed={category === game.id} onClick={() => { setCategory(game.id); setTier('ALL'); setMarketplaceCategoryId('ALL'); setAttributeFilters({}); setQuery(''); }}>
             <img className="game-tab-icon" src={game.icon} alt="" loading="lazy" />{game.short}
           </button>)}
           {!gameTabs.length && !loading && <span className="marketplace-no-categories">Game akan tampil setelah tersedia produk aktif.</span>}
@@ -490,6 +511,7 @@ export default function HomePage() {
           <label><span>Tipe produk</span><select value={tier} onChange={(e)=>setTier(e.target.value)}>
             <option value="ALL">Semua tipe</option>{availableTiers.map(([value,label])=><option key={value} value={value}>{label}</option>)}
           </select></label>
+          {attributeFacets.map((facet) => <label key={facet.key}><span>{facet.key}</span><select value={attributeFilters[facet.key] || ''} onChange={(e)=>setAttributeFilters((current)=>({...current,[facet.key]:e.target.value}))}><option value="">Semua {facet.key.toLowerCase()}</option>{facet.values.map((value)=><option value={value} key={value}>{value}</option>)}</select></label>)}
           <label><span>Urutkan</span><select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
             <option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option>
           </select></label>
@@ -504,7 +526,7 @@ export default function HomePage() {
           <img className="state-illustration" src="/assets/05-states/product-not-found.png" alt="" />
           <strong>Produk tidak ditemukan</strong>
           <p>Coba kata kunci lain atau pilih filter kategori dan tier yang berbeda.</p>
-          <button className="reset-filters" type="button" onClick={() => { setQuery(''); setCategory('ALL'); setTier('ALL'); setMarketplaceCategoryId('ALL'); }}>Reset filter</button>
+          <button className="reset-filters" type="button" onClick={() => { setQuery(''); setCategory('ALL'); setTier('ALL'); setMarketplaceCategoryId('ALL'); setAttributeFilters({}); }}>Reset filter</button>
         </div> : <div className="product-grid">
           {filtered.map((product) => {
             const game = product.game_category || 'OTHER';
@@ -572,6 +594,7 @@ export default function HomePage() {
               <div><span>Pemenuhan</span><strong>{FULFILLMENT_LABELS[selectedProduct.fulfillment_type] || selectedProduct.fulfillment_type || 'Belum ditentukan'}</strong></div>
               <div><span>Estimasi</span><strong>{selectedProduct.fulfillment_eta || 'Belum ditetapkan Owner'}</strong></div>
             </div>
+            {selectedProduct.attributes && typeof selectedProduct.attributes === 'object' && !Array.isArray(selectedProduct.attributes) && Object.keys(selectedProduct.attributes).length > 0 && <section className="marketplace-detail-section"><h3>Spesifikasi Produk</h3><dl className="marketplace-attributes">{Object.entries(selectedProduct.attributes).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></section>}
             <section className="marketplace-detail-section"><h3>Deskripsi Produk</h3><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
             <section className="marketplace-detail-section"><h3>Ketentuan Produk</h3><p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p></section>
             <section className="marketplace-detail-section marketplace-guide-link"><button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Cara Beli &amp; Tips <span>›</span></button></section>

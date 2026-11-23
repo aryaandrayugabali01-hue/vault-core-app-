@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getInitData } from '../../../../lib/telegram';
 import { splitInventoryPayloads } from '../../../../lib/inventory';
+import { parseProductAttributesText } from '../../../../lib/product-attributes';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const CATEGORIES = [
@@ -37,7 +38,7 @@ function nextSku(category, tier, products) {
 export default function NewProductPage() {
   const [products, setProducts] = useState([]);
   const [marketplaceCategories, setMarketplaceCategories] = useState([]);
-  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', marketplaceCategoryId:'', tier:'GOLD', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'', imageUrl:'', imageGalleryText:'', customerTerms:'', fulfillmentEta:'' });
+  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', marketplaceCategoryId:'', tier:'GOLD', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'', imageUrl:'', imageGalleryText:'', attributesText:'', customerTerms:'', fulfillmentEta:'' });
   const [stock, setStock] = useState('');
   const [stockSourceReference, setStockSourceReference] = useState('');
   const [rightsForm, setRightsForm] = useState({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
@@ -93,8 +94,11 @@ export default function NewProductPage() {
     let productRecord = null;
     let currentReviewStatus = savedReviewStatus;
     try {
+      const parsedAttributes = parseProductAttributesText(form.attributesText);
+      if (!parsedAttributes.ok) throw new Error(parsedAttributes.error);
       const productPayload = {
         ...form,
+        attributes:parsedAttributes.value,
         sku:String(form.sku).trim().toUpperCase(),
         marketplaceCategoryId:form.marketplaceCategoryId || null,
         imageGallery:String(form.imageGalleryText || '').split(/\r?\n/).map((value)=>value.trim()).filter(Boolean),
@@ -171,7 +175,7 @@ export default function NewProductPage() {
       setManualSku(false);
       setStock('');
       setStockSourceReference('');
-      setForm({ sku:'', gameCategory:form.gameCategory, tier:form.tier, name:'', description:'', fulfillmentType:form.fulfillmentType, salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'', imageUrl:'', customerTerms:'', fulfillmentEta:'' });
+      setForm({ sku:'', gameCategory:form.gameCategory, marketplaceCategoryId:'', tier:form.tier, name:'', description:'', fulfillmentType:form.fulfillmentType, salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'', imageUrl:'', imageGalleryText:'', attributesText:'', customerTerms:'', fulfillmentEta:'' });
       setRightsForm({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
     } catch (e) {
       if (productId) {
@@ -208,6 +212,7 @@ export default function NewProductPage() {
         <label>Tingkat produk<select value={form.tier} onChange={(e)=>change('tier',e.target.value)}>{TIERS.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
         <label>Nama produk<input required maxLength="160" value={form.name} onChange={(e)=>change('name',e.target.value)} placeholder="Nama yang tampil di katalog" /></label>
         <label className="span-2">Deskripsi produk<textarea rows="4" value={form.description} onChange={(e)=>change('description',e.target.value)} placeholder="Jelaskan isi produk, manfaat, ketentuan, dan cara pemenuhan." /></label>
+        <label className="span-2">Atribut produk <small className="field-hint">Format Key|Value, satu atribut per baris. Contoh rank, server, region, level, atau tipe layanan.</small><textarea rows="4" value={form.attributesText} onChange={(e)=>change('attributesText',e.target.value)} placeholder={'Rank|Mythic\nServer|Asia\nLevel|75'} /></label>
         <label>Metode pemenuhan<select value={form.fulfillmentType} onChange={(e)=>change('fulfillmentType',e.target.value)}>{FULFILLMENT.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
         <label className="span-2">URL gambar utama <small className="field-hint">HTTPS publik atau file lokal /assets/</small><input type="text" value={form.imageUrl} onChange={(e)=>change('imageUrl',e.target.value)} placeholder="https://.../produk.webp" /></label>
         <label className="span-2">Galeri gambar, satu URL per baris<textarea rows="3" value={form.imageGalleryText} onChange={(e)=>change('imageGalleryText',e.target.value)} placeholder={'https://cdn.../gambar-1.webp\nhttps://cdn.../gambar-2.webp'} /></label>

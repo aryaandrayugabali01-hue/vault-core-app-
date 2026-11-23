@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getInitData } from '../../lib/telegram';
 import { splitInventoryPayloads } from '../../lib/inventory';
+import { parseProductAttributesText, formatProductAttributesText } from '../../lib/product-attributes';
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 const GAME_LABELS = { MLBB:'MLBB', ROBLOX:'Roblox', FREE_FIRE:'Free Fire', GENSHIN:'Genshin Impact', OTHER:'Lainnya' };
@@ -60,7 +61,7 @@ export default function AdminPage() {
   const [rightsForm, setRightsForm] = useState({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
   const [displayCap, setDisplayCap] = useState({});
   const [editingProductId, setEditingProductId] = useState('');
-  const [editForm, setEditForm] = useState({ sku:'', gameCategory:'MLBB', tier:'SILVER', marketplaceCategoryId:'', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', imageUrl:'', imageGalleryText:'', customerTerms:'', fulfillmentEta:'' });
+  const [editForm, setEditForm] = useState({ sku:'', gameCategory:'MLBB', tier:'SILVER', marketplaceCategoryId:'', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', imageUrl:'', imageGalleryText:'', attributesText:'', customerTerms:'', fulfillmentEta:'' });
   const [busy, setBusy] = useState(false);
   const [authState, setAuthState] = useState('checking');
   const [botUsername, setBotUsername] = useState('');
@@ -171,6 +172,7 @@ export default function AdminPage() {
       costPriceXtr:String(product.cost_price_xtr ?? '0'),
       imageUrl:product.image_url || '',
       imageGalleryText:Array.isArray(product.image_gallery)?product.image_gallery.join('\n'):'',
+      attributesText:formatProductAttributesText(product.attributes),
       customerTerms:product.customer_terms || '',
       fulfillmentEta:product.fulfillment_eta || ''
     });
@@ -182,13 +184,16 @@ export default function AdminPage() {
     if (!editingProductId || busy) return;
     setBusy(true);
     try {
+      const parsedAttributes = parseProductAttributesText(editForm.attributesText);
+      if (!parsedAttributes.ok) throw new Error(parsedAttributes.error);
       const response = await fetch(`${API}/api/admin/products/${editingProductId}`, {
         method:'PATCH', headers:headers(), credentials:'include',
         body:JSON.stringify({
           ...editForm,
           sku:String(editForm.sku).trim().toUpperCase(),
           marketplaceCategoryId:editForm.marketplaceCategoryId || null,
-          imageGallery:String(editForm.imageGalleryText || '').split(/\\r?\\n/).map((value)=>value.trim()).filter(Boolean),
+          attributes:parsedAttributes.value,
+          imageGallery:String(editForm.imageGalleryText || '').split(/\r?\n/).map((value)=>value.trim()).filter(Boolean),
           salePriceXtr:Number(editForm.salePriceXtr),
           costPriceXtr:Number(editForm.costPriceXtr)
         })
@@ -350,13 +355,14 @@ export default function AdminPage() {
         <label>Tier<select value={editForm.tier} onChange={e=>setEditForm({...editForm,tier:e.target.value})}>{Object.entries(TIER_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
         <label>Nama produk<input required maxLength="160" value={editForm.name} onChange={e=>setEditForm({...editForm,name:e.target.value})} /></label>
         <label className="span-2">Deskripsi produk<textarea rows="3" maxLength="5000" value={editForm.description} onChange={e=>setEditForm({...editForm,description:e.target.value})} /></label>
+        <label className="span-2">Atribut produk <small className="field-hint">Format Key|Value, satu atribut per baris. Perubahan atribut memerlukan review ulang CR-05.</small><textarea rows="4" value={editForm.attributesText} onChange={e=>setEditForm({...editForm,attributesText:e.target.value})} placeholder={'Rank|Mythic\nServer|Asia\nLevel|75'} /></label>
         <label>Metode pemenuhan<select value={editForm.fulfillmentType} onChange={e=>setEditForm({...editForm,fulfillmentType:e.target.value})}>
           <option value="REDEEM_CODE">Kode redeem</option><option value="VOUCHER_CODE">Kode voucher</option><option value="LICENSE_KEY">Kunci lisensi</option><option value="GIFT_CODE">Kode hadiah</option><option value="DIGITAL_FILE">Berkas digital</option><option value="SERVICE_INSTRUCTIONS">Petunjuk layanan</option><option value="GAME_ACCOUNT_TRANSFER">Transfer akun melalui prosedur resmi</option>
         </select></label>
         <label>Harga jual (XTR)<input required type="number" min="1" step="1" value={editForm.salePriceXtr} onChange={e=>setEditForm({...editForm,salePriceXtr:e.target.value})} /></label>
         <label>Modal (XTR)<input required type="number" min="0" step="1" value={editForm.costPriceXtr} onChange={e=>setEditForm({...editForm,costPriceXtr:e.target.value})} /></label>
         <label className="span-2">URL gambar utama (HTTPS atau /assets/)<input type="text" value={editForm.imageUrl} onChange={e=>setEditForm({...editForm,imageUrl:e.target.value})} placeholder="https://.../produk.webp" /></label>
-        <label className="span-2">Galeri gambar, satu URL per baris<textarea rows="3" value={editForm.imageGalleryText} onChange={e=>setEditForm({...editForm,imageGalleryText:e.target.value})} placeholder={'https://cdn.../gambar-1.webp\\nhttps://cdn.../gambar-2.webp'} /></label>
+        <label className="span-2">Galeri gambar, satu URL per baris<textarea rows="3" value={editForm.imageGalleryText} onChange={e=>setEditForm({...editForm,imageGalleryText:e.target.value})} placeholder={'https://cdn.../gambar-1.webp\nhttps://cdn.../gambar-2.webp'} /></label>
         <label className="span-2">Ketentuan untuk pelanggan<textarea rows="3" maxLength="5000" value={editForm.customerTerms} onChange={e=>setEditForm({...editForm,customerTerms:e.target.value})} /></label>
         <label className="span-2">Estimasi waktu pemenuhan<input maxLength="160" value={editForm.fulfillmentEta} onChange={e=>setEditForm({...editForm,fulfillmentEta:e.target.value})} placeholder="Contoh: 5–15 menit setelah pembayaran" /></label>
         <div className="admin-actions"><button className="admin-primary" disabled={busy}>Simpan rincian</button><button type="button" onClick={()=>setEditingProductId('')} disabled={busy}>Batal</button></div>
