@@ -89,28 +89,33 @@ Owner authorization accepts either the existing `ADMIN_TELEGRAM_IDS` server-side
 
 ## Current implementation status
 
-Production infrastructure is deployed from commit b3dc38a37b8ed7df44dc6ad7e2812d2e533c1e70 in run 45058882018, which completed SUCCESS. This release includes CR-05 and CR-06. PR #6 was merged; CI run 45058785912 and the full production deployment passed.
+Latest production application source: `af6516c71e7ee8d0a7745fc9e6ac4567756f3526`; CI run [45193828516](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45193828516) and production deployment [45193828313](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45193828313) completed SUCCESS.
 
-Implemented in the deployed application: Telegram initData authentication, catalog API, order reservation, Telegram Stars invoice generation, successful-payment verification/idempotency, encrypted inventory, delivery recovery/reconciliation, two-phase Stars refund recovery, /paysupport, Owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console. CR-05 review enforcement is active across catalog, activation, inventory insertion, order creation, Telegram pre-checkout, and delivery.
+Implemented and deployed: Telegram Mini App authentication, public catalog, Telegram Stars XTR invoice creation, stock reservation, pre-checkout validation, successful-payment verification and idempotency, encrypted digital inventory, Owner manual fulfillment queue, delivery recovery/reconciliation, two-phase Stars refund recovery, Owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console. CR-05 review enforcement remains active across catalog, activation, inventory insertion, order creation, pre-checkout, and delivery.
 
 Latest production data snapshot (23 November 2026):
 
 | Entity | Production state |
 |---|---:|
-| Total products | 16 |
-| Commercial products | 12, all PENDING_REVIEW |
-| Commercial products active | 0 |
-| Owner rights reviews recorded | 0 |
-| TEST-only fixtures | 4 |
-| Inventory items | 4, TEST-only dummy units |
+| Commercial products | 16 |
+| Commercial products ACTIVE | 16 |
+| Current CR-05 Owner-attested APPROVED reviews | 16 |
+| Available commercial manual-fulfillment slots | 16 (1 per SKU) |
+| TEST-only inventory | 4 |
+| Active marketplace categories | 17 |
+| Modal (cost price) | 0 XTR per SKU |
 | Orders | 0 |
 | Transactions | 0 |
+| Deliveries | 0 |
 
-No commercial SKU has an approved current rights review, no commercial inventory has been sourced or added, and no live order or transaction exists. Accordingly, the public commercial catalog has no sellable SKU until Owner completes the relevant product details, records a valid CR-05 review, approves the SKU, and adds source-bound inventory.
+All 16 commercial SKUs have a current Owner-attested review, one source-bound manual-fulfillment slot, and a positive XTR sale price. The review record cites Owner attestation reference `VC-OWNER-ATTESTATION-20261123-01`. Owner confirmed that source, distribution, and transfer requirements are met and retains supporting records. Those underlying documents were not uploaded to this task and were not independently reviewed; database status represents the Owner's internal approval, not independent legal verification or a publisher certificate.
 
-CR-06 is live in production. Owner can edit SKU identity, category, tier, name, description, XTR price/cost, fulfillment method, product image reference, customer purchase terms, and expected fulfillment time. The storefront displays Owner-managed image/terms/ETA. A material change to SKU identity, category, tier, name, description, customer terms, or fulfillment method clears the current rights review and makes available stock unavailable; an ACTIVE SKU is paused. Such changes are blocked while any PENDING_PAYMENT, PAID, FULFILLING, or REFUND_PENDING order exists. Owner must record a fresh CR-05 review before resuming commercial sale.
+Manual-fulfillment slots do not contain dummy redeem codes or customer credentials. After Telegram confirms payment, the customer receives a payment acknowledgement and the order enters `FULFILLING / REVIEW_REQUIRED`. Owner must deliver the actual product through the SKU's stated fulfillment method, then reconcile delivery as `DELIVERED` in Owner Console. Inventory is marked sold and the order fulfilled only after reconciliation. An undelivered order remains open for Owner action or refund.
 
-Live customer XTR payment/refund/fulfillment acceptance, IDOR/admin authorization review, backup/restore, production rate-limit verification, and Owner UAT/release approval are still pending.
+Sale price is stored in XTR and modal is set to 0 XTR per Owner instruction. Reference conversion used for the 16 current prices: Rp375 per XTR, with each IDR price rounded up to a whole XTR. Aggregate reference price is Rp38,359,090 / 102,297 XTR. This is a pricing reference, not a guaranteed fixed cash-out rate; Telegram's store/provider pricing can vary by region and platform.
+
+Telegram XTR invoice creation and pre-checkout protections are enabled in production. No customer order or transaction has yet been recorded, so paid customer UAT, manual delivery UAT, refund acceptance, IDOR/admin authorization review, backup/restore, and production rate-limit review remain outstanding. A material product change or an expired rights review still requires Owner re-review before the next sale.
+
 ## Production deployment
 
 - Frontend Worker: vault-core-web.
