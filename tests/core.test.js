@@ -36,6 +36,8 @@ test('storefront and Owner branding use the supplied VAULT CORE logo and mapped 
   assert.ok(dashboard.includes("from '../lib/marketplace.js'"));
   assert.ok(catalog.includes("from '../../lib/marketplace.js'"));
   assert.ok(owner.includes("from '../../lib/marketplace.js'"));
+  const newProduct = readFileSync(new URL('../frontend/src/app/admin/products/new/page.jsx', import.meta.url), 'utf8');
+  assert.ok(newProduct.includes("from '../../../../lib/marketplace.js'"));
   assert.ok(marketplace.includes('export const GAME_BACKGROUNDS'));
   assert.ok(marketplace.includes('export const GAME_ART'));
   assert.doesNotMatch(catalog + owner, /brand-mark[^>]*>V</);
@@ -54,8 +56,8 @@ test('storefront and Owner branding use the supplied VAULT CORE logo and mapped 
   assert.match(catalog, /game-category-logo/);
   assert.match(catalog, /product-photo-image/);
   assert.match(dashboard, /product-category-logo/);
-  assert.match(styles, /\.dashboard-game-art img\{[^}]*object-fit:contain!important/);
-  assert.match(styles, /\.dashboard-featured-card>img\.product-category-logo\{[^}]*object-fit:contain!important/);
+  assert.match(styles, /\.dashboard-game-art img\{[^}]*object-fit:contain/);
+  assert.match(styles, /\.dashboard-featured-card>img\.product-category-logo\{[^}]*object-fit:contain/);
   for (const icon of ['icon-wallet.svg','icon-shield.svg','icon-orders.svg']) {
     assert.ok(dashboard.includes('/assets/06-icons/' + icon), 'Missing matching trust icon: ' + icon);
   }
