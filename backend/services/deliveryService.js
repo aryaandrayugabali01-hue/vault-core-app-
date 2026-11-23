@@ -2,6 +2,12 @@ import { pool } from '../db/pool.js';
 import { decryptPayload } from '../utils/encryption.js';
 import { telegramCall } from './telegramApi.js';
 
+const MANUAL_FULFILLMENT_SOURCE_PREFIX = 'VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:';
+
+export function isOwnerManualFulfillmentSource(sourceReference) {
+  return String(sourceReference ?? '').startsWith(MANUAL_FULFILLMENT_SOURCE_PREFIX);
+}
+
 export function canReconcileDelivery(orderStatus) {
   return orderStatus === 'PAID' || orderStatus === 'FULFILLING';
 }
@@ -64,7 +70,7 @@ export async function deliverPaidOrder(orderNumber) {
 
     const { rows: eligible } = await pool.query(
       `SELECT d.id AS delivery_id, d.inventory_item_id, p.name AS product_name,
-              i.payload_ciphertext, i.payload_nonce, i.payload_tag
+              i.payload_ciphertext, i.payload_nonce, i.payload_tag, i.source_reference
        FROM deliveries d
        JOIN inventory_items i ON i.id=d.inventory_item_id
        JOIN products p ON p.id=i.product_id
@@ -124,6 +130,34 @@ export async function deliverPaidOrder(orderNumber) {
         [item.delivery_id, order.id]
       );
       if (!claim.rowCount) continue;
+
+      if (isOwnerManualFulfillmentSource(item.source_reference)) {
+        try {
+          await telegramCall('sendMessage', {
+            chat_id: order.telegram_user_id,
+            text: `✅ <b>Pembayaran terverifikasi</b>\n\nPesanan: <code>${escapeHtml(order.order_number)}</code>\nProduk: ${escapeHtml(item.product_name)}\n\nPesanan diteruskan ke Owner untuk pemenuhan manual melalui metode yang tercantum di katalog. Status pengiriman akan diperbarui setelah produk benar-benar diserahkan.`,
+            parse_mode: 'HTML',
+            protect_content: true
+          });
+          await pool.query(
+            `UPDATE deliveries
+             SET status='REVIEW_REQUIRED',
+                 last_error='OWNER_MANUAL_FULFILLMENT_REQUIRED: Payment acknowledgement sent; Owner must deliver the actual product using the listed fulfillment method, then reconcile DELIVERED.'
+             WHERE id=$1 AND status='READY'`,
+            [item.delivery_id]
+          );
+          reviewRequired++;
+        } catch (error) {
+          const nextStatus = error.telegramRejected ? 'FAILED' : 'REVIEW_REQUIRED';
+          await pool.query(
+            `UPDATE deliveries SET status=$2, last_error=$3 WHERE id=$1 AND status='READY'`,
+            [item.delivery_id, nextStatus, String(error.message || 'Manual fulfillment acknowledgement failed').slice(0, 500)]
+          );
+          if (nextStatus === 'FAILED') failed++;
+          else reviewRequired++;
+        }
+        continue;
+      }
 
       try {
         const payload = decryptPayload(item);
