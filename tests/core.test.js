@@ -47,8 +47,8 @@ test('storefront and Owner branding use the supplied VAULT CORE logo and mapped 
   assert.match(catalog, /game-category-logo/);
   assert.match(catalog, /product-photo-image/);
   assert.match(dashboard, /product-category-logo/);
-  assert.match(styles, /\.dashboard-game-art img\\{[^}]*object-fit:contain!important/);
-  assert.match(styles, /\.dashboard-featured-card>img\.product-category-logo\\{[^}]*object-fit:contain!important/);
+  assert.match(styles, /\.dashboard-game-art img\{[^}]*object-fit:contain!important/);
+  assert.match(styles, /\.dashboard-featured-card>img\.product-category-logo\{[^}]*object-fit:contain!important/);
   for (const icon of ['icon-wallet.svg','icon-shield.svg','icon-orders.svg']) {
     assert.ok(dashboard.includes('/assets/06-icons/' + icon), 'Missing matching trust icon: ' + icon);
   }
