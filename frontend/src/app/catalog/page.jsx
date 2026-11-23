@@ -534,7 +534,7 @@ export default function HomePage() {
             const isDraftTest = isTestMode && product.is_test === true && product.status !== 'ACTIVE';
             return <article className="product-card" key={product.id}>
               <div className="product-card-head">
-                <div className={'product-art art-' + game.toLowerCase()}>
+                <div className={'product-art ' + (product.image_url ? 'product-art-photo' : 'product-art-brand') + ' art-' + game.toLowerCase()}>
                   <img src={product.image_url || GAME_ART[game] || GAME_ART.OTHER} alt="" loading="lazy" />
                 </div>
                 <div className="product-card-meta">
@@ -566,7 +566,7 @@ export default function HomePage() {
           <div><strong>{item.title}</strong><small>{item.detail}</small></div>
         </div>)}
       </section>
-      <footer className="footer"><a className="brand" href="/" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a><small>© {new Date().getFullYear()} VAULT CORE. Katalog produk digital dan layanan gaming.</small></footer>
+      <footer className="footer"><a className="brand" href="/" aria-label="VAULT CORE" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}><img className="brand-logo footer-brand-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /></a><small>© {new Date().getFullYear()} VAULT CORE. Katalog produk digital dan layanan gaming.</small></footer>
 
       {telegramContext && <nav className="bottom-nav" aria-label="Navigasi utama">
         <button type="button" className="nav-item" onClick={() => window.location.assign('/')}><AppIcon name="home" /><span>Dashboard</span></button>
