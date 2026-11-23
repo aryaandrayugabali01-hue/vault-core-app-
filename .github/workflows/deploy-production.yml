@@ -95,6 +95,25 @@ jobs:
           console.log('All storefront asset references resolve to the extracted library.');
           NODE
 
+      - name: Verify Itemku game logo assets referenced by uploaded ZIPs
+        shell: bash
+        run: |
+          set -euo pipefail
+          urls=(
+            "https://d1x91p7vw3vuq8.cloudfront.net/game/2024109/rcks2r0xntbibkh7gf72p.png"
+            "https://d1x91p7vw3vuq8.cloudfront.net/game/2025124/vhyvvmjoekra0kyu3a2af4.svg"
+            "https://d1x91p7vw3vuq8.cloudfront.net/game/2024711/93cu2pbsceeiior5v9yc2q.png"
+            "https://d1x91p7vw3vuq8.cloudfront.net/game/2025118/z9t30wkd81lxiwmaio40v.webp"
+          )
+          for url in "${urls[@]}"; do
+            code="$(curl --location --silent --show-error --output /dev/null --write-out '%{http_code}' "$url")"
+            if [[ "$code" != "200" ]]; then
+              echo "::error::Itemku game logo returned HTTP $code: $url"
+              exit 1
+            fi
+          done
+          echo "All four supplied Itemku game logo image references returned HTTP 200."
+
       - name: Install VAULT CORE visual assets from committed library
         shell: bash
         run: |
