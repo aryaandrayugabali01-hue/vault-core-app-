@@ -212,6 +212,14 @@ test('manual delivery reconciliation is blocked for refund and terminal order st
   assert.equal(canReconcileDelivery('PENDING_PAYMENT'), false);
 });
 
+test('delivery does not hold an idle database connection while awaiting Telegram', () => {
+  const source = readFileSync(new URL('../backend/services/deliveryService.js', import.meta.url), 'utf8');
+  assert.match(source, /const \\{ rows: orderRows \\} = await pool\\.query/);
+  assert.doesNotMatch(source, /const client = await pool\\.connect/);
+  assert.match(source, /const completion = await pool\\.connect/);
+  assert.match(source, /completion\\.release\\(\\)/);
+});
+
 test('display stock modes support count, boolean availability, and hidden count', () => {
   assert.equal(resolveDisplayStock({ actualStock: 3, mode: 'IN_STOCK_ONLY' }), 'IN_STOCK');
   assert.equal(resolveDisplayStock({ actualStock: 0, mode: 'IN_STOCK_ONLY' }), 'OUT_OF_STOCK');
