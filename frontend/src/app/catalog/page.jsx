@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { getInitData, getTelegramWebApp, openInvoice } from '../../lib/telegram';
+import { getCustomerVisibleProductAttributes } from '../../lib/product-attributes';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const GAME_ORDER = ['MLBB','ROBLOX','FREE_FIRE','GENSHIN','OTHER'];
@@ -20,7 +21,6 @@ const TIER_ART = {
 };
 const TRUST_ITEMS = [
   { icon: '/assets/06-icons/icon-wallet.svg', title: 'Pembayaran Telegram Stars', detail: 'Invoice resmi dalam XTR' },
-  { icon: '/assets/06-icons/icon-box.svg', title: 'Stok aktual', detail: 'Ketersediaan diperiksa saat checkout' },
   { icon: '/assets/06-icons/icon-shield.svg', title: 'Payload terenkripsi', detail: 'Inventaris digital disimpan terenkripsi' },
   { icon: '/assets/06-icons/icon-orders.svg', title: 'Status pesanan', detail: 'Riwayat dan status dapat dipantau' }
 ];
@@ -35,12 +35,6 @@ function formatDate(value) {
   if (!value) return '';
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('id-ID');
-}
-function formatStock(product) {
-  if (product.status === 'PENDING_REVIEW') return 'Menunggu pemeriksaan';
-  if (product.display_stock === null) return product.is_available ? 'Tersedia' : 'Stok habis';
-  if (typeof product.display_stock === 'number') return product.display_stock > 0 ? 'Tersedia · ' + product.display_stock + ' unit' : 'Stok habis';
-  return product.display_stock === 'OUT_OF_STOCK' ? 'Stok habis' : 'Tersedia';
 }
 function formatIdrRange(attributes = {}) {
   const min = Number(attributes.price_min_idr || 0);
@@ -183,8 +177,8 @@ export default function HomePage() {
     );
     const valuesByKey = new Map();
     for (const product of productsForFacets) {
-      const attributes = product.attributes && typeof product.attributes === 'object' && !Array.isArray(product.attributes) ? product.attributes : {};
-      for (const [key, rawValue] of Object.entries(attributes)) {
+      const attributes = getCustomerVisibleProductAttributes(product.attributes);
+      for (const [key, rawValue] of attributes) {
         const value = String(rawValue ?? '').trim();
         if (!value) continue;
         if (!valuesByKey.has(key)) valuesByKey.set(key, new Set());
@@ -199,7 +193,7 @@ export default function HomePage() {
       (category === 'ALL' || p.game_category === category)
       && (tier === 'ALL' || p.tier === tier)
       && (marketplaceCategoryId === 'ALL' || String(p.marketplace_category_id || '') === marketplaceCategoryId)
-      && Object.entries(attributeFilters).every(([key, value]) => !value || String(p.attributes?.[key] ?? '') === value)
+      && Object.entries(attributeFilters).every(([key, value]) => !value || String(Object.fromEntries(getCustomerVisibleProductAttributes(p.attributes))[key] ?? '') === value)
       && (String(p.name || '') + ' ' + String(p.description || '') + ' ' + String(p.sku || '') + ' ' + String(p.marketplace_category_name || '')).toLowerCase().includes(query.toLowerCase())
     );
     if (sortBy === 'PRICE_ASC') return list.sort((a,b)=>Number(a.sale_price_xtr)-Number(b.sale_price_xtr));
@@ -538,7 +532,6 @@ export default function HomePage() {
           {filtered.map((product) => {
             const game = product.game_category || 'OTHER';
             const isDraftTest = isTestMode && product.is_test === true && product.status !== 'ACTIVE';
-            const stockText = formatStock(product);
             return <article className="product-card" key={product.id}>
               <div className="product-card-head">
                 <div className={'product-art art-' + game.toLowerCase()}>
@@ -547,7 +540,6 @@ export default function HomePage() {
                 <div className="product-card-meta">
                   <span className={'tier-label ' + String(product.tier || '').toLowerCase()}>{product.tier === 'SERVICE' ? 'Katalog' : (TIER_LABELS[product.tier] || product.tier) + ' Tier'}</span>
                   <span className="product-sku">{product.sku}</span>
-                  <span className="stock-label"><span className="stock-dot" />{product.catalog_status_label || stockText}</span>
                 </div>
                 {product.is_test && <span className="product-test-badge">CONTOH UJI</span>}
               </div>
@@ -594,14 +586,12 @@ export default function HomePage() {
           </div>
           <div className="marketplace-detail-body">
             <div className="marketplace-detail-title-row"><div><span className="detail-category">{selectedProduct.marketplace_category_name || GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</span><h3>{selectedProduct.name}</h3></div><strong className="marketplace-detail-price">{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
-            <div className="marketplace-store-trust"><div><strong>VAULT CORE Store</strong><small>Produk dikelola oleh Owner VAULT CORE</small></div></div>
             <div className="marketplace-detail-stats">
-              <div><span>Stok</span><strong>{formatStock(selectedProduct)}</strong></div>
               <div><span>Minimum beli</span><strong>1 unit</strong></div>
               <div><span>Pemenuhan</span><strong>{FULFILLMENT_LABELS[selectedProduct.fulfillment_type] || selectedProduct.fulfillment_type || 'Belum ditentukan'}</strong></div>
               <div><span>Estimasi</span><strong>{selectedProduct.fulfillment_eta || 'Belum ditetapkan Owner'}</strong></div>
             </div>
-            {selectedProduct.attributes && typeof selectedProduct.attributes === 'object' && !Array.isArray(selectedProduct.attributes) && Object.keys(selectedProduct.attributes).length > 0 && <section className="marketplace-detail-section"><h3>Spesifikasi Produk</h3><dl className="marketplace-attributes">{Object.entries(selectedProduct.attributes).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></section>}
+            {getCustomerVisibleProductAttributes(selectedProduct.attributes).length > 0 && <section className="marketplace-detail-section"><h3>Spesifikasi Produk</h3><dl className="marketplace-attributes">{getCustomerVisibleProductAttributes(selectedProduct.attributes).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></section>}
             <section className="marketplace-detail-section"><h3>Deskripsi Produk</h3><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
             <section className="marketplace-detail-section"><h3>Ketentuan Produk</h3><p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p></section>
             <section className="marketplace-detail-section marketplace-guide-link"><button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Cara Beli &amp; Tips <span>›</span></button></section>
@@ -670,7 +660,7 @@ export default function HomePage() {
           {cartLines.length ? <div className="cart-lines">
             {cartLines.map((line)=><article className="cart-line" key={line.productId}>
               <img src={line.product.image_url||GAME_ART[line.product.game_category]||GAME_ART.OTHER} alt="" />
-              <div className="cart-line-copy"><strong>{line.product.name}</strong><small>{line.product.marketplace_category_name||GAME_LABELS[line.product.game_category]||line.product.game_category} · {formatStock(line.product)}</small>
+              <div className="cart-line-copy"><strong>{line.product.name}</strong><small>{line.product.marketplace_category_name||GAME_LABELS[line.product.game_category]||line.product.game_category}</small>
                 <div className="cart-line-controls"><button type="button" onClick={()=>updateCartQuantity(line.productId,line.quantity-1)} disabled={line.quantity<=1}>−</button><span>{line.quantity}</span><button type="button" onClick={()=>updateCartQuantity(line.productId,line.quantity+1)} disabled={line.quantity>=5}>+</button><button className="cart-remove" type="button" onClick={()=>removeCartItem(line.productId)}>Hapus</button></div>
               </div>
               <strong className="cart-line-price">{line.subtotal.toLocaleString('en-US')} XTR</strong>
