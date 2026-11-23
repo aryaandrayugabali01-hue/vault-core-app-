@@ -6,7 +6,6 @@ import { getCustomerVisibleProductAttributes } from '../../lib/product-attribute
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const GAME_ORDER = ['MLBB','ROBLOX','FREE_FIRE','GENSHIN','OTHER'];
-const GAME_MARKS = { MLBB:'⚔', ROBLOX:'R', FREE_FIRE:'◎', GENSHIN:'✧', OTHER:'◇' };
 const GAME_ART = {
   MLBB: '/assets/03-categories/category-mlbb.png',
   ROBLOX: '/assets/03-categories/category-roblox.png',
@@ -152,7 +151,6 @@ export default function HomePage() {
       id,
       label: GAME_LABELS[id] || id.replaceAll('_', ' '),
       short: id === 'FREE_FIRE' ? 'FREE FIRE' : (id === 'OTHER' ? 'LAINNYA' : id),
-      mark: GAME_MARKS[id] || '◇',
       icon: GAME_ART[id] || GAME_ART.OTHER
     }));
   }, [sourceProducts]);
