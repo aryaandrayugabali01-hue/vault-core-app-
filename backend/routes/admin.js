@@ -12,13 +12,21 @@ router.get('/dashboard', async (_req, res) => {
   const [sales, inventory, orders, expenses, catalog] = await Promise.all([
     pool.query(`SELECT COUNT(*)::int AS paid_orders, COALESCE(SUM(total_xtr),0)::bigint AS gross_xtr,
       COALESCE(SUM(total_cost_xtr),0)::bigint AS cost_xtr
-      FROM orders WHERE status IN ('PAID','FULFILLING','FULFILLED','REFUND_PENDING')`),
-    pool.query(`SELECT COUNT(*) FILTER (WHERE status='AVAILABLE')::int AS available,
-      COUNT(*) FILTER (WHERE status='RESERVED')::int AS reserved,
-      COUNT(*) FILTER (WHERE status='SOLD')::int AS sold FROM inventory_items`),
-    pool.query(`SELECT COUNT(*) FILTER (WHERE status='PENDING_PAYMENT')::int AS pending,
-      COUNT(*) FILTER (WHERE status='FULFILLED')::int AS fulfilled,
-      COUNT(*) FILTER (WHERE status='REFUND_PENDING')::int AS refund_pending FROM orders`),
+      FROM orders o
+      WHERE o.status IN ('PAID','FULFILLING','FULFILLED','REFUND_PENDING')
+        AND EXISTS (SELECT 1 FROM order_items oi JOIN products p ON p.id=oi.product_id
+                    WHERE oi.order_id=o.id AND COALESCE(p.is_test,FALSE)=FALSE)`),
+    pool.query(`SELECT COUNT(*) FILTER (WHERE i.status='AVAILABLE')::int AS available,
+      COUNT(*) FILTER (WHERE i.status='RESERVED')::int AS reserved,
+      COUNT(*) FILTER (WHERE i.status='SOLD')::int AS sold
+      FROM inventory_items i JOIN products p ON p.id=i.product_id
+      WHERE COALESCE(p.is_test,FALSE)=FALSE`),
+    pool.query(`SELECT COUNT(*) FILTER (WHERE o.status='PENDING_PAYMENT')::int AS pending,
+      COUNT(*) FILTER (WHERE o.status='FULFILLED')::int AS fulfilled,
+      COUNT(*) FILTER (WHERE o.status='REFUND_PENDING')::int AS refund_pending
+      FROM orders o
+      WHERE EXISTS (SELECT 1 FROM order_items oi JOIN products p ON p.id=oi.product_id
+                    WHERE oi.order_id=o.id AND COALESCE(p.is_test,FALSE)=FALSE)`),
     pool.query(`SELECT COALESCE(SUM(amount_xtr),0)::bigint AS expenses_xtr FROM operating_expenses`),
     pool.query(`SELECT COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE)::int AS total_products,
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='ACTIVE')::int AS active_products,
