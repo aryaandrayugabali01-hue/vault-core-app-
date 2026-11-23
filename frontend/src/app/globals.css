@@ -1154,3 +1154,16 @@ gap:10px;padding:24px
 .marketplace-detail-policy strong{color:#8ce6bd}
 .marketplace-detail-policy p{color:#aab5c5}
 .marketplace-category-nav button{position:relative}
+
+
+/* Original game logos referenced by the supplied Itemku ZIP: preserve full mark, never crop. */
+.dashboard-game-art{background:#171d28!important}
+.dashboard-game-art img{object-fit:contain!important;object-position:center;padding:18px;opacity:1;background:transparent}
+.dashboard-featured-card>img.product-category-logo{object-fit:contain!important;object-position:center;padding:14px;background:#202735}
+.product-art.game-logo-card img,
+.product-art img.game-category-logo{object-fit:contain!important;object-position:center;padding:15px;background:transparent}
+.product-art img.product-photo-image{object-fit:cover}
+.product-art.game-logo-card::before{background:transparent!important}
+.cart-lines img.cart-game-logo{object-fit:contain;background:#202735;padding:5px}
+.cart-lines img.cart-product-photo{object-fit:cover}
+.game-tab-icon{object-fit:contain!important;background:transparent!important;padding:0!important;border-radius:0!important}
