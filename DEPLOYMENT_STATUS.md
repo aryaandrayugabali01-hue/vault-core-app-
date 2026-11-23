@@ -1,32 +1,37 @@
 # VAULT CORE — Deployment Status
 
-**Updated:** 2026-11-23 (CR-05 production verification, CR-06 database migration, and Owner product workflow audit)
+**Updated:** 2026-11-23 (CR-08 marketplace attributes, Mini App startup recovery, and production rollout)
 
 ## Current production snapshot — 23 November 2026
 
-- Latest confirmed production source: b3dc38a37b8ed7df44dc6ad7e2812d2e533c1e70 (CR-05 + CR-06).
-- Production deployment: run 45058882018, SUCCESS. API Worker, frontend Worker, gateway, public domains, public artwork, Neon connectivity, Telegram webhook read-back, and encrypted TEST fixtures passed.
-- Neon migrations 001–012 are registered. CR-05 migration 011 and additive CR-06 migration 012 are applied. Migration 012 SHA-256: ac983f418dc7797cf971c39dfe222badbc8f18c383182fdfbba44c368763eb5a.
-- Database: 16 products total; 12 commercial SKUs all PENDING_REVIEW; 0 commercial SKUs active; 0 Owner rights reviews; 4 TEST-only inventory items; 0 orders; 0 transactions.
-- TEST inventory is dummy and non-commercial. No sellable commercial inventory has been sourced or added. No real customer payment/delivery acceptance has been performed.
-- CR-06 application changes in PR #6 are merged and live. CI run 45058785912 passed backend/core tests, frontend build, asset verification, and API Worker dry-run.
-- Product image management currently accepts HTTPS URLs or local /assets paths. Binary image/evidence upload remains unavailable because Cloudflare R2 is disabled.
-- Remaining launch gates: Owner completes accurate per-SKU details and CR-05 reviews, adds source-bound stock, then performs controlled XTR payment/refund/delivery acceptance, security/recovery checks, and Owner UAT/release approval.
+- Latest production source: `3495d5cc20f7ae525a7222be3d7739ef3fa686fc`; merged PR #14.
+- Production deployment: [run 45183635248](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45183635248), **SUCCESS**. All production steps passed: API/frontend Workers, Neon health, existing gateway upstreams, root/www/API domain checks, public artwork, Telegram webhook read-back, and encrypted Owner TEST fixture verification.
+- Latest CI: [run 45183023193](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45183023193), **SUCCESS**. Asset validation, backend/core tests, Mini App build, and API Worker dry-run passed.
+- Neon migrations 001–014 are registered. CR-05 migration 011, CR-06 migration 012, marketplace category/guide migration 013, and additive CR-08 migration 014 are applied. Migration 014 SHA-256: `522670f518cb781b323726b4ac4d6d7c043ede859c50a496cc4bae0311e34bdb`.
+- Migration 014 adds Owner-managed `products.attributes` JSONB, a bounded object constraint (maximum 24 key/value pairs), and a GIN index. Existing 16 product rows were preserved with default empty objects; the checksum is registered in `schema_migrations`.
+- Current database facts: 16 products total; 12 commercial SKUs pending review; 0 active commercial SKUs; 0 CR-05 rights reviews; 0 marketplace categories; 0 sellable commercial inventory; 4 TEST inventory rows; 0 orders; 0 transactions; 0 deliveries.
+- No product, category, commercial stock, order, payment, transaction, or delivery data was fabricated. TEST fixtures remain non-commercial and excluded from the public catalog.
+- Marketplace navigation, category/tier/attribute filters, product specifications, Owner attribute editors, and purchase guide/gallery form corrections are deployed. Category filters are sourced from Owner-managed database records, not hard-coded sample tabs.
+- Root Mini App now calls Telegram WebApp `ready()` and `expand()`; dashboard API errors are displayed rather than silently treated as an empty catalog. Existing local VAULT CORE artwork is used instead of external Itemku image-proxy links.
+- CR-05 and CR-06 business rules, Telegram Stars XTR checkout, stock reservation, payment verification, and fulfillment controls were preserved.
+- Production infrastructure checks passed, but manual Telegram Android session/UAT and live customer XTR payment/refund/delivery acceptance remain unverified. The exact runtime cause of the original Android screenshot has not been isolated from a live device session; the missing root-route Telegram readiness signal was a concrete startup defect and has been corrected.
+- Sales readiness remains gated: Owner must create/activate real marketplace categories, complete per-SKU details and CR-05 reviews, add source-bound commercial stock, and complete controlled payment/refund/delivery and security/recovery acceptance.
+- Product ratings and sales totals are not shown unless corresponding source data exists. Binary file/evidence upload remains unavailable while Cloudflare R2 is not enabled; product images currently use HTTPS or existing local `/assets/` paths.
 
 **The detailed sections below are retained as historical deployment evidence. Where older numbers or run IDs conflict with this snapshot, this snapshot is authoritative.**
 ## Connected infrastructure
 
 | Service | Resource | Verified status |
 |---|---|---|
-| Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; 11 application tables and 7 migration records verified, including XTR-only migration 006 and owner allowlist migration 007 |
+| Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; migrations 001–014 registered; CR-08 JSONB product attributes and GIN index verified |
 | GitHub | `aryaandrayugabali01-hue/vault-core-app-` / `main` | Source published; repository read/write operations verified |
-| Cloudflare | Primary account | `vault-core-gateway`, `vault-core-api`, and `vault-core-web` deployed; gateway origins installed; root/www/api custom domains attached and public DNS/TLS checks passed in production run `44902626165` attempt 1 |
-| Telegram | Bot API | Production bot identity passed `getMe`; webhook was set to `https://api.vaultcore.biz.id/api/telegram/webhook` and read-back passed in production run `44902626165` attempt 1 |
+| Cloudflare | Primary account | Existing `vault-core-gateway`, `vault-core-api`, and `vault-core-web` deployed; gateway origins installed; root/www/api domain, TLS, public artwork, and health checks passed in production run `45183635248` |
+| Telegram | Bot API | Production webhook `https://api.vaultcore.biz.id/api/telegram/webhook` configured and read-back verified in production run `45183635248` |
 
 ## Repository state
 
 - Default branch: `main`.
-- Latest deployed application source commit: `eafd57dca29404729d2dad7587810e7b025a8cdf`, deployed successfully in production run `44902626165` attempt 1. XTR-only database migration 006 is applied and registered.
+- Latest deployed application source commit: `3495d5cc20f7ae525a7222be3d7739ef3fa686fc`, deployed successfully in production run `45183635248`. PR #14 includes Telegram Mini App startup recovery, data-driven marketplace navigation, Owner product attributes, and CR-05 attribute re-review.
 - Cloudflare gateway source commit: `e88739e82119f287db4215a570b3ab0f64eede23`.
 - Source extraction commit: `15780b23e816cd4c8b3647d6359f949b53c4b2ea`.
 - 40 project source files are now present at repository root; original `vault-core-app-v1.3-github-ready.zip` retained as an archive.
@@ -120,13 +125,12 @@ Connected Neon database `vault_core` was inspected read-only:
 
 ## Latest source and deployment proof
 
-- Latest deployed application source: `eafd57dca29404729d2dad7587810e7b025a8cdf`; latest repository documentation revision: `b9cbdfa8d724dca83e061878bc1f234cb61dbcf0`.
-- CI: [run 44902626129](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44902626129) SUCCESS.
-- Frontend preparation: [run 44902626134](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44902626134) SUCCESS.
-- Production deployment: [run 44902626165](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/44902626165), attempt 1, SUCCESS; all 16 production steps passed through Telegram webhook read-back.
-- Cloudflare live state: all three Workers exist; API Hyperdrive and secrets are attached; gateway upstream secrets exist; three custom domains and three proxied DNS records are configured.
-- The GitHub Actions deployment runner verified root, www, API, TLS, and gateway origins. Cloudflare Observability recent audit returned no error-level events for API and gateway during the checked post-deployment window.
+- Latest deployed application source: `3495d5cc20f7ae525a7222be3d7739ef3fa686fc`; PR #14 merged to `main`.
+- CI: [run 45183023193](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45183023193) SUCCESS (backend/core tests, Mini App build, asset validation, API Worker dry-run).
+- Production deployment: [run 45183635248](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45183635248) SUCCESS; all deployment steps passed through Telegram webhook read-back and TEST fixture verification.
+- Cloudflare live state: existing API/frontend/gateway Workers, Hyperdrive, upstream secrets, three custom domains, public TLS, and public asset checks passed in the latest deployment run.
+- Neon read-back confirms migrations 001–014, JSONB attributes for all 16 current products, and unchanged product/order/transaction/delivery counts.
 
 ## Production deployment and sales readiness
 
-**DEPLOYED — NOT YET READY FOR GENERAL SALES.** Production infrastructure deployment is complete: API/frontend/gateway Workers, Neon/Hyperdrive health, gateway origins, root/www/api custom domains, public DNS/TLS checks, and Telegram webhook read-back all passed in run `44902626165` attempt 1. The remaining blockers are operational/product acceptance: the database has 4 TEST-only DRAFT products and 0 inventory items; no live customer XTR payment/refund/delivery acceptance, IDOR/backup-restore review, or Owner UAT/release approval has been recorded.
+**DEPLOYED — NOT YET READY FOR GENERAL SALES.** The latest application and marketplace changes are deployed. Commercial sales remain blocked by verified database state: 0 marketplace categories, 0 active commercial SKUs, 0 sellable commercial inventory, and 12 commercial SKUs pending CR-05 review. The database has 4 TEST inventory rows, 0 orders, 0 transactions, and 0 deliveries. Manual Telegram Android UAT, live XTR payment/refund/delivery acceptance, IDOR/backup-restore checks, and Owner release approval remain pending.
