@@ -33,7 +33,10 @@ test('storefront and Owner branding use the supplied VAULT CORE logo and mapped 
   const logo = '/assets/01-brand/vaultcore-horizontal.svg';
   for (const page of [dashboard, catalog, owner]) assert.ok(page.includes(logo), 'Every surface must use the supplied VAULT CORE logo');
   assert.doesNotMatch(catalog + owner, /brand-mark[^>]*>V</);
-  assert.doesNotMatch(dashboard, /GAME_MARKS|g\.mark/);
+  assert.doesNotMatch(dashboard + catalog, /GAME_MARKS|g\.mark/);
+  for (const asset of ['category-mlbb.png','category-roblox.png','category-free-fire.png','category-genshin.png']) {
+    assert.ok(catalog.includes('/assets/03-categories/' + asset), 'Catalog must use the matching game asset: ' + asset);
+  }
   for (const asset of ['category-mlbb.png','category-roblox.png','category-free-fire.png','category-genshin.png']) {
     assert.ok(dashboard.includes('/assets/03-categories/' + asset), 'Missing game artwork mapping: ' + asset);
   }
