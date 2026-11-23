@@ -6,9 +6,11 @@ import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes
 import { validateMarketplaceCategory, normalizeImageGallery } from '../services/marketplaceCategoryService.js';
 import { refundStarPayment } from '../services/telegramApi.js';
 import { deliverPaidOrder, canReconcileDelivery } from '../services/deliveryService.js';
+import { releaseExpiredPendingOrders } from '../services/reservationService.js';
 const router = Router();
 
 router.get('/dashboard', async (_req, res) => {
+  await releaseExpiredPendingOrders();
   const [sales, inventory, orders, expenses, catalog] = await Promise.all([
     pool.query(`SELECT COUNT(*)::int AS paid_orders, COALESCE(SUM(total_xtr),0)::bigint AS gross_xtr,
       COALESCE(SUM(total_cost_xtr),0)::bigint AS cost_xtr
@@ -111,6 +113,7 @@ router.patch('/marketplace-categories/:id', async (req,res) => {
 });
 
 router.get('/products', async (_req, res) => {
+  await releaseExpiredPendingOrders();
   const { rows } = await pool.query(
     `SELECT p.*, mc.name AS marketplace_category_name, mc.slug AS marketplace_category_slug, rr.review_status AS rights_review_status,
             rr.valid_until AS rights_valid_until, rr.reviewed_at AS rights_reviewed_at,
@@ -857,6 +860,7 @@ router.post('/orders/:orderNumber/retry-delivery', async (req, res) => {
 });
 
 router.get('/orders', async (_req, res) => {
+  await releaseExpiredPendingOrders();
   const { rows } = await pool.query(
     `SELECT o.order_number,o.status,o.total_xtr,o.total_cost_xtr,o.created_at,o.paid_at,o.fulfilled_at,
       c.telegram_user_id,c.username,
