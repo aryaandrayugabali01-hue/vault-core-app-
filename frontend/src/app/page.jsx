@@ -4,16 +4,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { getInitData, getTelegramWebApp, openInvoice } from '../lib/telegram';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-const STORE_FILTERS = [
-  { key: 'ALL', mode: 'all', id: 'ALL', label: 'Semua produk' },
-  { key: 'TIER_SILVER', mode: 'tier', id: 'SILVER', label: '🥈 Silver' },
-  { key: 'TIER_GOLD', mode: 'tier', id: 'GOLD', label: '🥇 Gold' },
-  { key: 'TIER_PLATINUM', mode: 'tier', id: 'PLATINUM', label: '💎 Platinum' },
-  { key: 'TIER_SERVICE', mode: 'tier', id: 'SERVICE', label: 'Layanan' },
-  { key: 'GAME_MLBB', mode: 'game', id: 'MLBB', label: '⚔ MLBB' },
-  { key: 'GAME_ROBLOX', mode: 'game', id: 'ROBLOX', label: 'Roblox' },
-  { key: 'GAME_FREE_FIRE', mode: 'game', id: 'FREE_FIRE', label: '◎ Free Fire' },
-  { key: 'GAME_GENSHIN', mode: 'game', id: 'GENSHIN', label: '✧ Genshin Impact' }
+const GAME_TABS = [
+  {id:'MLBB',label:'Mobile Legends',short:'MLBB',mark:'⚔'},
+  {id:'ROBLOX',label:'Roblox',short:'ROBLOX',mark:'R'},
+  {id:'FREE_FIRE',label:'Free Fire',short:'FREE FIRE',mark:'◎'},
+  {id:'GENSHIN',label:'Genshin Impact',short:'GENSHIN',mark:'✧'}
 ];
 const CATEGORY_TILES = [
   { id: 'MLBB', label: 'Mobile Legends', subtitle: 'Kategori game', mode: 'game', mark: '⚔' },
@@ -114,7 +109,7 @@ export default function HomePage() {
   const [isTestMode, setIsTestMode] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activatingId, setActivatingId] = useState(null);
-  const [category, setCategory] = useState('ALL');
+  const [category, setCategory] = useState('MLBB');
   const [tier, setTier] = useState('ALL');
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -159,10 +154,11 @@ export default function HomePage() {
   }, []);
 
   const sourceProducts = isTestMode ? testProducts : products;
-  const activeStoreFilter = tier !== 'ALL' ? 'TIER_' + tier : category !== 'ALL' ? 'GAME_' + category : 'ALL';
-  const activeFilterLabel = tier !== 'ALL'
-    ? (tier === 'SERVICE' ? 'Layanan' : (TIER_LABELS[tier] || tier) + ' Tier')
-    : category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua produk';
+  const activeFilterLabel = category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua game';
+  const selectedGame = GAME_TABS.find((item)=>item.id===category) || GAME_TABS[0];
+  const gameMarketplaceCategories = useMemo(()=>marketplaceCategories.filter((item)=>
+    sourceProducts.some((product)=>product.game_category===category && String(product.marketplace_category_id||'')===String(item.id))
+  ),[marketplaceCategories,sourceProducts,category]);
   const filtered = useMemo(() => {
     const list = sourceProducts.filter((p) =>
       (category === 'ALL' || p.game_category === category)
@@ -482,57 +478,24 @@ export default function HomePage() {
         <span>Halaman ini menampilkan katalog publik. Login akun, riwayat pesanan, checkout XTR, dan Dashboard Owner tersedia setelah VAULT CORE dibuka melalui Telegram Mini App.</span>
       </aside>}
 
-      <nav className="store-tabs" aria-label="Filter tier dan kategori katalog">
-        {STORE_FILTERS.map((item) => <button
-          key={item.key}
-          type="button"
-          className={'store-tab ' + (activeStoreFilter === item.key ? 'active' : '')}
-          aria-pressed={activeStoreFilter === item.key}
-          onClick={() => selectStoreFilter(item)}
-        >{item.label}</button>)}
-      </nav>
-
-      <section className="hero" id="home">
-        <div className="hero-copy">
-          <div className="eyebrow"><span className="pulse" /> VAULT CORE DIGITAL STORE</div>
-          <h1>Temukan pilihan digital<br /><span>gaming dalam satu tempat.</span></h1>
-          <p>Jelajahi kategori dan tier, periksa stok yang tersedia, lalu selesaikan pembayaran melalui invoice Telegram Stars.</p>
-          <div className="hero-actions">
-            <button className="hero-cta" type="button" onClick={() => { setCategory('ALL'); setTier('PLATINUM'); const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            document.getElementById('products')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); }}>Jelajahi Tier Platinum <span>↗</span></button>
-            <button className="hero-secondary" type="button" onClick={() => { setCategory('ALL'); setTier('ALL'); const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            document.getElementById('products')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); }}>Semua produk</button>
-          </div>
-          <div className="hero-stats">
-            <div><strong>04</strong><small>Kategori game</small></div>
-            <div><strong>04</strong><small>Tier & layanan</small></div>
-            <div><strong>XTR</strong><small>Telegram Stars</small></div>
-          </div>
+      <section className="marketplace-game-nav" id="home">
+        <div className="marketplace-game-heading">
+          <span className="eyebrow muted">VAULT CORE · DIGITAL GAME STORE</span>
+          <h1>{selectedGame.label}</h1>
+          <p>Pilih jenis produk, buka detail penawaran, lalu lanjutkan ke pembayaran Telegram Stars.</p>
         </div>
-        <div className="hero-visual" aria-hidden="true">
-          <div className="hero-visual-glow" />
-          <img src="/assets/02-hero/hero-vaultcore.webp" alt="" fetchPriority="high" />
-          <span className="hero-visual-caption">DIGITAL GAMING STORE <b>· XTR</b></span>
+        <nav className="marketplace-game-tabs" aria-label="Pilih game">
+          {GAME_TABS.map((game)=><button key={game.id} type="button" className={category===game.id?'active':''} aria-pressed={category===game.id} onClick={()=>{setCategory(game.id);setTier('ALL');setMarketplaceCategoryId('ALL');setQuery('');}}>
+            <span>{game.mark}</span>{game.short}
+          </button>)}
+        </nav>
+        <div className="marketplace-category-nav">
+          <button type="button" className={marketplaceCategoryId==='ALL'?'active':''} onClick={()=>selectMarketplaceCategory('ALL')}>Semua</button>
+          {gameMarketplaceCategories.map((item)=><button key={item.id} type="button" className={marketplaceCategoryId===String(item.id)?'active':''} onClick={()=>selectMarketplaceCategory(String(item.id))}>
+            <span>{item.icon||'◇'}</span>{item.name}
+          </button>)}
+          {!gameMarketplaceCategories.length&&!loading&&<span className="marketplace-no-categories">Kategori game ini akan tampil setelah Owner menghubungkan produk aktif.</span>}
         </div>
-      </section>
-
-      <section className="section category-section" id="catalog">
-        <div className="section-heading">
-          <div><span className="eyebrow muted">JELAJAHI KATALOG</span><h2 id="categories">Kategori produk</h2></div>
-          <span className="section-count">{marketplaceCategories.length} KATEGORI</span>
-        </div>
-        {marketplaceCategories.length ? <div className="category-grid" role="group" aria-label="Pilih kategori produk">
-          {marketplaceCategories.map((item) => (
-            <button key={item.id} type="button"
-              className={'category-card marketplace-category-card '+(marketplaceCategoryId===String(item.id)?'selected':'')}
-              aria-pressed={marketplaceCategoryId===String(item.id)}
-              onClick={()=>selectMarketplaceCategory(String(item.id))}>
-              <span className="cat-icon marketplace-category-icon">{item.icon || '◇'}</span>
-              <span className="category-copy"><strong>{item.name}</strong><small>{item.description || item.product_count+' produk tersedia'}</small></span>
-              <span className="cat-arrow">↗</span>
-            </button>
-          ))}
-        </div> : <div className="category-empty">Kategori akan tampil setelah Owner mengelola kategori dan menghubungkan produk yang telah aktif.</div>}
       </section>
 
       <section className="section product-section" id="products">
@@ -540,15 +503,8 @@ export default function HomePage() {
           <div><span className="eyebrow muted">PILIHAN UNTUK ANDA</span><h2>Katalog digital <span className="active-filter-badge">{activeFilterLabel}</span></h2></div>
           <span className="section-count">{loading ? '—' : String(filtered.length).padStart(2, '0') + ' PRODUK'}</span>
         </div>
-        <div className="catalog-toolbar">
-          <label><span>Kategori</span><select value={marketplaceCategoryId} onChange={(e)=>setMarketplaceCategoryId(e.target.value)}>
-            <option value="ALL">Semua kategori</option>
-            {marketplaceCategories.map((item)=><option key={item.id} value={String(item.id)}>{item.name}</option>)}
-          </select></label>
-          <label><span>Game</span><select value={category} onChange={(e)=>setCategory(e.target.value)}>
-            <option value="ALL">Semua game</option>{Object.entries(GAME_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}
-          </select></label>
-          <label><span>Tipe</span><select value={tier} onChange={(e)=>setTier(e.target.value)}>
+        <div className="catalog-toolbar marketplace-toolbar">
+          <label><span>Tipe produk</span><select value={tier} onChange={(e)=>setTier(e.target.value)}>
             <option value="ALL">Semua tipe</option>{Object.entries(TIER_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}
           </select></label>
           <label><span>Urutkan</span><select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
@@ -617,39 +573,36 @@ export default function HomePage() {
 
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Tutup">×</button></div>}
 
-{selectedProduct && <div className="modal-backdrop" onClick={() => setSelectedProduct(null)}>
-        <section className="product-detail-modal" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-head"><div><span className="eyebrow muted">DETAIL PENAWARAN</span><h2 id="product-detail-title">{selectedProduct.name}</h2></div><button className="icon-button" type="button" onClick={() => setSelectedProduct(null)} aria-label="Tutup detail produk">×</button></div>
-          <div className="detail-product-art">
+{selectedProduct && <div className="modal-backdrop marketplace-detail-backdrop" onClick={() => setSelectedProduct(null)}>
+        <section className="product-detail-modal marketplace-detail-modal" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onClick={(e) => e.stopPropagation()}>
+          <div className="marketplace-sheet-grip" />
+          <div className="modal-head marketplace-detail-head"><div><span className="eyebrow muted">DETAIL PRODUK · {GAME_LABELS[selectedProduct.game_category]||selectedProduct.game_category}</span><h2 id="product-detail-title">{selectedProduct.name}</h2></div><button className="icon-button" type="button" onClick={() => setSelectedProduct(null)} aria-label="Tutup detail produk">×</button></div>
+          <div className="marketplace-detail-gallery">
             {(Array.isArray(selectedProduct.image_gallery)&&selectedProduct.image_gallery.length?selectedProduct.image_gallery:[selectedProduct.image_url||GAME_ART[selectedProduct.game_category]||GAME_ART.OTHER]).map((src,index)=><img key={src+index} src={src} alt={selectedProduct.name+' '+(index+1)} loading={index?'lazy':'eager'} />)}
           </div>
-          <div className="detail-category">{selectedProduct.marketplace_category_name || GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</div>
-          <p className="detail-description">{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p>
-          <div className="detail-facts">
-            <div><span>Harga</span><strong>{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
-            <div><span>Stok</span><strong>{formatStock(selectedProduct)}</strong></div>
-            <div><span>Pemenuhan</span><strong>{FULFILLMENT_LABELS[selectedProduct.fulfillment_type] || selectedProduct.fulfillment_type || 'Belum ditentukan'}</strong></div>
-            <div><span>Estimasi</span><strong>{selectedProduct.fulfillment_eta || 'Belum ditetapkan Owner'}</strong></div>
-          </div>
-          <div className="detail-policy">
-            <strong>Ketentuan pembelian</strong>
-            <p>Pembayaran menggunakan invoice Telegram Stars (XTR). Stok diperiksa dan direservasi ulang oleh server saat checkout. Pemenuhan dimulai setelah Telegram memverifikasi pembayaran.</p>
-            <strong>Ketentuan produk</strong>
-            <p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p>
-            <button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Panduan Beli &amp; Tips</button>
-            {selectedProduct.is_test && <p>Produk uji internal. Invoice uji tetap menagihkan 1 XTR sungguhan.</p>}
-          </div>
-          <div className="detail-buy-row">
-            <label>Jumlah<input type="number" min="1" max="5" value={detailQuantity} onChange={(e)=>setDetailQuantity(Math.max(1,Math.min(5,Number(e.target.value)||1)))} /></label>
-            <div><small>Subtotal indikatif</small><strong>{(Number(selectedProduct.sale_price_xtr||0)*detailQuantity).toLocaleString('en-US')} XTR</strong></div>
-          </div>
-          <div className="detail-actions detail-market-actions">
-            {selectedProduct.is_test && selectedProduct.status !== 'ACTIVE'
-              ? <button className="buy-button" type="button" disabled={activatingId === selectedProduct.id} onClick={() => { const productId = selectedProduct.id; setSelectedProduct(null); activateTestProduct(productId); }}>Aktifkan produk ini</button>
-              : <><button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available||selectedProduct.is_test} onClick={()=>addToCart(selectedProduct,detailQuantity)}>Tambah ke keranjang</button>
-                <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id} onClick={() => { const product = selectedProduct; const quantity=detailQuantity; setSelectedProduct(null); buy(product,quantity); }}>
-                  {selectedProduct.is_test ? 'Buat invoice uji · 1 XTR' : 'Beli sekarang'}
-                </button></>}
+          <div className="marketplace-detail-body">
+            <div className="marketplace-detail-title-row"><div><span className="detail-category">{selectedProduct.marketplace_category_name || GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</span><h3>{selectedProduct.name}</h3></div><strong className="marketplace-detail-price">{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
+            <div className="marketplace-store-trust"><span className="store-shield">✓</span><div><strong>VAULT CORE Store</strong><small>Penawaran dikelola melalui katalog resmi VAULT CORE</small></div><span className="store-verified">TERVERIFIKASI</span></div>
+            <div className="marketplace-detail-stats">
+              <div><span>Stok</span><strong>{formatStock(selectedProduct)}</strong></div>
+              <div><span>Minimum beli</span><strong>1 unit</strong></div>
+              <div><span>Pemenuhan</span><strong>{FULFILLMENT_LABELS[selectedProduct.fulfillment_type] || selectedProduct.fulfillment_type || 'Belum ditentukan'}</strong></div>
+              <div><span>Estimasi</span><strong>{selectedProduct.fulfillment_eta || 'Belum ditetapkan Owner'}</strong></div>
+            </div>
+            <section className="marketplace-detail-section"><h3>Deskripsi Produk</h3><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
+            <section className="marketplace-detail-section"><h3>Ketentuan Produk</h3><p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p></section>
+            <section className="marketplace-detail-section marketplace-guide-link"><button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Cara Beli &amp; Tips <span>›</span></button></section>
+            <div className="marketplace-detail-policy"><strong>Perlindungan transaksi</strong><p>Pembayaran menggunakan invoice Telegram Stars (XTR). Harga dan stok diperiksa ulang oleh server saat checkout. Pemenuhan dimulai setelah Telegram mengonfirmasi pembayaran.</p></div>
+            <div className="detail-buy-row marketplace-quantity-row">
+              <label>Jumlah pembelian<div className="marketplace-quantity-control"><button type="button" disabled={detailQuantity<=1} onClick={()=>setDetailQuantity(Math.max(1,detailQuantity-1))}>−</button><strong>{detailQuantity}</strong><button type="button" disabled={detailQuantity>=5} onClick={()=>setDetailQuantity(Math.min(5,detailQuantity+1))}>+</button></div></label>
+              <div><small>Subtotal indikatif</small><strong>{(Number(selectedProduct.sale_price_xtr||0)*detailQuantity).toLocaleString('en-US')} XTR</strong></div>
+            </div>
+            <div className="marketplace-detail-actions">
+              <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available||selectedProduct.is_test} onClick={()=>addToCart(selectedProduct,detailQuantity)}>+ Keranjang</button>
+              <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || selectedProduct.is_test} onClick={() => { const product = selectedProduct; const quantity=detailQuantity; setSelectedProduct(null); buy(product,quantity); }}>
+                {buyingId === selectedProduct.id ? 'Menyiapkan…' : 'Beli sekarang'}
+              </button>
+            </div>
           </div>
         </section>
       </div>}
