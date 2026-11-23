@@ -36,7 +36,16 @@ jobs:
           test -s "$public_dir/03-categories/category-roblox.png"
           test -s "$public_dir/03-categories/category-free-fire.png"
           test -s "$public_dir/03-categories/category-genshin.png"
+          test -s "$public_dir/03-categories/category-other.png"
           test -s "$public_dir/04-tiers/tier-platinum.png"
+          test -s "$public_dir/06-icons/icon-wallet.svg"
+          test -s "$public_dir/06-icons/icon-shield.svg"
+          test -s "$public_dir/06-icons/icon-orders.svg"
+          test -s "$public_dir/01-brand/favicon.svg"
+          test -s "$public_dir/01-brand/favicon.png"
+          test -s "$public_dir/01-brand/pwa-icon-192.png"
+          test -s "$public_dir/09-social/og-cover-1200x630.jpg"
+          echo "Brand logo, all game category images, trust icons, favicon, PWA icon and social cover are present."
           cat "$public_dir/README.md"
           cat "$public_dir/asset-manifest.json"
       - name: Verify every storefront asset URL resolves
@@ -48,6 +57,8 @@ jobs:
           const sources = [
             'frontend/src/app/globals.css',
             'frontend/src/app/page.jsx',
+            'frontend/src/app/catalog/page.jsx',
+            'frontend/src/app/admin/page.jsx',
             'frontend/src/app/layout.jsx'
           ].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
           const paths = [...sources.matchAll(/\/assets\/([A-Za-z0-9_./-]+)/g)]
