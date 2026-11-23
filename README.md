@@ -89,11 +89,11 @@ Owner authorization accepts either the existing `ADMIN_TELEGRAM_IDS` server-side
 
 ## Current implementation status
 
-Latest production application source: `af6516c71e7ee8d0a7745fc9e6ac4567756f3526`; CI run [45193828516](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45193828516) and production deployment [45193828313](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45193828313) completed SUCCESS.
+Latest production application source: `8876ea58a945d21b82b0ef00a3cae419d2f2b216`; CI run [45199182726](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45199182726) and production deployment [45199182854](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45199182854) completed SUCCESS.
 
 Implemented and deployed: Telegram Mini App authentication, public catalog, Telegram Stars XTR invoice creation, stock reservation, pre-checkout validation, successful-payment verification and idempotency, encrypted digital inventory, Owner manual fulfillment queue, delivery recovery/reconciliation, two-phase Stars refund recovery, Owner product/inventory/order routes, expense/profit reporting, customer Mini App, and Owner Console. CR-05 review enforcement remains active across catalog, activation, inventory insertion, order creation, pre-checkout, and delivery.
 
-Latest production data snapshot (23 November 2026):
+Latest production data snapshot (23 November 2026, 14:57 UTC):
 
 | Entity | Production state |
 |---|---:|
@@ -101,12 +101,13 @@ Latest production data snapshot (23 November 2026):
 | Commercial products ACTIVE | 16 |
 | Current CR-05 Owner-attested APPROVED reviews | 16 |
 | Available commercial manual-fulfillment slots | 16 (1 per SKU) |
+| Reserved commercial slots | 0 |
 | TEST-only inventory | 4 |
 | Active marketplace categories | 17 |
 | Modal (cost price) | 0 XTR per SKU |
-| Orders | 0 |
+| Orders | 1 CANCELLED (expired unpaid Owner test checkout) |
 | Transactions | 0 |
-| Deliveries | 0 |
+| Deliveries | 1 REVOKED (expired unpaid checkout) |
 
 All 16 commercial SKUs have a current Owner-attested review, one source-bound manual-fulfillment slot, and a positive XTR sale price. The review record cites Owner attestation reference `VC-OWNER-ATTESTATION-20261123-01`. Owner confirmed that source, distribution, and transfer requirements are met and retains supporting records. Those underlying documents were not uploaded to this task and were not independently reviewed; database status represents the Owner's internal approval, not independent legal verification or a publisher certificate.
 
@@ -114,26 +115,11 @@ Manual-fulfillment slots do not contain dummy redeem codes or customer credentia
 
 Sale price is stored in XTR and modal is set to 0 XTR per Owner instruction. Reference conversion used for the 16 current prices: Rp375 per XTR, with each IDR price rounded up to a whole XTR. Aggregate reference price is Rp38,359,090 / 102,297 XTR. This is a pricing reference, not a guaranteed fixed cash-out rate; Telegram's store/provider pricing can vary by region and platform.
 
-Telegram XTR invoice creation and pre-checkout protections are enabled in production. No customer order or transaction has yet been recorded, so paid customer UAT, manual delivery UAT, refund acceptance, IDOR/admin authorization review, backup/restore, and production rate-limit review remain outstanding. A material product change or an expired rights review still requires Owner re-review before the next sale.
+Telegram XTR invoice creation and pre-checkout protections are enabled in production. One unpaid checkout initiated from the Owner account for FF-001 was left pending without a pre-checkout query or payment transaction; after its 15-minute window expired, it was cancelled, its delivery was revoked, and its inventory reservation was released. Current production read-back shows 0 payment transactions and all 16 commercial stock slots available. Paid customer UAT, manual delivery UAT, refund acceptance, IDOR/admin authorization review, backup/restore, and production rate-limit review remain outstanding. A material product change or an expired rights review still requires Owner re-review before the next sale.
 
-## Production deployment
-
-- Frontend Worker: vault-core-web.
-- API Worker: vault-core-api, connected to Neon through Hyperdrive vault-core-neon.
-- Existing gateway: vault-core-gateway; WEB_ORIGIN and API_ORIGIN secrets are installed.
-- Custom domains: vaultcore.biz.id, www.vaultcore.biz.id, and api.vaultcore.biz.id.
-- Production Telegram webhook: https://api.vaultcore.biz.id/api/telegram/webhook; configuration and getWebhookInfo read-back passed in deployment run 45056388433.
-- Latest confirmed production source: b3dc38a37b8ed7df44dc6ad7e2812d2e533c1e70; run 45058882018, SUCCESS.
-- Neon migrations 001–012 are registered. Migration 012 is additive and does not alter existing SKU prices, statuses, or inventory.
-## Remaining production acceptance gates
-
-1. Run a controlled end-to-end acceptance with separate Owner and customer accounts: Telegram authentication, public catalog, single-item and cart checkout, XTR invoice, pre-checkout validation, successful-payment verification, payment acknowledgement, and Owner manual fulfillment reconciliation.
-2. Verify refund/recovery using a controlled paid test order, including Telegram refund confirmation, database ledger finalization, and safe handling of ambiguous outcomes.
-3. Complete IDOR/admin authorization review, backup/restore test, production rate-limit review, and record Owner UAT plus explicit release approval.
-
-The 16 imported commercial SKUs are already ACTIVE with current Owner-attested reviews and one available manual-fulfillment capacity slot each. Their supporting rights/source documents remain Owner-held and have not been independently inspected in this implementation session. TEST fixtures remain separate from commercial stock.
-
-Binary evidence/image uploads remain unavailable while R2 is disabled; use valid document references and public HTTPS or existing /assets/ image paths.
-## Continuous integration
-
-`.github/workflows/ci.yml` runs workspace installation, automated tests, and the Next.js production build on pushes to `main`/`develop` and pull requests to `main`.
+Production audit fixes deployed on 23 November 2026:
+- Removed the stale Owner Console effect that referenced deleted form variables and could throw a runtime error.
+- Added atomic expiry cleanup for unpaid orders after the existing 15-minute window. Cleanup now runs when the catalog, customer order history, Owner dashboard/product/order lists, or checkout is accessed; expired deliveries are revoked and their reservations are released.
+- Removed the customer-facing “VAULT CORE Store” / Owner attribution block and all stock-count labels from product cards, product details, and cart rows.
+- Customer specifications now omit internal cost, Owner-attestation, and XTR conversion metadata. The production attributes `xtr_conversion_reference_date` and `xtr_conversion_rate_idr_per_star` were deleted from all 16 commercial SKUs; XTR sale prices remain unchanged.
+- Regression coverage includes Owner page stale references, reservation expiry, and customer metadata visibility.
