@@ -3,17 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getInitData, getTelegramWebApp, openInvoice } from '../../lib/telegram';
 import { getCustomerVisibleProductAttributes } from '../../lib/product-attributes';
+import { GAME_ORDER, GAME_LABELS, GAME_ART, GAME_BACKGROUNDS } from '../../lib/marketplace.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-const GAME_ORDER = ['MLBB','ROBLOX','FREE_FIRE','GENSHIN','OTHER'];
-// Original game logo asset URLs referenced by the supplied Itemku homepage ZIP.
-const GAME_ART = {
-  MLBB: 'https://d1x91p7vw3vuq8.cloudfront.net/game/2024109/rcks2r0xntbibkh7gf72p.png',
-  ROBLOX: 'https://d1x91p7vw3vuq8.cloudfront.net/game/2025124/vhyvvmjoekra0kyu3a2af4.svg',
-  FREE_FIRE: 'https://d1x91p7vw3vuq8.cloudfront.net/game/2024711/93cu2pbsceeiior5v9yc2q.png',
-  GENSHIN: 'https://d1x91p7vw3vuq8.cloudfront.net/game/2025118/z9t30wkd81lxiwmaio40v.webp',
-  OTHER: '/assets/03-categories/category-other.png'
-};
 const TIER_ART = {
   SILVER: '/assets/04-tiers/tier-silver.png',
   GOLD: '/assets/04-tiers/tier-gold.png',
@@ -25,7 +17,6 @@ const TRUST_ITEMS = [
   { icon: '/assets/06-icons/icon-orders.svg', title: 'Status pesanan', detail: 'Riwayat dan status dapat dipantau' }
 ];
 
-const GAME_LABELS = { MLBB: 'MLBB', ROBLOX: 'Roblox', FREE_FIRE: 'Free Fire', GENSHIN: 'Genshin Impact', OTHER: 'Lainnya' };
 const TIER_LABELS = { SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Platinum', SERVICE: 'Layanan' };
 const FULFILLMENT_LABELS = {
   REDEEM_CODE: 'Kode redeem', VOUCHER_CODE: 'Kode voucher', LICENSE_KEY: 'Kunci lisensi',
@@ -482,7 +473,7 @@ export default function HomePage() {
         <span>Website ini hanya untuk melihat katalog dan detail produk. Untuk membuat pesanan, membayar dengan invoice resmi Telegram Stars (XTR), dan memantau pesanan, buka VAULT CORE melalui bot Telegram.</span>
       </aside>}
 
-      <section className="marketplace-game-nav" id="home">
+      <section className="marketplace-game-nav" id="home" style={{ "--marketplace-background": `url("${category === "ALL" ? "/assets/02-hero/hero-vaultcore-loop.webp" : (GAME_BACKGROUNDS[category] || GAME_BACKGROUNDS.OTHER)}")` }}>
         <div className="marketplace-game-heading">
           <span className="eyebrow muted">VAULT CORE · DIGITAL GAME STORE</span>
           <h1>{selectedGame?.label || 'Semua game'}</h1>
@@ -533,7 +524,7 @@ export default function HomePage() {
             const isDraftTest = isTestMode && product.is_test === true && product.status !== 'ACTIVE';
             return <article className="product-card" key={product.id}>
               <div className="product-card-head">
-                <div className={'product-art ' + (product.image_url ? 'product-art-photo' : 'product-art-brand') + ' art-' + game.toLowerCase()}>
+                <div className={'product-art ' + (product.image_url ? 'product-art-photo' : 'product-art-brand') + ' art-' + game.toLowerCase()} style={{ "--game-background": `url("${GAME_BACKGROUNDS[game] || GAME_BACKGROUNDS.OTHER}")` }}>
                   <img className={product.image_url ? "product-photo-image" : "game-category-logo"} src={product.image_url || GAME_ART[game] || GAME_ART.OTHER} alt={product.image_url ? product.name : (GAME_LABELS[game] || "Game") + " logo"} loading="lazy" />
                 </div>
                 <div className="product-card-meta">
