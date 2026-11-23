@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { validateTelegramInitData } from '../backend/utils/telegram.js';
@@ -16,6 +17,12 @@ import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes
 import { parseProductAttributesText, formatProductAttributesText } from '../frontend/src/lib/product-attributes.js';
 import { validateMarketplaceCategory, normalizeImageGallery } from '../backend/services/marketplaceCategoryService.js';
 import { normalizeCartItems } from '../backend/services/cartService.js';
+
+
+test('Owner dashboard has no stale product-form effect references', () => {
+  const ownerPage = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(ownerPage, /\\b(?:skuManual|setForm|suggestedSku)\\b/);
+});
 
 function signedInitData(user, token, authDate = Math.floor(Date.now() / 1000), extraParams = {}) {
   const params = new URLSearchParams({ auth_date: String(authDate), query_id: 'AAE-test', user: JSON.stringify(user), ...extraParams });
