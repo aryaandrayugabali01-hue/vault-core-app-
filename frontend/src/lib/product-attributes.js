@@ -29,6 +29,7 @@ const HIDDEN_CUSTOMER_PRODUCT_ATTRIBUTE_KEYS = new Set([
   'xtr_price',
   'price_note',
   'price_currency',
+  'price_reference_idr',
   'price_min_idr',
   'price_max_idr',
   'cost_price_note',
