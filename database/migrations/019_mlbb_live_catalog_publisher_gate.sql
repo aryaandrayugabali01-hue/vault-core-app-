@@ -91,7 +91,14 @@ SET status = 'ACTIVE',
     sale_price_xtr = CASE WHEN p.sku = 'ML-001' THEN 400 ELSE p.sale_price_xtr END,
     display_stock_mode = 'HIDE_COUNT',
     display_stock_override = NULL,
-    attributes = COALESCE(p.attributes, '{}'::jsonb) || jsonb_build_object(
+    attributes = (
+      COALESCE(p.attributes, '{}'::jsonb)
+      - 'cost_price_note'
+      - 'cost_price_status'
+      - 'fulfillment_mode'
+      - 'owner_attestation_ref'
+      - 'authorization_evidence_status'
+    ) || jsonb_build_object(
       'public_preview', true,
       'sales_enabled', false,
       'stock_model', 'CATALOG_ON_DEMAND',
@@ -117,7 +124,14 @@ SET name = 'Akun MLBB · 79 Hero · 130 Skin · Mythic',
       "/assets/products/mlbb-account/skin-catalog-03.jpg",
       "/assets/products/mlbb-account/emblem-all-max.webp"
     ]'::jsonb,
-    attributes = COALESCE(attributes, '{}'::jsonb) || jsonb_build_object(
+    attributes = (
+      COALESCE(attributes, '{}'::jsonb)
+      - 'cost_price_note'
+      - 'cost_price_status'
+      - 'fulfillment_mode'
+      - 'owner_attestation_ref'
+      - 'authorization_evidence_status'
+    ) || jsonb_build_object(
       'price_reference_idr', '150000',
       'price_currency', 'IDR',
       'win_rate', '49%',

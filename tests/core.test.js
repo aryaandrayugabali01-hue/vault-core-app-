@@ -253,6 +253,7 @@ test('MLBB public catalog listing is not checkout-enabled without publisher auth
   assert.match(delivery, /MLBB_ACCOUNT_TRANSFER/);
   assert.match(migration, /MLBB_ACCOUNT_TRANSFER_PUBLISHER_AUTHORIZATION_REQUIRED/);
   assert.match(migration, /'sales_enabled', false/);
+  assert.match(migration, /- 'cost_price_note'[\s\S]*- 'authorization_evidence_status'/);
   assert.doesNotMatch(migration, /Mitra/);
 });
 
