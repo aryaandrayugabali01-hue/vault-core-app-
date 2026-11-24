@@ -260,6 +260,52 @@ export default function HomePage() {
     }
   }
 
+  async function confirmOrderReceived(orderNumber) {
+    const initData = getInitData();
+    if (!initData) { setNotice('Buka VAULT CORE melalui Telegram untuk mengonfirmasi penerimaan.'); return; }
+    if (!window.confirm('Konfirmasi bahwa produk telah diterima dan diperiksa? Garansi Anti Hackback 14 hari dimulai setelah konfirmasi ini.')) return;
+    setBuyingId('complete:' + orderNumber);
+    try {
+      const response = await fetch(API + '/api/orders/' + encodeURIComponent(orderNumber) + '/complete', {
+        method:'POST',
+        headers:{ 'content-type':'application/json', 'x-telegram-init-data':initData },
+        body:JSON.stringify({})
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Konfirmasi penerimaan belum dapat diproses.');
+      setNotice('Penerimaan dikonfirmasi. Garansi aktif sampai ' + formatDate(data.warranty_expires_at) + '.');
+      await loadOrders();
+    } catch(e) { setNotice(e.message || 'Konfirmasi penerimaan gagal.'); }
+    finally { setBuyingId(null); }
+  }
+
+  async function submitWarrantyClaim(orderNumber) {
+    const description = window.prompt('Jelaskan kronologi indikasi hackback (minimal 10 karakter):');
+    if (description === null) return;
+    const evidenceText = window.prompt('Masukkan 1–8 URL HTTPS bukti pendukung, pisahkan dengan baris baru atau koma:');
+    if (evidenceText === null) return;
+    const evidenceUrls = evidenceText.split(/[\\n,]+/).map((item)=>item.trim()).filter(Boolean);
+    if (description.trim().length < 10 || !evidenceUrls.length || evidenceUrls.some((url)=>!/^https:\\/\\//i.test(url))) {
+      setNotice('Kronologi dan minimal satu URL bukti HTTPS wajib diisi.');
+      return;
+    }
+    const initData = getInitData();
+    if (!initData) { setNotice('Buka VAULT CORE melalui Telegram untuk mengajukan klaim.'); return; }
+    setBuyingId('claim:' + orderNumber);
+    try {
+      const response = await fetch(API + '/api/orders/' + encodeURIComponent(orderNumber) + '/warranty-claims', {
+        method:'POST',
+        headers:{ 'content-type':'application/json', 'x-telegram-init-data':initData },
+        body:JSON.stringify({ description, evidenceUrls })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Klaim garansi belum dapat dibuat.');
+      setNotice('Klaim ' + data.claim_number + ' tercatat. Batas tindak lanjut: ' + formatDate(data.sla_due_at) + '.');
+      await loadOrders();
+    } catch(e) { setNotice(e.message || 'Pengajuan klaim gagal.'); }
+    finally { setBuyingId(null); }
+  }
+
   async function loadOrders() {
     const initData = getInitData();
     if (!initData) throw new Error('Buka VAULT CORE melalui Telegram untuk melihat riwayat pesanan.');
@@ -611,6 +657,10 @@ export default function HomePage() {
                 <strong>{Number(order.total_xtr || 0).toLocaleString('en-US')} XTR</strong>
                 {order.paid_at && <small>Dibayar: {formatDate(order.paid_at)}</small>}
                 {order.fulfilled_at && <small>Dipenuhi: {formatDate(order.fulfilled_at)}</small>}
+                {order.status === 'FULFILLED' && !order.warranty_started_at && <button className="order-warranty-button" type="button" disabled={buyingId === 'complete:' + order.order_number} onClick={()=>confirmOrderReceived(order.order_number)}>{buyingId === 'complete:' + order.order_number ? 'Mencatat…' : 'Selesai · Konfirmasi diterima'}</button>}
+                {order.warranty_started_at && <small>Garansi 14 hari aktif sampai: {formatDate(order.warranty_expires_at)}</small>}
+                {order.warranty_started_at && new Date(order.warranty_expires_at).getTime() >= Date.now() && !order.warranty_claim_number && <button className="order-warranty-button" type="button" disabled={buyingId === 'claim:' + order.order_number} onClick={()=>submitWarrantyClaim(order.order_number)}>{buyingId === 'claim:' + order.order_number ? 'Mengirim klaim…' : 'Ajukan Klaim Anti Hackback'}</button>}
+                {order.warranty_claim_number && <small>Klaim {order.warranty_claim_number} · {order.warranty_claim_status}</small>}
               </div>
             </div>
             <span className={'order-status ' + String(order.status).toLowerCase()}>{ORDER_STATUS_LABELS[order.status] || 'Status pesanan sedang diperbarui'}</span>
