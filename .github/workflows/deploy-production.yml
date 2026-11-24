@@ -71,6 +71,7 @@ jobs:
           test -s "$public_dir/04-tiers/tier-platinum.png"
           cat "$public_dir/README.md"
           cat "$public_dir/asset-manifest.json"
+          python3 scripts/extract_mlbb_account_assets.py
       - name: Verify all storefront logos and image assets resolve
         shell: bash
         run: |
