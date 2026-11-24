@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
 import { pool } from '../db/pool.js';
 import { sendStarsInvoice } from '../services/telegramApi.js';
-import { isEligibleCheckoutProduct } from '../services/catalogService.js';
+import { isEligibleCheckoutProduct, isCatalogOnDemandProduct } from '../services/catalogService.js';
+import { assertAllowedDigitalPayload, encryptPayload } from '../utils/encryption.js';
 import { isRightsReviewUsable } from '../services/rightsReviewService.js';
 import { normalizeCartItems } from '../services/cartService.js';
 import { releaseExpiredPendingOrders } from '../services/reservationService.js';
@@ -44,23 +45,32 @@ export async function createOrder(req, res, { testMode = false } = {}) {
           }))) {
         throw Object.assign(new Error('Produk tidak tersedia atau pemeriksaan internal Owner sudah kedaluwarsa.'),{status:404});
       }
-      const stockParams = testMode
-        ? [item.productId,item.quantity]
-        : [item.productId,item.quantity,product.current_rights_review_id];
-      const {rows:stockRows}=await client.query(
-        `SELECT id FROM inventory_items
-         WHERE product_id=$1 AND status='AVAILABLE'
-           AND reserved_order_id IS NULL AND reserved_until IS NULL
-           AND ${testMode ? 'TRUE' : 'rights_review_id=$3 AND source_reference IS NOT NULL'}
-         ORDER BY id LIMIT $2 FOR UPDATE SKIP LOCKED`,
-        stockParams
-      );
-      if(stockRows.length<item.quantity) {
-        throw Object.assign(new Error('Stok tidak mencukupi untuk '+product.name+'.'),{status:409});
+      const onDemand = !testMode && isCatalogOnDemandProduct(product);
+      let stockRows;
+      if (onDemand) {
+        // An active catalog listing represents on-demand fulfillment capacity.
+        // A unique internal placeholder is created per paid-order unit below.
+        stockRows = Array.from({ length:item.quantity }, (_, unitIndex) => ({ onDemand:true, unitIndex }));
+      } else {
+        const stockParams = testMode
+          ? [item.productId,item.quantity]
+          : [item.productId,item.quantity,product.current_rights_review_id];
+        const result = await client.query(
+          `SELECT id FROM inventory_items
+           WHERE product_id=$1 AND status='AVAILABLE'
+             AND reserved_order_id IS NULL AND reserved_until IS NULL
+             AND ${testMode ? 'TRUE' : 'rights_review_id=$3 AND source_reference IS NOT NULL'}
+           ORDER BY id LIMIT $2 FOR UPDATE SKIP LOCKED`,
+          stockParams
+        );
+        stockRows = result.rows;
+        if(stockRows.length<item.quantity) {
+          throw Object.assign(new Error('Stok tidak mencukupi untuk '+product.name+'.'),{status:409});
+        }
       }
       totalXtr += Number(product.sale_price_xtr)*item.quantity;
       totalCostXtr += Number(product.cost_price_xtr)*item.quantity;
-      reservedLines.push({item,product,stockRows});
+      reservedLines.push({item,product,stockRows,onDemand});
     }
 
     if (!Number.isSafeInteger(totalXtr) || totalXtr<=0 || totalXtr>2147483647
@@ -83,18 +93,40 @@ export async function createOrder(req, res, { testMode = false } = {}) {
         [order.id,product.id,item.quantity,product.sale_price_xtr,product.cost_price_xtr,product.name]
       );
       for(const stock of stockRows) {
-        const reservation=await client.query(
-          `UPDATE inventory_items
-           SET status='RESERVED',reserved_order_id=$2,reserved_until=NOW()+INTERVAL '15 minutes'
-           WHERE id=$1 AND status='AVAILABLE' AND reserved_order_id IS NULL
-           RETURNING id`,
-          [stock.id,order.id]
-        );
-        if(!reservation.rowCount) throw new Error('INVENTORY_RESERVATION_CONFLICT');
+        let inventoryItemId;
+        if (line.onDemand) {
+          const unitReference = `${orderNumber}:${product.sku}:${stock.unitIndex + 1}`;
+          const encrypted = encryptPayload(assertAllowedDigitalPayload(
+            'VAULT_CORE_ON_DEMAND_FULFILLMENT_PENDING|' + unitReference
+          ));
+          const placeholder = await client.query(
+            `INSERT INTO inventory_items
+             (product_id,payload_ciphertext,payload_nonce,payload_tag,status,
+              reserved_order_id,reserved_until,rights_review_id,source_reference)
+             VALUES ($1,$2,$3,$4,'RESERVED',$5,NOW()+INTERVAL '15 minutes',$6,$7)
+             RETURNING id`,
+            [
+              product.id,encrypted.payload_ciphertext,encrypted.payload_nonce,encrypted.payload_tag,
+              order.id,product.current_rights_review_id,
+              'VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:ON_DEMAND_ORDER:' + unitReference
+            ]
+          );
+          inventoryItemId = placeholder.rows[0].id;
+        } else {
+          const reservation=await client.query(
+            `UPDATE inventory_items
+             SET status='RESERVED',reserved_order_id=$2,reserved_until=NOW()+INTERVAL '15 minutes'
+             WHERE id=$1 AND status='AVAILABLE' AND reserved_order_id IS NULL
+             RETURNING id`,
+            [stock.id,order.id]
+          );
+          if(!reservation.rowCount) throw new Error('INVENTORY_RESERVATION_CONFLICT');
+          inventoryItemId = stock.id;
+        }
         await client.query(
           `INSERT INTO deliveries (order_id,inventory_item_id,idempotency_key)
            VALUES ($1,$2,$3)`,
-          [order.id,stock.id,`${orderNumber}:${stock.id}`]
+          [order.id,inventoryItemId,`${orderNumber}:${inventoryItemId}`]
         );
       }
     }
@@ -126,7 +158,10 @@ export async function createOrder(req, res, { testMode = false } = {}) {
         [order.id]
       );
       await cleanup.query(
-        `UPDATE inventory_items SET status='AVAILABLE',reserved_order_id=NULL,reserved_until=NULL
+        `UPDATE inventory_items
+         SET status=CASE WHEN source_reference LIKE 'VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:ON_DEMAND_ORDER:%'
+                          THEN 'UNAVAILABLE' ELSE 'AVAILABLE' END,
+             reserved_order_id=NULL,reserved_until=NULL
          WHERE status='RESERVED' AND reserved_order_id=$1`,
         [order.id]
       );
