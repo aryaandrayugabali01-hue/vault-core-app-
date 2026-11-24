@@ -1040,6 +1040,8 @@ margin-top:37px
 .product-preview-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:4px 7px;border:1px solid rgba(232,202,139,.35);border-radius:999px;background:rgba(232,202,139,.09);color:#e8ca8b;font-size:8px;font-weight:900;letter-spacing:.04em;line-height:1.25}
 .marketplace-preview-notice{border-color:rgba(232,202,139,.28);background:rgba(232,202,139,.07)}
 .marketplace-preview-notice strong{color:#e8ca8b}
+.order-warranty-button{display:inline-flex;align-items:center;justify-content:center;min-height:34px;width:max-content;max-width:100%;margin-top:7px;padding:7px 10px;border:1px solid rgba(0,214,138,.34);border-radius:9px;background:rgba(0,214,138,.08);color:#8ce6bd;font-size:11px;font-weight:800;cursor:pointer}
+.order-warranty-button:disabled{opacity:.55;cursor:wait}
 .marketplace-detail-actions.marketplace-preview-actions{grid-template-columns:minmax(0,1fr)}
 .marketplace-quantity-row{align-items:center}
 .marketplace-quantity-row label{display:grid;gap:7px;color:#aab5c5;font-size:12px}
