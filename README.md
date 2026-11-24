@@ -145,6 +145,6 @@ Production audit fixes deployed on 23 November 2026:
 - Harga referensi: Rp150.000 = **400 XTR** menggunakan Rp375/XTR sebagai kurs referensi internal; harga customer selalu ditampilkan dalam XTR.
 - Customer bertransaksi dan berkomunikasi hanya dengan VAULT CORE. Pemasok ditangani sebagai proses internal.
 - Garansi yang ditetapkan: 14 hari kalender sejak buyer menekan **Selesai** setelah penerimaan; klaim valid mendapat refund 100%; SLA maksimal 48 jam sejak bukti lengkap.
-- Stok ditampilkan tanpa angka dan bersumber dari kapasitas pemenuhan yang benar-benar tersedia.
+- Model stok CATALOG_ON_DEMAND: listing yang aktif dan lolos pemeriksaan hak tampil sebagai Tersedia tanpa angka jumlah. Checkout membuat reservasi internal per order, lalu Owner mengelola pengadaan dan pemenuhan aktual. Listing dijeda/pratinjau tetap tidak dapat dibeli.
 - **Status publikasi:** preview-only sampai izin tertulis/otorisasi transfer dari penerbit dapat dibuktikan. Terms of Service Moonton yang diperbarui 23 Oktober 2026 melarang penjualan/pengalihan akun dan kredensial login. Persetujuan internal Owner bukan pengganti izin penerbit.
 
