@@ -21,7 +21,11 @@ export async function releaseExpiredPendingOrders(db = pool) {
      ),
      released_inventory AS (
        UPDATE inventory_items
-       SET status='AVAILABLE',
+       SET status=CASE
+             WHEN source_reference LIKE 'VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:ON_DEMAND_ORDER:%'
+               THEN 'UNAVAILABLE'
+             ELSE 'AVAILABLE'
+           END,
            reserved_order_id=NULL,
            reserved_until=NULL
        WHERE status='RESERVED'
