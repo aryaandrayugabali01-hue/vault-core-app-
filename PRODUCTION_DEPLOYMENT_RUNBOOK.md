@@ -13,7 +13,7 @@
 - Gateway `WEB_ORIGIN` and `API_ORIGIN` secrets are installed.
 - Custom domains `vaultcore.biz.id`, `www.vaultcore.biz.id`, and `api.vaultcore.biz.id` are attached to the existing `vault-core-gateway`; public DNS/TLS, API health, and gateway-origin checks passed.
 - Telegram webhook was configured to `https://api.vaultcore.biz.id/api/telegram/webhook`; `getWebhookInfo` read-back passed.
-- Neon catalog import `015_owner_game_catalog_import.sql` completed: 16 Owner-provided listings are present across MLBB, Roblox, Free Fire, and Genshin Impact. Their source descriptions, fulfillment methods, buyer terms, IDR price ranges, category guides, and five-step transaction SOP are stored. All 16 remain `PENDING_REVIEW`, with zero commercial stock and no final XTR checkout price; they are public catalog previews only and cannot be purchased. The four internal test fixtures remain separate (`is_test=true`), with one active fixture at a time and a real 1 XTR Telegram Stars test invoice.
+- Neon production read-back (25 November 2026): all 16 commercial SKUs across MLBB, Roblox, Free Fire, and Genshin Impact are `ACTIVE`, each has an unexpired Owner-attested `APPROVED` CR-05 review, a commercial XTR price above 1 XTR, and one available source-bound manual-fulfillment inventory slot. All 17 marketplace categories are active. The 16 SKUs meet the backend catalog and checkout eligibility checks; paid customer UAT and delivery/refund acceptance remain separate release gates. Four TEST-only fixtures remain isolated from the public catalog (`is_test=true`).
 - The production deployment workflow supports manual `workflow_dispatch` and a restricted `main` push trigger for changes to the API Worker entrypoint or deployment workflow. Keep the five repository secrets current.
 
 ## Repository secrets required
@@ -86,4 +86,4 @@ The deployment workflow uses the exact `TELEGRAM_WEBHOOK_SECRET` stored in GitHu
 - delivery runs once and stores the expected audit data;
 - refund and recovery flows behave correctly.
 
-Production infrastructure deployment is complete. Keep the application marked **NOT READY FOR GENERAL SALES** until reviewed SKUs and sellable inventory exist, and live order/XTR payment/pre-checkout/delivery/refund, Owner UAT, IDOR, backup/restore and release approval checks pass.
+Production catalog state is ready for transaction testing: all 16 commercial SKUs are active, meet backend checkout eligibility, and have available source-bound inventory. General-sales release approval remains separate until live order/XTR payment, pre-checkout, fulfillment, refund, Owner UAT, IDOR, and backup/restore checks pass.
