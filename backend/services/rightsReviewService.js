@@ -65,7 +65,7 @@ export function isRightsReviewUsable(review, now = new Date()) {
 
 export function canAddProductInventory(product, review, now = new Date()) {
   if (!product || product.is_test === true) return false;
-  if (!['DRAFT','PENDING_REVIEW','ACTIVE'].includes(product.status)) return false;
+  if (!['DRAFT','ACTIVE'].includes(product.status)) return false;
   return isRightsReviewUsable(review, now)
     && String(product.current_rights_review_id ?? '') === String(review.id ?? '');
 }
