@@ -578,6 +578,7 @@ export default function HomePage() {
               </div>
               <div className="product-content">
                 <div className="product-category">{product.marketplace_category_name || GAME_LABELS[game] || game.replaceAll('_', ' ')}</div>
+                {!product.is_preview_only && <span className={'product-availability-badge ' + (product.is_available ? 'available' : 'unavailable')}>{product.is_available ? 'Tersedia' : 'Stok habis'}</span>}
                 <h3>{product.name}</h3>
                 <p>{product.description}</p>
                 <div className="product-bottom">
@@ -620,6 +621,7 @@ export default function HomePage() {
           <div className="marketplace-detail-body">
             <div className="marketplace-detail-title-row"><div><span className="detail-category">{selectedProduct.marketplace_category_name || GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</span><h3>{selectedProduct.name}</h3></div><strong className="marketplace-detail-price">{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
             <div className="marketplace-detail-stats">
+              <div><span>Ketersediaan</span><strong>{selectedProduct.is_preview_only ? 'Pratinjau katalog' : selectedProduct.is_available ? (selectedProduct.is_on_demand ? 'Tersedia selama listing aktif' : 'Tersedia') : 'Stok habis'}</strong></div>
               <div><span>Minimum beli</span><strong>1 unit</strong></div>
               <div><span>Pemenuhan</span><strong>{FULFILLMENT_LABELS[selectedProduct.fulfillment_type] || selectedProduct.fulfillment_type || 'Belum ditentukan'}</strong></div>
               <div><span>Estimasi</span><strong>{selectedProduct.fulfillment_eta || 'Belum ditetapkan Owner'}</strong></div>
