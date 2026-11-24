@@ -29,3 +29,8 @@ export function isCatalogOnDemandProduct(product) {
   return product?.is_test !== true
     && product?.attributes?.stock_model === 'CATALOG_ON_DEMAND';
 }
+
+export function isCatalogListedAvailable(product, actualStock = 0) {
+  if (product?.status !== 'ACTIVE') return false;
+  return isCatalogOnDemandProduct(product) || Number(actualStock) > 0;
+}
