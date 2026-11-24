@@ -44,7 +44,9 @@ Latest production visual update: source commit `a5fc2b925e66e70a7742d9f402483086
 - Database: `vault_core`
 - Default branch: `main`
 
-The production database has migrations 001–016 registered. Migration 011 (CR-05) adds structured Owner rights reviews, append-only review events, source-bound inventory, and database guards. Migration 012 (CR-06) adds Owner-managed product image URL, customer terms, and fulfillment ETA fields. Migrations 013–016 maintain marketplace categories, product attributes, the Owner game catalog, and a product lifecycle without a PENDING_REVIEW status. All are applied to Neon production.
+The production database has migrations 001–016 registered.
+
+CR-11 implementation is being prepared on an isolated review branch. Migrations 017–018 are not yet applied to the production database; they will run only through the existing versioned migration deployment after approval and merge. Migration 011 (CR-05) adds structured Owner rights reviews, append-only review events, source-bound inventory, and database guards. Migration 012 (CR-06) adds Owner-managed product image URL, customer terms, and fulfillment ETA fields. Migrations 013–016 maintain marketplace categories, product attributes, the Owner game catalog, and a product lifecycle without a PENDING_REVIEW status. All are applied to Neon production.
 
 ## Local setup
 
