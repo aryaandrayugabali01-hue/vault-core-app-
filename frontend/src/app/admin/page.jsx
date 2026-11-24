@@ -365,7 +365,7 @@ export default function AdminPage() {
         <label>Metode pemenuhan<select value={editForm.fulfillmentType} onChange={e=>setEditForm({...editForm,fulfillmentType:e.target.value})}>
           <option value="REDEEM_CODE">Kode redeem</option><option value="VOUCHER_CODE">Kode voucher</option><option value="LICENSE_KEY">Kunci lisensi</option><option value="GIFT_CODE">Kode hadiah</option><option value="DIGITAL_FILE">Berkas digital</option><option value="SERVICE_INSTRUCTIONS">Petunjuk layanan</option><option value="GAME_ACCOUNT_TRANSFER">Transfer akun melalui prosedur resmi</option>
         </select></label>
-        <label>Harga jual (XTR)<input required type="number" min="1" step="1" value={editForm.salePriceXtr} onChange={e=>setEditForm({...editForm,salePriceXtr:e.target.value})} /></label>
+        <label>Harga jual (XTR)<input required type="number" min="2" step="1" value={editForm.salePriceXtr} onChange={e=>setEditForm({...editForm,salePriceXtr:e.target.value})} /></label>
         <label>Modal (XTR)<input required type="number" min="0" step="1" value={editForm.costPriceXtr} onChange={e=>setEditForm({...editForm,costPriceXtr:e.target.value})} /></label>
         <label className="span-2">URL gambar utama (HTTPS atau /assets/)<input type="text" value={editForm.imageUrl} onChange={e=>setEditForm({...editForm,imageUrl:e.target.value})} placeholder="https://.../produk.webp" /></label>
         <label className="span-2">Galeri gambar, satu URL per baris<textarea rows="3" value={editForm.imageGalleryText} onChange={e=>setEditForm({...editForm,imageGalleryText:e.target.value})} placeholder={'https://cdn.../gambar-1.webp\nhttps://cdn.../gambar-2.webp'} /></label>
