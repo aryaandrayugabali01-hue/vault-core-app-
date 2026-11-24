@@ -136,3 +136,13 @@ Production audit fixes deployed on 23 November 2026:
 - Removed the customer-facing “VAULT CORE Store” / Owner attribution block and all stock-count labels from product cards, product details, and cart rows.
 - Customer specifications now omit internal cost, Owner-attestation, and XTR conversion metadata. The production attributes `xtr_conversion_reference_date` and `xtr_conversion_rate_idr_per_star` were deleted from all 16 commercial SKUs; XTR sale prices remain unchanged.
 - Regression coverage includes Owner page stale references, reservation expiry, and customer metadata visibility.
+
+## CR-11 — Kategori MLBB · Akun (25 November 2026)
+
+- Sumber detail dan gambar penawaran: frontend/src/app/catalog/ML.zip (direview: 49% win rate, 79 hero, 130 skin, rank Mythic, Miya, lima gambar katalog).
+- Harga referensi: Rp150.000 = **400 XTR** menggunakan Rp375/XTR sebagai kurs referensi internal; harga customer selalu ditampilkan dalam XTR.
+- Customer bertransaksi dan berkomunikasi hanya dengan VAULT CORE. Pemasok ditangani sebagai proses internal.
+- Garansi yang ditetapkan: 14 hari kalender sejak buyer menekan **Selesai** setelah penerimaan; klaim valid mendapat refund 100%; SLA maksimal 48 jam sejak bukti lengkap.
+- Stok ditampilkan tanpa angka dan bersumber dari kapasitas pemenuhan yang benar-benar tersedia.
+- **Status publikasi:** preview-only sampai izin tertulis/otorisasi transfer dari penerbit dapat dibuktikan. Terms of Service Moonton yang diperbarui 23 Oktober 2026 melarang penjualan/pengalihan akun dan kredensial login. Persetujuan internal Owner bukan pengganti izin penerbit.
+
