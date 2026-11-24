@@ -1,8 +1,10 @@
 import { Router } from 'express';
-import { createOrder, getMyOrders } from '../controllers/orderController.js';
+import { createOrder, getMyOrders, confirmOrderReceived, createWarrantyClaim } from '../controllers/orderController.js';
 import { requireOwner } from '../middleware/adminAuth.js';
 const router = Router();
 router.post('/', createOrder);
 router.post('/test', requireOwner, (req, res) => createOrder(req, res, { testMode: true }));
+router.post('/:orderNumber/complete', confirmOrderReceived);
+router.post('/:orderNumber/warranty-claims', createWarrantyClaim);
 router.get('/mine', getMyOrders);
 export default router;
