@@ -22,7 +22,8 @@ Berkas detail.md.bak tidak memuat harga Rp150.000; nilai harga dipakai dari deta
 | Harga katalog XTR | 400 XTR |
 | Kurs referensi internal | Rp375 per XTR |
 | Tampilan jumlah stok | Disembunyikan |
-| Label ketersediaan | Hanya jika penawaran aktif dan kapasitas pemenuhan nyata tersedia |
+| Model stok | CATALOG_ON_DEMAND; listing aktif yang lolos pemeriksaan hak tampil Tersedia tanpa angka jumlah. Checkout membuat reservasi pemenuhan internal per order dan Owner mengelola pengadaan/pemenuhan aktual. |
+| Label ketersediaan | Tersedia selama listing komersial aktif; pratinjau/PAUSED tidak dapat dibeli |
 | Garansi Anti Hackback | 14 hari kalender sejak pembeli menekan Selesai |
 | Refund klaim valid | 100% nilai transaksi |
 | SLA | Maksimal 48 jam setelah bukti lengkap diterima |
@@ -60,3 +61,11 @@ Galeri gambar adalah bukti visual yang diberikan di arsip. Gambar tidak membukti
 Terms of Service Moonton yang tercantum sebagai Official Policy dan diperbarui 23 Oktober 2026 melarang penjualan atau pengalihan akun game dan kredensial login. Karena itu, listing MLBB Akun dalam implementasi CR-11 berstatus PAUSED + public_preview. Harga dan spesifikasi terlihat sebagai pratinjau, sedangkan keranjang, checkout, dan invoice dikunci. Pembukaan transaksi menunggu izin tertulis yang benar-benar mengizinkan transfer akun atau perubahan SKU ke produk/layanan resmi yang diperbolehkan.
 
 Persetujuan internal Owner tidak mengubah Terms of Service penerbit.
+
+## Model stok on-demand
+
+- Listing komersial aktif dan lolos pemeriksaan hak ditampilkan **Tersedia** selama status katalog aktif, tanpa menampilkan angka stok.
+- Checkout membuat slot reservasi internal unik untuk setiap unit pesanan, bukan meminjam satu placeholder inventory yang sama untuk banyak order.
+- Setelah pembayaran XTR terverifikasi, VAULT CORE mengirim acknowledgement dan menempatkan order di antrean pemenuhan Owner. Proses pengadaan dari pemasok tetap internal.
+- Slot on-demand yang berasal dari invoice gagal, order tidak dibayar, atau refund ditandai UNAVAILABLE dan tidak dihitung sebagai stok.
+- Status pratinjau MLBB Akun tetap tidak dapat checkout sampai persyaratan hak eksternal terpenuhi.
