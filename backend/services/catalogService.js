@@ -24,3 +24,8 @@ export function isEligibleCheckoutProduct(product, { testMode = false, ownerAuth
 }
 
 
+
+export function isCatalogOnDemandProduct(product) {
+  return product?.is_test !== true
+    && product?.attributes?.stock_model === 'CATALOG_ON_DEMAND';
+}
