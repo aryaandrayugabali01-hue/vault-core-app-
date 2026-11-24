@@ -1396,3 +1396,89 @@ Panduan kategori tidak boleh memuat instruksi Rekber, transfer bank, direct tran
 - UI, panduan kategori, README, dan kontrak menyampaikan aturan yang sama.
 
 ---
+
+# 33. Addendum CR-11 — Model Bisnis Kategori MLBB · Akun
+
+**Tanggal:** 25 November 2026  
+**Dasar:** Instruksi Owner dan berkas produk frontend/src/app/catalog/ML.zip.
+
+## 33.1 Posisi VAULT CORE terhadap pembeli
+
+- VAULT CORE adalah satu-satunya pihak yang tampil sebagai toko, penerima pesanan, kanal komunikasi, penyampai informasi pemenuhan, dan penanggung jawab layanan kepada pembeli.
+- Pembeli berhubungan langsung dengan VAULT CORE dari katalog, pembayaran, penyerahan, konfirmasi penerimaan, sampai klaim garansi.
+- Sumber pasokan/pemasok merupakan proses operasional internal VAULT CORE. Informasi pemasok tidak menjadi alur transaksi atau instruksi yang harus diurus pembeli.
+- Komunikasi kepada pembeli menggunakan frasa **“VAULT CORE menyediakan/menyerahkan data produk”**. Jangan mengarahkan pembeli untuk menghubungi pemasok.
+
+## 33.2 Harga dan cara menampilkan stok
+
+- Harga referensi produk akun pada berkas ML.zip: **Rp150.000**.
+- Harga checkout internal: **400 XTR**, berdasarkan konversi referensi Rp375/XTR dan pembulatan ke atas. Tampilan customer tetap menggunakan XTR sesuai CR-03 dan CR-10.
+- Harga XTR adalah harga transaksi aplikasi, bukan janji nilai tukar atau nilai pencairan Stars.
+- Model tampilan stok yang diminta Owner: tanpa angka jumlah; label ketersediaan mengikuti listing aktif dan kapasitas pemenuhan yang benar-benar dikonfirmasi Owner.
+- Status “Tersedia” hanya boleh ditampilkan untuk SKU yang secara operasional dapat dipenuhi dan lolos seluruh pemeriksaan hak. Listing pratinjau/PAUSED tidak boleh ditampilkan seolah siap dibeli.
+
+## 33.3 Alur penjualan VAULT CORE
+
+1. Pembeli memilih **MLBB → Akun**, membuka detail, memeriksa spesifikasi, harga XTR, syarat, panduan dan garansi.
+2. Checkout dilakukan di VAULT CORE Telegram Mini App melalui invoice Telegram Stars resmi (XTR).
+3. Order menjadi PAID hanya setelah successful_payment diverifikasi backend.
+4. VAULT CORE mengatur pemenuhan internal dan menyampaikan informasi produk kepada pembeli melalui kanal pesanan yang terverifikasi.
+5. Pembeli memeriksa kecocokan produk dan menyelesaikan pengamanan sesuai panduan.
+6. Tombol **Selesai** adalah konfirmasi pembeli bahwa produk telah diterima/diperiksa. Waktu konfirmasi menjadi awal periode garansi.
+7. Status transaksi dan seluruh komunikasi tetap berada di kanal resmi VAULT CORE.
+
+## 33.4 Garansi Anti Hackback
+
+- Masa perlindungan: **14 hari kalender**.
+- Mulai otomatis saat pembeli menekan **Selesai** setelah produk benar-benar diterima.
+- Pembeli mengajukan klaim melalui VAULT CORE dengan nomor pesanan, kronologi, waktu kejadian, dan bukti pendukung.
+- Tim VAULT CORE memverifikasi klaim terhadap histori pesanan, data pemenuhan, dan bukti yang diberikan.
+- Klaim yang terbukti valid berhak atas refund **100% dari nilai transaksi** melalui mekanisme refund Stars yang tercatat.
+- SLA penanganan maksimal **48 jam** sejak laporan dan bukti pendukung dinyatakan lengkap.
+- Pengajuan harus masuk sebelum masa 14 hari kalender berakhir. Keputusan dan alasan penyelesaian dicatat pada riwayat klaim.
+
+## 33.5 Panduan pembeli
+
+- Setelah penyerahan, pembeli memeriksa ID, nickname, server, spesifikasi, dan kecocokan penawaran.
+- Jika email disertakan, pembeli mengikuti prosedur pengamanan email yang disediakan VAULT CORE: mengganti kata sandi, memperbarui metode pemulihan, meninjau perangkat, dan mengaktifkan 2FA.
+- Pembeli menghubungkan metode login pribadi yang didukung dan meninjau perangkat/sesi tertaut melalui fitur resmi yang tersedia.
+- Informasi bahwa email Moonton dan akun pihak ketiga dapat dilepas setelah 30 hari harus ditampilkan sebagai ketentuan penawaran, bukan janji bahwa semua mekanisme unbind pasti berhasil pada setiap akun.
+- Rank dapat berubah ketika season baru dimulai; informasi rank pada katalog adalah snapshot saat penawaran dibuat.
+
+## 33.6 Data listing ML-250 dari ML.zip
+
+Spesifikasi yang boleh ditampilkan berdasarkan berkas:
+- Win rate 49%.
+- 79 hero dan 130 skin.
+- Rank saat ini Mythic.
+- Akun Moonton; hero utama Miya.
+- Akun juga masih tertaut ke Google Play, Facebook, dan TikTok.
+- Pengiriman disebut termasuk email; unbind email Moonton dan akun sosial disebut dapat dilakukan setelah 30 hari.
+- Platform Android/iOS; emblem ditandai MAX.
+- Lima gambar dalam arsip digunakan sebagai galeri; gambar merupakan bukti tampilan katalog, bukan bukti kepemilikan akun atau otorisasi transfer.
+
+Arsip tidak menyertakan kredensial login, bukti kepemilikan sumber, atau surat izin transfer dari penerbit. Data tersebut tidak boleh dianggap tersedia atau terverifikasi hanya karena gambar dan spesifikasi produk ada.
+
+## 33.7 Batas kepatuhan eksternal dan status publikasi
+
+Addendum ini mengubah model operasional internal dan komunikasi pembeli, tetapi tidak mengubah Terms of Service penerbit, tidak membuat hak transfer, dan tidak menjadi surat izin Moonton. Terms of Service resmi Moonton yang diperbarui 23 Oktober 2026 menyatakan akun game dan login credentials tidak boleh dijual atau dialihkan; mata uang dan virtual items juga dibatasi sebagaimana ketentuannya.
+
+Karena itu, SKU kategori MLBB · Akun disiapkan sebagai **pratinjau katalog** sampai Owner memasukkan bukti otorisasi tertulis yang secara khusus mengizinkan model penjualan/transfer tersebut atau mengganti penawaran dengan produk/layanan resmi yang diperbolehkan. Dalam status pratinjau:
+- Harga indikatif 400 XTR dan spesifikasi boleh dilihat.
+- Tombol keranjang, checkout, invoice, dan pembayaran harus terkunci.
+- Label tidak boleh menyatakan “Tersedia” atau “Siap dibeli”.
+- Persetujuan internal Owner dan referensi attestation bukan pengganti izin penerbit.
+
+## 33.8 Kriteria penerimaan CR-11
+
+- Customer hanya melihat VAULT CORE sebagai pihak penjual/penanggung jawab.
+- Harga 400 XTR ditampilkan konsisten.
+- Ketersediaan tidak menampilkan jumlah palsu dan tidak melebihi kapasitas yang dapat dipenuhi.
+- Lima gambar dari ML.zip tampil pada detail produk.
+- Spesifikasi akun akurat terhadap detail.md.
+- Panduan pembeli dan ringkasan garansi 14 hari ditautkan dari detail produk.
+- Tombol **Selesai** hanya dapat digunakan setelah pemenuhan tercatat.
+- Garansi dimulai dari konfirmasi **Selesai**, bukan waktu order dibuat atau pembayaran diterima.
+- Klaim, bukti, keputusan, SLA, dan refund memiliki jejak audit.
+- SKU transfer akun tetap preview-only sampai persyaratan hak eksternal terpenuhi.
+
