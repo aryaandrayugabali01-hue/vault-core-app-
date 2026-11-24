@@ -848,7 +848,13 @@ router.post('/orders/:orderNumber/refund', async (req, res) => {
       [refund.id, 'Refunded by owner: ' + reason]
     );
     await finalize.query(
-      `UPDATE inventory_items SET status='AVAILABLE', reserved_order_id=NULL, reserved_until=NULL
+      `UPDATE inventory_items
+       SET status=CASE
+             WHEN source_reference LIKE 'VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:ON_DEMAND_ORDER:%'
+               THEN 'UNAVAILABLE'
+             ELSE 'AVAILABLE'
+           END,
+           reserved_order_id=NULL,reserved_until=NULL
        WHERE reserved_order_id=$1 AND status='RESERVED'`,
       [refund.id]
     );
