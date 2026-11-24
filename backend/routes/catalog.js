@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
-import { resolveDisplayStock, isCatalogOnDemandProduct } from '../services/catalogService.js';
+import { resolveDisplayStock, isCatalogOnDemandProduct, isCatalogListedAvailable } from '../services/catalogService.js';
 import { releaseExpiredPendingOrders } from '../services/reservationService.js';
 const router = Router();
 
@@ -46,7 +46,7 @@ router.get('/', async (_req, res) => {
       && product.rights_review_status === 'APPROVED'
       && product.rights_owner_attested === true
       && product.rights_valid_until && new Date(product.rights_valid_until) > new Date();
-    const available = purchaseable && (onDemand || actual > 0);
+    const available = purchaseable && isCatalogListedAvailable(product, actual);
     const visible = onDemand || !purchaseable
       ? null
       : resolveDisplayStock({ actualStock: actual, mode: product.display_stock_mode, override: product.display_stock_override });
