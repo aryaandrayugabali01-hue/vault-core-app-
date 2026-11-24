@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
-import { resolveDisplayStock } from '../services/catalogService.js';
+import { resolveDisplayStock, isCatalogOnDemandProduct } from '../services/catalogService.js';
 import { releaseExpiredPendingOrders } from '../services/reservationService.js';
 const router = Router();
 
@@ -38,6 +38,7 @@ router.get('/', async (_req, res) => {
   const products = rows.map((product) => {
     const actual = Number(product.sellable_stock);
     const previewOnly = product.status === 'PAUSED' && product.attributes?.public_preview === true;
+    const onDemand = isCatalogOnDemandProduct(product);
     const purchaseable = product.status === 'ACTIVE'
       && Number.isSafeInteger(Number(product.sale_price_xtr))
       && Number(product.sale_price_xtr) > 1
@@ -45,15 +46,17 @@ router.get('/', async (_req, res) => {
       && product.rights_review_status === 'APPROVED'
       && product.rights_owner_attested === true
       && product.rights_valid_until && new Date(product.rights_valid_until) > new Date();
-    const visible = purchaseable
-      ? resolveDisplayStock({ actualStock: actual, mode: product.display_stock_mode, override: product.display_stock_override })
-      : null;
+    const available = purchaseable && (onDemand || actual > 0);
+    const visible = onDemand || !purchaseable
+      ? null
+      : resolveDisplayStock({ actualStock: actual, mode: product.display_stock_mode, override: product.display_stock_override });
     return {
       ...product,
       is_preview_only: Boolean(previewOnly),
+      is_on_demand: Boolean(onDemand),
       is_purchaseable: Boolean(purchaseable),
-      is_available: Boolean(purchaseable && actual > 0),
-      catalog_status_label: previewOnly ? 'Pratinjau katalog' : actual > 0 ? 'Tersedia' : 'Stok habis',
+      is_available: Boolean(available),
+      catalog_status_label: previewOnly ? 'Pratinjau katalog' : available ? 'Tersedia' : 'Stok habis',
       display_stock: visible
     };
   });
