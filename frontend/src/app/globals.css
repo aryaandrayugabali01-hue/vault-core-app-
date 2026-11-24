@@ -1037,6 +1037,10 @@ margin-top:37px
 .marketplace-detail-policy{margin:15px 0;padding:14px;border:1px solid rgba(0,214,138,.18);border-radius:14px;background:#17222d}
 .marketplace-detail-policy strong{color:#8ce6bd;font-size:12px}
 .marketplace-detail-policy p{margin:5px 0 0;color:#aab5c5;font-size:11px;line-height:1.55}
+.product-preview-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:4px 7px;border:1px solid rgba(232,202,139,.35);border-radius:999px;background:rgba(232,202,139,.09);color:#e8ca8b;font-size:8px;font-weight:900;letter-spacing:.04em;line-height:1.25}
+.marketplace-preview-notice{border-color:rgba(232,202,139,.28);background:rgba(232,202,139,.07)}
+.marketplace-preview-notice strong{color:#e8ca8b}
+.marketplace-detail-actions.marketplace-preview-actions{grid-template-columns:minmax(0,1fr)}
 .marketplace-quantity-row{align-items:center}
 .marketplace-quantity-row label{display:grid;gap:7px;color:#aab5c5;font-size:12px}
 .marketplace-quantity-control{display:flex;align-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12);border-radius:10px}
