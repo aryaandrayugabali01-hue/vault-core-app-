@@ -27,7 +27,7 @@ router.get('/', async (_req, res) => {
      LEFT JOIN marketplace_categories c ON c.id=p.marketplace_category_id AND c.is_active=TRUE
      LEFT JOIN inventory_items i ON i.product_id=p.id
      WHERE COALESCE(p.is_test,FALSE)=FALSE
-       AND p.status='ACTIVE'
+       AND (p.status='ACTIVE' OR (p.status='PAUSED' AND COALESCE(p.attributes->>'public_preview','false')='true'))
        AND p.fulfillment_type IS NOT NULL
        AND p.sale_price_xtr > 1
        AND rr.review_status='APPROVED'
@@ -37,6 +37,7 @@ router.get('/', async (_req, res) => {
   );
   const products = rows.map((product) => {
     const actual = Number(product.sellable_stock);
+    const previewOnly = product.status === 'PAUSED' && product.attributes?.public_preview === true;
     const purchaseable = product.status === 'ACTIVE'
       && Number.isSafeInteger(Number(product.sale_price_xtr))
       && Number(product.sale_price_xtr) > 1
@@ -46,12 +47,13 @@ router.get('/', async (_req, res) => {
       && product.rights_valid_until && new Date(product.rights_valid_until) > new Date();
     const visible = purchaseable
       ? resolveDisplayStock({ actualStock: actual, mode: product.display_stock_mode, override: product.display_stock_override })
-      : 0;
+      : null;
     return {
       ...product,
+      is_preview_only: Boolean(previewOnly),
       is_purchaseable: Boolean(purchaseable),
       is_available: Boolean(purchaseable && actual > 0),
-      catalog_status_label: actual > 0 ? 'Tersedia' : 'Stok habis',
+      catalog_status_label: previewOnly ? 'Pratinjau katalog' : actual > 0 ? 'Tersedia' : 'Stok habis',
       display_stock: visible
     };
   });
@@ -61,7 +63,7 @@ router.get('/', async (_req, res) => {
      FROM marketplace_categories c
      LEFT JOIN products p ON p.marketplace_category_id=c.id
        AND COALESCE(p.is_test,FALSE)=FALSE
-       AND p.status='ACTIVE'
+       AND (p.status='ACTIVE' OR (p.status='PAUSED' AND COALESCE(p.attributes->>'public_preview','false')='true'))
        AND p.fulfillment_type IS NOT NULL
        AND p.sale_price_xtr > 1
        AND EXISTS (
