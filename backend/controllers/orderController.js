@@ -141,11 +141,92 @@ export async function getMyOrders(req, res) {
   await releaseExpiredPendingOrders();
   const { rows } = await pool.query(
     `SELECT o.order_number, o.status, o.total_xtr, o.created_at, o.paid_at, o.fulfilled_at,
+            o.buyer_completed_at, o.warranty_started_at, o.warranty_expires_at,
+            MAX(wc.claim_number) AS warranty_claim_number,
+            MAX(wc.status) AS warranty_claim_status,
+            MAX(wc.sla_due_at) AS warranty_claim_sla_due_at,
             COALESCE(json_agg(json_build_object('name', oi.product_name_snapshot, 'quantity', oi.quantity))
               FILTER (WHERE oi.id IS NOT NULL), '[]') AS items
-     FROM orders o LEFT JOIN order_items oi ON oi.order_id=o.id
+     FROM orders o
+     LEFT JOIN order_items oi ON oi.order_id=o.id
+     LEFT JOIN order_warranty_claims wc ON wc.order_id=o.id
      WHERE o.customer_id=$1 GROUP BY o.id ORDER BY o.created_at DESC LIMIT 50`,
     [req.customer.id]
   );
   res.json({ orders: rows });
+}
+
+
+export async function confirmOrderReceived(req, res) {
+  const orderNumber = String(req.params.orderNumber || '').trim();
+  if (!orderNumber) return res.status(400).json({ error:'INVALID_ORDER_NUMBER' });
+  const { rows } = await pool.query(
+    `UPDATE orders
+     SET buyer_completed_at=COALESCE(buyer_completed_at,NOW()),
+         warranty_started_at=COALESCE(warranty_started_at,NOW()),
+         warranty_expires_at=COALESCE(warranty_expires_at,NOW()+INTERVAL '14 days')
+     WHERE order_number=$1 AND customer_id=$2 AND status='FULFILLED'
+     RETURNING order_number,buyer_completed_at,warranty_started_at,warranty_expires_at`,
+    [orderNumber,req.customer.id]
+  );
+  if (!rows[0]) {
+    const existing = await pool.query(
+      'SELECT status FROM orders WHERE order_number=$1 AND customer_id=$2',
+      [orderNumber,req.customer.id]
+    );
+    if (!existing.rows[0]) return res.status(404).json({ error:'ORDER_NOT_FOUND' });
+    return res.status(409).json({ error:'ORDER_NOT_READY_FOR_CUSTOMER_CONFIRMATION', message:'Pesanan belum tercatat selesai dipenuhi oleh VAULT CORE.' });
+  }
+  return res.json({ ok:true, ...rows[0], warrantyDays:14 });
+}
+
+export async function createWarrantyClaim(req, res) {
+  const orderNumber = String(req.params.orderNumber || '').trim();
+  const description = String(req.body?.description || '').trim();
+  const rawEvidence = Array.isArray(req.body?.evidenceUrls) ? req.body.evidenceUrls : [];
+  const evidenceUrls = rawEvidence.map((value) => String(value || '').trim()).filter(Boolean);
+  if (!orderNumber || description.length < 10 || description.length > 3000
+      || evidenceUrls.length < 1 || evidenceUrls.length > 8
+      || evidenceUrls.some((value) => {
+        try { return new URL(value).protocol !== 'https:'; } catch { return true; }
+      })) {
+    return res.status(400).json({ error:'INVALID_WARRANTY_CLAIM', message:'Isi kronologi minimal 10 karakter dan lampirkan 1–8 URL bukti HTTPS.' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows:orders } = await client.query(
+      `SELECT id,order_number,warranty_started_at,warranty_expires_at
+       FROM orders
+       WHERE order_number=$1 AND customer_id=$2 AND status='FULFILLED'
+         AND buyer_completed_at IS NOT NULL
+         AND warranty_started_at IS NOT NULL
+         AND warranty_expires_at >= NOW()
+       FOR UPDATE`,
+      [orderNumber,req.customer.id]
+    );
+    const order = orders[0];
+    if (!order) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error:'WARRANTY_NOT_ACTIVE', message:'Masa garansi belum dimulai atau sudah berakhir.' });
+    }
+    const claimNumber = `VCW-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+    const { rows } = await client.query(
+      `INSERT INTO order_warranty_claims
+       (claim_number,order_id,customer_id,description,evidence_urls,sla_due_at)
+       VALUES ($1,$2,$3,$4,$5::jsonb,NOW()+INTERVAL '48 hours')
+       RETURNING claim_number,status,submitted_at,sla_due_at`,
+      [claimNumber,order.id,req.customer.id,description,JSON.stringify(evidenceUrls)]
+    );
+    await client.query('COMMIT');
+    return res.status(201).json({ ok:true, ...rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    if (error.code === '23505') return res.status(409).json({ error:'WARRANTY_CLAIM_ALREADY_SUBMITTED', message:'Klaim untuk pesanan ini sudah tercatat.' });
+    console.error('[warranty-claim-create-error]', error.message);
+    return res.status(500).json({ error:'WARRANTY_CLAIM_CREATE_FAILED' });
+  } finally {
+    client.release();
+  }
 }
