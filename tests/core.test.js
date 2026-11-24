@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { validateTelegramInitData } from '../backend/utils/telegram.js';
 import { encryptPayload, decryptPayload, assertAllowedDigitalPayload } from '../backend/utils/encryption.js';
-import { resolveDisplayStock, isPublicCatalogProduct, isEligibleCheckoutProduct } from '../backend/services/catalogService.js';
+import { resolveDisplayStock, isPublicCatalogProduct, isEligibleCheckoutProduct, isCatalogOnDemandProduct, isCatalogListedAvailable } from '../backend/services/catalogService.js';
 import { validateRightsReviewInput, isRightsReviewUsable, canAddProductInventory } from '../backend/services/rightsReviewService.js';
 import { sendStarsInvoice, refundStarPayment, telegramCall } from '../backend/services/telegramApi.js';
 import { sanitizeSuccessfulPaymentUpdate } from '../backend/utils/paymentAudit.js';
@@ -99,7 +99,7 @@ test('expired pending orders are atomically cancelled, unreserved, and hidden fr
   assert.deepEqual(result, { expired_orders: 2, revoked_deliveries: 2, released_inventory: 2 });
   assert.match(statement, /status='PENDING_PAYMENT'[\s\S]*INTERVAL '15 minutes'/);
   assert.match(statement, /UPDATE deliveries[\s\S]*status='REVOKED'/);
-  assert.match(statement, /UPDATE inventory_items[\s\S]*status='AVAILABLE'/);
+  assert.match(statement, /UPDATE inventory_items[\s\S]*status=CASE[\s\S]*ON_DEMAND_ORDER[\s\S]*UNAVAILABLE[\s\S]*ELSE 'AVAILABLE'/);
   assert.ok(statement.includes('reserved_order_id IN (SELECT id FROM expired_orders)'));
 });
 
@@ -221,6 +221,13 @@ test('rate limiter skips malformed Cloudflare IP metadata and uses a valid fallb
   );
 });
 
+test('on-demand checkout placeholders use the encrypted manual-fulfillment path', () => {
+  const source = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  assert.match(source, /VAULT_CORE_ON_DEMAND_FULFILLMENT_PENDING/);
+  assert.match(source, /VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:ON_DEMAND_ORDER/);
+  assert.match(source, /isCatalogOnDemandProduct\(product\)/);
+});
+
 test('owner manual fulfillment slots are recognized only by their explicit source marker', () => {
   assert.equal(isOwnerManualFulfillmentSource('VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:OWNER_ATTESTED'), true);
   assert.equal(isOwnerManualFulfillmentSource('ordinary vendor invoice reference'), false);
@@ -242,6 +249,17 @@ test('delivery does not hold an idle database connection while awaiting Telegram
   assert.doesNotMatch(source, /const client = await pool[.]connect/);
   assert.match(source, /const completion = await pool[.]connect/);
   assert.match(source, /completion[.]release[(][)]/);
+});
+
+test('catalog-on-demand products are available while listed without a numeric stock balance', () => {
+  const onDemand = { status:'ACTIVE', is_test:false, attributes:{ stock_model:'CATALOG_ON_DEMAND' } };
+  assert.equal(isCatalogOnDemandProduct(onDemand), true);
+  assert.equal(isCatalogListedAvailable(onDemand, 0), true);
+  assert.equal(isCatalogListedAvailable(onDemand, 7), true);
+  assert.equal(isCatalogListedAvailable({ ...onDemand, status:'PAUSED' }, 0), false);
+  assert.equal(isCatalogOnDemandProduct({ ...onDemand, is_test:true }), false);
+  assert.equal(isCatalogListedAvailable({ status:'ACTIVE', attributes:{} }, 0), false);
+  assert.equal(isCatalogListedAvailable({ status:'ACTIVE', attributes:{} }, 1), true);
 });
 
 test('display stock modes support count, boolean availability, and hidden count', () => {
