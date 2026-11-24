@@ -164,14 +164,14 @@ test('test fixtures are never visible through the public catalog policy', () => 
   assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: true, sale_price_xtr: 2 }), false);
 });
 
-test('public catalog excludes pending-review and placeholder-priced commercial products', () => {
+test('public catalog only exposes active, priced, approved commercial products', () => {
   const route = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
-  assert.match(route, /p\.status='ACTIVE'/);
-  assert.doesNotMatch(route, /p\.status='PENDING_REVIEW'/);
-  assert.match(route, /p\.sale_price_xtr > 1/);
-  assert.match(route, /rr\.review_status='APPROVED'/);
-  assert.match(route, /rr\.owner_attested=TRUE/);
-  assert.match(route, /rr\.valid_until>NOW\(\)/);
+  assert.ok(route.includes("p.status='ACTIVE'"));
+  assert.doesNotMatch(route, /PENDING_REVIEW|Menunggu pemeriksaan Owner/);
+  assert.ok(route.includes("p.sale_price_xtr > 1"));
+  assert.ok(route.includes("rr.review_status='APPROVED'"));
+  assert.ok(route.includes("rr.owner_attested=TRUE"));
+  assert.ok(route.includes("rr.valid_until>NOW()"));
 });
 
 test('customer catalog displays product prices only in Telegram Stars XTR', () => {
@@ -596,7 +596,7 @@ test('Owner review rejects incomplete declarations, invalid URLs and expired val
 test('rights review validity expires at its date and inventory must use the current review', () => {
   const now = new Date('2026-11-23T12:00:00.000Z');
   const review = { id:12, review_status:'APPROVED', owner_attested:true, valid_until:'2026-12-31T16:59:59.999Z' };
-  const product = { id:1, status:'PENDING_REVIEW', is_test:false, current_rights_review_id:12 };
+  const product = { id:1, status:'DRAFT', is_test:false, current_rights_review_id:12 };
   assert.equal(isRightsReviewUsable(review, now), true);
   assert.equal(canAddProductInventory(product, review, now), true);
   assert.equal(canAddProductInventory({ ...product,current_rights_review_id:11 }, review, now), false);
@@ -690,4 +690,21 @@ test('cart normalization preserves legacy checkout and merges valid product line
   assert.equal(normalizeCartItems({items:[{productId:2,quantity:6}]}).ok,false);
   assert.equal(normalizeCartItems({items:Array.from({length:11},(_,i)=>({productId:i+1,quantity:1}))}).ok,false);
   assert.equal(normalizeCartItems({items:[{productId:2,quantity:2},{productId:3,quantity:2}]},{testMode:true}).ok,false);
+});
+
+
+test('product lifecycle removes PENDING_REVIEW and publishes approved Owner products automatically', () => {
+  const adminRoute = readFileSync(new URL('../backend/routes/admin.js', import.meta.url), 'utf8');
+  const ownerPage = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
+  const catalogPage = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const rightsService = readFileSync(new URL('../backend/services/rightsReviewService.js', import.meta.url), 'utf8');
+  const migration = readFileSync(new URL('../database/migrations/016_remove_pending_review_product_status.sql', import.meta.url), 'utf8');
+  assert.doesNotMatch(adminRoute + ownerPage + catalogPage + rightsService, /PENDING_REVIEW|MENUNGGU REVIEW|belum dapat dibeli/i);
+  assert.ok(adminRoute.includes('buyable_products'));
+  assert.ok(adminRoute.includes("WHEN $3='APPROVED'"));
+  assert.ok(adminRoute.includes("THEN 'ACTIVE'"));
+  assert.match(ownerPage, /SKU siap dijual/);
+  assert.match(catalogPage, /Produk ini dapat dipesan melalui VAULT CORE Telegram Mini App/);
+  assert.ok(migration.includes('DROP CONSTRAINT IF EXISTS products_status_check'));
+  assert.ok(migration.includes("'DRAFT','ACTIVE','PAUSED','ARCHIVED'"));
 });

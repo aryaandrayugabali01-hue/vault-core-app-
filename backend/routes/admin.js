@@ -32,7 +32,15 @@ router.get('/dashboard', async (_req, res) => {
     pool.query(`SELECT COALESCE(SUM(amount_xtr),0)::bigint AS expenses_xtr FROM operating_expenses`),
     pool.query(`SELECT COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE)::int AS total_products,
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='ACTIVE')::int AS active_products,
-      COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='PENDING_REVIEW')::int AS pending_review_products,
+      COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='ACTIVE'
+        AND sale_price_xtr>1 AND fulfillment_type IS NOT NULL
+        AND EXISTS (SELECT 1 FROM product_rights_reviews r
+          WHERE r.id=products.current_rights_review_id AND r.product_id=products.id
+            AND r.review_status='APPROVED' AND r.owner_attested=TRUE AND r.valid_until>NOW())
+        AND EXISTS (SELECT 1 FROM inventory_items i
+          WHERE i.product_id=products.id AND i.status='AVAILABLE'
+            AND i.rights_review_id=products.current_rights_review_id
+            AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL))::int AS buyable_products,
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status IN ('DRAFT','PAUSED'))::int AS paused_or_draft_products
       FROM products`)
   ]);
@@ -251,7 +259,7 @@ router.patch('/products/:id', async (req, res) => {
       }
     } else if (key === 'displayStockMode' && !['EXACT_COUNT','IN_STOCK_ONLY','HIDE_COUNT'].includes(value)) {
       return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
-    } else if (key === 'status' && !['DRAFT','PENDING_REVIEW','ACTIVE','PAUSED','ARCHIVED'].includes(value)) {
+    } else if (key === 'status' && !['DRAFT','ACTIVE','PAUSED','ARCHIVED'].includes(value)) {
       return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
     }
     columns.push(column);
@@ -460,7 +468,13 @@ router.post('/products/:id/rights-review', async (req, res) => {
     );
     const created = rows[0];
     await client.query(
-      'UPDATE products SET current_rights_review_id=$2,updated_at=NOW(),status=CASE WHEN $3 <> \'APPROVED\' AND status=\'ACTIVE\' THEN \'PAUSED\' ELSE status END WHERE id=$1',
+      `UPDATE products SET current_rights_review_id=$2,updated_at=NOW(),
+       status=CASE
+         WHEN $3='APPROVED' AND status IN ('DRAFT','PAUSED')
+           AND sale_price_xtr>1 AND fulfillment_type IS NOT NULL THEN 'ACTIVE'
+         WHEN $3<>'APPROVED' AND status='ACTIVE' THEN 'PAUSED'
+         ELSE status END
+       WHERE id=$1`,
       [productId,created.id,created.review_status]
     );
     if (created.review_status !== 'APPROVED') {
@@ -475,7 +489,9 @@ router.post('/products/:id/rights-review', async (req, res) => {
     );
     await client.query('COMMIT');
     await audit(req,'PRODUCT_RIGHTS_REVIEW_RECORDED','PRODUCT',productId,{ reviewId:created.id,status:created.review_status });
-    res.status(201).json({ review:created, message:'Pemeriksaan internal Owner tersimpan. Produk tidak diaktifkan otomatis.' });
+    res.status(201).json({ review:created, message:created.review_status === 'APPROVED'
+      ? 'Pemeriksaan internal Owner APPROVED. Produk otomatis aktif; pembelian tersedia setelah stok aktual ditambahkan.'
+      : 'Pemeriksaan internal Owner tersimpan. Produk dijeda sampai pemeriksaan disetujui.' });
   } catch (error) {
     try { await client.query('ROLLBACK'); } catch {}
     console.error('[rights-review-save]', error.message);

@@ -534,7 +534,7 @@ export default function HomePage() {
                   <div className="product-price"><small>HARGA JUAL</small><strong>{Number(product.sale_price_xtr).toLocaleString('en-US')} XTR</strong></div>
                   <button className="buy-button" type="button" disabled={buyingId === product.id || activatingId === product.id}
                     onClick={() => { if (isDraftTest) activateTestProduct(product.id); else { setDetailQuantity(1); setSelectedProduct(product); } }}>
-                    {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : product.is_purchaseable ? 'Detail & Beli' : 'Lihat Detail'}
+                    {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : 'Detail & Beli'}
                   </button>
                 </div>
               </div>
@@ -578,7 +578,7 @@ export default function HomePage() {
             <section className="marketplace-detail-section"><h3>Deskripsi Produk</h3><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
             <section className="marketplace-detail-section"><h3>Ketentuan Produk</h3><p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p></section>
             <section className="marketplace-detail-section marketplace-guide-link"><button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Cara Beli &amp; Tips <span>›</span></button></section>
-            <div className="marketplace-detail-policy"><strong>{selectedProduct.is_purchaseable ? 'Perlindungan transaksi' : 'Status katalog'}</strong><p>{selectedProduct.is_purchaseable ? 'Seluruh transaksi hanya diproses di VAULT CORE Telegram Mini App menggunakan invoice resmi Telegram Stars (XTR). Harga dan stok diperiksa ulang oleh server. Pesanan diproses setelah Telegram mengonfirmasi pembayaran.' : 'Produk tercatat di katalog VAULT CORE, tetapi belum dapat dibeli karena pemeriksaan CR-05 dan stok komersial belum tersedia.'}</p></div>
+            <div className="marketplace-detail-policy"><strong>Transaksi resmi Telegram Stars</strong><p>Produk ini dapat dipesan melalui VAULT CORE Telegram Mini App. Harga dan stok diperiksa ulang oleh server sebelum invoice resmi Telegram Stars (XTR) dibuat. Pesanan diproses setelah Telegram mengonfirmasi pembayaran.</p></div>
             {selectedProduct.is_purchaseable || selectedProduct.is_test ? <div className="detail-buy-row marketplace-quantity-row">
               <label>Jumlah pembelian<div className="marketplace-quantity-control"><button type="button" disabled={detailQuantity<=1} onClick={()=>setDetailQuantity(Math.max(1,detailQuantity-1))}>−</button><strong>{detailQuantity}</strong><button type="button" disabled={detailQuantity>=5} onClick={()=>setDetailQuantity(Math.min(5,detailQuantity+1))}>+</button></div></label>
               <div><small>Subtotal indikatif</small><strong>{(Number(selectedProduct.sale_price_xtr||0)*detailQuantity).toLocaleString('en-US')} XTR</strong></div>
@@ -586,7 +586,7 @@ export default function HomePage() {
             <div className="marketplace-detail-actions">
               {telegramContext && <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available||selectedProduct.is_test||!selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,detailQuantity)}>+ Keranjang</button>}
               <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || selectedProduct.is_test || !selectedProduct.is_purchaseable} onClick={() => { const product = selectedProduct; const quantity=detailQuantity; setSelectedProduct(null); buy(product,quantity); }}>
-                {buyingId === selectedProduct.id ? 'Menyiapkan…' : !telegramContext ? 'Lanjutkan di Telegram' : selectedProduct.is_purchaseable ? 'Beli sekarang' : 'Belum tersedia'}
+                {buyingId === selectedProduct.id ? 'Menyiapkan…' : !telegramContext ? 'Lanjutkan di Telegram' : selectedProduct.is_available ? 'Beli sekarang' : 'Stok habis'}
               </button>
             </div>
           </div>

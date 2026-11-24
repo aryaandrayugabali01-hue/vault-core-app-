@@ -1,6 +1,6 @@
 # VAULT CORE — Deployment Status
 
-**Updated:** 2026-11-23 (production audit fixes deployed, 16 commercial SKUs active, XTR pricing, Owner manual fulfillment)
+**Updated:** 2026-11-25 (16 commercial SKUs verified buyable, product lifecycle cleanup prepared, XTR pricing, Owner manual fulfillment)
 
 ## Current production snapshot — 23 November 2026
 
@@ -19,7 +19,7 @@
 
 | Service | Resource | Verified status |
 |---|---|---|
-| Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; migrations 001–014 registered; CR-08 JSONB product attributes and GIN index verified |
+| Neon PostgreSQL | `VAULT CORE` / `soft-morning-26299268` / Singapore | Connected; migrations 001–016 registered; CR-08 JSONB product attributes and GIN index verified |
 | GitHub | `aryaandrayugabali01-hue/vault-core-app-` / `main` | Source published; repository read/write operations verified |
 | Cloudflare | Primary account | Existing `vault-core-gateway`, `vault-core-api`, and `vault-core-web` deployed; gateway origins installed; root/www/api domain, TLS, public artwork, and health checks passed in production run `45183635248` |
 | Telegram | Bot API | Production webhook `https://api.vaultcore.biz.id/api/telegram/webhook` configured and read-back verified in production run `45183635248` |
@@ -129,4 +129,4 @@ Connected Neon database `vault_core` was inspected read-only:
 
 ## Production deployment and sales readiness
 
-**DEPLOYED — NOT YET READY FOR GENERAL SALES.** The latest application and marketplace changes are deployed. Commercial sales remain blocked by verified database state: 0 marketplace categories, 0 active commercial SKUs, 0 sellable commercial inventory, and 12 commercial SKUs pending CR-05 review. The database has 4 TEST inventory rows, 0 orders, 0 transactions, and 0 deliveries. Manual Telegram Android UAT, live XTR payment/refund/delivery acceptance, IDOR/backup-restore checks, and Owner release approval remain pending.
+**DEPLOYED — CATALOG READY FOR TRANSACTION TESTING; GENERAL-SALES UAT PENDING.** Neon read-back confirms 16 ACTIVE commercial SKUs, 16 current Owner-attested APPROVED reviews, 16 available source-bound inventory units, and 17 active marketplace categories. TEST fixtures remain isolated. Actual customer payment/delivery/refund acceptance, IDOR, backup/restore, and Owner release approval remain pending.
