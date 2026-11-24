@@ -20,7 +20,8 @@ export async function createOrder(req, res, { testMode = false } = {}) {
 
     const ids = cartItems.map((item) => item.productId);
     const { rows: products } = await client.query(
-      `SELECT p.*,rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
+      `SELECT p.*,rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested,
+              rr.rights_basis,rr.publisher_platform,rr.authorization_evidence_reference,rr.official_terms_url
        FROM products p
        LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
        WHERE p.id=ANY($1::bigint[]) AND p.status='ACTIVE'

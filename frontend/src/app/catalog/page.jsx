@@ -572,7 +572,7 @@ export default function HomePage() {
                 <div className="product-card-meta">
                   <span className={'tier-label ' + String(product.tier || '').toLowerCase()}>{product.tier === 'SERVICE' ? 'Katalog' : (TIER_LABELS[product.tier] || product.tier) + ' Tier'}</span>
                   <span className="product-sku">{product.sku}</span>
-                  {product.is_preview_only && <span className="product-preview-badge">PRATINJAU KATALOG</span>}
+                  {product.is_preview_only && <span className="product-preview-badge">LIVE DI KATALOG</span>}
                 </div>
                 {product.is_test && <span className="product-test-badge">CONTOH UJI</span>}
               </div>
@@ -582,7 +582,7 @@ export default function HomePage() {
                 <h3>{product.name}</h3>
                 <p>{product.description}</p>
                 <div className="product-bottom">
-                  <div className="product-price"><small>{product.is_preview_only ? 'HARGA REFERENSI' : 'HARGA JUAL'}</small><strong>{Number(product.sale_price_xtr).toLocaleString('en-US')} XTR</strong></div>
+                  <div className="product-price"><small>{product.is_preview_only ? 'NILAI KATALOG' : 'HARGA JUAL'}</small><strong>{Number(product.sale_price_xtr).toLocaleString('en-US')} XTR</strong></div>
                   <button className="buy-button" type="button" disabled={buyingId === product.id || activatingId === product.id}
                     onClick={() => { if (isDraftTest) activateTestProduct(product.id); else { setDetailQuantity(1); setSelectedProduct(product); } }}>
                     {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : product.is_preview_only ? 'Lihat detail' : 'Detail & Beli'}
@@ -621,7 +621,7 @@ export default function HomePage() {
           <div className="marketplace-detail-body">
             <div className="marketplace-detail-title-row"><div><span className="detail-category">{selectedProduct.marketplace_category_name || GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</span><h3>{selectedProduct.name}</h3></div><strong className="marketplace-detail-price">{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
             <div className="marketplace-detail-stats">
-              <div><span>Ketersediaan</span><strong>{selectedProduct.is_preview_only ? 'Pratinjau katalog' : selectedProduct.is_available ? (selectedProduct.is_on_demand ? 'Tersedia selama listing aktif' : 'Tersedia') : 'Stok habis'}</strong></div>
+              <div><span>Ketersediaan</span><strong>{selectedProduct.is_preview_only ? 'Tercantum di katalog' : selectedProduct.is_available ? (selectedProduct.is_on_demand ? 'Tersedia selama listing aktif' : 'Tersedia') : 'Stok habis'}</strong></div>
               <div><span>Minimum beli</span><strong>1 unit</strong></div>
               <div><span>Pemenuhan</span><strong>{FULFILLMENT_LABELS[selectedProduct.fulfillment_type] || selectedProduct.fulfillment_type || 'Belum ditentukan'}</strong></div>
               <div><span>Estimasi</span><strong>{selectedProduct.fulfillment_eta || 'Belum ditetapkan Owner'}</strong></div>
@@ -631,9 +631,9 @@ export default function HomePage() {
             <section className="marketplace-detail-section"><h3>Ketentuan Produk</h3><p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p></section>
             <section className="marketplace-detail-section marketplace-guide-link"><button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Cara Beli &amp; Tips <span>›</span></button></section>
             <div className={'marketplace-detail-policy' + (selectedProduct.is_preview_only ? ' marketplace-preview-notice' : '')}>
-              <strong>{selectedProduct.is_preview_only ? 'Pratinjau katalog · Pembelian belum dibuka' : 'Transaksi resmi Telegram Stars'}</strong>
+              <strong>{selectedProduct.is_preview_only ? 'Listing publik · Pembelian belum dibuka' : 'Transaksi resmi Telegram Stars'}</strong>
               <p>{selectedProduct.is_preview_only
-                ? 'Spesifikasi, gambar, dan harga referensi dapat dilihat sebagai informasi katalog. Checkout, keranjang, dan invoice belum tersedia sampai persyaratan hak transfer produk dinyatakan terpenuhi.'
+                ? 'Spesifikasi, gambar, dan nilai katalog 400 XTR ditampilkan secara publik. Pemesanan akun MLBB belum dibuka sampai VAULT CORE memiliki bukti otorisasi transfer tertulis dari publisher yang dapat diverifikasi.'
                 : 'Produk ini dapat dipesan melalui VAULT CORE Telegram Mini App. Harga dan stok diperiksa ulang oleh server sebelum invoice resmi Telegram Stars (XTR) dibuat. Pesanan diproses setelah Telegram mengonfirmasi pembayaran.'}</p>
             </div>
             {selectedProduct.is_purchaseable || selectedProduct.is_test ? <div className="detail-buy-row marketplace-quantity-row">
@@ -643,7 +643,7 @@ export default function HomePage() {
             <div className={'marketplace-detail-actions' + (selectedProduct.is_preview_only ? ' marketplace-preview-actions' : '')}>
               {telegramContext && !selectedProduct.is_preview_only && <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available||selectedProduct.is_test||!selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,detailQuantity)}>+ Keranjang</button>}
               <button className="buy-button" type="button" disabled={selectedProduct.is_preview_only || !selectedProduct.is_available || buyingId === selectedProduct.id || selectedProduct.is_test || !selectedProduct.is_purchaseable} onClick={() => { const product = selectedProduct; const quantity=detailQuantity; setSelectedProduct(null); buy(product,quantity); }}>
-                {selectedProduct.is_preview_only ? 'Pratinjau saja' : buyingId === selectedProduct.id ? 'Menyiapkan…' : !telegramContext ? 'Lanjutkan di Telegram' : selectedProduct.is_available ? 'Beli sekarang' : 'Stok habis'}
+                {selectedProduct.is_preview_only ? 'Pembelian belum dibuka' : buyingId === selectedProduct.id ? 'Menyiapkan…' : !telegramContext ? 'Lanjutkan di Telegram' : selectedProduct.is_available ? 'Beli sekarang' : 'Stok habis'}
               </button>
             </div>
           </div>

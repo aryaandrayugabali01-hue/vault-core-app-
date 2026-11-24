@@ -82,7 +82,9 @@ test('public catalog declares Telegram Mini App as the only transaction channel'
   assert.match(page, /telegramContext && <>[\s\S]*top-cart-button/);
   assert.match(page, /telegramContext && <nav className="bottom-nav"/);
   assert.match(page, /telegramContext && !selectedProduct\.is_preview_only && <button className="detail-secondary-button"/);
-  assert.match(page, /selectedProduct\.is_preview_only \? 'Pratinjau saja'/);
+  assert.match(page, /LIVE DI KATALOG/);
+  assert.match(page, /Listing publik · Pembelian belum dibuka/);
+  assert.match(page, /selectedProduct\.is_preview_only \? 'Pembelian belum dibuka'/);
   assert.match(page, /async function confirmOrderReceived/);
   assert.match(page, /async function submitWarrantyClaim/);
 });
@@ -187,6 +189,25 @@ test('test products require the Owner-only test checkout lane', () => {
   const commercial = { status: 'ACTIVE', is_test: false, sale_price_xtr: 2 };
   const fixture = { status: 'ACTIVE', is_test: true, sale_price_xtr: 1 };
   assert.equal(isEligibleCheckoutProduct(commercial), true);
+  const mlbbPreview = {
+    status:'ACTIVE', is_test:false, sale_price_xtr:400, game_category:'MLBB',
+    fulfillment_type:'GAME_ACCOUNT_TRANSFER',
+    attributes:{ public_preview:true, sales_enabled:false, stock_model:'CATALOG_ON_DEMAND' }
+  };
+  assert.equal(isEligibleCheckoutProduct(mlbbPreview), false);
+  const mlbbWithoutPublisherProof = {
+    ...mlbbPreview,
+    attributes:{ public_preview:true, sales_enabled:true, stock_model:'CATALOG_ON_DEMAND' },
+    rights_basis:'AUTHORIZED_VENDOR', publisher_platform:'MOONTON',
+    authorization_evidence_reference:'https://example.com/vendor-proof',
+    official_terms_url:'https://mlbbesports.com/legal/terms'
+  };
+  assert.equal(isEligibleCheckoutProduct(mlbbWithoutPublisherProof), false);
+  const mlbbWithPublisherProof = {
+    ...mlbbWithoutPublisherProof,
+    rights_basis:'OFFICIAL_DISTRIBUTION'
+  };
+  assert.equal(isEligibleCheckoutProduct(mlbbWithPublisherProof), true);
   assert.equal(isEligibleCheckoutProduct({ ...commercial, sale_price_xtr: 1 }), false);
   assert.equal(isEligibleCheckoutProduct({ ...commercial, sale_price_xtr: 0 }), false);
   assert.equal(isEligibleCheckoutProduct({ ...commercial, sale_price_xtr: undefined }), false);
@@ -219,6 +240,20 @@ test('rate limiter skips malformed Cloudflare IP metadata and uses a valid fallb
     }),
     'ip:198.51.100.22'
   );
+});
+
+test('MLBB public catalog listing is not checkout-enabled without publisher authorization', () => {
+  const route = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
+  const order = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  const delivery = readFileSync(new URL('../backend/services/deliveryService.js', import.meta.url), 'utf8');
+  const migration = readFileSync(new URL('../database/migrations/019_mlbb_live_catalog_publisher_gate.sql', import.meta.url), 'utf8');
+  assert.match(route, /public_preview/);
+  assert.match(route, /sales_enabled/);
+  assert.match(order, /rr\.rights_basis/);
+  assert.match(delivery, /MLBB_ACCOUNT_TRANSFER/);
+  assert.match(migration, /MLBB_ACCOUNT_TRANSFER_PUBLISHER_AUTHORIZATION_REQUIRED/);
+  assert.match(migration, /'sales_enabled', false/);
+  assert.doesNotMatch(migration, /Mitra/);
 });
 
 test('on-demand checkout placeholders use the encrypted manual-fulfillment path', () => {

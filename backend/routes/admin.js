@@ -34,13 +34,27 @@ router.get('/dashboard', async (_req, res) => {
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='ACTIVE')::int AS active_products,
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='ACTIVE'
         AND sale_price_xtr>1 AND fulfillment_type IS NOT NULL
+        AND COALESCE(products.attributes->>'sales_enabled','true') <> 'false'
         AND EXISTS (SELECT 1 FROM product_rights_reviews r
           WHERE r.id=products.current_rights_review_id AND r.product_id=products.id
-            AND r.review_status='APPROVED' AND r.owner_attested=TRUE AND r.valid_until>NOW())
-        AND EXISTS (SELECT 1 FROM inventory_items i
-          WHERE i.product_id=products.id AND i.status='AVAILABLE'
-            AND i.rights_review_id=products.current_rights_review_id
-            AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL))::int AS buyable_products,
+            AND r.review_status='APPROVED' AND r.owner_attested=TRUE AND r.valid_until>NOW()
+            AND (
+              NOT (products.game_category='MLBB' AND products.fulfillment_type='GAME_ACCOUNT_TRANSFER')
+              OR (
+                products.attributes->>'sales_enabled'='true'
+                AND r.rights_basis='OFFICIAL_DISTRIBUTION'
+                AND upper(r.publisher_platform) LIKE '%MOONTON%'
+                AND r.authorization_evidence_reference ~* '^https://'
+                AND r.official_terms_url ~* '^https://'
+              )
+            ))
+        AND (
+          products.attributes->>'stock_model'='CATALOG_ON_DEMAND'
+          OR EXISTS (SELECT 1 FROM inventory_items i
+            WHERE i.product_id=products.id AND i.status='AVAILABLE'
+              AND i.rights_review_id=products.current_rights_review_id
+              AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL)
+        ))::int AS buyable_products,
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status IN ('DRAFT','PAUSED'))::int AS paused_or_draft_products
       FROM products`)
   ]);
@@ -490,7 +504,7 @@ router.post('/products/:id/rights-review', async (req, res) => {
     await client.query('COMMIT');
     await audit(req,'PRODUCT_RIGHTS_REVIEW_RECORDED','PRODUCT',productId,{ reviewId:created.id,status:created.review_status });
     res.status(201).json({ review:created, message:created.review_status === 'APPROVED'
-      ? 'Pemeriksaan internal Owner APPROVED. Produk otomatis aktif; pembelian tersedia setelah stok aktual ditambahkan.'
+      ? 'Pemeriksaan hak Owner tersimpan. Checkout MLBB tetap terkunci sampai bukti otorisasi tertulis publisher terverifikasi.'
       : 'Pemeriksaan internal Owner tersimpan. Produk dijeda sampai pemeriksaan disetujui.' });
   } catch (error) {
     try { await client.query('ROLLBACK'); } catch {}
