@@ -838,6 +838,11 @@ router.post('/orders/:orderNumber/refund', async (req, res) => {
     await finalize.query(`UPDATE transactions SET status='REFUNDED' WHERE id=$1`, [refund.transactionId]);
     await finalize.query(`UPDATE orders SET status='REFUNDED' WHERE id=$1`, [refund.id]);
     await finalize.query(
+      `UPDATE order_warranty_claims SET status='REFUNDED',resolved_at=NOW(),updated_at=NOW()
+       WHERE order_id=$1 AND status='APPROVED'`,
+      [refund.id]
+    );
+    await finalize.query(
       `UPDATE deliveries SET status='REVOKED', last_error=$2
        WHERE order_id=$1 AND status IN ('PENDING','READY','FAILED','REVIEW_REQUIRED')`,
       [refund.id, 'Refunded by owner: ' + reason]
@@ -879,6 +884,44 @@ router.post('/orders/:orderNumber/retry-delivery', async (req, res) => {
   const result = await deliverPaidOrder(orderNumber);
   await audit(req, 'DELIVERY_RETRY_REQUESTED', 'ORDER', order.id, result);
   res.json({ ok: true, orderNumber, ...result });
+});
+
+router.get('/warranty-claims', async (_req, res) => {
+  const { rows } = await pool.query(
+    `SELECT wc.id,wc.claim_number,wc.description,wc.evidence_urls,wc.status,
+            wc.submitted_at,wc.sla_due_at,wc.reviewed_at,wc.resolution_notes,
+            o.order_number,o.total_xtr,o.warranty_started_at,o.warranty_expires_at,
+            c.telegram_user_id,c.username
+     FROM order_warranty_claims wc
+     JOIN orders o ON o.id=wc.order_id
+     JOIN customers c ON c.id=wc.customer_id
+     ORDER BY CASE WHEN wc.status IN ('SUBMITTED','REVIEWING') THEN 0 ELSE 1 END,
+              wc.submitted_at ASC
+     LIMIT 200`
+  );
+  res.json({ claims:rows });
+});
+
+router.patch('/warranty-claims/:id', async (req, res) => {
+  const id=Number(req.params.id);
+  const status=String(req.body?.status || '').toUpperCase();
+  const resolutionNotes=String(req.body?.resolutionNotes || '').trim();
+  if(!Number.isSafeInteger(id)||id<=0||!['REVIEWING','APPROVED','REJECTED'].includes(status)
+      || resolutionNotes.length<3||resolutionNotes.length>1000) {
+    return res.status(400).json({error:'INVALID_WARRANTY_CLAIM_REVIEW'});
+  }
+  const {rows}=await pool.query(
+    `UPDATE order_warranty_claims
+     SET status=$2,reviewed_at=NOW(),reviewed_by_telegram_user_id=$3,
+         resolution_notes=$4,resolved_at=CASE WHEN $2='REJECTED' THEN NOW() ELSE NULL END,
+         updated_at=NOW()
+     WHERE id=$1 AND status IN ('SUBMITTED','REVIEWING','APPROVED')
+     RETURNING id,claim_number,status,resolution_notes`,
+    [id,status,String(req.telegramUser.id),resolutionNotes]
+  );
+  if(!rows[0]) return res.status(404).json({error:'WARRANTY_CLAIM_NOT_FOUND_OR_CLOSED'});
+  await audit(req,'WARRANTY_CLAIM_REVIEWED','WARRANTY_CLAIM',id,{status,resolutionNotes});
+  res.json({claim:rows[0]});
 });
 
 router.get('/orders', async (_req, res) => {
