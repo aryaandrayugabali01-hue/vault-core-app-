@@ -38,6 +38,7 @@ SET name='Akun MLBB · 79 Hero · 130 Skin · Mythic',
       'platform_support','Android dan iOS',
       'emblem_status','ALL MAX',
       'season_note','Rank dapat turun saat reset season',
+      'stock_model','CATALOG_ON_DEMAND',
       'public_preview',true
     ),
     customer_terms='Penawaran akun dengan spesifikasi sebagaimana tercantum pada katalog. Jika kelak diaktifkan untuk transaksi yang diizinkan, seluruh komunikasi dan penyerahan kepada pembeli dilakukan oleh VAULT CORE. Garansi Anti Hackback ditetapkan 14 hari kalender sejak pembeli mengonfirmasi Selesai setelah penerimaan. Klaim valid mendapat pengembalian 100% dari nilai transaksi; SLA maksimal 48 jam sejak bukti lengkap diterima. Informasi unbind setelah 30 hari dan perubahan rank saat reset season merupakan ketentuan khusus penawaran.',
@@ -55,13 +56,25 @@ UPDATE products p
 SET status='PAUSED',
     display_stock_mode='HIDE_COUNT',
     display_stock_override=NULL,
-    attributes=COALESCE(p.attributes,'{}'::jsonb) || jsonb_build_object('public_preview',true),
+    attributes=COALESCE(p.attributes,'{}'::jsonb) || jsonb_build_object('public_preview',true,'stock_model','CATALOG_ON_DEMAND'),
     updated_at=NOW()
 FROM marketplace_categories c
 WHERE p.marketplace_category_id=c.id
   AND c.slug='mlbb-akun'
   AND p.game_category='MLBB'
   AND COALESCE(p.is_test,FALSE)=FALSE;
+
+-- The previous one-per-SKU rows were manual fulfillment capacity markers, not credentials.
+-- Disable those static rows; each paid on-demand order will receive its own internal fulfillment reservation.
+UPDATE inventory_items
+SET status='UNAVAILABLE',reserved_order_id=NULL,reserved_until=NULL
+WHERE status='AVAILABLE'
+  AND product_id IN (
+    SELECT p.id
+    FROM products p
+    JOIN marketplace_categories c ON c.id=p.marketplace_category_id
+    WHERE c.slug='mlbb-akun' AND p.game_category='MLBB' AND COALESCE(p.is_test,FALSE)=FALSE
+  );
 
 UPDATE marketplace_categories
 SET purchase_guide='[
