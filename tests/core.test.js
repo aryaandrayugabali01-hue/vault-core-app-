@@ -81,7 +81,10 @@ test('public catalog declares Telegram Mini App as the only transaction channel'
   assert.match(page, /if \(!initData\)/);
   assert.match(page, /telegramContext && <>[\s\S]*top-cart-button/);
   assert.match(page, /telegramContext && <nav className="bottom-nav"/);
-  assert.match(page, /telegramContext && <button className="detail-secondary-button"/);
+  assert.match(page, /telegramContext && !selectedProduct\.is_preview_only && <button className="detail-secondary-button"/);
+  assert.match(page, /selectedProduct\.is_preview_only \? 'Pratinjau saja'/);
+  assert.match(page, /async function confirmOrderReceived/);
+  assert.match(page, /async function submitWarrantyClaim/);
 });
 
 test('expired pending orders are atomically cancelled, unreserved, and hidden from stock counts', async () => {
