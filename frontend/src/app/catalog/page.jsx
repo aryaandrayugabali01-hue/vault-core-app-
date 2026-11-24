@@ -284,8 +284,11 @@ export default function HomePage() {
     if (description === null) return;
     const evidenceText = window.prompt('Masukkan 1–8 URL HTTPS bukti pendukung, pisahkan dengan baris baru atau koma:');
     if (evidenceText === null) return;
-    const evidenceUrls = evidenceText.split(/[\\n,]+/).map((item)=>item.trim()).filter(Boolean);
-    if (description.trim().length < 10 || !evidenceUrls.length || evidenceUrls.some((url)=>!/^https:\\/\\//i.test(url))) {
+    const evidenceUrls = evidenceText.split(',').flatMap((entry)=>entry.split(String.fromCharCode(10))).map((item)=>item.trim()).filter(Boolean);
+    const invalidEvidenceUrl = evidenceUrls.some((url) => {
+      try { return new URL(url).protocol !== 'https:'; } catch { return true; }
+    });
+    if (description.trim().length < 10 || !evidenceUrls.length || invalidEvidenceUrl) {
       setNotice('Kronologi dan minimal satu URL bukti HTTPS wajib diisi.');
       return;
     }
