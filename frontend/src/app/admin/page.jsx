@@ -70,19 +70,21 @@ export default function AdminPage() {
   const headers = () => ({ 'content-type':'application/json', 'x-telegram-init-data':getInitData() });
 
   async function refresh() {
-    const [dashboard, productResponse, orderResponse, categoryResponse] = await Promise.all([
+    const [dashboard, productResponse, orderResponse, categoryResponse, warrantyResponse] = await Promise.all([
       fetch(`${API}/api/admin/dashboard`, { headers:headers(), credentials:'include', cache:'no-store' }),
       fetch(`${API}/api/admin/products`, { headers:headers(), credentials:'include', cache:'no-store' }),
       fetch(`${API}/api/admin/orders`, { headers:headers(), credentials:'include', cache:'no-store' }),
-      fetch(`${API}/api/admin/marketplace-categories`, { headers:headers(), credentials:'include', cache:'no-store' })
+      fetch(`${API}/api/admin/marketplace-categories`, { headers:headers(), credentials:'include', cache:'no-store' }),
+      fetch(`${API}/api/admin/warranty-claims`, { headers:headers(), credentials:'include', cache:'no-store' })
     ]);
     const dashboardData = await dashboard.json();
     const productData = await productResponse.json();
     const orderData = await orderResponse.json();
     const categoryData = await categoryResponse.json();
-    if (!dashboard.ok || !productResponse.ok || !orderResponse.ok || !categoryResponse.ok) throw new Error(apiErrorMessage(dashboardData, '') || apiErrorMessage(productData, '') || apiErrorMessage(orderData, '') || apiErrorMessage(categoryData, '') || 'Akses panel pemilik tidak dapat diverifikasi. Buka VAULT CORE melalui Telegram dengan akun pemilik.');
+    const warrantyData = await warrantyResponse.json();
+    if (!dashboard.ok || !productResponse.ok || !orderResponse.ok || !categoryResponse.ok || !warrantyResponse.ok) throw new Error(apiErrorMessage(dashboardData, '') || apiErrorMessage(productData, '') || apiErrorMessage(orderData, '') || apiErrorMessage(categoryData, '') || apiErrorMessage(warrantyData, '') || 'Akses panel pemilik tidak dapat diverifikasi. Buka VAULT CORE melalui Telegram dengan akun pemilik.');
     const nextProducts = productData.products || [];
-    setStats(dashboardData); setProducts(nextProducts); setOrders(orderData.orders || []); setMarketplaceCategories(categoryData.categories || []);
+    setStats(dashboardData); setProducts(nextProducts); setOrders(orderData.orders || []); setWarrantyClaims(warrantyData.claims || []); setMarketplaceCategories(categoryData.categories || []);
     if (!rightsProductId && nextProducts.length) setRightsProductId(String(nextProducts.find((item) => !item.is_test)?.id || nextProducts[0].id));
     setNotice('Panel pemilik berhasil terhubung.');
   }
@@ -287,6 +289,23 @@ export default function AdminPage() {
     } catch(e) { setNotice(e.message); } finally { setBusy(false); }
   }
 
+  async function updateWarrantyClaim(claimId, status) {
+    const message = status === 'REVIEWING' ? 'Catatan pemeriksaan awal:' : status === 'APPROVED' ? 'Alasan klaim dinyatakan valid:' : 'Alasan klaim ditolak:';
+    const resolutionNotes = window.prompt(message, status === 'REVIEWING' ? 'Bukti sedang diverifikasi oleh VAULT CORE.' : '');
+    if (resolutionNotes === null) return;
+    setBusy(true);
+    try {
+      const response = await fetch(`${API}/api/admin/warranty-claims/${claimId}`, {
+        method:'PATCH', headers:headers(), credentials:'include',
+        body:JSON.stringify({ status, resolutionNotes })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(apiErrorMessage(data,'Pembaruan klaim garansi gagal.'));
+      setNotice('Status klaim ' + data.claim.claim_number + ' diperbarui menjadi ' + data.claim.status + '.');
+      await refresh();
+    } catch(e) { setNotice(e.message); } finally { setBusy(false); }
+  }
+
   async function issueRefund(orderNumber) {
     const reason = window.prompt(`Alasan refund untuk ${orderNumber}:`, 'Permintaan bantuan pelanggan');
     if (reason === null) return;
@@ -424,6 +443,27 @@ export default function AdminPage() {
       {!orders.length && <tr><td colSpan="7" className="table-empty">Belum ada transaksi.</td></tr>}
       </tbody></table></div>
       <p className="admin-footnote">Pengembalian dana hanya tersedia untuk pembayaran Stars yang tercatat. Produk yang sudah terkirim tetap tercatat sebagai terjual dan tidak otomatis dikembalikan ke stok.</p>
+    </section>
+
+    <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">LAYANAN PEMBELI</span><h2>Klaim Garansi Anti Hackback</h2></div><span className="section-count">{warrantyClaims.length} KLAIM</span></div>
+      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Klaim / Pesanan</th><th>Pembeli</th><th>Kronologi</th><th>Bukti</th><th>SLA</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
+      {warrantyClaims.map(claim=><tr key={claim.claim_number}>
+        <td><strong>{claim.claim_number}</strong><small>{claim.order_number}</small><small>{new Date(claim.submitted_at).toLocaleString('id-ID')}</small></td>
+        <td>{claim.username ? '@'+claim.username : claim.telegram_user_id}</td>
+        <td>{claim.description}</td>
+        <td>{(Array.isArray(claim.evidence_urls)?claim.evidence_urls:[]).map((url,index)=><a key={url} href={url} target="_blank" rel="noreferrer">Bukti {index+1}</a>)}</td>
+        <td>{new Date(claim.sla_due_at).toLocaleString('id-ID')}</td>
+        <td><span className={`admin-status ${String(claim.status).toLowerCase()}`}>{claim.status}</span></td>
+        <td><div className="admin-actions">
+          {['SUBMITTED','REVIEWING'].includes(claim.status) && <button disabled={busy} onClick={()=>updateWarrantyClaim(claim.id,'REVIEWING')}>Periksa</button>}
+          {['SUBMITTED','REVIEWING'].includes(claim.status) && <button disabled={busy} onClick={()=>updateWarrantyClaim(claim.id,'APPROVED')}>Setujui</button>}
+          {['SUBMITTED','REVIEWING'].includes(claim.status) && <button disabled={busy} onClick={()=>updateWarrantyClaim(claim.id,'REJECTED')}>Tolak</button>}
+          {claim.status==='APPROVED' && <button disabled={busy} onClick={()=>issueRefund(claim.order_number)}>Refund 100% Stars</button>}
+        </div></td>
+      </tr>)}
+      {!warrantyClaims.length && <tr><td colSpan="7" className="table-empty">Belum ada klaim garansi.</td></tr>}
+      </tbody></table></div>
+      <p className="admin-footnote">SLA 48 jam dihitung sejak klaim dan bukti pendukung diterima. Refund hanya dinyatakan selesai setelah Telegram mengonfirmasi pengembalian Stars.</p>
     </section>
 
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">BIAYA OPERASIONAL</span><h2>Biaya operasional</h2></div></div>
