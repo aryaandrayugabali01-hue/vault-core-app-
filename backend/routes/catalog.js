@@ -18,7 +18,7 @@ router.get('/', async (_req, res) => {
             rr.valid_until AS rights_valid_until,
             GREATEST(COUNT(i.id) FILTER (WHERE i.status='AVAILABLE'
               AND i.rights_review_id=p.current_rights_review_id
-              AND i.source_reference IS NOT NULL
+              AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
               AND rr.review_status='APPROVED' AND rr.owner_attested=TRUE
               AND rr.valid_until>NOW()),0)::int AS sellable_stock
      FROM products p
@@ -51,7 +51,7 @@ router.get('/', async (_req, res) => {
       ...product,
       is_purchaseable: Boolean(purchaseable),
       is_available: Boolean(purchaseable && actual > 0),
-      catalog_status_label: purchaseable ? (actual > 0 ? 'Tersedia' : 'Stok habis') : 'Menunggu pemeriksaan Owner',
+      catalog_status_label: actual > 0 ? 'Tersedia' : 'Stok habis',
       display_stock: visible
     };
   });
