@@ -75,6 +75,3 @@ SET purchase_guide='[
     updated_at=NOW()
 WHERE slug='mlbb-akun';
 
-INSERT INTO schema_migrations (filename,checksum_sha256)
-VALUES ('017_mlbb_account_catalog_cr11.sql','managed-by-versioned-migration-runner')
-ON CONFLICT (filename) DO NOTHING;
