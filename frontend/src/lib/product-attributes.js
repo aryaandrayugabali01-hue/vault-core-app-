@@ -37,7 +37,8 @@ const HIDDEN_CUSTOMER_PRODUCT_ATTRIBUTE_KEYS = new Set([
   'fulfillment_mode',
   'owner_attestation_ref',
   'authorization_evidence_status',
-  'public_preview'
+  'public_preview',
+  'stock_model'
 ]);
 
 export function getCustomerVisibleProductAttributes(attributes) {
