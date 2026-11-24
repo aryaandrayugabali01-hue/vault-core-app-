@@ -1414,8 +1414,10 @@ Panduan kategori tidak boleh memuat instruksi Rekber, transfer bank, direct tran
 - Harga referensi produk akun pada berkas ML.zip: **Rp150.000**.
 - Harga checkout internal: **400 XTR**, berdasarkan konversi referensi Rp375/XTR dan pembulatan ke atas. Tampilan customer tetap menggunakan XTR sesuai CR-03 dan CR-10.
 - Harga XTR adalah harga transaksi aplikasi, bukan janji nilai tukar atau nilai pencairan Stars.
-- Model tampilan stok yang diminta Owner: tanpa angka jumlah; label ketersediaan mengikuti listing aktif dan kapasitas pemenuhan yang benar-benar dikonfirmasi Owner.
-- Status “Tersedia” hanya boleh ditampilkan untuk SKU yang secara operasional dapat dipenuhi dan lolos seluruh pemeriksaan hak. Listing pratinjau/PAUSED tidak boleh ditampilkan seolah siap dibeli.
+- Model stok yang diminta Owner: **CATALOG_ON_DEMAND**. Listing komersial yang aktif dan lolos pemeriksaan hak ditampilkan “Tersedia” tanpa angka jumlah selama status listing tetap aktif. Produk yang dijeda/ditarik tidak dapat dipesan.
+- Checkout CATALOG_ON_DEMAND membuat satu reservasi pemenuhan internal per unit order. Slot reservasi ini bukan kredensial/akun palsu dan tidak mengirim data dummy ke pembeli. Setelah pembayaran, order masuk antrean pemenuhan Owner; Owner mengadakan sumber produk dan menyerahkan produk aktual kepada pembeli melalui VAULT CORE.
+- Status “Tersedia” untuk mode on-demand berarti VAULT CORE menerima order dan mengelola pengadaan/pemenuhan. Ini bukan jaminan bahwa akun/kredensial sudah tersimpan di inventory sebelum order. Owner wajib memastikan setiap pesanan dapat dipenuhi atau memproses refund sesuai ketentuan.
+- Listing pratinjau/PAUSED tidak boleh ditampilkan seolah siap dibeli.
 
 ## 33.3 Alur penjualan VAULT CORE
 
