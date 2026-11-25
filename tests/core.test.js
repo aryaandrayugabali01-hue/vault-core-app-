@@ -731,7 +731,7 @@ test('account catalogue hides filters for all games and uses a unified dark filt
   for (const label of ['Win Rate','Jumlah Skin','Jumlah Hero','Rank Saat Ini','Akun Terhubung Pada']) {
     assert.ok(page.includes(label), 'Missing account filter group: ' + label);
   }
-  assert.match(page, /category !== 'ALL' && <>/);
+  assert.match(page, /category !== 'ALL' && <div className="mlbb-filter-strip"/);
   assert.match(page, /MLBB_FILTER_GROUPS\.map/);
   assert.match(page, /activeRankOptions/);
   assert.match(page, /activeProviderOptions/);
