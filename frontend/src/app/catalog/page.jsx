@@ -128,7 +128,7 @@ export default function HomePage() {
     return GAME_ORDER.filter((id) => present.has(id)).map((id) => ({
       id,
       label: GAME_LABELS[id] || id.replaceAll('_', ' '),
-      short: id === 'FREE_FIRE' ? 'FREE FIRE' : (id === 'OTHER' ? 'LAINNYA' : id),
+      short: id === 'FREE_FIRE' ? 'FREE FIRE' : id,
       icon: GAME_ART[id] || GAME_ART.MLBB
     }));
   }, [sourceProducts]);
@@ -502,12 +502,12 @@ export default function HomePage() {
           <button className="reset-filters" type="button" onClick={() => { setQuery(''); setCategory('ALL');  setMarketplaceCategoryId('ALL'); setAttributeFilters({}); }}>Reset filter</button>
         </div> : <div className="product-grid">
           {filtered.map((product) => {
-            const game = product.game_category || 'OTHER';
+            const game = product.game_category || 'MLBB';
             const isDraftTest = isTestMode && product.is_test === true && product.status !== 'ACTIVE';
             return <article className="product-card" key={product.id}>
               <div className="product-card-head">
-                <div className={'product-art ' + (product.image_url ? 'product-art-photo' : 'product-art-brand') + ' art-' + game.toLowerCase()} style={{ "--game-background": `url("${GAME_BACKGROUNDS[game] || GAME_BACKGROUNDS.OTHER}")` }}>
-                  <img className={product.image_url ? "product-photo-image" : "game-category-logo"} src={product.image_url || GAME_ART[game] || GAME_ART.OTHER} alt={product.image_url ? product.name : (GAME_LABELS[game] || "Game") + " logo"} loading="lazy" />
+                <div className={'product-art ' + (product.image_url ? 'product-art-photo' : 'product-art-brand') + ' art-' + game.toLowerCase()} style={{ "--game-background": `url("${GAME_BACKGROUNDS[game] || GAME_BACKGROUNDS.MLBB}")` }}>
+                  <img className={product.image_url ? "product-photo-image" : "game-category-logo"} src={product.image_url || GAME_ART[game] || GAME_ART.MLBB} alt={product.image_url ? product.name : (GAME_LABELS[game] || "Game") + " logo"} loading="lazy" />
                 </div>
                 <div className="product-card-meta">
                   <span className="account-product-badge">Akun Game</span>
