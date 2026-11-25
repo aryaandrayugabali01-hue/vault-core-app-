@@ -1,5 +1,6 @@
 import './globals.css';
 import Script from 'next/script';
+import { StoreFooter } from '../components/store-navigation.jsx';
 
 export const metadata = {
   title: 'VAULT CORE | Lebih Yakin Bersama Vault Core',
@@ -27,6 +28,7 @@ export default function RootLayout({ children }) {
       <body>
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
         {children}
+        <StoreFooter />
       </body>
     </html>
   );

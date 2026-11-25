@@ -166,11 +166,11 @@ export default function DashboardPage(){
     </section>}
 
     <section className="dashboard-protection" id="protection">
-      <div className="dashboard-protection-heading"><img className="dashboard-protection-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /><div className="dashboard-protection-heading-copy"><h2>Perlindungan Pembeli</h2><p>Lebih Yakin Bersama Vault Core</p></div></div>
+      <div className="dashboard-protection-heading" id="terms-and-conditions"><img className="dashboard-protection-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /><div className="dashboard-protection-heading-copy"><h2>Perlindungan Pembeli</h2><p>Lebih Yakin Bersama Vault Core</p></div></div>
       <div className="dashboard-protection-grid">
         <article className="dashboard-protection-card"><span>⬡</span><div><strong>Anti-Hackback</strong><p>Perlindungan sesuai masa garansi dan ketentuan produk.</p></div></article>
         <article className="dashboard-protection-card"><span>◎</span><div><strong>Akun Dicek Manual</strong><p>Detail akun diperiksa VAULT CORE sebelum ditampilkan.</p></div></article>
-        <article className="dashboard-protection-card"><span>↻</span><div><strong>Garansi Refund</strong><p>Refund atau penggantian mengikuti ketentuan produk.</p></div></article>
+        <article className="dashboard-protection-card" id="refund-policy"><span>↻</span><div><strong>Garansi Refund</strong><p>Refund atau penggantian mengikuti ketentuan produk.</p></div></article>
       </div>
     </section>
 

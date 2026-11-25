@@ -792,7 +792,7 @@ test('storefront and Owner routes share the approved header and four-item bottom
     assert.ok(page.includes('StoreHeader'), 'Shared header is missing from a route');
     assert.ok(page.includes('StoreBottomNav'), 'Shared bottom navigation is missing from a route');
   }
-  for (const label of ['Dashboard','Katalog','Kategori','Owner']) assert.ok(navigation.includes(label));
+  for (const label of ['Beranda','Produk','Bantuan','Akun']) assert.ok(navigation.includes(label));
   assert.match(catalog, /StoreBottomNav active=\{isPinnedCatalogRoute \? "categories" : "catalog"\}/);
   assert.match(catalog, /StoreBottomNav active="catalog" embedded/);
 });
@@ -1017,4 +1017,23 @@ test('dashboard home spacing and typography follow the supplied size reference o
     '@media(max-width:390px)'
   ]) assert.ok(sizing.includes(rule), 'Missing size reference rule: ' + rule);
   assert.equal(/(?:^|[;{])\\s*(?:background|background-color|color|border-color)\\s*:/.test(sizing), false);
+});
+
+
+test('shared footer and c.html bottom navigation are global across route layouts', () => {
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
+  const notFound = readFileSync(new URL('../frontend/src/app/not-found.jsx', import.meta.url), 'utf8');
+  const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
+  const catalog = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  for (const label of ['Beranda', 'Produk', 'Bantuan', 'Akun', 'Katalog', 'Kategori', 'Cara Beli', 'Syarat & Ketentuan', 'Kebijakan Refund']) {
+    assert.ok(navigation.includes(label), 'Missing navigation label: ' + label);
+  }
+  assert.ok(layout.includes('<StoreFooter />'));
+  assert.match(navigation, /catalog-footer-buy-guide/);
+  assert.match(navigation, /catalog-footer-support/);
+  assert.ok(notFound.includes('<StoreBottomNav active="dashboard"/>'));
+  assert.match(catalog, /openProfileFromFooter/);
+  assert.match(home, /id="terms-and-conditions"/);
+  assert.match(home, /id="refund-policy"/);
 });
