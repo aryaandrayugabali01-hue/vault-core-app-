@@ -173,17 +173,16 @@ Rilis hanya setelah ruang lingkup terpenuhi, area LOCKED aman, test/build lulus,
 
 ## 12. Visual correction — 25 Nov 2026
 
-The latest three-screen owner reference controls the MLBB product detail visual. Keep the current locked data and route rules in sections 3–4 unchanged.
+The latest three-screen owner reference controls the MLBB product detail visual and supersedes the earlier compact-callout-only composition. Keep the approved data and route rules in sections 3–4 unchanged.
 
-- Center the VAULT CORE brand above a compact product toolbar.
+- Center the VAULT CORE brand above a compact toolbar with back, search, share, and cart actions.
 - Use a short landscape gallery and thumbnail strip.
 - Use near-black/navy surfaces with gold price and purchase CTA.
-- Render the three trust indicators as one compact inline row.
-- Keep the stock pill and truthful rating-unavailable state.
-- Keep the compact guide callout and customer-visible product description/specifications.
-- Do not add sales/delivery statistics, minimum-purchase panels, quantity controls, store panels, or related-product panels to customer detail.
-- Keep the sticky purchase action to one account per action.
-- Keep Anti-Hackback and Cara Beli & Tips as separate blue-neon bottom sheets with yellow confirmation CTA.
+- Main content order: product title and stock; truthful rating status; three inline trust indicators; left-aligned gold XTR price with final-price note; separate blue Anti-Hackback trigger; compact three-row sales/delivery/minimum-purchase panel; full-width single-row Cara Beli & Tips trigger; description; account specifications with contextual emoji; remaining product content and terms.
+- Sales, delivery time, minimum quantity, price, stock, attributes, warranty terms, and guide steps must remain backed by selected-product data or approved constants.
+- Rating and review counts remain “Belum tersedia” until a real backend source exists; do not copy sample values from the reference.
+- Both information sheets remain dark-navy blue-neon bottom sheets with gold “Mengerti” actions.
+- Sticky purchase area has a separate cart icon button and a wide gold buy button.
 
 ## 13. Product terms footer — 25 Nov 2026
 

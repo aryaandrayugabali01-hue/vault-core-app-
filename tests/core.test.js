@@ -861,3 +861,26 @@ test('account catalogue hides filters for all games and uses a unified dark filt
   assert.doesNotMatch(adminRoutes, /fulfillment_type IS NOT NULL THEN 'ACTIVE'/);
   assert.match(adminRoutes, /fulfillment_type='GAME_ACCOUNT_TRANSFER'[\s\S]*?game_category IN \('MLBB','FREE_FIRE','ROBLOX','GENSHIN'\)/);
 });
+
+
+test('MLBB detail page matches the approved mobile reference composition', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const trust = page.indexOf('marketplace-detail-trust-grid');
+  const price = page.indexOf('marketplace-detail-price-panel', trust);
+  const warranty = page.indexOf('marketplace-detail-warranty-trigger', price);
+  const stats = page.indexOf('marketplace-detail-stats-v2', warranty);
+  const guide = page.indexOf('marketplace-detail-guide-trigger', stats);
+  const description = page.indexOf('Deskripsi Produk', guide);
+  const specs = page.indexOf('Spesifikasi Akun', description);
+  assert.ok(trust < price && price < warranty && warranty < stats && stats < guide && guide < description && description < specs);
+  for (const icon of ['🛡️','🔐','🧩','🪙','🛒','⚡','📦','📖','🎮','👕','👥','👑','🔗']) assert.ok(page.includes(icon), 'Missing reference icon: ' + icon);
+  assert.ok(page.includes('navigator.share'));
+  assert.ok(page.includes('marketplace-detail-tool-action'));
+  assert.ok(page.includes('Belum tersedia · Ulasan belum tersedia'));
+  assert.ok(page.includes('Perlindungan<br/>Anti-Hackback'));
+  assert.ok(page.includes('>Mengerti</button>'));
+  assert.ok(styles.includes('.marketplace-detail-warranty-trigger'));
+  assert.ok(styles.includes('.marketplace-detail-guide-trigger'));
+  assert.ok(styles.includes('.marketplace-detail-stickybar .detail-secondary-button'));
+});
