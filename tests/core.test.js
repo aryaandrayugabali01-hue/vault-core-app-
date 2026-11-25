@@ -792,7 +792,7 @@ test('storefront and Owner routes share the approved header and four-item bottom
     assert.ok(page.includes('StoreHeader'), 'Shared header is missing from a route');
     assert.ok(page.includes('StoreBottomNav'), 'Shared bottom navigation is missing from a route');
   }
-  for (const label of ['Dashboard','Katalog','Kategori','Owner']) assert.ok(navigation.includes(label));
+  for (const label of ['Beranda','Produk','Bantuan','Akun']) assert.ok(navigation.includes(label));
   assert.match(catalog, /StoreBottomNav active=\{isPinnedCatalogRoute \? "categories" : "catalog"\}/);
   assert.match(catalog, /StoreBottomNav active="catalog" embedded/);
 });
