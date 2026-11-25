@@ -174,6 +174,5 @@ export default function DashboardPage(){
       </div>
     </section>
 
-    <StoreBottomNav active="dashboard"/>
   </main>;
 }
