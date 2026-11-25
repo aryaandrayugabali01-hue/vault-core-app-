@@ -50,7 +50,7 @@ router.get('/variants', async (_req, res) => {
     game: variant.nama_game,
     category: variant.kategori_produk,
     name: variant.jenis_varian,
-    order_ready: variant.kategori_produk === 'Akun',
+    order_ready: true,
     skus: (variant.skus ?? []).map((sku) => {
       const actual = Math.max(0, Number(sku.actual_stock) || 0);
       return {
