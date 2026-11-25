@@ -622,15 +622,16 @@ test('Owner product text values are trimmed and length-limited', () => {
   assert.equal(normalizeProductText(null), '');
 });
 
-test('marketplace category guide accepts bounded Owner-authored steps', () => {
+test('marketplace categories are restricted to the four canonical game account categories', () => {
   const result = validateMarketplaceCategory({
-    slug:'joki',name:'Joki',description:'Layanan pengerjaan game',
-    icon:'🎮',purchaseGuide:[{title:'Pilih layanan',content:'Periksa detail dan cakupan layanan.'}],
+    slug:'mlbb-akun',name:'Akun',description:'Akun Mobile Legends',
+    icon:'🎮',purchaseGuide:[{title:'Periksa akun',content:'Periksa spesifikasi dan ketentuan akun.'}],
     sortOrder:20,isActive:true
   });
   assert.equal(result.ok,true);
   assert.equal(result.value.purchaseGuide.length,1);
-  assert.equal(validateMarketplaceCategory({...result.value,slug:'Invalid slug'}).ok,false);
+  assert.equal(validateMarketplaceCategory({...result.value,slug:'joki'}).ok,false);
+  assert.equal(validateMarketplaceCategory({...result.value,slug:'mlbb-skin'}).ok,false);
   assert.equal(validateMarketplaceCategory({...result.value,purchaseGuide:Array(13).fill({title:'Step',content:'Text'})}).ok,false);
 });
 
