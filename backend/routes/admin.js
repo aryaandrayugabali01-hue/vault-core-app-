@@ -34,13 +34,27 @@ router.get('/dashboard', async (_req, res) => {
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='ACTIVE')::int AS active_products,
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='ACTIVE'
         AND sale_price_xtr>1 AND fulfillment_type IS NOT NULL
+        AND COALESCE(products.attributes->>'sales_enabled','true') <> 'false'
         AND EXISTS (SELECT 1 FROM product_rights_reviews r
           WHERE r.id=products.current_rights_review_id AND r.product_id=products.id
-            AND r.review_status='APPROVED' AND r.owner_attested=TRUE AND r.valid_until>NOW())
-        AND EXISTS (SELECT 1 FROM inventory_items i
-          WHERE i.product_id=products.id AND i.status='AVAILABLE'
-            AND i.rights_review_id=products.current_rights_review_id
-            AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL))::int AS buyable_products,
+            AND r.review_status='APPROVED' AND r.owner_attested=TRUE AND r.valid_until>NOW()
+            AND (
+              NOT (products.game_category='MLBB' AND products.fulfillment_type='GAME_ACCOUNT_TRANSFER')
+              OR (
+                products.attributes->>'sales_enabled'='true'
+                AND r.rights_basis='OFFICIAL_DISTRIBUTION'
+                AND upper(r.publisher_platform) LIKE '%MOONTON%'
+                AND r.authorization_evidence_reference ~* '^https://'
+                AND r.official_terms_url ~* '^https://'
+              )
+            ))
+        AND (
+          products.attributes->>'stock_model'='CATALOG_ON_DEMAND'
+          OR EXISTS (SELECT 1 FROM inventory_items i
+            WHERE i.product_id=products.id AND i.status='AVAILABLE'
+              AND i.rights_review_id=products.current_rights_review_id
+              AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL)
+        ))::int AS buyable_products,
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status IN ('DRAFT','PAUSED'))::int AS paused_or_draft_products
       FROM products`)
   ]);
@@ -490,7 +504,7 @@ router.post('/products/:id/rights-review', async (req, res) => {
     await client.query('COMMIT');
     await audit(req,'PRODUCT_RIGHTS_REVIEW_RECORDED','PRODUCT',productId,{ reviewId:created.id,status:created.review_status });
     res.status(201).json({ review:created, message:created.review_status === 'APPROVED'
-      ? 'Pemeriksaan internal Owner APPROVED. Produk otomatis aktif; pembelian tersedia setelah stok aktual ditambahkan.'
+      ? 'Pemeriksaan hak Owner tersimpan. Checkout MLBB tetap terkunci sampai bukti otorisasi tertulis publisher terverifikasi.'
       : 'Pemeriksaan internal Owner tersimpan. Produk dijeda sampai pemeriksaan disetujui.' });
   } catch (error) {
     try { await client.query('ROLLBACK'); } catch {}
@@ -838,12 +852,23 @@ router.post('/orders/:orderNumber/refund', async (req, res) => {
     await finalize.query(`UPDATE transactions SET status='REFUNDED' WHERE id=$1`, [refund.transactionId]);
     await finalize.query(`UPDATE orders SET status='REFUNDED' WHERE id=$1`, [refund.id]);
     await finalize.query(
+      `UPDATE order_warranty_claims SET status='REFUNDED',resolved_at=NOW(),updated_at=NOW()
+       WHERE order_id=$1 AND status='APPROVED'`,
+      [refund.id]
+    );
+    await finalize.query(
       `UPDATE deliveries SET status='REVOKED', last_error=$2
        WHERE order_id=$1 AND status IN ('PENDING','READY','FAILED','REVIEW_REQUIRED')`,
       [refund.id, 'Refunded by owner: ' + reason]
     );
     await finalize.query(
-      `UPDATE inventory_items SET status='AVAILABLE', reserved_order_id=NULL, reserved_until=NULL
+      `UPDATE inventory_items
+       SET status=CASE
+             WHEN source_reference LIKE 'VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:ON_DEMAND_ORDER:%'
+               THEN 'UNAVAILABLE'
+             ELSE 'AVAILABLE'
+           END,
+           reserved_order_id=NULL,reserved_until=NULL
        WHERE reserved_order_id=$1 AND status='RESERVED'`,
       [refund.id]
     );
@@ -879,6 +904,44 @@ router.post('/orders/:orderNumber/retry-delivery', async (req, res) => {
   const result = await deliverPaidOrder(orderNumber);
   await audit(req, 'DELIVERY_RETRY_REQUESTED', 'ORDER', order.id, result);
   res.json({ ok: true, orderNumber, ...result });
+});
+
+router.get('/warranty-claims', async (_req, res) => {
+  const { rows } = await pool.query(
+    `SELECT wc.id,wc.claim_number,wc.description,wc.evidence_urls,wc.status,
+            wc.submitted_at,wc.sla_due_at,wc.reviewed_at,wc.resolution_notes,
+            o.order_number,o.total_xtr,o.warranty_started_at,o.warranty_expires_at,
+            c.telegram_user_id,c.username
+     FROM order_warranty_claims wc
+     JOIN orders o ON o.id=wc.order_id
+     JOIN customers c ON c.id=wc.customer_id
+     ORDER BY CASE WHEN wc.status IN ('SUBMITTED','REVIEWING') THEN 0 ELSE 1 END,
+              wc.submitted_at ASC
+     LIMIT 200`
+  );
+  res.json({ claims:rows });
+});
+
+router.patch('/warranty-claims/:id', async (req, res) => {
+  const id=Number(req.params.id);
+  const status=String(req.body?.status || '').toUpperCase();
+  const resolutionNotes=String(req.body?.resolutionNotes || '').trim();
+  if(!Number.isSafeInteger(id)||id<=0||!['REVIEWING','APPROVED','REJECTED'].includes(status)
+      || resolutionNotes.length<3||resolutionNotes.length>1000) {
+    return res.status(400).json({error:'INVALID_WARRANTY_CLAIM_REVIEW'});
+  }
+  const {rows}=await pool.query(
+    `UPDATE order_warranty_claims
+     SET status=$2,reviewed_at=NOW(),reviewed_by_telegram_user_id=$3,
+         resolution_notes=$4,resolved_at=CASE WHEN $2='REJECTED' THEN NOW() ELSE NULL END,
+         updated_at=NOW()
+     WHERE id=$1 AND status IN ('SUBMITTED','REVIEWING','APPROVED')
+     RETURNING id,claim_number,status,resolution_notes`,
+    [id,status,String(req.telegramUser.id),resolutionNotes]
+  );
+  if(!rows[0]) return res.status(404).json({error:'WARRANTY_CLAIM_NOT_FOUND_OR_CLOSED'});
+  await audit(req,'WARRANTY_CLAIM_REVIEWED','WARRANTY_CLAIM',id,{status,resolutionNotes});
+  res.json({claim:rows[0]});
 });
 
 router.get('/orders', async (_req, res) => {

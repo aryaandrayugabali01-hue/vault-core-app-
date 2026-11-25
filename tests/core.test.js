@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { validateTelegramInitData } from '../backend/utils/telegram.js';
 import { encryptPayload, decryptPayload, assertAllowedDigitalPayload } from '../backend/utils/encryption.js';
-import { resolveDisplayStock, isPublicCatalogProduct, isEligibleCheckoutProduct } from '../backend/services/catalogService.js';
+import { resolveDisplayStock, isPublicCatalogProduct, isEligibleCheckoutProduct, isCatalogOnDemandProduct, isCatalogListedAvailable } from '../backend/services/catalogService.js';
 import { validateRightsReviewInput, isRightsReviewUsable, canAddProductInventory } from '../backend/services/rightsReviewService.js';
 import { sendStarsInvoice, refundStarPayment, telegramCall } from '../backend/services/telegramApi.js';
 import { sanitizeSuccessfulPaymentUpdate } from '../backend/utils/paymentAudit.js';
@@ -81,7 +81,12 @@ test('public catalog declares Telegram Mini App as the only transaction channel'
   assert.match(page, /if \(!initData\)/);
   assert.match(page, /telegramContext && <>[\s\S]*top-cart-button/);
   assert.match(page, /telegramContext && <nav className="bottom-nav"/);
-  assert.match(page, /telegramContext && <button className="detail-secondary-button"/);
+  assert.match(page, /telegramContext && !selectedProduct\.is_preview_only && <button className="detail-secondary-button"/);
+  assert.match(page, /LIVE DI KATALOG/);
+  assert.match(page, /Listing publik · Pembelian belum dibuka/);
+  assert.match(page, /selectedProduct\.is_preview_only \? 'Pembelian belum dibuka'/);
+  assert.match(page, /async function confirmOrderReceived/);
+  assert.match(page, /async function submitWarrantyClaim/);
 });
 
 test('expired pending orders are atomically cancelled, unreserved, and hidden from stock counts', async () => {
@@ -96,7 +101,7 @@ test('expired pending orders are atomically cancelled, unreserved, and hidden fr
   assert.deepEqual(result, { expired_orders: 2, revoked_deliveries: 2, released_inventory: 2 });
   assert.match(statement, /status='PENDING_PAYMENT'[\s\S]*INTERVAL '15 minutes'/);
   assert.match(statement, /UPDATE deliveries[\s\S]*status='REVOKED'/);
-  assert.match(statement, /UPDATE inventory_items[\s\S]*status='AVAILABLE'/);
+  assert.match(statement, /UPDATE inventory_items[\s\S]*status=CASE[\s\S]*ON_DEMAND_ORDER[\s\S]*UNAVAILABLE[\s\S]*ELSE 'AVAILABLE'/);
   assert.ok(statement.includes('reserved_order_id IN (SELECT id FROM expired_orders)'));
 });
 
@@ -184,6 +189,25 @@ test('test products require the Owner-only test checkout lane', () => {
   const commercial = { status: 'ACTIVE', is_test: false, sale_price_xtr: 2 };
   const fixture = { status: 'ACTIVE', is_test: true, sale_price_xtr: 1 };
   assert.equal(isEligibleCheckoutProduct(commercial), true);
+  const mlbbPreview = {
+    status:'ACTIVE', is_test:false, sale_price_xtr:400, game_category:'MLBB',
+    fulfillment_type:'GAME_ACCOUNT_TRANSFER',
+    attributes:{ public_preview:true, sales_enabled:false, stock_model:'CATALOG_ON_DEMAND' }
+  };
+  assert.equal(isEligibleCheckoutProduct(mlbbPreview), false);
+  const mlbbWithoutPublisherProof = {
+    ...mlbbPreview,
+    attributes:{ public_preview:true, sales_enabled:true, stock_model:'CATALOG_ON_DEMAND' },
+    rights_basis:'AUTHORIZED_VENDOR', publisher_platform:'MOONTON',
+    authorization_evidence_reference:'https://example.com/vendor-proof',
+    official_terms_url:'https://mlbbesports.com/legal/terms'
+  };
+  assert.equal(isEligibleCheckoutProduct(mlbbWithoutPublisherProof), false);
+  const mlbbWithPublisherProof = {
+    ...mlbbWithoutPublisherProof,
+    rights_basis:'OFFICIAL_DISTRIBUTION'
+  };
+  assert.equal(isEligibleCheckoutProduct(mlbbWithPublisherProof), true);
   assert.equal(isEligibleCheckoutProduct({ ...commercial, sale_price_xtr: 1 }), false);
   assert.equal(isEligibleCheckoutProduct({ ...commercial, sale_price_xtr: 0 }), false);
   assert.equal(isEligibleCheckoutProduct({ ...commercial, sale_price_xtr: undefined }), false);
@@ -218,6 +242,28 @@ test('rate limiter skips malformed Cloudflare IP metadata and uses a valid fallb
   );
 });
 
+test('MLBB public catalog listing is not checkout-enabled without publisher authorization', () => {
+  const route = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
+  const order = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  const delivery = readFileSync(new URL('../backend/services/deliveryService.js', import.meta.url), 'utf8');
+  const migration = readFileSync(new URL('../database/migrations/019_mlbb_live_catalog_publisher_gate.sql', import.meta.url), 'utf8');
+  assert.match(route, /public_preview/);
+  assert.match(route, /sales_enabled/);
+  assert.match(order, /rr\.rights_basis/);
+  assert.match(delivery, /GAME_ACCOUNT_TRANSFER/);
+  assert.match(migration, /MLBB_ACCOUNT_TRANSFER_PUBLISHER_AUTHORIZATION_REQUIRED/);
+  assert.match(migration, /'sales_enabled', false/);
+  assert.match(migration, /- 'cost_price_note'[\s\S]*- 'authorization_evidence_status'/);
+  assert.doesNotMatch(migration, /Mitra/);
+});
+
+test('on-demand checkout placeholders use the encrypted manual-fulfillment path', () => {
+  const source = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  assert.match(source, /VAULT_CORE_ON_DEMAND_FULFILLMENT_PENDING/);
+  assert.match(source, /VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:ON_DEMAND_ORDER/);
+  assert.match(source, /isCatalogOnDemandProduct\(product\)/);
+});
+
 test('owner manual fulfillment slots are recognized only by their explicit source marker', () => {
   assert.equal(isOwnerManualFulfillmentSource('VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:OWNER_ATTESTED'), true);
   assert.equal(isOwnerManualFulfillmentSource('ordinary vendor invoice reference'), false);
@@ -239,6 +285,17 @@ test('delivery does not hold an idle database connection while awaiting Telegram
   assert.doesNotMatch(source, /const client = await pool[.]connect/);
   assert.match(source, /const completion = await pool[.]connect/);
   assert.match(source, /completion[.]release[(][)]/);
+});
+
+test('catalog-on-demand products are available while listed without a numeric stock balance', () => {
+  const onDemand = { status:'ACTIVE', is_test:false, attributes:{ stock_model:'CATALOG_ON_DEMAND' } };
+  assert.equal(isCatalogOnDemandProduct(onDemand), true);
+  assert.equal(isCatalogListedAvailable(onDemand, 0), true);
+  assert.equal(isCatalogListedAvailable(onDemand, 7), true);
+  assert.equal(isCatalogListedAvailable({ ...onDemand, status:'PAUSED' }, 0), false);
+  assert.equal(isCatalogOnDemandProduct({ ...onDemand, is_test:true }), false);
+  assert.equal(isCatalogListedAvailable({ status:'ACTIVE', attributes:{} }, 0), false);
+  assert.equal(isCatalogListedAvailable({ status:'ACTIVE', attributes:{} }, 1), true);
 });
 
 test('display stock modes support count, boolean availability, and hidden count', () => {
@@ -668,7 +725,6 @@ test('customer catalog hides private price, ownership and XTR conversion metadat
     price_max_idr:200000
   });
   assert.deepEqual(visible, [
-    ['kode_produk','ML-001'],
     ['subkategori','Akun Collector'],
     ['metode_penyerahan','Transfer resmi']
   ]);

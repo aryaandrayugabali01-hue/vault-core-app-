@@ -44,7 +44,9 @@ Latest production visual update: source commit `a5fc2b925e66e70a7742d9f402483086
 - Database: `vault_core`
 - Default branch: `main`
 
-The production database has migrations 001–016 registered. Migration 011 (CR-05) adds structured Owner rights reviews, append-only review events, source-bound inventory, and database guards. Migration 012 (CR-06) adds Owner-managed product image URL, customer terms, and fulfillment ETA fields. Migrations 013–016 maintain marketplace categories, product attributes, the Owner game catalog, and a product lifecycle without a PENDING_REVIEW status. All are applied to Neon production.
+The production database has migrations 001–016 registered.
+
+CR-11 implementation is being prepared on an isolated review branch. Migrations 017–018 are not yet applied to the production database; they will run only through the existing versioned migration deployment after approval and merge. Migration 011 (CR-05) adds structured Owner rights reviews, append-only review events, source-bound inventory, and database guards. Migration 012 (CR-06) adds Owner-managed product image URL, customer terms, and fulfillment ETA fields. Migrations 013–016 maintain marketplace categories, product attributes, the Owner game catalog, and a product lifecycle without a PENDING_REVIEW status. All are applied to Neon production.
 
 ## Local setup
 
@@ -136,3 +138,13 @@ Production audit fixes deployed on 23 November 2026:
 - Removed the customer-facing “VAULT CORE Store” / Owner attribution block and all stock-count labels from product cards, product details, and cart rows.
 - Customer specifications now omit internal cost, Owner-attestation, and XTR conversion metadata. The production attributes `xtr_conversion_reference_date` and `xtr_conversion_rate_idr_per_star` were deleted from all 16 commercial SKUs; XTR sale prices remain unchanged.
 - Regression coverage includes Owner page stale references, reservation expiry, and customer metadata visibility.
+
+## CR-11 — Kategori MLBB · Akun (25 November 2026)
+
+- Sumber detail dan gambar penawaran: frontend/src/app/catalog/ML.zip (direview: 49% win rate, 79 hero, 130 skin, rank Mythic, Miya, lima gambar katalog).
+- Harga referensi: Rp150.000 = **400 XTR** menggunakan Rp375/XTR sebagai kurs referensi internal; harga customer selalu ditampilkan dalam XTR.
+- Customer bertransaksi dan berkomunikasi hanya dengan VAULT CORE. Pemasok ditangani sebagai proses internal.
+- Garansi yang ditetapkan: 14 hari kalender sejak buyer menekan **Selesai** setelah penerimaan; klaim valid mendapat refund 100%; SLA maksimal 48 jam sejak bukti lengkap.
+- Model stok CATALOG_ON_DEMAND: listing yang aktif dan lolos pemeriksaan hak tampil sebagai Tersedia tanpa angka jumlah. Checkout membuat reservasi internal per order, lalu Owner mengelola pengadaan dan pemenuhan aktual. Listing dijeda/pratinjau tetap tidak dapat dibeli.
+- **Status publikasi:** preview-only sampai izin tertulis/otorisasi transfer dari penerbit dapat dibuktikan. Terms of Service Moonton yang diperbarui 23 Oktober 2026 melarang penjualan/pengalihan akun dan kredensial login. Persetujuan internal Owner bukan pengganti izin penerbit.
+

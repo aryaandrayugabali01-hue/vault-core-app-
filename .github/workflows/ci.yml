@@ -48,6 +48,7 @@ jobs:
           echo "Brand logo, all game category images, trust icons, favicon, PWA icon and social cover are present."
           cat "$public_dir/README.md"
           cat "$public_dir/asset-manifest.json"
+          python3 scripts/extract_mlbb_account_assets.py
       - name: Verify every storefront asset URL resolves
         shell: bash
         run: |

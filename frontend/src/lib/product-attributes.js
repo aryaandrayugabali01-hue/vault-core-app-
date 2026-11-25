@@ -29,13 +29,23 @@ const HIDDEN_CUSTOMER_PRODUCT_ATTRIBUTE_KEYS = new Set([
   'xtr_price',
   'price_note',
   'price_currency',
+  'price_reference_idr',
   'price_min_idr',
   'price_max_idr',
   'cost_price_note',
   'cost_price_status',
   'fulfillment_mode',
   'owner_attestation_ref',
-  'authorization_evidence_status'
+  'authorization_evidence_status',
+  'public_preview',
+  'stock_model',
+  'sales_enabled',
+  'publisher_transfer_authorization_status',
+  'publisher_platform',
+  'rights_basis',
+  'authorization_evidence_reference',
+  'official_terms_url',
+  'kode_produk'
 ]);
 
 export function getCustomerVisibleProductAttributes(attributes) {

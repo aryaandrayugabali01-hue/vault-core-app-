@@ -86,6 +86,16 @@ export async function deliverPaidOrder(orderNumber) {
            AND rr.review_status='APPROVED'
            AND rr.owner_attested=TRUE
            AND rr.valid_until>NOW()
+           AND (
+             NOT (p.game_category='MLBB' AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER')
+             OR (
+               p.attributes->>'sales_enabled'='true'
+               AND rr.rights_basis='OFFICIAL_DISTRIBUTION'
+               AND upper(rr.publisher_platform) LIKE '%MOONTON%'
+               AND rr.authorization_evidence_reference ~* '^https://'
+               AND rr.official_terms_url ~* '^https://'
+             )
+           )
          )
        )
      ORDER BY d.id`,
@@ -133,7 +143,7 @@ export async function deliverPaidOrder(orderNumber) {
       try {
         await telegramCall('sendMessage', {
           chat_id: order.telegram_user_id,
-          text: `✅ <b>Pembayaran terverifikasi</b>\n\nPesanan: <code>${escapeHtml(order.order_number)}</code>\nProduk: ${escapeHtml(item.product_name)}\n\nPesanan diteruskan ke Owner untuk pemenuhan manual melalui metode yang tercantum di katalog. Status pengiriman akan diperbarui setelah produk benar-benar diserahkan.`,
+          text: `✅ <b>Pembayaran terverifikasi</b>\n\nPesanan: <code>${escapeHtml(order.order_number)}</code>\nProduk: ${escapeHtml(item.product_name)}\n\nTim VAULT CORE sedang menyiapkan pesanan Anda. Status pengiriman akan diperbarui setelah produk benar-benar diserahkan melalui kanal resmi VAULT CORE.`,
           parse_mode: 'HTML',
           protect_content: true
         });
