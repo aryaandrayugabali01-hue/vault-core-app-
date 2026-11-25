@@ -1037,6 +1037,9 @@ test('shared footer and c.html bottom navigation are global across route layouts
   assert.match(navigation, /catalog-footer-buy-guide/);
   assert.match(navigation, /catalog-footer-support/);
   assert.match(navigation, /usePathname/);
+  assert.match(navigation, /vaultcore:navigation-active/);
+  assert.match(navigation, /active === 'account'/);
+  assert.match(catalog, /vaultcore:navigation-active/);
   assert.match(navigation, /store-bottom-nav-shell/);
   assert.ok(styles.includes('position:relative;inset:auto'));
   assert.ok(!notFound.includes("StoreBottomNav"));
