@@ -1660,3 +1660,13 @@ body{
  .marketplace-detail-trust-item strong{font-size:8px}
  .marketplace-detail-stickybar>.buy-button{font-size:12px}
 }
+
+
+/* MLBB catalog offer terms footer */
+.catalog-product-terms{margin:18px 0 12px;padding:17px 16px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:linear-gradient(145deg,#101b2a,#091321);color:#e9edf4}
+.catalog-product-terms h2{margin:0 0 12px;color:#f5f7fb;font-size:15px;font-weight:850;letter-spacing:.01em}
+.catalog-product-terms-content{padding:12px 13px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(3,10,20,.48)}
+.catalog-product-terms-content h3{margin:0 0 8px;color:#ffd15a;font-size:9px;font-weight:900;letter-spacing:.13em}
+.catalog-product-terms-content p{margin:0;color:#c3cedd;font-size:10px;line-height:1.75}
+.catalog-product-terms-content p+p{margin-top:9px;padding-top:9px;border-top:1px solid rgba(255,255,255,.07)}
+@media(min-width:700px){.catalog-product-terms{padding:20px}.catalog-product-terms-content p{font-size:11px;max-width:1050px}}

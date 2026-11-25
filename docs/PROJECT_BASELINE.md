@@ -168,3 +168,11 @@ The latest three-screen reference supplied by the owner is the controlling visua
 - Sticky action: gold purchase button and cart action; minimum purchase is one unit.
 - Anti-Hackback and Cara Beli & Tips: separate blue-neon bottom sheets with dark navy background, blue highlights, yellow confirmation CTA.
 - Preserve truthful unavailable states for ratings and warranty data; preserve XTR-only Mini App transaction flow.
+
+
+## 12. MLBB catalog terms footer — 25 Nov 2026
+
+- Add a page-level "Ketentuan Produk" footer section to the MLBB catalog view.
+- Preserve the supplied "INFORMASI PENAWARAN" wording and paragraph separation.
+- Show this game-specific notice only when the active catalog category is MLBB, not across Free Fire, Roblox, or Genshin listings.
+- Keep the existing global VAULT CORE footer and all catalog, filter, purchase, and XTR behavior intact.

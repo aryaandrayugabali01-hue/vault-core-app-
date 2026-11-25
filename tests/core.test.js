@@ -181,6 +181,18 @@ test('public catalog only exposes active, priced, approved commercial products',
   assert.ok(route.includes("rr.valid_until>NOW()"));
 });
 
+test('MLBB catalog displays the supplied offer terms in the page footer only for the MLBB category', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  assert.match(page, /category === 'MLBB' && <section className="catalog-product-terms"/);
+  assert.match(page, /Ketentuan Produk/);
+  assert.match(page, /INFORMASI PENAWARAN/);
+  assert.match(page, /Paket penawaran mencakup Gmail/);
+  assert.match(page, /Rank Mythic dapat berubah saat reset season/);
+  assert.match(page, /Keterangan “100% No Minus” merupakan klaim pada materi penawaran/);
+  assert.match(styles, /\.catalog-product-terms/);
+});
+
 test('catalog detail uses backend fulfillment metrics and keeps warranty and guide content in separate accessible overlays', () => {
   const route = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
   const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');

@@ -774,6 +774,14 @@ export default function HomePage() {
           <div><strong>{item.title}</strong><small>{item.detail}</small></div>
         </div>)}
       </section>
+      {category === 'MLBB' && <section className="catalog-product-terms" aria-labelledby="catalog-product-terms-title">
+        <h2 id="catalog-product-terms-title">Ketentuan Produk</h2>
+        <div className="catalog-product-terms-content">
+          <h3>INFORMASI PENAWARAN</h3>
+          <p>Spesifikasi akun mengikuti data dan gambar yang ditampilkan pada katalog. Paket penawaran mencakup Gmail. Akun masih terhubung dengan Moonton, Google Play, Facebook, dan TikTok. Keterangan penawaran menyebut email Moonton dan platform sosial dapat dilepas setelah 30 hari. Rank Mythic dapat berubah saat reset season.</p>
+          <p>Keterangan “100% No Minus” merupakan klaim pada materi penawaran; pembeli tetap perlu memeriksa ID, nickname, server, spesifikasi, akses Gmail, dan tautan akun ketika penyerahan dilakukan.</p>
+        </div>
+      </section>}
       <footer className="footer"><a className="brand" href="/" aria-label="VAULT CORE" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}><img className="brand-logo footer-brand-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /></a><small>© {new Date().getFullYear()} VAULT CORE. Marketplace akun game.</small></footer>
 
       {telegramContext && <nav className="bottom-nav" aria-label="Navigasi utama">
