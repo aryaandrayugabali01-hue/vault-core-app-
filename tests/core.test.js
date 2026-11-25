@@ -806,7 +806,7 @@ test('customer display text normalizes repeated escaped newline sequences', () =
 test('detail specification labels and values have independent wrapping columns', () => {
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   assert.ok(styles.includes('grid-template-columns:minmax(132px,38%) minmax(0,1fr)'));
-  assert.match(styles, /grid-template-columns:18px minmax\\(0,1fr\\)/);
+  assert.ok(styles.includes('grid-template-columns:18px minmax(0,1fr)'));
   assert.match(styles, /overflow-wrap:anywhere/);
   assert.match(styles, /dashboard-bottom-nav-embedded/);
 });
