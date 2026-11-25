@@ -2,6 +2,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import {GAME_ORDER,GAME_NAMES,GAME_ART,GAME_BACKGROUNDS} from '../lib/marketplace.js';
 import {getInitData,getTelegramWebApp} from '../lib/telegram.js';
+import { StoreHeader, StoreBottomNav, NavigationIcon } from '../components/store-navigation.jsx';
 
 const API=process.env.NEXT_PUBLIC_API_BASE_URL||'';
 const ORDER_STATUS={PENDING_PAYMENT:'Menunggu pembayaran',PAID:'Pembayaran diterima',FULFILLING:'Sedang diproses',FULFILLED:'Selesai',CANCELLED:'Dibatalkan',REFUND_PENDING:'Refund diproses',REFUNDED:'Refund selesai',FAILED:'Pesanan gagal'};
@@ -32,17 +33,6 @@ function ProductCard({product}){
 
 function SectionHeading({eyebrow,title,subtitle,href='/catalog',linkLabel='Lihat semua ↗',count}){
   return <div className="dashboard-section-heading"><div>{eyebrow&&<span className="dashboard-eyebrow">{eyebrow}</span>}<h2>{title}</h2>{subtitle&&<p className="dashboard-section-subtitle">{subtitle}</p>}</div><a href={href}>{count||linkLabel}</a></div>;
-}
-
-function DashboardIcon({name}){
-  const common={viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round','aria-hidden':true};
-  if(name==='search')return <svg {...common}><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>;
-  if(name==='bell')return <svg {...common}><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>;
-  if(name==='user')return <svg {...common}><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-3.4 3.2-5.2 7.5-5.2s6.7 1.8 7.5 5.2"/></svg>;
-  if(name==='home')return <svg {...common}><path d="m3.5 10 8.5-7 8.5 7M5.5 9v11h13V9M9.5 20v-6h5v6"/></svg>;
-  if(name==='catalog')return <svg {...common}><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg>;
-  if(name==='category')return <svg {...common}><path d="m12 2.8 9.2 9.2-9.2 9.2L2.8 12z"/><circle cx="12" cy="12" r="2"/></svg>;
-  return <svg {...common}><path d="M5 3.5h14v17H5zM8 8h8M8 12h8M8 16h5"/></svg>;
 }
 
 export default function DashboardPage(){
@@ -107,18 +97,11 @@ export default function DashboardPage(){
   ];
 
   return <main className="dashboard-shell">
-    <header className="dashboard-topbar">
-      <a className="dashboard-brand" href="/" aria-label="VAULT CORE Beranda"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE Digital Store"/></a>
-      <form className="dashboard-search" action="/catalog" method="get" role="search">
-        <DashboardIcon name="search"/>
-        <input type="search" name="q" placeholder="Cari akun game, hero, skin, bundle..." aria-label="Cari produk katalog"/>
-        <button type="submit" aria-label="Cari"><DashboardIcon name="search"/></button>
-      </form>
-      <div className="dashboard-header-actions">
-        <a className="dashboard-icon-button" href={telegramContext?'#transactions':'/catalog'} aria-label="Notifikasi dan pesanan" title="Notifikasi dan pesanan"><DashboardIcon name="bell"/></a>
-        <a className="dashboard-icon-button" href="/admin" aria-label="Portal Owner" title="Portal Owner"><DashboardIcon name="user"/></a>
-      </div>
-    </header>
+    <StoreHeader rightSlot={<>
+      <a className="dashboard-icon-button" href={telegramContext?'#transactions':'/catalog'} aria-label="Notifikasi dan pesanan" title="Notifikasi dan pesanan"><NavigationIcon name="bell"/></a>
+      <a className="dashboard-icon-button" href="/catalog" aria-label="Buka katalog" title="Buka katalog"><NavigationIcon name="cart"/></a>
+      <a className="dashboard-icon-button" href="/admin" aria-label="Portal Owner" title="Portal Owner"><NavigationIcon name="user"/></a>
+    </>}/>
 
     <section className="dashboard-hero">
       <div className="dashboard-hero-copy">
@@ -191,11 +174,6 @@ export default function DashboardPage(){
       </div>
     </section>
 
-    <nav className="dashboard-bottom-nav" aria-label="Navigasi utama">
-      <a className="active" href="/" aria-current="page"><DashboardIcon name="home"/><span>Dashboard</span></a>
-      <a href="/catalog"><DashboardIcon name="catalog"/><span>Katalog</span></a>
-      <a href="/catalog#categories"><DashboardIcon name="category"/><span>Kategori</span></a>
-      <a href="/admin"><DashboardIcon name="owner"/><span>Owner</span></a>
-    </nav>
+    <StoreBottomNav active="dashboard"/>
   </main>;
 }
