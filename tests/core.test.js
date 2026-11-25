@@ -788,12 +788,14 @@ test('storefront and Owner routes share the approved header and four-item bottom
   const categories = readFileSync(new URL('../frontend/src/app/admin/categories/page.jsx', import.meta.url), 'utf8');
   const newProduct = readFileSync(new URL('../frontend/src/app/admin/products/new/page.jsx', import.meta.url), 'utf8');
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   for (const page of [home, catalog, owner, categories, newProduct]) {
     assert.ok(page.includes('StoreHeader'), 'Shared header is missing from a route');
-    assert.ok(page.includes('StoreBottomNav'), 'Shared bottom navigation is missing from a route');
+    assert.doesNotMatch(page, /<StoreBottomNav active=/, 'Global bottom navigation must not be duplicated per route');
   }
   for (const label of ['Beranda','Produk','Bantuan','Akun']) assert.ok(navigation.includes(label));
-  assert.match(catalog, /StoreBottomNav active=\{isPinnedCatalogRoute \? "categories" : "catalog"\}/);
+  assert.ok(layout.includes('<StoreChrome />'));
+  assert.match(navigation, /<StoreBottomNav active=\{active\} \/>/);
   assert.match(catalog, /StoreBottomNav active="catalog" embedded/);
 });
 
