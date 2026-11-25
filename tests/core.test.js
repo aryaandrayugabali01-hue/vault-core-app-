@@ -951,3 +951,25 @@ test('MLBB detail page matches the approved mobile reference composition', () =>
   assert.ok(styles.includes('.marketplace-detail-guide-trigger'));
   assert.ok(styles.includes('.marketplace-detail-stickybar .detail-secondary-button'));
 });
+
+test('customer catalog footer follows the approved XTR, account-security, and warranty rules', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const start = page.indexOf('<section className="catalog-info-footer"');
+  const end = page.indexOf('<footer className="footer">', start);
+  assert.ok(start >= 0 && end > start);
+  const footer = page.slice(start, end);
+  assert.match(footer, /Telegram Stars · XTR/);
+  assert.match(footer, /Detail &amp; Beli/);
+  assert.match(footer, /myaccount\\.google\\.com/);
+  assert.match(footer, /14 hari kalender/i);
+  assert.match(footer, /48 jam/i);
+  assert.match(footer, /pengembalian dana 100%/i);
+  assert.match(footer, /500 Diamond/);
+  assert.match(footer, /Informasi akun diserahkan oleh <strong>VAULT CORE<\\/strong>/);
+  assert.doesNotMatch(footer, /\\b(?:BCA|Mandiri|BNI|Maybank|PermataBank|BRI|Indomaret|Alfamart|QRIS|ShopeePay|PayLater)\\b/i);
+  assert.doesNotMatch(footer, /PT\\. Five Jack/i);
+  assert.ok(styles.includes('.catalog-info-footer'));
+  assert.ok(styles.includes('.catalog-info-details[open] summary'));
+  assert.ok(styles.includes('@media(max-width:680px)'));
+});

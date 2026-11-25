@@ -802,6 +802,106 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
           <div><strong>{item.title}</strong><small>{item.detail}</small></div>
         </div>)}
       </section>
+      <section className="catalog-info-footer" aria-label="Informasi katalog VAULT CORE">
+        <div className="catalog-info-footer-inner">
+          {category === 'MLBB' && !isTestMode && <section className="catalog-info-account" aria-labelledby="catalog-info-account-title">
+            <span className="catalog-info-eyebrow">VAULT CORE · MOBILE LEGENDS</span>
+            <h2 id="catalog-info-account-title">Akun Mobile Legends</h2>
+            <p className="catalog-info-lead">Temukan akun Mobile Legends berdasarkan spesifikasi yang tersedia di katalog. Periksa detail produk, harga dalam XTR, ketersediaan, dan ketentuan setiap akun sebelum melanjutkan pembelian.</p>
+
+            <div className="catalog-info-faq">
+              <details className="catalog-info-details" id="catalog-footer-buy-guide" open>
+                <summary>Cara Beli Akun Mobile Legends di Vault Core</summary>
+                <ol>
+                  <li>Buka katalog Vault Core, lalu pilih kategori <strong>Mobile Legends</strong> dan subkategori <strong>Akun</strong>.</li>
+                  <li>Gunakan pencarian dan filter akun untuk menemukan spesifikasi yang sesuai, seperti Win Rate, jumlah Skin, jumlah Hero, Rank Saat Ini, dan Akun Terhubung Pada.</li>
+                  <li>Baca deskripsi dan spesifikasi produk dengan saksama, termasuk level, jumlah Hero, Skin, peringkat, Diamond, serta ketentuan produk.</li>
+                  <li>Periksa harga XTR, ketersediaan stok, dan informasi garansi yang tercantum pada detail produk.</li>
+                  <li>Tekan <strong>Detail &amp; Beli</strong> untuk membuka detail akun, lalu lanjutkan pembelian melalui VAULT CORE Telegram Mini App.</li>
+                  <li>Selesaikan pembayaran menggunakan invoice resmi <strong>Telegram Stars (XTR)</strong>. Pembuatan pesanan, pembayaran, dan pemantauan pesanan dilakukan melalui Mini App.</li>
+                  <li>Setelah pembayaran dikonfirmasi dan pesanan diproses, periksa detail pesanan. Informasi akun diserahkan oleh <strong>VAULT CORE</strong>. Login dan cocokkan ID, nickname, server, serta detail akun dengan pesanan.</li>
+                  <li>Amankan akses akun mengikuti panduan di bawah. Setelah pemeriksaan dan pengamanan selesai, buka Riwayat Pembelian di Vault Core lalu tekan <strong>Selesai</strong>.</li>
+                </ol>
+              </details>
+
+              <details className="catalog-info-details" id="catalog-footer-security">
+                <summary>Bagaimana cara mengamankan akun setelah diterima?</summary>
+                <ol>
+                  <li><strong>Login dan periksa akun.</strong> Di Mobile Legends, buka Profile → Account → Switch Account. Login menggunakan metode dan informasi yang diberikan, lalu periksa ID, nickname, server, dan detail akun sesuai pesanan.</li>
+                  <li><strong>Amankan email.</strong> Ganti password email, perbarui email dan nomor HP pemulihan, lalu aktifkan verifikasi dua langkah (2FA).</li>
+                  <li><strong>Periksa perangkat Gmail.</strong> Buka <a href="https://myaccount.google.com" target="_blank" rel="noopener noreferrer">myaccount.google.com</a> → Security → Your Devices. Keluarkan perangkat yang bukan milik Anda melalui opsi Sign Out.</li>
+                  <li><strong>Bind akun.</strong> Buka Profile → Account, pilih metode Bind yang tersedia, lalu hubungkan akun dengan Moonton, Facebook, Google, atau VK milik pribadi. Pastikan metode login berada di bawah kendali Anda.</li>
+                  <li><strong>Periksa perangkat tertaut.</strong> Buka Profile → Account Settings → Account Center → Device Management. Periksa perangkat dan gunakan Log Out All apabila tersedia untuk mengakhiri sesi perangkat lain.</li>
+                  <li><strong>Periksa akun pihak ketiga.</strong> Dari Account Center, buka Disconnect 3rd Party Account jika diperlukan, ikuti verifikasi, dan pastikan akun pribadi Anda tetap terhubung serta dapat digunakan untuk login.</li>
+                  <li><strong>Selesaikan pesanan.</strong> Pastikan akun sesuai pesanan, email dan metode pemulihan aman, serta perangkat lama tidak lagi memiliki akses. Setelah itu buka Riwayat Pembelian di Vault Core dan tekan Selesai.</li>
+                </ol>
+                <p className="catalog-info-note">Simpan bukti transaksi dan informasi pendukung selama masa garansi berlangsung.</p>
+              </details>
+
+              <details className="catalog-info-details" id="catalog-footer-warranty">
+                <summary>Bagaimana Garansi Anti Hackback Vault Core bekerja?</summary>
+                <p>Ketentuan garansi dan masa perlindungan yang berlaku harus diperiksa pada detail setiap produk. Untuk produk yang tercakup dalam Garansi Anti Hackback 14 hari kalender, garansi aktif sejak pesanan dinyatakan selesai atau diterima oleh pembeli.</p>
+                <ol>
+                  <li><strong>Pelaporan:</strong> hubungi Admin Vault Core melalui fitur pesan atau kanal dukungan resmi, sertakan kronologi dan bukti kendala.</li>
+                  <li><strong>Verifikasi:</strong> tim Vault Core memeriksa laporan, riwayat transaksi, dan bukti pendukung.</li>
+                  <li><strong>Penyelesaian:</strong> jika klaim terbukti valid, pembeli mendapatkan pengembalian dana 100% dari nilai transaksi.</li>
+                </ol>
+                <p>Waktu pemrosesan klaim maksimal <strong>48 jam</strong> sejak laporan dan bukti pendukung diterima. Klaim wajib diajukan selama masa garansi aktif; klaim yang melewati masa garansi tidak dapat diproses.</p>
+              </details>
+
+              <details className="catalog-info-details">
+                <summary>Di mana tempat jual akun Mobile Legends terpercaya?</summary>
+                <p>Vault Core menyediakan katalog akun Mobile Legends dengan informasi produk, spesifikasi, harga XTR, stok, dan ketentuan yang dapat diperiksa sebelum pembelian. Website digunakan untuk melihat katalog dan detail produk. Transaksi serta pemantauan pesanan dilakukan melalui VAULT CORE Telegram Mini App.</p>
+              </details>
+
+              <details className="catalog-info-details">
+                <summary>Apakah Vault Core menjual akun ML Sultan?</summary>
+                <p>Ketersediaan akun dengan koleksi Skin, Hero, atau item langka mengikuti produk yang sedang tampil dan tersedia di katalog. Periksa deskripsi serta spesifikasi setiap akun untuk memastikan koleksi yang tercantum sesuai dengan kebutuhan Anda.</p>
+              </details>
+
+              <details className="catalog-info-details">
+                <summary>Cara Mengganti Nama Akun Mobile Legends</summary>
+                <ol>
+                  <li>Buka aplikasi Mobile Legends dan masuk ke akun yang digunakan.</li>
+                  <li>Ketuk ikon Profil di pojok kiri atas layar.</li>
+                  <li>Scroll hingga menemukan Pengaturan Akun di bawah foto profil.</li>
+                  <li>Pilih Ubah Nama, masukkan nama baru pada kolom yang tersedia, lalu tekan Konfirmasi.</li>
+                  <li>Pastikan perubahan nama sudah tersimpan.</li>
+                </ol>
+                <p className="catalog-info-note">Materi panduan yang diberikan mencantumkan biaya 500 Diamond untuk setiap penggantian nama. Periksa kembali biaya yang ditampilkan di dalam game sebelum mengonfirmasi.</p>
+              </details>
+            </div>
+          </section>}
+
+          <div className="catalog-info-meta-grid">
+            <section className="catalog-info-panel" aria-labelledby="catalog-info-payment-title">
+              <span className="catalog-info-eyebrow">PEMBAYARAN</span>
+              <h3 id="catalog-info-payment-title">Metode Pembayaran</h3>
+              <div className="catalog-info-xtr-pill"><span aria-hidden="true">✦</span><strong>Telegram Stars · XTR</strong></div>
+              <p>Invoice resmi dan pembayaran tersedia melalui VAULT CORE Telegram Mini App. Harga produk pada katalog ditampilkan dalam XTR.</p>
+            </section>
+
+            <section className="catalog-info-panel" id="catalog-footer-about" aria-labelledby="catalog-info-about-title">
+              <span className="catalog-info-eyebrow">TENTANG KAMI</span>
+              <h3 id="catalog-info-about-title">Tentang Vault Core</h3>
+              <p>Vault Core menyediakan katalog akun game digital. Website ini digunakan untuk melihat katalog dan detail produk; pemesanan, pembayaran, serta pemantauan pesanan dilakukan melalui Telegram Mini App resmi Vault Core.</p>
+              <nav className="catalog-info-links" aria-label="Informasi Vault Core">
+                <a href="/">Beranda</a>
+                <a href="/catalog">Katalog Game</a>
+                {category === 'MLBB' && !isTestMode && <>
+                  <a href="#catalog-footer-buy-guide">Panduan Beli &amp; Tips</a>
+                  <a href="#catalog-footer-warranty">Garansi Anti Hackback</a>
+                </>}
+                <a href="#catalog-footer-support">Hubungi Admin</a>
+              </nav>
+              <div className="catalog-info-support" id="catalog-footer-support">
+                <strong>Butuh Bantuan?</strong>
+                <p>Untuk kendala login, Bind, pengamanan akun, atau indikasi hackback, hubungi Admin Vault Core melalui fitur pesan atau kanal dukungan resmi.</p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
       <footer className="footer"><a className="brand" href="/" aria-label="VAULT CORE" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}><img className="brand-logo footer-brand-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /></a><small>© {new Date().getFullYear()} VAULT CORE. Marketplace akun game.</small></footer>
 
       <StoreBottomNav active={isPinnedCatalogRoute ? "categories" : "catalog"}/>

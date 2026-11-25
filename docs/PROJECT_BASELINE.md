@@ -211,3 +211,13 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - Customer terms normalize repeated escaped newline sequences before display.
 - Preserve existing product data, price, stock, XTR checkout, catalog filters, and page content.
 
+## 16. Customer catalog footer — 25 Nov 2026
+
+- Footer katalog memakai permukaan charcoal/navy dan token warna global Vault Core; layout mobile memakai satu kolom dan tidak mengubah header, bottom navigation, kartu produk, filter, atau detail produk.
+- Konten FAQ khusus Mobile Legends tampil saat kategori MLBB dipilih dan mode uji tidak aktif. Isinya mengikuti materi pembelian, pemeriksaan akun, keamanan email/perangkat, bind, penyelesaian pesanan, dan penggantian nama yang diberikan pemilik proyek.
+- Langkah transaksi wajib menjelaskan bahwa website publik hanya untuk melihat katalog/detail; pembuatan pesanan, pembayaran invoice Telegram Stars (XTR), dan pemantauan pesanan dilakukan melalui VAULT CORE Telegram Mini App.
+- Informasi akun yang diterima pembeli disampaikan oleh VAULT CORE. Jangan menampilkan nama mitra sebagai pihak yang harus dihubungi pembeli.
+- Informasi garansi mengarahkan pembeli ke ketentuan pada detail SKU. Periode 14 hari kalender disebut hanya untuk produk yang tercakup dalam ketentuan Garansi Anti-Hackback tersebut; klaim valid mendapat refund 100% dengan pemrosesan maksimal 48 jam sejak laporan dan bukti diterima.
+- Panel metode pembayaran hanya menampilkan Telegram Stars (XTR). Dilarang menambahkan logo bank, minimarket, e-wallet, PayLater, atau QRIS karena bertentangan dengan kontrak pembayaran.
+- Navigasi footer hanya mengarah ke route dan anchor yang benar-benar tersedia. Halaman legal, karier, kanal sosial, dan URL kontak eksternal yang belum ada tidak dibuat sebagai tautan mati.
+- Baris hak cipta tidak menyalin identitas badan usaha atau tahun berdiri milik situs referensi.
