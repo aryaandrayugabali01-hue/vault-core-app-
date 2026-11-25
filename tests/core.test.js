@@ -219,7 +219,10 @@ test('all customer-sale product data is centralized at GET /api/catalog while Ow
   assert.match(home, /fetch\(API\+'\/api\/catalog'/);
   assert.match(route, /res\.json\(\{ products, categories \}\)/);
   assert.match(route, /display_stock: visibleStock/);
-  assert.match(route, /rights_review_active: Boolean\(purchaseable\)/);
+  const dtoStart = route.indexOf('    return {');
+  const dtoEnd = route.indexOf('\n    };', dtoStart);
+  const publicDto = route.slice(dtoStart, dtoEnd);
+  assert.doesNotMatch(publicDto, /rights_review_active|rights_review_status|rights_valid_until|rights_owner_attested|sellable_stock|cost_price_xtr/);
   assert.doesNotMatch(route, /sales\.sold_count|average_delivery_minutes|catalog_status_label/);
   assert.doesNotMatch(route, /return \{\s*\.\.\.product/);
   assert.match(ownerRoute, /router\.get\('\/products'/);
@@ -804,8 +807,10 @@ test('MLBB account detail uses the public catalog DTO, last-stock label, and fou
   assert.match(page, /Keamanan Akun/);
   assert.doesNotMatch(page, /detailReviewActive|rights_review_active/);
   assert.doesNotMatch(page, /Status pengiriman|Jumlah terjual|Rata-rata pengiriman|Minimum pembelian|Jumlah pembelian|INFORMASI TOKO|Produk lain dari VAULT CORE|detailQuantity|marketplace-detail-store|marketplace-detail-related/);
-  assert.doesNotMatch(catalogApi, /rights_review_active\\s*:/);
-  assert.doesNotMatch(catalogApi, /(?:^|\\n)\\s*(?:sellable_stock|cost_price_xtr|average_delivery_minutes|sold_count)\\s*:/);
+  const customerDtoStart = catalogApi.indexOf('    return {');
+  const customerDtoEnd = catalogApi.indexOf('\n    };', customerDtoStart);
+  const customerDto = catalogApi.slice(customerDtoStart, customerDtoEnd);
+  assert.doesNotMatch(customerDto, /rights_review_active|rights_review_status|rights_valid_until|rights_owner_attested|sellable_stock|cost_price_xtr|average_delivery_minutes|sold_count/);
   assert.match(catalogApi, /display_stock: visibleStock/);
   assert.match(styles, /marketplace-guide-security-list/);
   assert.match(guideMigration, /Selesaikan pembayaran melalui VAULT CORE/);
