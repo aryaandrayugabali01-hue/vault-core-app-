@@ -181,25 +181,49 @@ test('public catalog only exposes active, priced, approved commercial products',
   assert.ok(route.includes("rr.valid_until>NOW()"));
 });
 
-test('catalog detail uses backend fulfillment metrics and keeps warranty and guide content in separate accessible overlays', () => {
+test('MLBB account detail matches the locked compact layout and removes unrelated sales blocks', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const routePage = readFileSync(new URL('../frontend/src/app/catalog/mlbb-akun/page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const detailStart = page.indexOf('{selectedProduct && <div className="modal-backdrop marketplace-detail-backdrop"');
+  const detailEnd = page.indexOf('\n\n            {ordersOpen &&', detailStart);
+  assert.ok(detailStart >= 0 && detailEnd > detailStart);
+  const detail = page.slice(detailStart, detailEnd);
+  assert.match(routePage, /initialCategory="MLBB"/);
+  assert.match(routePage, /initialCategorySlug="mlbb-akun"/);
+  assert.match(page, /isPinnedCatalogRoute/);
+  assert.match(page, /getProductStockLabel/);
+  assert.match(page, /STOK TERAKHIR/);
+  assert.match(detail, /marketplace-detail-stock-pill/);
+  assert.match(detail, /marketplace-detail-thumbnails/);
+  assert.match(detail, /marketplace-detail-price-panel/);
+  assert.match(detail, /buy\(product,1\)/);
+  assert.doesNotMatch(detail, /Status pengiriman|Jumlah terjual|Rata-rata pengiriman|Minimum pembelian|Jumlah pembelian|Minimum 1 unit|Penyerahan manual oleh VAULT CORE|INFORMASI TOKO|Produk lain dari VAULT CORE/);
+  assert.doesNotMatch(page, /detailQuantity|formatAverageDeliveryMinutes|detailRelatedProducts/);
+  assert.match(page, /Garansi Anti-Hackback/);
+  assert.match(page, /Cara Beli &amp; Tips/);
+  assert.match(page, /marketplace-info-modal/);
+  assert.match(styles, /marketplace-detail-page \.marketplace-detail-body\{width:100%/);
+  assert.match(styles, /marketplace-detail-stock-pill/);
+});
+
+test('all customer-sale product data is centralized at GET /api/catalog while Owner management stays protected', () => {
+  const app = readFileSync(new URL('../backend/app.js', import.meta.url), 'utf8');
   const route = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
   const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  assert.match(route, /SUM\(oi\.quantity\)[\s\S]*AS sold_count/);
-  assert.match(route, /AVG\(EXTRACT\(EPOCH FROM \(o\.fulfilled_at-o\.paid_at\)\)\/60\.0\)[\s\S]*AS average_delivery_minutes/);
-  assert.match(route, /o\.status='FULFILLED'/);
-  assert.match(page, /if \(value == null \|\| value === ''\) return 'Belum tersedia'/);
-  assert.match(page, /marketplace-detail-page/);
-  assert.match(page, /marketplace-detail-stickybar/);
-  assert.match(page, /marketplace-detail-thumbnails/);
-  assert.match(page, /Rating pelanggan[\s\S]*Belum tersedia/);
-  assert.match(page, /getWarrantyTerms/);
-  assert.match(page, /marketplace-info-modal/);
-  assert.match(page, /Informasi dan data akun diberikan langsung oleh VAULT CORE/);
-  assert.match(page, /setGuideOpen\(true\)/);
-  assert.match(styles, /marketplace-detail-page/);
-  assert.match(styles, /marketplace-policy-backdrop/);
-  assert.match(styles, /marketplace-detail-scroll/);
+  const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
+  const ownerRoute = readFileSync(new URL('../backend/routes/admin.js', import.meta.url), 'utf8');
+  assert.match(app, /app\.use\('\/api\/catalog', apiRateLimit, catalogRoutes\)/);
+  assert.match(app, /app\.use\('\/api\/admin', apiRateLimit, ownerRateLimit, requireOwnerSession, requireOwner, adminRoutes\)/);
+  assert.match(page, /fetch\(API \+ '\/api\/catalog'/);
+  assert.match(home, /fetch\(API\+'\/api\/catalog'/);
+  assert.match(route, /res\.json\(\{ products, categories \}\)/);
+  assert.match(route, /display_stock: visibleStock/);
+  assert.match(route, /rights_review_active: Boolean\(purchaseable\)/);
+  assert.doesNotMatch(route, /sales\.sold_count|average_delivery_minutes|catalog_status_label/);
+  assert.doesNotMatch(route, /return \{\s*\.\.\.product/);
+  assert.match(ownerRoute, /router\.get\('\/products'/);
+  assert.match(app, /requireOwnerSession, requireOwner, adminRoutes/);
 });
 
 test('customer catalog displays product prices only in Telegram Stars XTR', () => {

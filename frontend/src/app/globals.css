@@ -1543,3 +1543,30 @@ body{
   .marketplace-detail-sticky-price strong{font-size:14px}
   .marketplace-detail-sticky-actions .buy-button{min-width:105px;font-size:9px}
 }
+
+
+/* Locked MLBB account detail layout: compact dark full-width sheet. */
+.marketplace-game-tabs-locked button:disabled{opacity:1;cursor:default;filter:none}
+.marketplace-detail-page .marketplace-detail-body{width:100%;max-width:760px;margin:0 auto;padding:14px 13px 22px}
+.marketplace-detail-media-section{padding-bottom:8px}
+.marketplace-detail-page .marketplace-detail-gallery{height:clamp(200px,35vh,320px)}
+.marketplace-detail-thumbnails{gap:7px;padding-right:13px;padding-left:13px}
+.marketplace-detail-thumbnails button{width:62px;height:50px;flex-basis:62px}
+.marketplace-detail-heading h1{margin:6px 0 4px;font-size:clamp(19px,4.7vw,24px)}
+.marketplace-detail-stock-row{display:flex;align-items:center;gap:8px;margin:8px 0 2px}
+.marketplace-detail-stock-pill{display:inline-flex;align-items:center;min-height:25px;padding:5px 9px;border:1px solid rgba(0,214,138,.22);border-radius:999px;background:rgba(0,214,138,.085);color:#8ce6bd;font-size:9px;font-weight:900;letter-spacing:.055em}
+.marketplace-detail-stock-pill.out-of-stock{border-color:rgba(255,119,119,.22);background:rgba(255,90,90,.08);color:#ff9e9e}
+.marketplace-detail-rating{padding:7px 0 11px}
+.marketplace-detail-trust-grid{gap:6px;margin:10px 0 12px}
+.marketplace-detail-trust-card{min-height:70px;padding:9px 8px}
+.marketplace-detail-trust-card strong{font-size:9px}
+.marketplace-detail-trust-card small{font-size:8px}
+.marketplace-detail-price-panel{margin:0 0 8px;padding:12px}
+.marketplace-detail-section{padding:13px 0}
+.marketplace-detail-section h2{margin-bottom:7px}
+.marketplace-detail-section p{font-size:11px;line-height:1.6}
+.marketplace-detail-guide-callout{margin-top:8px;padding:11px}
+.marketplace-detail-page .marketplace-detail-policy{margin-top:10px}
+.marketplace-detail-stickybar{min-height:68px;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px))}
+.marketplace-detail-sticky-price strong{font-size:17px}
+.marketplace-detail-sticky-actions .buy-button{min-height:43px}
