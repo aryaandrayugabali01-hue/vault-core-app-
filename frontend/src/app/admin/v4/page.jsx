@@ -2,6 +2,7 @@
 
 import { useCallback,useEffect,useMemo,useState } from 'react';
 import { getInitData } from '../../../lib/telegram';
+import './page.css';
 
 const API=process.env.NEXT_PUBLIC_API_BASE_URL||'';
 const GAME_CATEGORY={MLBB:'MLBB',FF:'FREE_FIRE',ROBLOX:'ROBLOX',GI:'GENSHIN'};
