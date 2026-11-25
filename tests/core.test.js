@@ -181,6 +181,27 @@ test('public catalog only exposes active, priced, approved commercial products',
   assert.ok(route.includes("rr.valid_until>NOW()"));
 });
 
+test('catalog detail uses backend fulfillment metrics and keeps warranty and guide content in separate accessible overlays', () => {
+  const route = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  assert.match(route, /SUM\(oi\.quantity\)[\s\S]*AS sold_count/);
+  assert.match(route, /AVG\(EXTRACT\(EPOCH FROM \(o\.fulfilled_at-o\.paid_at\)\)\/60\.0\)[\s\S]*AS average_delivery_minutes/);
+  assert.match(route, /o\.status='FULFILLED'/);
+  assert.match(page, /if \(value == null \|\| value === ''\) return 'Belum tersedia'/);
+  assert.match(page, /marketplace-detail-page/);
+  assert.match(page, /marketplace-detail-stickybar/);
+  assert.match(page, /marketplace-detail-thumbnails/);
+  assert.match(page, /Rating pelanggan[\s\S]*Belum tersedia/);
+  assert.match(page, /getWarrantyTerms/);
+  assert.match(page, /marketplace-info-modal/);
+  assert.match(page, /Informasi dan data akun diberikan langsung oleh VAULT CORE/);
+  assert.match(page, /setGuideOpen\(true\)/);
+  assert.match(styles, /marketplace-detail-page/);
+  assert.match(styles, /marketplace-policy-backdrop/);
+  assert.match(styles, /marketplace-detail-scroll/);
+});
+
 test('customer catalog displays product prices only in Telegram Stars XTR', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   assert.doesNotMatch(page, /formatIdrRange|price_min_idr|price_max_idr|Referensi pasar/);

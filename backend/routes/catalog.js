@@ -16,6 +16,8 @@ router.get('/', async (_req, res) => {
             p.display_stock_mode, p.display_stock_override, p.low_stock_threshold,
             rr.review_status AS rights_review_status, rr.owner_attested AS rights_owner_attested,
             rr.valid_until AS rights_valid_until,
+            sales.sold_count,
+            sales.average_delivery_minutes,
             GREATEST(COUNT(i.id) FILTER (WHERE i.status='AVAILABLE'
               AND i.rights_review_id=p.current_rights_review_id
               AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
@@ -26,6 +28,18 @@ router.get('/', async (_req, res) => {
        ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
      LEFT JOIN marketplace_categories c ON c.id=p.marketplace_category_id AND c.is_active=TRUE
      LEFT JOIN inventory_items i ON i.product_id=p.id
+     LEFT JOIN LATERAL (
+       SELECT COALESCE(SUM(oi.quantity),0)::int AS sold_count,
+              CASE WHEN COUNT(*)=0 THEN NULL
+                   ELSE ROUND(AVG(EXTRACT(EPOCH FROM (o.fulfilled_at-o.paid_at))/60.0))::int
+              END AS average_delivery_minutes
+       FROM order_items oi
+       JOIN orders o ON o.id=oi.order_id
+       WHERE oi.product_id=p.id
+         AND o.status='FULFILLED'
+         AND o.paid_at IS NOT NULL
+         AND o.fulfilled_at IS NOT NULL
+     ) sales ON TRUE
      WHERE COALESCE(p.is_test,FALSE)=FALSE
        AND p.status='ACTIVE'
        AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER'
@@ -35,7 +49,7 @@ router.get('/', async (_req, res) => {
        AND rr.review_status='APPROVED'
        AND rr.owner_attested=TRUE
        AND rr.valid_until>NOW()
-     GROUP BY p.id,c.id,rr.id ORDER BY p.game_category, p.name`
+     GROUP BY p.id,c.id,rr.id,sales.sold_count,sales.average_delivery_minutes ORDER BY p.game_category, p.name`
   );
   const products = rows.map((product) => {
     const actual = Number(product.sellable_stock);
