@@ -742,6 +742,11 @@ test('account catalogue hides filters for all games and uses a unified dark filt
   assert.match(styles, /background:linear-gradient\(155deg,#1a2635/);
   assert.match(styles, /\.mlbb-filter-sheet/);
   assert.match(styles, /\.mlbb-filter-footer/);
-  assert.doesNotMatch(styles, /#fff;color:#17191f/);
+  assert.doesNotMatch(styles, /background:#fff|background:white|color:#17191f/);
   assert.doesNotMatch(styles, /\.tier-label|\.product-sku|\.art-other|\.cat-tier-platinum/);
+  const admin = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
+  const adminRoutes = readFileSync(new URL('../backend/routes/admin.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(admin, /fulfillmentType:'REDEEM_CODE'/);
+  assert.doesNotMatch(adminRoutes, /fulfillment_type IS NOT NULL THEN 'ACTIVE'/);
+  assert.match(adminRoutes, /fulfillment_type='GAME_ACCOUNT_TRANSFER'[\s\S]*?game_category IN \('MLBB','FREE_FIRE','ROBLOX','GENSHIN'\)/);
 });
