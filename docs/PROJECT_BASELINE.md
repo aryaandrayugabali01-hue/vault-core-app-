@@ -27,6 +27,7 @@
 | Database | Neon PostgreSQL, `vault_core` |
 | Stack | Next.js/Vinext, Node.js/Express, Cloudflare Workers, Neon, Telegram Mini App |
 | Pembayaran | Telegram Stars (XTR) saja |
+| Tagline resmi | **Lebih Yakin Bersama Vault Core** |
 
 Checkout, invoice, dan pembayaran tetap melalui VAULT CORE Telegram Mini App. Website publik menampilkan katalog dan detail produk.
 
@@ -221,3 +222,13 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - Panel metode pembayaran hanya menampilkan Telegram Stars (XTR). Dilarang menambahkan logo bank, minimarket, e-wallet, PayLater, atau QRIS karena bertentangan dengan kontrak pembayaran.
 - Navigasi footer hanya mengarah ke route dan anchor yang benar-benar tersedia. Halaman legal, karier, kanal sosial, dan URL kontak eksternal yang belum ada tidak dibuat sebagai tautan mati.
 - Baris hak cipta tidak menyalin identitas badan usaha atau tahun berdiri milik situs referensi.
+
+## 17. Official brand tagline — 25 Nov 2026
+
+<badge>LOCKED · BRAND IDENTITY</badge>
+
+**Tagline resmi VAULT CORE: “Lebih Yakin Bersama Vault Core”.**
+
+- Gunakan persis seperti penulisan di atas pada identitas brand, footer, metadata SEO, Open Graph, materi promosi, dan komunikasi pelanggan.
+- Tagline ini adalah identitas brand utama, bukan tagline sementara atau opsi copywriting.
+- Jangan mengganti, memparafrasekan, menambahkan klausa, atau menggunakan tagline alternatif pada kanal resmi tanpa instruksi eksplisit pemilik proyek.

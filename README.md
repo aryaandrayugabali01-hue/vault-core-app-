@@ -1,5 +1,7 @@
 # VAULT CORE
 
+> **Lebih Yakin Bersama Vault Core**
+
 Single-vendor Telegram Mini App store for transferable digital products, vouchers, codes, licenses, and supported service instructions.
 
 ## Source of truth

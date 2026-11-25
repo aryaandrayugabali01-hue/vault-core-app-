@@ -902,7 +902,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
           </div>
         </div>
       </section>
-      <footer className="footer"><a className="brand" href="/" aria-label="VAULT CORE" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}><img className="brand-logo footer-brand-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /></a><small>© {new Date().getFullYear()} VAULT CORE. Marketplace akun game.</small></footer>
+      <footer className="footer"><a className="brand" href="/" aria-label="VAULT CORE — Lebih Yakin Bersama Vault Core" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}><span className="footer-brand-copy"><img className="brand-logo footer-brand-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /><span className="footer-brand-tagline">Lebih Yakin Bersama Vault Core</span></span></a><small>© {new Date().getFullYear()} VAULT CORE. Marketplace akun game.</small></footer>
 
       <StoreBottomNav active={isPinnedCatalogRoute ? "categories" : "catalog"}/>
 
