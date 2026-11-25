@@ -1283,3 +1283,25 @@ body{
  .marketplace-product-card .product-price strong{font-size:14px}
  .marketplace-filter-toggle{padding:0 11px}
 }
+
+
+/* Compact game-category masthead, inspired by marketplace navigation */
+.marketplace-game-nav{min-height:0;padding-top:18px;padding-bottom:0}
+.marketplace-game-heading{padding-top:17px;padding-bottom:10px}
+.marketplace-game-heading h1{margin:8px 0 10px;font-size:clamp(25px,4vw,34px);letter-spacing:-.045em}
+.marketplace-game-heading p{max-width:680px;margin:0;color:#b7c1d0;font-size:13px;line-height:1.6}
+.marketplace-game-tabs{min-height:58px;gap:22px}
+.marketplace-category-nav{min-height:58px}
+@media(max-width:639px){
+ .marketplace-game-nav{padding-top:12px}
+ .marketplace-game-heading{padding:14px 14px 9px}
+ .marketplace-game-heading .eyebrow{font-size:9px;letter-spacing:1.3px}
+ .marketplace-game-heading h1{margin:6px 0 7px;font-size:25px}
+ .marketplace-game-heading p{display:-webkit-box;overflow:hidden;font-size:11px;line-height:1.55;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+ .marketplace-game-tabs{min-height:53px;gap:17px}
+ .marketplace-category-nav{min-height:53px}
+ .product-section{margin-top:22px}
+ .product-section .section-heading{align-items:center;margin-bottom:14px}
+ .product-section .section-heading h2{font-size:20px}
+ .product-section .section-count{font-size:9px;letter-spacing:.8px}
+}
