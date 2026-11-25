@@ -795,7 +795,7 @@ test('storefront and Owner routes share the approved header and four-item bottom
   }
   for (const label of ['Beranda','Produk','Bantuan','Akun']) assert.ok(navigation.includes(label));
   assert.ok(layout.includes('<StoreChrome />'));
-  assert.match(navigation, /<StoreBottomNav active=\{active\} \/>/);
+  assert.match(navigation, /<StoreBottomNav active=\{active\}\/>/);
   assert.match(catalog, /StoreBottomNav active="catalog" embedded/);
 });
 
