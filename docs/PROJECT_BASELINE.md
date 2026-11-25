@@ -152,6 +152,8 @@ Rilis hanya setelah ruang lingkup terpenuhi, area LOCKED aman, test/build lulus,
 | 2026-11-25 | `cf78e1dd8e97d68658dadf26e4895dd38cc7e08e` | Panduan MLBB 4 langkah + 3 tips keamanan, mode stok terakhir SKU ML-001, dan pembersihan metadata internal pada DTO customer | `database/migrations/022_mlbb_account_purchase_guide.sql`, `database/migrations/023_mlbb_account_last_stock_display.sql`, `frontend/src/app/catalog/page.jsx`, `frontend/src/app/globals.css`, `backend/routes/catalog.js`, `tests/core.test.js`, `docs/PROJECT_BASELINE.md` | CI SUCCESS (run 45576618965); production deployment SUCCESS (run 45576775159); migration 022/023 applied and verified on Neon. |
 | 2026-11-25 | `f2a8b8ddac5bdcd36fce04db1e3eae8c4a5a7922` | Perbaikan wrapping spesifikasi panjang, konversi newline literal pada deskripsi/atribut/ketentuan, dan refresh data katalog saat membuka detail produk | `frontend/src/app/catalog/page.jsx`, `frontend/src/app/globals.css`, `frontend/src/lib/product-attributes.js`, `tests/core.test.js` | 56/56 backend/core tests PASS; Mini App build PASS; API dry-run PASS; production workflow SUCCESS. |
 
+| 2026-11-25 | fda9509c83e3fc2f3d4fa27f4331d1d774cdef04 | Header dan bottom navigation bersama untuk Dashboard, Katalog, Detail Produk, dan portal Owner; perbaikan wrapping spesifikasi serta newline bertingkat | `frontend/src/components/store-navigation.jsx`, route storefront/Owner, `frontend/src/app/globals.css`, `frontend/src/lib/product-attributes.js`, `tests/core.test.js` | CI perlu pengulangan setelah penyesuaian tes. |
+
 ## 9. Status audit data produksi (25 Nov 2026)
 
 - Produk aktif yang diperiksa: 7 SKU.
@@ -198,3 +200,14 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - The mobile account-specification rows use a constrained two-column grid. Long labels and values wrap inside their own columns without overlapping adjacent rows.
 - Refresh the public catalog snapshot when a customer opens a product detail. The displayed availability, stock badge, price, description, gallery, and attributes then use the latest customer DTO. If refresh fails, retain the last successful snapshot; checkout continues to validate price and stock on the server.
 - Preserve the approved detail composition, XTR checkout flow, Telegram Mini App transaction restriction, image gallery source URLs, and sticky purchase bar.
+
+
+## 15. Shared navigation and detail rendering — 25 Nov 2026
+
+- Reuse the approved Dashboard header frame across Dashboard, Katalog, Detail Produk, and Owner routes: VAULT CORE brand, centered search or Owner label, and right-side actions.
+- Reuse the approved four-item bottom navigation on every route: Dashboard, Katalog, Kategori, Owner. The Owner route remains protected by the existing authentication/session checks.
+- On product detail, keep the purchase action bar immediately above the shared bottom navigation.
+- Long account specification labels and values occupy independent wrapping columns.
+- Customer terms normalize repeated escaped newline sequences before display.
+- Preserve existing product data, price, stock, XTR checkout, catalog filters, and page content.
+
