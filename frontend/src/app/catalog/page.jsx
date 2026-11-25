@@ -94,7 +94,6 @@ export default function HomePage() {
   const [marketplaceCategories, setMarketplaceCategories] = useState([]);
   const [marketplaceCategoryId, setMarketplaceCategoryId] = useState('ALL');
   const [attributeFilters, setAttributeFilters] = useState({});
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState('NAME');
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -159,7 +158,6 @@ export default function HomePage() {
       icon: GAME_ART[id] || GAME_ART.OTHER
     }));
   }, [sourceProducts]);
-  const activeFilterLabel = category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua game';
   const selectedGame = gameTabs.find((item) => item.id === category) || null;
   const selectedMarketplaceCategory = gameMarketplaceCategories.find((item) => String(item.id) === marketplaceCategoryId) || null;
   const gameMarketplaceCategories = useMemo(() => marketplaceCategories.filter((item) => {
@@ -167,13 +165,6 @@ export default function HomePage() {
     const prefix = category.toLowerCase().replaceAll('_','-') + '-';
     return String(item.slug || '').startsWith(prefix);
   }), [marketplaceCategories, category]);
-  const availableTiers = useMemo(() => {
-    const present = new Set(sourceProducts
-      .filter((product) => (category === 'ALL' || product.game_category === category)
-        && (marketplaceCategoryId === 'ALL' || String(product.marketplace_category_id || '') === marketplaceCategoryId))
-      .map((product) => product.tier));
-    return Object.entries(TIER_LABELS).filter(([value]) => present.has(value));
-  }, [sourceProducts, category, marketplaceCategoryId]);
   const attributeFacets = useMemo(() => {
     const productsForFacets = sourceProducts.filter((product) =>
       (category === 'ALL' || product.game_category === category)
