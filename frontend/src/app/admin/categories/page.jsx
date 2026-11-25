@@ -43,6 +43,5 @@ export default function MarketplaceCategoriesPage(){
         <div className="marketplace-category-admin-copy"><strong>{item.name}</strong><small>/{item.slug} · {item.product_count} produk · {item.active_product_count} aktif</small><p>{item.description||'Akun game'}</p><span className={'marketplace-category-admin-status '+(item.is_active?'active':'paused')}>{item.is_active?'AKTIF':'NONAKTIF'}</span></div>
       </article>):<div className="admin-loading">Memuat struktur katalog…</div>}
     </section>
-    <StoreBottomNav active="owner"/>
   </main>;
 }
