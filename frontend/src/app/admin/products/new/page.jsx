@@ -8,14 +8,10 @@ import { GAME_NAMES } from '../../../../lib/marketplace.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const CATEGORIES = [
-  ['MLBB',GAME_NAMES.MLBB,'MLBB'],['ROBLOX',GAME_NAMES.ROBLOX,'RBLX'],
-  ['FREE_FIRE',GAME_NAMES.FREE_FIRE,'FFIR'],['GENSHIN',GAME_NAMES.GENSHIN,'GNSH'],['OTHER',GAME_NAMES.OTHER,'OTHR']
+  ['MLBB',GAME_NAMES.MLBB,'MLBB'],['FREE_FIRE',GAME_NAMES.FREE_FIRE,'FFIR'],
+  ['ROBLOX',GAME_NAMES.ROBLOX,'RBLX'],['GENSHIN',GAME_NAMES.GENSHIN,'GNSH']
 ];
-const TIERS = [['SILVER','Silver','SLV'],['GOLD','Gold','GLD'],['PLATINUM','Platinum','PLT'],['SERVICE','Layanan','SRV']];
-const FULFILLMENT = [
-  ['REDEEM_CODE','Kode redeem'],['VOUCHER_CODE','Kode voucher'],['LICENSE_KEY','Kunci lisensi'],
-  ['GIFT_CODE','Kode hadiah'],['DIGITAL_FILE','Berkas digital'],['SERVICE_INSTRUCTIONS','Petunjuk layanan'],['GAME_ACCOUNT_TRANSFER','Transfer akun melalui prosedur resmi']
-];
+const ACCOUNT_CATEGORY_SLUGS = {MLBB:'mlbb-akun',FREE_FIRE:'free-fire-akun',ROBLOX:'roblox-akun',GENSHIN:'genshin-akun'};
 const apiMessage = (data) => ({
   TELEGRAM_AUTH_REQUIRED:'Sesi Telegram tidak ditemukan. Masuk kembali melalui Telegram.',
   ADMIN_ACCESS_REQUIRED:'Akun Telegram ini tidak memiliki izin Owner.',
@@ -28,8 +24,8 @@ const apiMessage = (data) => ({
   INVALID_INVENTORY_INPUT:'Masukkan 1 sampai 100 unit stok, satu kode pada setiap baris.'
 }[data?.error] || data?.message || 'Permintaan tidak dapat diproses.');
 
-function nextSku(category, tier, products) {
-  const prefix = (CATEGORIES.find((item) => item[0] === category)?.[2] || 'ITEM') + '-' + (TIERS.find((item) => item[0] === tier)?.[2] || 'STD') + '-';
+function nextSku(category, products) {
+  const prefix = (CATEGORIES.find((item) => item[0] === category)?.[2] || 'GAME') + '-ACC-';
   const used = new Set(products.map((item) => String(item.sku || '').toUpperCase()));
   let number = 1;
   while (used.has(prefix + String(number).padStart(3, '0'))) number += 1;
@@ -39,7 +35,7 @@ function nextSku(category, tier, products) {
 export default function NewProductPage() {
   const [products, setProducts] = useState([]);
   const [marketplaceCategories, setMarketplaceCategories] = useState([]);
-  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', marketplaceCategoryId:'', tier:'GOLD', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'', imageUrl:'', imageGalleryText:'', attributesText:'', customerTerms:'', fulfillmentEta:'' });
+  const [form, setForm] = useState({ sku:'', gameCategory:'MLBB', marketplaceCategoryId:'', tier:'GOLD', name:'', description:'', fulfillmentType:'GAME_ACCOUNT_TRANSFER', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'', imageUrl:'', imageGalleryText:'', attributesText:'', customerTerms:'', fulfillmentEta:'' });
   const [stock, setStock] = useState('');
   const [stockSourceReference, setStockSourceReference] = useState('');
   const [rightsForm, setRightsForm] = useState({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
@@ -80,8 +76,16 @@ export default function NewProductPage() {
 
   useEffect(() => {
     if (manualSku) return;
-    setForm((current) => ({ ...current, sku:nextSku(current.gameCategory,current.tier,products) }));
-  }, [products, form.gameCategory, form.tier, manualSku]);
+    setForm((current) => ({ ...current, sku:nextSku(current.gameCategory,products) }));
+  }, [products, form.gameCategory, manualSku]);
+
+  useEffect(() => {
+    const slug = ACCOUNT_CATEGORY_SLUGS[form.gameCategory];
+    const match = marketplaceCategories.find((item) => item.slug === slug && item.is_active);
+    if (match && String(match.id) !== String(form.marketplaceCategoryId)) {
+      setForm((current) => ({...current, marketplaceCategoryId:String(match.id), tier:'GOLD', fulfillmentType:'GAME_ACCOUNT_TRANSFER'}));
+    }
+  }, [marketplaceCategories, form.gameCategory, form.marketplaceCategoryId]);
 
   function change(key, value) {
     setForm((current) => ({ ...current, [key]:value }));
@@ -176,7 +180,7 @@ export default function NewProductPage() {
       setManualSku(false);
       setStock('');
       setStockSourceReference('');
-      setForm({ sku:'', gameCategory:form.gameCategory, marketplaceCategoryId:'', tier:form.tier, name:'', description:'', fulfillmentType:form.fulfillmentType, salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'', imageUrl:'', imageGalleryText:'', attributesText:'', customerTerms:'', fulfillmentEta:'' });
+      setForm({ sku:'', gameCategory:form.gameCategory, marketplaceCategoryId:form.marketplaceCategoryId, tier:'GOLD', name:'', description:'', fulfillmentType:'GAME_ACCOUNT_TRANSFER', salePriceXtr:'', costPriceXtr:'0', rightsReviewReference:'', imageUrl:'', imageGalleryText:'', attributesText:'', customerTerms:'', fulfillmentEta:'' });
       setRightsForm({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
     } catch (e) {
       if (productId) {
@@ -209,12 +213,11 @@ export default function NewProductPage() {
       <form className="admin-form" onSubmit={submit}>
         <label>SKU <small className="field-hint">Otomatis, bisa diedit</small><input required value={form.sku} onChange={(e)=>{setManualSku(true);change('sku',e.target.value.toUpperCase());}} /></label>
         <label>Game<select value={form.gameCategory} onChange={(e)=>change('gameCategory',e.target.value)}>{CATEGORIES.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-        <label className="span-2">Kategori marketplace<select value={form.marketplaceCategoryId} onChange={(e)=>change('marketplaceCategoryId',e.target.value)}><option value="">Belum ditetapkan</option>{marketplaceCategories.filter((item)=>item.is_active).map((item)=><option key={item.id} value={String(item.id)}>{item.name}</option>)}</select><small className="field-hint">Pilih kategori yang dikelola Owner. Perubahan kategori SKU memerlukan review CR-05.</small></label>
-        <label>Tingkat produk<select value={form.tier} onChange={(e)=>change('tier',e.target.value)}>{TIERS.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label>Subkategori<input value="Akun" readOnly /></label>
         <label>Nama produk<input required maxLength="160" value={form.name} onChange={(e)=>change('name',e.target.value)} placeholder="Nama yang tampil di katalog" /></label>
         <label className="span-2">Deskripsi produk<textarea rows="4" value={form.description} onChange={(e)=>change('description',e.target.value)} placeholder="Jelaskan isi produk, manfaat, ketentuan, dan cara pemenuhan." /></label>
-        <label className="span-2">Atribut produk <small className="field-hint">Format Key|Value, satu atribut per baris. Contoh rank, server, region, level, atau tipe layanan.</small><textarea rows="4" value={form.attributesText} onChange={(e)=>change('attributesText',e.target.value)} placeholder={'Rank|Mythic\nServer|Asia\nLevel|75'} /></label>
-        <label>Metode pemenuhan<select value={form.fulfillmentType} onChange={(e)=>change('fulfillmentType',e.target.value)}>{FULFILLMENT.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label className="span-2">Atribut produk <small className="field-hint">Isi spesifikasi akun. Gunakan format Key|Value, satu atribut per baris.</small><textarea rows="4" value={form.attributesText} onChange={(e)=>change('attributesText',e.target.value)} placeholder={'Win Rate|58%\nJumlah Skin|120\nJumlah Hero|85\nRank Saat Ini|Mythic\nAkun Terhubung Pada|Moonton, Google'} /></label>
+        <input type="hidden" value="GAME_ACCOUNT_TRANSFER" readOnly />
         <label className="span-2">URL gambar utama <small className="field-hint">HTTPS publik atau file lokal /assets/</small><input type="text" value={form.imageUrl} onChange={(e)=>change('imageUrl',e.target.value)} placeholder="https://.../produk.webp" /></label>
         <label className="span-2">Galeri gambar, satu URL per baris<textarea rows="3" value={form.imageGalleryText} onChange={(e)=>change('imageGalleryText',e.target.value)} placeholder={'https://cdn.../gambar-1.webp\nhttps://cdn.../gambar-2.webp'} /></label>
         <label className="span-2">Ketentuan produk untuk pelanggan<textarea rows="3" maxLength="5000" value={form.customerTerms} onChange={(e)=>change('customerTerms',e.target.value)} placeholder="Isi paket, syarat penggunaan, wilayah, masa berlaku, dan batasan produk." /></label>
