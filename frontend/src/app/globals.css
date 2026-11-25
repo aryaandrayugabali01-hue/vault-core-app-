@@ -959,7 +959,7 @@ margin-top:37px
 .product-section{
   margin-top:0;padding:17px 14px 25px;color:#f3f5fa;
   background-color:#10151e;
-  background-image:linear-gradient(180deg,rgba(13,19,29,.94),rgba(13,19,29,.98)),url('/assets/03-categories/category-other.png');
+  background-image:linear-gradient(180deg,rgba(13,19,29,.94),rgba(13,19,29,.98)),url('/assets/02-hero/hero-vaultcore-loop.webp');
   background-size:cover;background-position:center;
 }
 .product-section .section-heading{align-items:center}
@@ -984,7 +984,7 @@ margin-top:37px
   border:0;border-radius:0;background-color:#171e29;
 }
 .product-art.product-art-brand{
-  background-image:linear-gradient(145deg,rgba(13,20,30,.26),rgba(9,14,22,.52)),var(--game-background,url('/assets/03-categories/category-other.png'));
+  background-image:linear-gradient(145deg,rgba(13,20,30,.26),rgba(9,14,22,.52)),var(--game-background,url('/assets/02-hero/hero-vaultcore-loop.webp'));
   background-size:cover;background-position:center;background-repeat:no-repeat;
 }
 .product-art.product-art-photo{background:#171e29}
@@ -1123,7 +1123,7 @@ margin-top:37px
 .dashboard-overview-title h2,.dashboard-section-heading h2{margin:7px 0 5px;color:#f4f5fa;font-size:clamp(20px,3vw,26px);letter-spacing:-.04em}
 .dashboard-overview-title p{margin:0;color:#9aa6b8;font-size:11px;line-height:1.6}
 .dashboard-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-.dashboard-stat-grid>div{display:grid;gap:6px;min-width:0;padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:linear-gradient(145deg,rgba(25,31,43,.94),rgba(17,23,32,.94)),url('/assets/03-categories/category-other.png');background-size:cover;background-position:center}
+.dashboard-stat-grid>div{display:grid;gap:6px;min-width:0;padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:linear-gradient(145deg,rgba(25,31,43,.94),rgba(17,23,32,.94)),url('/assets/02-hero/hero-vaultcore-loop.webp');background-size:cover;background-position:center}
 .dashboard-stat-grid span{color:#aab6c8;font-size:9px}
 .dashboard-stat-grid strong{color:#f4f5fa;font-size:22px;font-weight:850}
 .dashboard-stat-grid small{color:#929fb2;font-size:8px;line-height:1.4}
@@ -1137,7 +1137,7 @@ margin-top:37px
 .dashboard-game-art{
   position:relative;display:grid;place-items:center;height:132px;overflow:hidden;
   background-color:#171d28;
-  background-image:linear-gradient(180deg,rgba(9,14,22,.12),rgba(9,14,22,.5)),var(--game-background,url('/assets/03-categories/category-other.png'));
+  background-image:linear-gradient(180deg,rgba(9,14,22,.12),rgba(9,14,22,.5)),var(--game-background,url('/assets/02-hero/hero-vaultcore-loop.webp'));
   background-size:cover;background-position:center;background-repeat:no-repeat;
 }
 .dashboard-game-art:after{position:absolute;inset:0;background:linear-gradient(180deg,transparent 38%,rgba(5,9,15,.42));content:"";pointer-events:none}
@@ -1149,14 +1149,14 @@ margin-top:37px
 .dashboard-featured-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .dashboard-featured-card{min-width:0;overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:linear-gradient(145deg,#171e29,#111720);color:#f3f5fa;text-decoration:none;box-shadow:0 7px 20px rgba(0,0,0,.2)}
 .dashboard-featured-card>img{display:block;width:100%;height:112px;object-fit:cover;background:#202735}
-.dashboard-featured-card>img.product-category-logo{object-fit:contain;padding:14px;background-image:linear-gradient(145deg,rgba(12,18,28,.35),rgba(12,18,28,.78)),var(--game-background,url('/assets/03-categories/category-other.png'));background-size:cover;background-position:center}
+.dashboard-featured-card>img.product-category-logo{object-fit:contain;padding:14px;background-image:linear-gradient(145deg,rgba(12,18,28,.35),rgba(12,18,28,.78)),var(--game-background,url('/assets/02-hero/hero-vaultcore-loop.webp'));background-size:cover;background-position:center}
 .dashboard-featured-card>div{display:grid;gap:6px;padding:11px}
 .dashboard-featured-card small{color:#9aa6b8;font-size:9px}
 .dashboard-featured-card strong{min-height:31px;font-size:10px;line-height:1.5}
 .dashboard-featured-card b{color:#b9a7ff;font-size:12px}
-.dashboard-product-placeholder{padding:20px;border:1px dashed rgba(255,255,255,.13);border-radius:14px;color:#a2aec1;font-size:11px;text-align:center;background:linear-gradient(rgba(10,15,23,.92),rgba(10,15,23,.92)),url('/assets/03-categories/category-other.png');background-size:cover;background-position:center}
+.dashboard-product-placeholder{padding:20px;border:1px dashed rgba(255,255,255,.13);border-radius:14px;color:#a2aec1;font-size:11px;text-align:center;background:linear-gradient(rgba(10,15,23,.92),rgba(10,15,23,.92)),url('/assets/02-hero/hero-vaultcore-loop.webp');background-size:cover;background-position:center}
 .dashboard-trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:40px 0 28px}
-.dashboard-trust>div{display:grid;grid-template-columns:32px 1fr;align-items:center;gap:4px 9px;padding:13px;border:1px solid rgba(255,255,255,.07);border-radius:13px;background:linear-gradient(120deg,rgba(21,30,42,.9),rgba(16,22,32,.94)),url('/assets/03-categories/category-other.png');background-size:cover;background-position:center}
+.dashboard-trust>div{display:grid;grid-template-columns:32px 1fr;align-items:center;gap:4px 9px;padding:13px;border:1px solid rgba(255,255,255,.07);border-radius:13px;background:linear-gradient(120deg,rgba(21,30,42,.9),rgba(16,22,32,.94)),url('/assets/02-hero/hero-vaultcore-loop.webp');background-size:cover;background-position:center}
 .dashboard-trust>div>img{grid-row:span 2;display:block;width:31px;height:31px;object-fit:contain;background:transparent}
 .dashboard-trust strong{color:#e8f2ed;font-size:10px}
 .dashboard-trust small{color:#a0adbf;font-size:8px}
@@ -1202,7 +1202,7 @@ body{
   background-size:cover;background-position:center top;background-attachment:fixed;
 }
 .admin-panel{
-  background-image:linear-gradient(145deg,rgba(18,25,37,.91),rgba(13,19,29,.95)),url('/assets/03-categories/category-other.png');
+  background-image:linear-gradient(145deg,rgba(18,25,37,.91),rgba(13,19,29,.95)),url('/assets/02-hero/hero-vaultcore-loop.webp');
   background-size:cover;background-position:center;background-repeat:no-repeat;
 }
 .owner-login-card{
@@ -1210,7 +1210,7 @@ body{
   background-size:cover;background-position:center;background-repeat:no-repeat;
 }
 .marketplace-category-admin-row{
-  background-image:linear-gradient(100deg,rgba(12,18,28,.88),rgba(12,18,28,.96)),url('/assets/03-categories/category-other.png');
+  background-image:linear-gradient(100deg,rgba(12,18,28,.88),rgba(12,18,28,.96)),url('/assets/02-hero/hero-vaultcore-loop.webp');
   background-size:cover;background-position:center;background-repeat:no-repeat;
 }
 @media(max-width:760px){body{background-attachment:scroll}}
