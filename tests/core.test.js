@@ -186,7 +186,7 @@ test('MLBB account detail matches the locked compact layout and removes unrelate
   const routePage = readFileSync(new URL('../frontend/src/app/catalog/mlbb-akun/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   const detailStart = page.indexOf('{selectedProduct && <div className="modal-backdrop marketplace-detail-backdrop"');
-  const detailEnd = page.indexOf('\\n\\n            {ordersOpen &&', detailStart);
+  const detailEnd = page.indexOf('\n\n            {ordersOpen &&', detailStart);
   assert.ok(detailStart >= 0 && detailEnd > detailStart);
   const detail = page.slice(detailStart, detailEnd);
   assert.match(routePage, /initialCategory="MLBB"/);
@@ -197,13 +197,13 @@ test('MLBB account detail matches the locked compact layout and removes unrelate
   assert.match(detail, /marketplace-detail-stock-pill/);
   assert.match(detail, /marketplace-detail-thumbnails/);
   assert.match(detail, /marketplace-detail-price-panel/);
-  assert.match(detail, /buy\\(product,1\\)/);
+  assert.match(detail, /buy\(product,1\)/);
   assert.doesNotMatch(detail, /Status pengiriman|Jumlah terjual|Rata-rata pengiriman|Minimum pembelian|Jumlah pembelian|Minimum 1 unit|Penyerahan manual oleh VAULT CORE|INFORMASI TOKO|Produk lain dari VAULT CORE/);
   assert.doesNotMatch(page, /detailQuantity|formatAverageDeliveryMinutes|detailRelatedProducts/);
   assert.match(page, /Garansi Anti-Hackback/);
   assert.match(page, /Cara Beli &amp; Tips/);
   assert.match(page, /marketplace-info-modal/);
-  assert.match(styles, /marketplace-detail-page \\.marketplace-detail-body\\{width:100%/);
+  assert.match(styles, /marketplace-detail-page \.marketplace-detail-body\{width:100%/);
   assert.match(styles, /marketplace-detail-stock-pill/);
 });
 
@@ -213,16 +213,16 @@ test('all customer-sale product data is centralized at GET /api/catalog while Ow
   const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
   const ownerRoute = readFileSync(new URL('../backend/routes/admin.js', import.meta.url), 'utf8');
-  assert.match(app, /app\\.use\\('\\/api\\/catalog', apiRateLimit, catalogRoutes\\)/);
-  assert.match(app, /app\\.use\\('\\/api\\/admin', apiRateLimit, ownerRateLimit, requireOwnerSession, requireOwner, adminRoutes\\)/);
-  assert.match(page, /fetch\\(API \\+ '\\/api\\/catalog'/);
-  assert.match(home, /fetch\\(API\\+'\\/api\\/catalog'/);
-  assert.match(route, /res\\.json\\(\\{ products, categories \\}\\)/);
+  assert.match(app, /app\.use\('\/api\/catalog', apiRateLimit, catalogRoutes\)/);
+  assert.match(app, /app\.use\('\/api\/admin', apiRateLimit, ownerRateLimit, requireOwnerSession, requireOwner, adminRoutes\)/);
+  assert.match(page, /fetch\(API \+ '\/api\/catalog'/);
+  assert.match(home, /fetch\(API\+'\/api\/catalog'/);
+  assert.match(route, /res\.json\(\{ products, categories \}\)/);
   assert.match(route, /display_stock: visibleStock/);
-  assert.match(route, /rights_review_active: Boolean\\(purchaseable\\)/);
-  assert.doesNotMatch(route, /sales\\.sold_count|average_delivery_minutes|catalog_status_label/);
-  assert.doesNotMatch(route, /return \\{\\s*\\.\\.\\.product/);
-  assert.match(ownerRoute, /router\\.get\\('\\/products'/);
+  assert.match(route, /rights_review_active: Boolean\(purchaseable\)/);
+  assert.doesNotMatch(route, /sales\.sold_count|average_delivery_minutes|catalog_status_label/);
+  assert.doesNotMatch(route, /return \{\s*\.\.\.product/);
+  assert.match(ownerRoute, /router\.get\('\/products'/);
   assert.match(app, /requireOwnerSession, requireOwner, adminRoutes/);
 });
 
