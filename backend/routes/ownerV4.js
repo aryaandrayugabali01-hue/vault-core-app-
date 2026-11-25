@@ -23,6 +23,43 @@ const SENSITIVE_QUESTION = /(login|password|\bpass\b|kata\s*sandi|otp|session|re
 
 router.post('/orders/:orderNumber/customer-access/:orderItemId/read', readJokiCustomerAccess);
 
+router.get('/products', async (req,res) => {
+  const { rows } = await pool.query(
+    `SELECT p.id,p.sku,p.name,p.description,p.status,p.game_category,p.tier,p.fulfillment_type,
+            p.variant_id,p.variant_subtype,p.sale_price_xtr,p.cost_price_xtr,p.low_stock_threshold,
+            p.display_stock_mode,p.display_stock_override,p.image_url,p.image_gallery,p.attributes,
+            p.customer_terms,p.fulfillment_eta,p.current_rights_review_id,p.created_at,p.updated_at,
+            v.kategori_produk AS variant_category,v.jenis_varian AS variant_name,v.nama_game AS game_name,
+            rr.review_status,rr.valid_until,rr.owner_attested,
+            COUNT(q.pertanyaan_id)::int AS required_questions,
+            COUNT(q.pertanyaan_id) FILTER(WHERE r.response_status IN ('ANSWERED','OWNER_VERIFIED','SECRET_IN_VAULT'))::int AS completed_questions,
+            COUNT(i.id) FILTER(WHERE i.status='AVAILABLE' AND i.rights_review_id=p.current_rights_review_id)::int AS available_stock,
+            COUNT(s.id) FILTER(WHERE s.secret_scope='PRODUCT_ACCOUNT' AND s.secret_status='ACTIVE')::int AS vaulted_stock
+     FROM products p
+     LEFT JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
+     LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
+     LEFT JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=p.variant_id
+     LEFT JOIN vault_core_product_question_responses r ON r.product_id=p.id AND r.question_id=q.pertanyaan_id
+     LEFT JOIN inventory_items i ON i.product_id=p.id
+     LEFT JOIN vault_core_secret_payloads s ON s.inventory_item_id=i.id AND s.secret_status='ACTIVE'
+     WHERE COALESCE(p.is_test,FALSE)=FALSE
+     GROUP BY p.id,v.variant_id,rr.id
+     ORDER BY p.updated_at DESC,p.id DESC
+     LIMIT 250`
+  );
+  return res.json({ products:rows.map((row) => ({
+    ...row,
+    id:Number(row.id),
+    sale_price_xtr:Number(row.sale_price_xtr),
+    cost_price_xtr:Number(row.cost_price_xtr),
+    required_questions:Number(row.required_questions),
+    completed_questions:Number(row.completed_questions),
+    available_stock:Number(row.available_stock),
+    vaulted_stock:Number(row.vaulted_stock),
+    rights_approved:row.review_status==='APPROVED' && row.owner_attested===true && new Date(row.valid_until)>new Date()
+  })) });
+});
+
 router.get('/variants', async (_req, res) => {
   const { rows } = await pool.query(
     `SELECT v.variant_id,v.game_code,v.nama_game,v.kategori_produk,v.jenis_varian,
