@@ -1323,3 +1323,37 @@ body{
   .mlbb-filter-footer button{min-height:50px;font-size:14px}
   .mlbb-sort-control{margin-left:0}
 }
+
+
+/* VAULT CORE catalog controls and account filter sheet: unified dark surface */
+.catalog-controls{display:flex;align-items:center;justify-content:flex-start;gap:10px;min-width:0;margin:0 0 15px}
+.catalog-controls .mlbb-sort-control{margin-left:auto}
+.catalog-controls .mlbb-filter-main{min-height:43px;padding:0 15px;border-radius:12px}
+.mlbb-filter-sheet{
+  background:linear-gradient(155deg,#1a2230 0%,#111821 72%,#0d141d 100%);
+  color:#edf2f8;border:1px solid rgba(166,184,210,.16);
+  box-shadow:0 -18px 60px rgba(0,0,0,.48)
+}
+.mlbb-filter-grip{background:#667386}
+.mlbb-filter-header{border-bottom-color:rgba(180,196,218,.14)}
+.mlbb-filter-header h2,.mlbb-filter-section h3{color:#f4f7fb}
+.mlbb-filter-header button{color:#e9eef7}
+.mlbb-filter-section{border-bottom-color:rgba(180,196,218,.14)}
+.mlbb-range-grid label,.mlbb-choice-row{color:#c8d2e0}
+.mlbb-range-grid input,.mlbb-provider-search input{
+  border-color:#354256;background:#101721;color:#f2f5fa;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.2)
+}
+.mlbb-range-grid input::placeholder,.mlbb-provider-search input::placeholder{color:#748196}
+.mlbb-range-grid label>div b{color:#9ba9bc}
+.mlbb-provider-search{border-color:#354256;background:#101721;color:#9ba9bc}
+.mlbb-choice-row input{accent-color:#00c98b}
+.mlbb-filter-footer{border-top-color:rgba(180,196,218,.15);background:#101720}
+.mlbb-filter-footer button{border-color:#00c98b;background:transparent;color:#7ce6bd}
+.mlbb-filter-footer button:last-child{border-color:#00c98b;background:#00a976;color:#061710}
+.mlbb-filter-empty{margin:0;color:#8998ad;font-size:13px;line-height:1.6}
+@media(max-width:420px){
+  .catalog-controls{gap:8px}
+  .catalog-controls .mlbb-sort-control select{max-width:145px}
+  .mlbb-filter-sheet{max-height:min(91dvh,900px)}
+}
