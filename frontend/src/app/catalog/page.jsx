@@ -211,7 +211,7 @@ export default function HomePage() {
     const numericKeys=['win_rate_min','win_rate_max','total_skins_min','total_skins_max','total_heroes_min','total_heroes_max'];
     return numericKeys.filter((key)=>String(attributeFilters[key]??'').trim()!=='').length
       + (attributeFilters.rank_current ? 1 : 0)
-      + (Array.isArray(attributeFilters.linked_account) ? attributeFilters.linked_account.length : 0);
+      + (Array.isArray(attributeFilters.linked_account) && attributeFilters.linked_account.length ? 1 : 0);
   }, [attributeFilters]);
   const activeMlbbFilter = (id) => {
     if (id === 'rank_current') return Boolean(attributeFilters.rank_current);
@@ -482,11 +482,12 @@ export default function HomePage() {
     for (const [id,label,maximum] of [['win_rate','Winrate',100],['total_skins','Jumlah Skin',null],['total_heroes','Jumlah Hero',null]]) {
       const minimum=String(filterDraft[id+'_min']??'').trim();
       const maximumValue=String(filterDraft[id+'_max']??'').trim();
-      if (minimum && (!Number.isFinite(Number(minimum)) || Number(minimum)<0 || (maximum!==null && Number(minimum)>maximum))) {
+      const isIntegerRange=id!=='win_rate';
+      if (minimum && (!Number.isFinite(Number(minimum)) || Number(minimum)<0 || (isIntegerRange && !Number.isInteger(Number(minimum))) || (maximum!==null && Number(minimum)>maximum))) {
         setNotice('Nilai minimum '+label+' tidak valid.');
         return;
       }
-      if (maximumValue && (!Number.isFinite(Number(maximumValue)) || Number(maximumValue)<0 || (maximum!==null && Number(maximumValue)>maximum))) {
+      if (maximumValue && (!Number.isFinite(Number(maximumValue)) || Number(maximumValue)<0 || (isIntegerRange && !Number.isInteger(Number(maximumValue))) || (maximum!==null && Number(maximumValue)>maximum))) {
         setNotice('Nilai maksimum '+label+' tidak valid.');
         return;
       }
