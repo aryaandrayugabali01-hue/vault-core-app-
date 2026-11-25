@@ -333,7 +333,7 @@ export default function AdminPage() {
   </main>;
   return <main className="admin-shell">
     <StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<button type="button" className="admin-logout" onClick={logoutOwner}>Keluar</button>}/>
-    <section className="admin-title"><span className="eyebrow muted">PANEL KONTROL / PEMILIK</span><h1>Dashboard pemilik</h1><p>Kelola katalog, stok, harga, pesanan, dan laporan usaha dalam XTR.</p></section>
+    <section className="admin-title"><span className="eyebrow muted">PANEL KONTROL / PEMILIK</span><h1>Dashboard pemilik</h1><p>Kelola katalog, stok, harga, pesanan, dan laporan usaha dalam XTR.</p><a href="/admin/v4" className="owner-v4-entry">Buka pengelolaan produk v4 →</a></section>
     {notice && <div className="admin-notice">{notice}</div>}
     {stats && <section className="admin-stats">
       <div><small>Pesanan terbayar</small><strong>{stats.sales.paid_orders}</strong></div>
