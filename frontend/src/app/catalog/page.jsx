@@ -937,7 +937,7 @@ export default function HomePage() {
             <div className="marketplace-detail-sticky-price"><small>TOTAL</small><strong>{(Number(selectedProduct.sale_price_xtr || 0) * detailQuantity).toLocaleString('en-US')} XTR</strong></div>
             <div className="marketplace-detail-sticky-actions">
               {telegramContext && <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available || selectedProduct.is_test || !selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,detailQuantity)}>Keranjang</button>}
-              <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || selectedProduct.is_test || !selectedProduct.is_purchaseable} onClick={()=>{const product=selectedProduct;const quantity=detailQuantity;setSelectedProduct(null);setWarrantyOpen(false);buy(product,quantity);}}>{buyingId === selectedProduct.id ? 'Menyiapkan…' : !selectedProduct.is_available ? 'Stok habis' : !selectedProduct.is_purchaseable ? 'Belum dapat dibeli' : telegramContext ? 'Beli sekarang' : 'Beli melalui Telegram'}</button>
+              <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || selectedProduct.is_test || !selectedProduct.is_purchaseable} onClick={()=>{const product=selectedProduct;const quantity=detailQuantity;setSelectedProduct(null);setWarrantyOpen(false);buy(product,quantity);}}>{buyingId === selectedProduct.id ? 'Menyiapkan…' : !selectedProduct.is_available ? 'Stok habis' : !selectedProduct.is_purchaseable ? 'Tidak tersedia' : telegramContext ? 'Beli sekarang' : 'Beli melalui Telegram'}</button>
             </div>
           </footer>
         </section>
