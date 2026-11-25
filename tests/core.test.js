@@ -157,7 +157,7 @@ test('display stock override caps but cannot inflate actual inventory', () => {
 
 
 test('test fixtures are never visible through the public catalog policy', () => {
-  assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false, sale_price_xtr: 2 }), true);
+  assert.equal(isPublicCatalogProduct({ status:'ACTIVE',is_test:false,sale_price_xtr:2,game_category:'MLBB',fulfillment_type:'GAME_ACCOUNT_TRANSFER',marketplace_category_slug:'mlbb-akun' }),true);
   assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false, sale_price_xtr: 1 }), false);
   assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false }), false);
   assert.equal(isPublicCatalogProduct({ status: 'DRAFT', is_test: false, sale_price_xtr: 2 }), false);
@@ -181,8 +181,8 @@ test('customer catalog displays product prices only in Telegram Stars XTR', () =
 });
 
 test('test products require the Owner-only test checkout lane', () => {
-  const commercial = { status: 'ACTIVE', is_test: false, sale_price_xtr: 2 };
-  const fixture = { status: 'ACTIVE', is_test: true, sale_price_xtr: 1 };
+  const commercial = { status:'ACTIVE',is_test:false,sale_price_xtr:2,game_category:'MLBB',fulfillment_type:'GAME_ACCOUNT_TRANSFER',marketplace_category_slug:'mlbb-akun' };
+  const fixture = { status:'ACTIVE',is_test:true,sale_price_xtr:1,game_category:'MLBB',fulfillment_type:'GAME_ACCOUNT_TRANSFER',marketplace_category_slug:'mlbb-akun' };
   assert.equal(isEligibleCheckoutProduct(commercial), true);
   assert.equal(isEligibleCheckoutProduct({ ...commercial, sale_price_xtr: 1 }), false);
   assert.equal(isEligibleCheckoutProduct({ ...commercial, sale_price_xtr: 0 }), false);
@@ -193,6 +193,9 @@ test('test products require the Owner-only test checkout lane', () => {
   assert.equal(isEligibleCheckoutProduct({ ...fixture, status: 'DRAFT' }, { testMode: true, ownerAuthorized: true }), false);
   assert.equal(isEligibleCheckoutProduct({ ...fixture, sale_price_xtr: 2 }, { testMode: true, ownerAuthorized: true }), false);
   assert.equal(isEligibleCheckoutProduct(commercial, { testMode: true, ownerAuthorized: true }), false);
+  assert.equal(isEligibleCheckoutProduct({ ...commercial, fulfillment_type:'SERVICE_INSTRUCTIONS' }),false);
+  assert.equal(isEligibleCheckoutProduct({ ...commercial, marketplace_category_slug:'mlbb-skin' }),false);
+  assert.equal(isEligibleCheckoutProduct({ ...commercial, game_category:'OTHER' }),false);
 });
 
 test('rate limiter uses Cloudflare client IP when Express request.ip is unavailable', () => {
