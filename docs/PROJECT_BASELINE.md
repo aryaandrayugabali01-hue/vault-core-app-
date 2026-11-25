@@ -43,25 +43,37 @@ Checkout, invoice, dan pembayaran tetap melalui VAULT CORE Telegram Mini App. We
 | Detail produk MLBB | APPROVED / LOCKED (25 Nov 2026) | Ikuti referensi tiga tampilan terbaru: detail produk penuh, modal Anti-Hackback, modal Cara Beli & Tips. |
 | Detail produk game lain | CHANGE | Terapkan struktur konsisten dengan data produk dan kebijakan SKU yang tersedia. |
 | Modal Garansi dan Panduan | APPROVED / LOCKED (25 Nov 2026) | Dua modal terpisah, mobile-first, overlay gelap, scroll internal, close X, body scroll lock. |
-| API katalog | CHANGE terbatas | Perubahan hanya untuk data yang diperlukan detail produk; pertahankan kontrak transaksi. |
+| API katalog customer | LOCKED — satu sumber data publik | Data produk yang dijual hanya dibaca melalui GET /api/catalog. DTO publik hanya memuat field yang dibutuhkan katalog/detail. |
+| API Owner/Admin produk | LOCKED — privat | /api/admin/products hanya untuk pengelolaan Owner dan tetap dilindungi requireOwnerSession + requireOwner. |
 | Rating/ulasan | NOT AVAILABLE | Jangan menampilkan angka rating/ulasan rekaan; belum ada sumber data rating. |
 | Toko | SINGLE-VENDOR | Penjual yang ditampilkan kepada pembeli adalah VAULT CORE; urusan mitra tetap internal. |
 
 ### Referensi visual detail produk
 
 Referensi terbaru yang diberikan pada 25 November 2026 terdiri dari tiga tampilan:
-1. Detail Produk: galeri, nama, rating/ulasan, keamanan, garansi, harga XTR, ringkasan pengiriman/penjualan, Cara Beli & Tips, deskripsi, atribut akun, dan sticky purchase bar.
+1. Detail Produk: header VAULT CORE, galeri/thumbnail, nama, indikator stok, rating/ulasan (belum tersedia sampai ada sumber data), keamanan, garansi, harga XTR, Cara Beli & Tips, deskripsi, spesifikasi akun, dan sticky purchase bar.
 2. Modal Anti-Hackback: cakupan dan ketentuan garansi yang tercatat untuk SKU.
 3. Modal Cara Beli & Tips: langkah pembelian, penyerahan informasi oleh VAULT CORE, dan tips keamanan akun.
+
+### Keputusan path dan data produk (LOCKED, 25 Nov 2026)
+
+- URL katalog khusus MLBB Akun: `/catalog/mlbb-akun`. Halaman ini terkunci ke game MLBB dan subkategori slug `mlbb-akun`; Reset Filter tidak boleh mengembalikan halaman ini ke Semua Game.
+- Endpoint publik tunggal daftar produk jual: `GET /api/catalog`. Respons mempertahankan bentuk `{ products, categories }`.
+- Halaman utama dan seluruh katalog customer membaca data jual melalui `/api/catalog`; detail produk menggunakan objek produk dari respons yang sama. Tidak diperlukan endpoint publik detail produk terpisah.
+- `GET /api/admin/products` tetap merupakan jalur privat Owner untuk manajemen katalog, bukan sumber data halaman penjualan customer.
+- DTO publik hanya menyertakan ID, nama, game, kategori Akun, deskripsi, harga XTR, galeri, atribut customer-visible, ketentuan, panduan, status pembelian, status review aktif, dan nilai stok yang memang boleh ditampilkan.
+- SKU internal, status database mentah, metadata pemeriksaan hak, stok aktual mentah, harga modal, jumlah terjual, dan rata-rata pengiriman tidak dikirim ke DTO publik.
+- Detail tidak memiliki panel status pengiriman, jumlah terjual, rata-rata pengiriman, minimum pembelian, catatan penyerahan manual, kontrol kuantitas, informasi toko, atau rekomendasi produk.
+- Pembelian dari detail dilakukan satu akun per aksi. Indikator stok menggunakan `display_stock`: angka 1 ditampilkan sebagai `STOK TERAKHIR`; mode penyembunyian angka tetap hanya menampilkan `STOK TERSEDIA`. Checkout tetap memvalidasi stok aktual di server.
 
 Referensi terbaru ini menetapkan acuan detail produk MLBB dan menggantikan status penolakan screenshot detail yang lebih lama. Referensi dashboard, Semua Game, dan katalog MLBB tetap LOCKED.
 
 ## 4. Aturan data dan copywriting
 
 - Nama, harga XTR, galeri, deskripsi, atribut, stok, dan ketentuan produk diambil dari API/backend.
-- Jumlah terjual hanya dihitung dari item pesanan berstatus FULFILLED.
-- Rata-rata pengiriman hanya dihitung dari pesanan FULFILLED yang memiliki paid_at dan fulfilled_at.
-- Jika tidak ada data, tampilkan “Belum tersedia”; jangan mengarang angka.
+- Stok customer diambil dari nilai `display_stock` yang dihitung backend sesuai mode tampilan produk; angka stok aktual tidak dikirim secara mentah.
+- Checkout tetap memvalidasi stok aktual dan reservasi di backend.
+- Statistik penjualan/pengiriman tidak ditampilkan pada halaman detail customer.
 - Rating dan jumlah ulasan belum memiliki sumber backend/database.
 - Informasi akun/data akun diberikan oleh VAULT CORE kepada pembeli. Pembeli berurusan dengan VAULT CORE; jangan membebankan urusan internal mitra kepada pembeli.
 - Ketentuan garansi harus berasal dari data resmi SKU. Jangan menggeneralisasi garansi satu SKU ke semua SKU.
@@ -96,17 +108,17 @@ Referensi terbaru ini menetapkan acuan detail produk MLBB dan menggantikan statu
 |---|---|---|
 | CAT-01 | Semua Game | Tidak berubah dari baseline terkunci. |
 | CAT-02 | Kategori dan navigasi | Tab dan navigasi tetap benar. |
-| CAT-03 | MLBB/Akun | Tetap sesuai baseline terkunci. |
+| CAT-03 | MLBB/Akun | Route /catalog/mlbb-akun tetap terkunci ke MLBB/Akun. |
 | CAT-04 | Lima filter MLBB | Urutan dan fungsi tidak berubah. |
 | CAT-05 | Kartu produk | Nama, gambar, harga, stok berasal dari backend. |
-| CAT-06 | Detail produk | Struktur dan urutan sesuai referensi terbaru. |
+| CAT-06 | Detail produk | Struktur dan urutan sesuai referensi terbaru; elemen yang ditetapkan untuk dihapus tetap tidak tampil. |
 | CAT-07 | Galeri | Gambar utama dan thumbnail bekerja. |
 | CAT-08 | Spesifikasi | Semua atribut customer-visible berasal dari backend. |
 | CAT-09 | Anti-Hackback | Ketentuan sesuai SKU; SKU tanpa ketentuan ditandai belum tersedia. |
 | CAT-10 | Cara Beli & Tips | Data panduan kategori ditampilkan dan VAULT CORE menjadi pihak yang berhubungan dengan pembeli. |
 | CAT-11 | Modal | Dua modal terpisah, X berfungsi, scroll internal, body belakang terkunci. |
-| CAT-12 | Sticky purchase bar | Harga/subtotal XTR benar; aksi hanya menuju alur Mini App. |
-| CAT-13 | Statistik | Sold count dan waktu pengiriman berasal dari order FULFILLED. |
+| CAT-12 | Sticky purchase bar | Harga satu akun XTR benar; aksi hanya menuju alur Mini App. |
+| CAT-13 | Detail ringkas | Tidak menampilkan sold count, rata-rata pengiriman, minimum pembelian, atau panel penyerahan manual. |
 | CAT-14 | Checkout | Validasi harga/stok dan invoice XTR tidak berubah. |
 | CAT-15 | Mobile | Tidak ada overflow/clipping pada Android. |
 | CAT-16 | Build/test | Semua pemeriksaan CI yang relevan lulus. |
@@ -124,6 +136,7 @@ Rilis hanya setelah ruang lingkup terpenuhi, area LOCKED aman, test/build lulus,
 |---|---|---|---|---|
 | 2026-11-25 | `a4fa611b8b7e4e2b8302eafd91b2ab93a766f1ef` | Halaman detail produk mobile-first, modal Anti-Hackback dan Cara Beli & Tips, statistik penjualan/pengiriman dari pesanan selesai | `frontend/src/app/catalog/page.jsx`, `frontend/src/app/globals.css`, `backend/routes/catalog.js`, `tests/core.test.js` | 50 test backend/core PASS; build Mini App PASS; API Worker dry-run PASS; production workflow SUCCESS. |
 | 2026-11-25 | `0c7b03f91094c854189df77f946b043e16cdd6d0` | Membuat baseline pengendali dan mencatat acuan detail terbaru | `docs/PROJECT_BASELINE.md` | Dokumen saja; tidak mengubah aplikasi. |
+| 2026-11-25 | PENDING PR | Mengunci route `/catalog/mlbb-akun`, menyederhanakan detail sesuai acuan terbaru, membersihkan DTO `/api/catalog`, dan membuang statistik/panel yang tidak diminta | `frontend/src/app/catalog/mlbb-akun/page.jsx`, `frontend/src/app/catalog/page.jsx`, `frontend/src/app/globals.css`, `backend/routes/catalog.js`, `tests/core.test.js`, `docs/PROJECT_BASELINE.md` | Menunggu CI, deployment, dan verifikasi produksi. |
 
 ## 9. Status audit data produksi (25 Nov 2026)
 
