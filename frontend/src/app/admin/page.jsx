@@ -7,7 +7,6 @@ import { splitInventoryPayloads } from '../../lib/inventory';
 import { parseProductAttributesText, formatProductAttributesText } from '../../lib/product-attributes';
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
-const TIER_LABELS = { SILVER:'Silver', GOLD:'Gold', PLATINUM:'Platinum', SERVICE:'Layanan' };
 const STATUS_LABELS = {
   DRAFT:'Draf', ACTIVE:'Aktif', PAUSED:'Dijeda', ARCHIVED:'Diarsipkan',
   PENDING_PAYMENT:'Menunggu pembayaran', PAID:'Pembayaran diterima', FULFILLING:'Sedang dikirim',
@@ -17,7 +16,7 @@ const STATUS_LABELS = {
 const API_ERROR_MESSAGES = {
   TELEGRAM_AUTH_REQUIRED:'Sesi Telegram tidak dapat diverifikasi. Buka ulang VAULT CORE melalui bot Telegram.',
   ADMIN_ACCESS_REQUIRED:'Akses ditolak. Gunakan akun Telegram pemilik VAULT CORE.',
-  INVALID_PRODUCT_INPUT:'Periksa kembali SKU, kategori, tingkat produk, metode pemenuhan, dan harga.',
+  INVALID_PRODUCT_INPUT:'Periksa kembali SKU, game, subkategori Akun, spesifikasi, dan harga.',
   INVALID_PRODUCT_UPDATE:'Perubahan produk belum lengkap atau tidak valid. Periksa kembali data yang akan disimpan.',
   INVALID_PRODUCT_IMAGE_URL:'Gunakan URL gambar HTTPS atau path lokal /assets/ yang valid.',
   PRODUCT_SKU_ALREADY_EXISTS:'SKU tersebut sudah digunakan oleh produk lain.',
@@ -26,8 +25,8 @@ const API_ERROR_MESSAGES = {
   PRODUCT_REVIEW_REFERENCE_REQUIRED:'Tambahkan referensi verifikasi hak penjualan sebelum mengaktifkan produk.',
   PRODUCT_NOT_FOUND:'Produk tidak ditemukan. Muat ulang daftar produk lalu coba kembali.',
   INVALID_EXPENSE_INPUT:'Lengkapi kategori, keterangan, dan jumlah biaya operasional dengan benar.',
-  INVALID_INVENTORY_INPUT:'Masukkan 1 hingga 100 unit stok digital, satu unit pada setiap baris.',
-  INVALID_ASSET_PAYLOAD:'Stok tidak dapat disimpan. Pastikan setiap baris berisi kode atau instruksi digital yang didukung.',
+  INVALID_INVENTORY_INPUT:'Masukkan 1 hingga 100 data akun, satu akun per baris.',
+  INVALID_ASSET_PAYLOAD:'Stok tidak dapat disimpan. Pastikan setiap baris berisi data akun yang didukung.',
   ORDER_OR_PAYMENT_NOT_FOUND:'Pesanan atau catatan pembayarannya tidak ditemukan.',
   ORDER_ALREADY_REFUNDED:'Pengembalian dana untuk pesanan ini sudah selesai.',
   ORDER_NOT_REFUNDABLE:'Status pesanan ini belum memenuhi syarat untuk pengembalian dana.',
@@ -61,7 +60,7 @@ export default function AdminPage() {
   const [rightsForm, setRightsForm] = useState({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
   const [displayCap, setDisplayCap] = useState({});
   const [editingProductId, setEditingProductId] = useState('');
-  const [editForm, setEditForm] = useState({ sku:'', gameCategory:'MLBB', tier:'SILVER', marketplaceCategoryId:'', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', imageUrl:'', imageGalleryText:'', attributesText:'', customerTerms:'', fulfillmentEta:'' });
+  const [editForm, setEditForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', marketplaceCategoryId:'', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', imageUrl:'', imageGalleryText:'', attributesText:'', customerTerms:'', fulfillmentEta:'' });
   const [busy, setBusy] = useState(false);
   const [authState, setAuthState] = useState('checking');
   const [botUsername, setBotUsername] = useState('');
@@ -158,12 +157,12 @@ export default function AdminPage() {
     setEditingProductId(String(product.id));
     setEditForm({
       sku:product.sku || '',
-      gameCategory:product.game_category || 'OTHER',
+      gameCategory:product.game_category || 'MLBB',
       marketplaceCategoryId:product.marketplace_category_id ? String(product.marketplace_category_id) : '',
-      tier:product.tier || 'SILVER',
+      tier:'GOLD',
       name:product.name || '',
       description:product.description || '',
-      fulfillmentType:product.fulfillment_type || 'REDEEM_CODE',
+      fulfillmentType:'GAME_ACCOUNT_TRANSFER',
       salePriceXtr:String(product.sale_price_xtr ?? ''),
       costPriceXtr:String(product.cost_price_xtr ?? '0'),
       imageUrl:product.image_url || '',
@@ -353,18 +352,21 @@ export default function AdminPage() {
     </section>
 
     {editingProductId && <section className="admin-panel" id="product-edit-panel">
-      <div className="admin-section-head"><div><span className="eyebrow muted">OWNER / EDIT SKU</span><h2>Edit rincian produk</h2><p>Perubahan disimpan ke SKU yang dipilih. Metode pemenuhan baru memerlukan review ulang.</p></div></div>
+      <div className="admin-section-head"><div><span className="eyebrow muted">OWNER / EDIT SKU</span><h2>Edit rincian produk</h2><p>Perubahan disimpan ke SKU yang dipilih. Identitas, spesifikasi, dan ketentuan produk memerlukan review ulang CR-05.</p></div></div>
       <form className="admin-form" onSubmit={saveProductDetails}>
         <label>SKU<input required value={editForm.sku} onChange={e=>setEditForm({...editForm,sku:e.target.value.toUpperCase()})} /></label>
-        <label>Game<select value={editForm.gameCategory} onChange={e=>setEditForm({...editForm,gameCategory:e.target.value})}>{Object.entries(GAME_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-        <label className="span-2">Kategori marketplace<select value={editForm.marketplaceCategoryId} onChange={e=>setEditForm({...editForm,marketplaceCategoryId:e.target.value})}><option value="">Belum ditetapkan</option>{marketplaceCategories.filter((item)=>item.is_active).map((item)=><option key={item.id} value={String(item.id)}>{item.name}</option>)}</select><small className="field-hint">Perubahan kategori marketplace memerlukan review ulang CR-05.</small></label>
-        <label>Tier<select value={editForm.tier} onChange={e=>setEditForm({...editForm,tier:e.target.value})}>{Object.entries(TIER_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label>Game<select value={editForm.gameCategory} onChange={e=>{
+          const slug=({MLBB:'mlbb-akun',FREE_FIRE:'free-fire-akun',ROBLOX:'roblox-akun',GENSHIN:'genshin-akun'})[e.target.value];
+          const accountCategory=marketplaceCategories.find(item=>item.slug===slug&&item.is_active);
+          setEditForm({...editForm,gameCategory:e.target.value,marketplaceCategoryId:accountCategory?String(accountCategory.id):''});
+        }}>{Object.entries(GAME_LABELS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
+        <label>Subkategori<input value="Akun" readOnly /></label>
+        <input type="hidden" value="GOLD" readOnly />
+        <input type="hidden" value="GAME_ACCOUNT_TRANSFER" readOnly />
         <label>Nama produk<input required maxLength="160" value={editForm.name} onChange={e=>setEditForm({...editForm,name:e.target.value})} /></label>
         <label className="span-2">Deskripsi produk<textarea rows="3" maxLength="5000" value={editForm.description} onChange={e=>setEditForm({...editForm,description:e.target.value})} /></label>
-        <label className="span-2">Atribut produk <small className="field-hint">Format Key|Value, satu atribut per baris. Perubahan atribut memerlukan review ulang CR-05.</small><textarea rows="4" value={editForm.attributesText} onChange={e=>setEditForm({...editForm,attributesText:e.target.value})} placeholder={'Rank|Mythic\nServer|Asia\nLevel|75'} /></label>
-        <label>Metode pemenuhan<select value={editForm.fulfillmentType} onChange={e=>setEditForm({...editForm,fulfillmentType:e.target.value})}>
-          <option value="REDEEM_CODE">Kode redeem</option><option value="VOUCHER_CODE">Kode voucher</option><option value="LICENSE_KEY">Kunci lisensi</option><option value="GIFT_CODE">Kode hadiah</option><option value="DIGITAL_FILE">Berkas digital</option><option value="SERVICE_INSTRUCTIONS">Petunjuk layanan</option><option value="GAME_ACCOUNT_TRANSFER">Transfer akun melalui prosedur resmi</option>
-        </select></label>
+        <label className="span-2">Atribut produk <small className="field-hint">Spesifikasi akun. Format Key|Value, satu atribut per baris. Perubahan atribut memerlukan review ulang CR-05.</small><textarea rows="4" value={editForm.attributesText} onChange={e=>setEditForm({...editForm,attributesText:e.target.value})} placeholder={'Win Rate|58%\nJumlah Skin|120\nJumlah Hero|85\nRank Saat Ini|Mythic\nAkun Terhubung Pada|Moonton, Google'} /></label>
+
         <label>Harga jual (XTR)<input required type="number" min="2" step="1" value={editForm.salePriceXtr} onChange={e=>setEditForm({...editForm,salePriceXtr:e.target.value})} /></label>
         <label>Modal (XTR)<input required type="number" min="0" step="1" value={editForm.costPriceXtr} onChange={e=>setEditForm({...editForm,costPriceXtr:e.target.value})} /></label>
         <label className="span-2">URL gambar utama (HTTPS atau /assets/)<input type="text" value={editForm.imageUrl} onChange={e=>setEditForm({...editForm,imageUrl:e.target.value})} placeholder="https://.../produk.webp" /></label>
@@ -379,14 +381,14 @@ export default function AdminPage() {
       <form className="admin-form" onSubmit={addStock}>
         <label className="span-2">Produk<select required value={stockProduct} onChange={e=>setStockProduct(e.target.value)}><option value="">Pilih produk yang siap menerima stok</option>{products.filter(p=>['DRAFT','ACTIVE'].includes(p.status) && p.rights_review_usable && !p.is_test).map(p=><option key={p.id} value={p.id}>{p.sku} · {p.name}</option>)}</select></label>
         <label className="span-2">Referensi sumber/vendor atau asal internal Owner<input required minLength="3" maxLength="2000" value={stockSourceReference} onChange={e=>setStockSourceReference(e.target.value)} placeholder="Nomor dokumen, vendor/ref sumber, atau ID asal internal" /></label>
-        <label className="span-2">Satu unit per baris<textarea required rows="5" value={stockPayload} onChange={e=>setStockPayload(e.target.value)} placeholder="Masukkan kode digital/instruksi pemenuhan satu unit per baris." /></label>
+        <label className="span-2">Data akun, satu JSON per baris<textarea required rows="5" value={stockPayload} onChange={e=>setStockPayload(e.target.value)} placeholder={'{"email":"akun@example.com","password":"...","recovery":"..."}'} /></label>
         <button className="admin-primary" disabled={busy || !stockSourceReference.trim()}>Enkripsi dan simpan stok</button>
       </form>
     </section>
 
     <section className="admin-panel"><div className="admin-section-head"><div><span className="eyebrow muted">PENGELOLAAN STOK</span><h2>Produk dan tampilan stok</h2></div></div>
       <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Produk</th><th>Harga jual / rentang</th><th>Modal (XTR)</th><th>Stok aktual</th><th>Batas tampilan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
-      {products.map(p=><tr key={p.id}><td><strong>{p.name} {p.is_test ? <span className="test-product-label">CONTOH UJI</span> : null}</strong><small>{p.sku} · {GAME_LABELS[p.game_category] || p.game_category} / {p.tier === 'SERVICE' ? 'Katalog' : (TIER_LABELS[p.tier] || p.tier)}</small><details className="admin-product-details"><summary>Detail lengkap</summary><div><p>{p.description || 'Deskripsi belum diisi.'}</p><small>Metode: {p.fulfillment_type || 'BELUM DIKETAHUI'} · Review internal: {p.rights_review_status || 'BELUM ADA'} · Berlaku sampai: {p.rights_valid_until ? new Date(p.rights_valid_until).toLocaleDateString('id-ID') : 'BELUM DIKETAHUI'} · Referensi lama: {p.rights_review_reference || '—'} · Stok aktual: {p.actual_stock} · Status: {displayStatus(p.status)}</small></div></details></td><td><strong>{xtr(p.sale_price_xtr)}</strong><small>{idrRange(p.attributes) ? 'Referensi pasar: ' + idrRange(p.attributes) : 'Referensi IDR belum tersedia'}</small></td><td>{xtr(p.cost_price_xtr)}</td><td>{p.actual_stock}</td><td><input className="cap-input" type="number" min="0" value={displayCap[p.id] ?? p.display_stock_override ?? ''} placeholder="Aktual" onChange={e=>setDisplayCap({...displayCap,[p.id]:e.target.value})}/></td><td><span className={`admin-status ${p.status.toLowerCase()}`}>{displayStatus(p.status)}</span></td><td><div className="admin-actions"><button onClick={()=>updateProduct(p.id,{displayStockOverride:displayCap[p.id]==='' ? null : Number(displayCap[p.id])})} disabled={busy}>Simpan batas</button>{!p.is_test && <button onClick={()=>startEditProduct(p)} disabled={busy}>Edit detail</button>}{p.is_test ? <button disabled title="Fixture hanya dapat diaktifkan melalui ruang uji Owner">Ruang uji Owner</button> : p.status==='ACTIVE' ? <button onClick={()=>updateProduct(p.id,{status:'PAUSED'})} disabled={busy}>Jeda</button> : p.rights_review_usable && p.fulfillment_type ? <button onClick={()=>updateProduct(p.id,{status:'ACTIVE'})} disabled={busy}>Aktifkan</button> : <button onClick={()=>{setRightsProductId(String(p.id));document.getElementById('rights-review-panel')?.scrollIntoView({behavior:'smooth',block:'start'});}} disabled={busy}>Periksa CR-05</button>}</div></td></tr>)}
+      {products.map(p=><tr key={p.id}><td><strong>{p.name} {p.is_test ? <span className="test-product-label">CONTOH UJI</span> : null}</strong><small>{p.sku} · {GAME_LABELS[p.game_category] || p.game_category} / Akun</small><details className="admin-product-details"><summary>Detail lengkap</summary><div><p>{p.description || 'Deskripsi belum diisi.'}</p><small>Metode: Transfer akun · Review internal: {p.rights_review_status || 'BELUM ADA'} · Berlaku sampai: {p.rights_valid_until ? new Date(p.rights_valid_until).toLocaleDateString('id-ID') : 'BELUM DIKETAHUI'} · Referensi lama: {p.rights_review_reference || '—'} · Stok aktual: {p.actual_stock} · Status: {displayStatus(p.status)}</small></div></details></td><td><strong>{xtr(p.sale_price_xtr)}</strong><small>{idrRange(p.attributes) ? 'Referensi pasar: ' + idrRange(p.attributes) : 'Referensi IDR belum tersedia'}</small></td><td>{xtr(p.cost_price_xtr)}</td><td>{p.actual_stock}</td><td><input className="cap-input" type="number" min="0" value={displayCap[p.id] ?? p.display_stock_override ?? ''} placeholder="Aktual" onChange={e=>setDisplayCap({...displayCap,[p.id]:e.target.value})}/></td><td><span className={`admin-status ${p.status.toLowerCase()}`}>{displayStatus(p.status)}</span></td><td><div className="admin-actions"><button onClick={()=>updateProduct(p.id,{displayStockOverride:displayCap[p.id]==='' ? null : Number(displayCap[p.id])})} disabled={busy}>Simpan batas</button>{!p.is_test && <button onClick={()=>startEditProduct(p)} disabled={busy}>Edit detail</button>}{p.is_test ? <button disabled title="Fixture hanya dapat diaktifkan melalui ruang uji Owner">Ruang uji Owner</button> : p.status==='ACTIVE' ? <button onClick={()=>updateProduct(p.id,{status:'PAUSED'})} disabled={busy}>Jeda</button> : p.rights_review_usable && p.fulfillment_type ? <button onClick={()=>updateProduct(p.id,{status:'ACTIVE'})} disabled={busy}>Aktifkan</button> : <button onClick={()=>{setRightsProductId(String(p.id));document.getElementById('rights-review-panel')?.scrollIntoView({behavior:'smooth',block:'start'});}} disabled={busy}>Periksa CR-05</button>}</div></td></tr>)}
       {!products.length && <tr><td colSpan="7" className="table-empty">Belum ada produk dibuat.</td></tr>}
       </tbody></table></div>
       <p className="admin-footnote">Batas tampilan hanya membatasi angka yang ditampilkan. Sistem tetap menghitung dan memeriksa stok tersedia aktual saat checkout.</p><p className="admin-footnote">Produk komersial menerima stok hanya setelah pemeriksaan internal Owner APPROVED dan masih berlaku. Setiap batch stok wajib memiliki referensi sumber.</p>
