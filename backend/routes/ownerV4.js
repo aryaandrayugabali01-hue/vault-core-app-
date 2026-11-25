@@ -386,6 +386,7 @@ router.post('/products/:productId/inventory', async (req, res) => {
   const marker = encryptPayload('VAULT_CORE_V4_SECRET_MANAGED');
   const client = await pool.connect();
   const inserted = [];
+  let replacedLegacyStockCount=0;
   try {
     await client.query('BEGIN');
     for (let index=0; index<quantity; index++) {
@@ -424,7 +425,6 @@ router.post('/products/:productId/inventory', async (req, res) => {
       inserted.push({ id:inventoryItem.id,status:inventoryItem.status });
     }
 
-    let replacedLegacyStockCount=0;
     if (isAccount && req.body?.replaceLegacyStock===true) {
       const { rows: retired } = await client.query(
         `UPDATE inventory_items i
