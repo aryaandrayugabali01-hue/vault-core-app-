@@ -149,6 +149,13 @@ test('credential and authentication secrets are refused as fulfillment payloads'
   assert.throws(() => assertAllowedDigitalPayload('session cookie: abcdef'), /not supported/i);
 });
 
+test('encrypted account inventory accepts one account record per line and blocks session secrets', () => {
+  const payload = '{"account_id":"player-001","account_password":"secret-value","login_method":"Moonton"}';
+  assert.equal(assertAllowedDigitalPayload(payload), payload);
+  assert.throws(() => assertAllowedDigitalPayload('session_cookie=secret'), /not supported/i);
+  assert.throws(() => assertAllowedDigitalPayload('recovery_code=123456'), /not supported/i);
+});
+
 test('display stock override caps but cannot inflate actual inventory', () => {
   assert.equal(resolveDisplayStock({ actualStock: 3, override: 99 }), 3);
   assert.equal(resolveDisplayStock({ actualStock: 20, override: 4 }), 4);
@@ -635,6 +642,7 @@ test('marketplace categories are restricted to the four canonical game account c
   assert.equal(result.value.purchaseGuide.length,1);
   assert.equal(validateMarketplaceCategory({...result.value,slug:'joki'}).ok,false);
   assert.equal(validateMarketplaceCategory({...result.value,slug:'mlbb-skin'}).ok,false);
+  assert.equal(validateMarketplaceCategory({...result.value,name:'Gift'}).ok,false);
   assert.equal(validateMarketplaceCategory({...result.value,purchaseGuide:Array(13).fill({title:'Step',content:'Text'})}).ok,false);
 });
 
