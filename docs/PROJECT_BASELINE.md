@@ -176,3 +176,13 @@ The latest three-screen reference supplied by the owner is the controlling visua
 - Preserve the supplied "INFORMASI PENAWARAN" wording and paragraph separation.
 - Show this game-specific notice only when the active catalog category is MLBB, not across Free Fire, Roblox, or Genshin listings.
 - Keep the existing global VAULT CORE footer and all catalog, filter, purchase, and XTR behavior intact.
+
+
+## 13. Detail product visual alignment — 25 Nov 2026
+
+- The newly supplied three-panel mobile screenshot is the controlling reference for the MLBB product detail composition and both information sheets.
+- Main-page order: gallery and thumbnails; product title and customer-rating status; three compact trust indicators; gold XTR price; separate blue Anti-Hackback trigger; three compact offer-stat rows; full-width Cara Beli & Tips trigger; description; account specifications with contextual emoji; remaining product information below.
+- Use emoji consistently for security, account attributes, coins, cart, delivery speed, minimum purchase, and guide navigation.
+- Both information sheets remain separate dark-navy bottom sheets with blue neon border/highlights and a gold “Mengerti” action. Warranty details and purchase steps remain sourced from the product/category backend.
+- Rating and review counts remain “Belum tersedia” until a real backend source exists. Never copy sample values 5.0 / 206 from the visual reference into live product data.
+- Preserve backend-derived price, sales count, delivery average, attributes, warranty terms, purchase guide, XTR checkout, and all catalog behavior.
