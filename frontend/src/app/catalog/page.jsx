@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getInitData, getTelegramWebApp, openInvoice } from '../../lib/telegram';
 import { getCustomerVisibleProductAttributes, normalizeCustomerDisplayText } from '../../lib/product-attributes';
 import { GAME_ORDER, GAME_LABELS, GAME_ART, GAME_BACKGROUNDS } from '../../lib/marketplace.js';
+import { StoreHeader, StoreBottomNav, NavigationIcon } from '../../components/store-navigation.jsx';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const TRUST_ITEMS = [
@@ -695,18 +696,12 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
 
   return <>
     <main className="shell">
-      <header className="topbar">
-        <a className="brand" href="/" aria-label="Dashboard VAULT CORE" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}>
-          <img className="brand-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" />
-        </a>
-        <label className="top-searchbox" aria-label="Cari katalog">
-          <AppIcon name="search" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari game atau nama akun…" aria-label="Cari game atau nama akun" />
-          {query && <button className="clear-search" type="button" onClick={() => setQuery('')} aria-label="Hapus pencarian">×</button>}
-        </label>
-        {telegramContext && <><button className="top-cart-button" type="button" onClick={()=>setCartOpen(true)} aria-label={'Buka keranjang, '+cartCount+' item'}><AppIcon name="orders" /><span>Keranjang</span><b>{cartCount}</b></button>
-        <button className="top-profile-button" type="button" onClick={openProfile} aria-label="Buka profil"><AppIcon name="profile" /><span>Profil</span></button></>}
-      </header>
+      <StoreHeader searchValue={query} onSearchChange={setQuery} searchPlaceholder="Cari game atau nama akun…"
+        rightSlot={<>
+          <button className="dashboard-icon-button" type="button" onClick={()=>telegramContext?showOrders():setNotice('Riwayat pesanan tersedia melalui Telegram Mini App.')} aria-label="Notifikasi dan pesanan"><NavigationIcon name="bell"/></button>
+          <button className="dashboard-icon-button" type="button" onClick={()=>telegramContext?setCartOpen(true):setNotice('Keranjang tersedia melalui Telegram Mini App.')} aria-label={'Buka keranjang, '+cartCount+' item'}><NavigationIcon name="cart"/></button>
+          <button className="dashboard-icon-button" type="button" onClick={openProfile} aria-label="Buka profil"><NavigationIcon name="user"/></button>
+        </>}/>
 
       {telegramContext === false && <aside className="browser-access-notice" role="status">
         <strong>Transaksi hanya melalui Telegram Mini App</strong>
@@ -809,12 +804,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
       </section>
       <footer className="footer"><a className="brand" href="/" aria-label="VAULT CORE" onClick={() => { setActiveTab('home'); setOrdersOpen(false); setProfileOpen(false); }}><img className="brand-logo footer-brand-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /></a><small>© {new Date().getFullYear()} VAULT CORE. Marketplace akun game.</small></footer>
 
-      {telegramContext && <nav className="bottom-nav" aria-label="Navigasi utama">
-        <button type="button" className="nav-item" onClick={() => window.location.assign('/')}><AppIcon name="home" /><span>Dashboard</span></button>
-        <button type="button" className={'nav-item ' + (activeTab === 'categories' ? 'active' : '')} aria-current={activeTab === 'categories' ? 'page' : undefined} onClick={() => navigate('categories')}><AppIcon name="categories" /><span>Katalog</span></button>
-        <button type="button" className={'nav-item ' + (activeTab === 'orders' ? 'active' : '')} aria-current={activeTab === 'orders' ? 'page' : undefined} onClick={() => navigate('orders')}><AppIcon name="orders" /><span>Pesanan</span></button>
-        <button type="button" className={'nav-item ' + (activeTab === 'profile' ? 'active' : '')} aria-current={activeTab === 'profile' ? 'page' : undefined} onClick={() => navigate('profile')}><AppIcon name="profile" /><span>Profil</span></button>
-      </nav>}
+      <StoreBottomNav active={isPinnedCatalogRoute ? "categories" : "catalog"}/>
 
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Tutup">×</button></div>}
 
@@ -899,13 +889,16 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
 {selectedProduct && <div className="modal-backdrop marketplace-detail-backdrop" onClick={() => { setSelectedProduct(null); setWarrantyOpen(false); }}>
         <section className="product-detail-modal marketplace-detail-modal marketplace-detail-page" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onClick={(e) => e.stopPropagation()}>
           <header className="marketplace-detail-header">
-            <div className="marketplace-detail-brandbar"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /></div>
+            <StoreHeader searchValue={query} onSearchChange={setQuery} searchPlaceholder="Cari produk katalog…"
+              rightSlot={<>
+                <button className="dashboard-icon-button" type="button" onClick={()=>telegramContext?showOrders():setNotice('Riwayat pesanan tersedia melalui Telegram Mini App.')} aria-label="Notifikasi dan pesanan"><NavigationIcon name="bell"/></button>
+                <button className="dashboard-icon-button" type="button" onClick={()=>telegramContext?setCartOpen(true):setNotice('Keranjang tersedia melalui Telegram Mini App.')} aria-label="Buka keranjang"><NavigationIcon name="cart"/></button>
+                <button className="dashboard-icon-button" type="button" onClick={openProfile} aria-label="Buka profil"><NavigationIcon name="user"/></button>
+              </>}/>
             <div className="marketplace-detail-toolbar">
               <button className="marketplace-detail-back" type="button" onClick={() => { setSelectedProduct(null); setWarrantyOpen(false); }} aria-label="Kembali ke katalog">‹</button>
               <div className="marketplace-detail-toolbar-title"><strong>{selectedProduct.name}</strong><small>{GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · Akun</small></div>
-              <button className="marketplace-detail-tool-action" type="button" onClick={()=>setCatalogSearchOpen(true)} aria-label="Cari produk"><AppIcon name="search"/></button>
               <button className="marketplace-detail-tool-action" type="button" onClick={()=>{const url=window.location.href;if(typeof navigator!=='undefined'&&navigator.share){navigator.share({title:selectedProduct.name,url}).catch(()=>{});}else if(typeof navigator!=='undefined'&&navigator.clipboard){navigator.clipboard.writeText(url).then(()=>setNotice('Tautan produk disalin.')).catch(()=>setNotice('Tautan produk tidak dapat disalin.'));}}} aria-label="Bagikan produk">↗</button>
-              <button className="marketplace-detail-tool-action" type="button" onClick={()=>setCartOpen(true)} aria-label="Buka keranjang">🛒</button>
             </div>
           </header>
           <div className="marketplace-detail-scroll">
@@ -959,10 +952,13 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
               {detailCustomerTerms && <section className="marketplace-detail-section marketplace-detail-terms-footer"><h2>Ketentuan Produk</h2><p>{detailCustomerTerms}</p></section>}
             </div>
           </div>
-          <footer className="marketplace-detail-stickybar">
-            <button className="detail-secondary-button" data-visual="marketplace-detail-cart-button" type="button" aria-label="Tambahkan ke keranjang" disabled={!selectedProduct.is_available || !selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,1)}>🛒</button>
-            <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || !selectedProduct.is_purchaseable} onClick={()=>{const product=selectedProduct;setSelectedProduct(null);setWarrantyOpen(false);buy(product,1);}}>{buyingId === selectedProduct.id ? 'Menyiapkan…' : !selectedProduct.is_available ? 'Stok habis' : !selectedProduct.is_purchaseable ? 'Tidak tersedia' : 'Beli · ' + Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US') + ' XTR'}</button>
-          </footer>
+          <div className="marketplace-detail-footer-stack">
+            <footer className="marketplace-detail-stickybar">
+              <button className="detail-secondary-button" data-visual="marketplace-detail-cart-button" type="button" aria-label="Tambahkan ke keranjang" disabled={!selectedProduct.is_available || !selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,1)}>🛒</button>
+              <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || !selectedProduct.is_purchaseable} onClick={()=>{const product=selectedProduct;setSelectedProduct(null);setWarrantyOpen(false);buy(product,1);}}>{buyingId === selectedProduct.id ? 'Menyiapkan…' : !selectedProduct.is_available ? 'Stok habis' : !selectedProduct.is_purchaseable ? 'Tidak tersedia' : 'Beli · ' + Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US') + ' XTR'}</button>
+            </footer>
+            <StoreBottomNav active="catalog" embedded/>
+          </div>
         </section>
       </div>}
 
