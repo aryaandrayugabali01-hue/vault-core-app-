@@ -124,7 +124,7 @@ router.put('/products/:productId/questions', async (req, res) => {
     return res.status(400).json({ error: 'INVALID_QUESTION_RESPONSES' });
   }
   const { rows: products } = await pool.query(
-    'SELECT id,variant_id FROM products WHERE id=$1 AND COALESCE(is_test,FALSE)=FALSE',
+    'SELECT p.id,p.variant_id,v.kategori_produk AS variant_group FROM products p JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id WHERE p.id=$1 AND COALESCE(p.is_test,FALSE)=FALSE',
     [productId]
   );
   const product = products[0];
@@ -157,7 +157,7 @@ router.put('/products/:productId/questions', async (req, res) => {
       if (sensitive && responseText) {
         throw Object.assign(new Error('SECRET_MUST_BE_SUBMITTED_TO_ENCRYPTED_VAULT'),{status:400});
       }
-      const jokiAccessWorkflowConfirmed = productVariantGroup(product.variant_id, question.pertanyaan_wajib)
+      const jokiAccessWorkflowConfirmed = productVariantGroup(product.variant_group, question.pertanyaan_wajib)
         && answer?.confirmPostPaymentVault === true;
       const responseStatus = sensitive
         ? (jokiAccessWorkflowConfirmed ? 'OWNER_VERIFIED' : 'PENDING')
@@ -329,7 +329,7 @@ router.post('/products/:productId/inventory', async (req, res) => {
             (product_id,question_id,response_text,proof_urls,response_status,created_by_telegram_id)
            SELECT $1,q.pertanyaan_id,'','[]'::jsonb,'SECRET_IN_VAULT',$2
            FROM vault_core_pertanyaan_wajib_only q
-           WHERE q.variant_id=$3 AND q.pertanyaan_wajib ~* '(login|password|\\mpass\\M|kata[[:space:]]+sandi|otp|session|recovery|token)'
+           WHERE q.variant_id=$3 AND q.pertanyaan_wajib ~* '(login|password|pass|sandi|otp|session|recovery|token)'
            ON CONFLICT(product_id,question_id) DO UPDATE SET
              response_text='',response_status='SECRET_IN_VAULT',updated_at=NOW()`,
           [product.id,String(req.telegramUser.id),product.variant_id]
