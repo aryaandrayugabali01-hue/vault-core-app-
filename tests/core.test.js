@@ -959,16 +959,18 @@ test('customer catalog footer follows the approved XTR, account-security, and wa
   const end = page.indexOf('<footer className="footer">', start);
   assert.ok(start >= 0 && end > start);
   const footer = page.slice(start, end);
-  assert.match(footer, /Telegram Stars · XTR/);
-  assert.match(footer, /Detail &amp; Beli/);
-  assert.match(footer, /myaccount\\.google\\.com/);
-  assert.match(footer, /14 hari kalender/i);
-  assert.match(footer, /48 jam/i);
-  assert.match(footer, /pengembalian dana 100%/i);
-  assert.match(footer, /500 Diamond/);
-  assert.match(footer, /Informasi akun diserahkan oleh <strong>VAULT CORE<\\/strong>/);
-  assert.doesNotMatch(footer, /\\b(?:BCA|Mandiri|BNI|Maybank|PermataBank|BRI|Indomaret|Alfamart|QRIS|ShopeePay|PayLater)\\b/i);
-  assert.doesNotMatch(footer, /PT\\. Five Jack/i);
+  assert.ok(footer.includes('Telegram Stars · XTR'));
+  assert.ok(footer.includes('Detail &amp; Beli'));
+  assert.ok(footer.includes('myaccount.google.com'));
+  assert.ok(footer.includes('14 hari kalender'));
+  assert.ok(footer.includes('48 jam'));
+  assert.ok(footer.includes('pengembalian dana 100%'));
+  assert.ok(footer.includes('500 Diamond'));
+  assert.ok(footer.includes('Informasi akun diserahkan oleh <strong>VAULT CORE</strong>'));
+  for (const unsupportedMethod of ['BCA','Mandiri','BNI','Maybank','PermataBank','BRI','Indomaret','Alfamart','QRIS','ShopeePay','PayLater']) {
+    assert.equal(footer.includes(unsupportedMethod), false, 'Unsupported payment method in footer: ' + unsupportedMethod);
+  }
+  assert.equal(footer.includes('PT. Five Jack'), false);
   assert.ok(styles.includes('.catalog-info-footer'));
   assert.ok(styles.includes('.catalog-info-details[open] summary'));
   assert.ok(styles.includes('@media(max-width:680px)'));
