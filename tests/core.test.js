@@ -974,7 +974,7 @@ test('customer catalog footer follows the approved XTR, account-security, and wa
   assert.ok(styles.includes('.catalog-info-footer'));
   assert.ok(styles.includes('.catalog-info-details[open] summary'));
   assert.ok(styles.includes('@media(max-width:680px)'));
-  assert.ok(footer.includes('Lebih Yakin Bersama Vault Core'));
+  assert.ok(page.includes('footer-brand-tagline\">Lebih Yakin Bersama Vault Core'));
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   assert.ok(layout.includes('title: \'VAULT CORE | Lebih Yakin Bersama Vault Core\''));
   assert.ok(layout.includes('Lebih Yakin Bersama Vault Core. Marketplace akun game'));
