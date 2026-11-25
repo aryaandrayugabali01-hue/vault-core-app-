@@ -3,6 +3,8 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { pool, databaseRequestContext } from './db/pool.js';
 import catalogRoutes from './routes/catalog.js';
+import catalogV4Routes from './routes/catalogV4.js';
+import ownerV4Routes from './routes/ownerV4.js';
 import ordersRoutes from './routes/orders.js';
 import adminRoutes from './routes/admin.js';
 import telegramWebhookRoutes from './routes/telegramWebhook.js';
@@ -40,8 +42,10 @@ app.get('/api/session', apiRateLimit, requireTelegramUser, async (req, res) => {
 app.use('/api/owner-auth', apiRateLimit, ownerAuthRoutes);
 app.get('/api/owner-auth/session', apiRateLimit, requireOwnerSession, requireOwner, (req, res) => res.json({ authenticated: true, user: { id: String(req.telegramUser.id), username: req.telegramUser.username ?? null, first_name: req.telegramUser.first_name ?? '' } }));
 app.use('/api/catalog', apiRateLimit, catalogRoutes);
+app.use('/api/catalog/v4', apiRateLimit, catalogV4Routes);
 app.use('/api/orders', apiRateLimit, checkoutRateLimit, requireTelegramUser, ordersRoutes);
 app.use('/api/admin', apiRateLimit, ownerRateLimit, requireOwnerSession, requireOwner, adminRoutes);
+app.use('/api/admin/v4', apiRateLimit, ownerRateLimit, requireOwnerSession, requireOwner, ownerV4Routes);
 app.use('/api/telegram/webhook', telegramWebhookRoutes);
 app.use((error, _req, res, _next) => {
   const stack = String(error?.stack ?? '').split('\n').slice(0, 7).join('\n');
