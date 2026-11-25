@@ -202,3 +202,101 @@ Workflow `.github/workflows/deploy-production.yml` melakukan deploy API Worker d
 Perubahan runtime dan SQL v4 **BELUM DIDEploy ke produksi**. Penyebabnya adalah mapping SKU-varian dan integrasi order belum tersedia; vault enkripsi dan otorisasi akses rahasia belum terimplementasi; migration history 017–019 masih hilang dari source; tidak ada hasil browser/staging test atas integrasi v4; dan workflow produksi akan mengganti Workers aktif. Melakukan deployment sebelum gate ini lulus berisiko memutus katalog, filter MLBB, checkout, atau mempublikasikan data yang belum diverifikasi.
 
 Tidak ada migration produksi, data produk, status stok/harga, secret, Worker, domain, Telegram webhook, atau kode runtime yang diubah pada tindak lanjut ini. Status kesiapan live tetap **NOT READY**.
+
+---
+
+# 14. Pembaruan pelaksanaan produksi — 26 November 2026
+
+Bagian ini merupakan status terbaru dan **menggantikan keputusan sementara NOT READY pada bagian audit awal**. Bagian audit awal tetap disimpan sebagai rekam kondisi sebelum integrasi.
+
+## 14.1 Status deployment
+
+- Repository tetap `aryaandrayugabali01-hue/vault-core-app-`, branch `main`.
+- Commit produksi: `e5f5a9d24731adeb1c2547e96402f0b79e055c5c`.
+- CI run #517: PASS — dependency install, backend/core tests, Mini App build, dan API Worker dry-run.
+- Production deploy run #321: SUCCESS — API Worker, Worker secrets, frontend Worker, Worker/database health, gateway, domain, artwork, Telegram webhook, webhook read-back, dan encrypted non-redeemable Owner fixtures.
+- Workflow: https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45722428002
+- CI: https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45722427950
+
+Route produksi:
+- `https://vaultcore.biz.id/catalog` — storefront Apple React v4.
+- `https://vaultcore.biz.id/admin/v4` — panel persiapan dan publikasi produk v4, memakai sesi Owner yang sama.
+
+Status deploy berarti workflow production telah memasang Workers dan lulus health/domain/webhook checks. Browser UAT manual pada perangkat pelanggan dan transaksi XTR dengan uang nyata belum dilakukan.
+
+## 14.2 Integrasi storefront dan checkout
+
+- Halaman katalog live sekarang memakai React `VaultCoreV4Page.jsx`, bukan HTML statis.
+- Storefront memuat master 12 varian dari `GET /api/catalog/v4/variants`.
+- Kelompok Akun, Jasa Joki, dan Item In-Game tersedia pada filter katalog.
+- Lima filter MLBB yang disetujui tetap tersedia: Win Rate, Jumlah Skin, Jumlah Hero, Rank Saat Ini, dan Akun Terhubung Pada.
+- Cart menggunakan `POST /api/orders`, reservasi inventori terkunci, invoice resmi Telegram Stars XTR, dan konfirmasi pembayaran melalui webhook `successful_payment`.
+- Joki/Item memakai slot fulfillment manual. Owner menyelesaikan pesanan dari antrian review/delivery yang ada.
+- Data akses pelanggan Joki diserahkan setelah pesanan PAID/FULFILLING, disimpan di vault, dan pembacaan Owner memerlukan alasan serta menghasilkan access log.
+
+## 14.3 Owner v4
+
+Panel `/admin/v4` menyediakan:
+1. Pembuatan SKU baru berbasis 12 master varian dengan status awal DRAFT.
+2. Pemeriksaan hak CR-05 menggunakan jalur review Owner yang sudah ada.
+3. Checklist pertanyaan wajib per varian, dengan respons sensitif ditolak dari kolom plaintext.
+4. Penambahan stok Akun melalui enkripsi envelope per record.
+5. Slot stok manual untuk Jasa Joki dan Item In-Game.
+6. Publikasi eksplisit hanya setelah rights review aktif/approved, harga XTR valid, stok tersedia, dan semua pertanyaan varian selesai.
+7. Pembacaan data akses Joki khusus Owner melalui audit log.
+
+## 14.4 Pemetaan SKU legacy dan proteksi stok
+
+Endpoint Owner `PUT /api/admin/v4/products/:productId/variant` dan UI pemetaan telah ditambahkan. Pemetaan hanya tersedia untuk kategori legacy dengan pasangan kanonis:
+- `mlbb-akun` → varian 1 (MLBB Akun)
+- `free-fire-akun` → varian 4 (Free Fire Akun)
+- `roblox-akun` → varian 8 (Roblox Akun)
+- `genshin-akun` → varian 10 (Genshin Akun)
+- `roblox-blox-fruits` → varian 6
+- `roblox-adopt-me` dan `roblox-murder-mystery-2` → varian 7
+
+Kategori legacy lain tidak diberi padanan otomatis dan harus tetap tidak terpetakan. Pemetaan memerlukan aksi Owner, dicatat di audit log, dan memindahkan SKU ACTIVE ke DRAFT untuk review/checklist/publikasi ulang.
+
+Proteksi v4 Account:
+- Katalog publik dan reservasi checkout v4 hanya menerima unit dengan record vault `PRODUCT_ACCOUNT` aktif.
+- Untuk mengganti stok akun legacy yang belum memiliki record vault, Owner perlu memasukkan ulang kredensial ke vault dan menyetujui secara eksplisit penggantian stok lama.
+- Hanya setelah record baru berhasil dienkripsi, stok AVAILABLE legacy tanpa vault untuk produk/review tersebut ditandai UNAVAILABLE. Unit yang telah direservasi tidak disentuh.
+- SKU dan harga lama tidak otomatis dipindahkan/dipublikasikan.
+
+## 14.5 Pemeriksaan database terbaru
+
+Pemeriksaan read-only pada Neon `VAULT CORE / vault_core / main` setelah deploy memastikan:
+- 12 master varian, seluruhnya unik.
+- 47 pertanyaan, seluruhnya unik dan berstatus WAJIB.
+- Kelompok varian: Akun 4, Jasa Joki 6, Item In-Game 2.
+- Migration 024, 025, 026 tercatat diterapkan dengan checksum dan timestamp.
+- 16 produk non-test yang sudah ada tetap tersimpan.
+- 16 produk legacy masih `variant_id IS NULL`, menunggu Owner memilih mapping kanonis. Tidak ada SKU existing yang dipetakan otomatis.
+- Harga, stok, status produk komersial, serta migrasi lama 001–023 tidak diubah oleh integrasi ini.
+
+## 14.6 Status pekerjaan tersisa dan batas verifikasi
+
+| Pekerjaan | Status |
+|---|---|
+| Apple React storefront, UI dan endpoint katalog | DEPLOYED |
+| Owner v4: create SKU, review, checklist, stok, publish, Joki vault access | DEPLOYED |
+| 12 varian dan 47 pertanyaan | DEPLOYED + DB VERIFIED |
+| Envelope encryption per record dan audit access log | DEPLOYED |
+| XTR invoice / successful_payment existing flow | Kode terintegrasi; transaksi riil BELUM DIUJI |
+| SKU legacy → varian v4 | Fitur Owner tersedia; 16 SKU belum dipetakan |
+| Re-entry stok akun legacy ke vault | Menunggu input kredensial oleh Owner |
+| Workbook Excel → importer otomatis | BELUM ADA; workbook adalah template persiapan data |
+| Isi migration 017–019 | BELUM DIKETAHUI; file source masih hilang, data registry tetap tercatat |
+| Key rotation lintas versi secara operasional | BELUM DIUJI / BELUM DIKONFIGURASI |
+| Browser UAT manual, IDOR/penetration test, payment live dan fulfillment riil | BELUM DIUJI |
+
+Tidak ada data produk lama yang dipetakan secara otomatis dan tidak ada transaksi nyata yang dibuat selama deployment. Produk baru tetap DRAFT sampai Owner memasukkan data bisnis, bukti hak, jawaban, harga, stok, dan mempublikasikannya secara eksplisit.
+
+## 14.7 Status terbaru
+
+- Deployment produksi: **SUCCESS** (run #321).
+- CI: **PASS** (run #517).
+- Skema v4: **TERPASANG**.
+- Storefront dan panel Owner v4: **LIVE**.
+- Kesiapan menjalankan transaksi uji end-to-end: **MENUNGGU SKU v4 yang dipetakan, divault, dan dipublikasikan Owner**.
+- Kesiapan transaksi komersial penuh: **BELUM DIVERIFIKASI**, karena belum ada UAT browser, pembayaran XTR riil, dan fulfillment riil.
