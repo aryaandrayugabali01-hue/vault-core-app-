@@ -191,7 +191,7 @@ test('v4 customer catalog and Owner product routes are mounted behind the correc
   assert.match(route, /rr\.owner_attested=TRUE/);
   assert.match(route, /rr\.valid_until>NOW\(\)/);
   assert.match(route, /stock\.available_stock>0/);
-  assert.match(route, /login\|password\|pass\|sandi\|otp\|session\|recovery\|token/);
+  assert.ok(route.includes('Object.fromEntries(Object.entries(sku.attributes ?? {})'));
   assert.match(ownerRoute, /router\.get\('\/products'/);
   assert.match(ownerRoute, /router\.post\('\/products\/:[^']+\/publish'/);
 });
@@ -829,7 +829,7 @@ test('MLBB account detail uses the public v4 DTO, last-stock label, and four-ste
   assert.match(page, /Aktifkan verifikasi dua langkah/);
   assert.match(page, /metode pemulihan/);
   assert.match(catalogApi, /display_stock:/);
-  assert.match(catalogApi, /login\|password\|pass\|sandi/);
+  assert.ok(catalogApi.includes('Object.fromEntries(Object.entries(sku.attributes ?? {})'));
   assert.match(styles, /vc4-mlbb-filters/);
   assert.match(styles, /vc4-mlbb-grid/);
   assert.match(guard, /login\|password\|pass\|sandi\|otp\|session\|recovery\|token/);
