@@ -150,7 +150,7 @@ export default function OwnerV4Page(){
    const data=await api('/api/admin/v4/products/'+selected.id+'/inventory',{method:'POST',body:JSON.stringify(payload)});
    setInventory({...inventory,payloads:'[\n  {"login":"","password":""}\n]',quantity:'1'});
    await refresh();
-   setNotice(data.inserted+' unit stok berhasil dicatat'+(isAccount?' dan dienkripsi per record.':'.'));
+   setNotice(data.inserted+' unit stok berhasil dicatat'+(isAccount?' dan dienkripsi per record. '+(data.replacedLegacyStockCount||0)+' unit stok legacy tanpa vault dinonaktifkan.':'.'));
   }catch(e){setError(e.message);}finally{setBusy(false);}
  }
 
