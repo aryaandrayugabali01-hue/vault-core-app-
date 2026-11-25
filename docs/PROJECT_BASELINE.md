@@ -123,7 +123,7 @@ Rilis hanya setelah ruang lingkup terpenuhi, area LOCKED aman, test/build lulus,
 | Tanggal | Commit | Ruang lingkup | File | Pengujian / deployment |
 |---|---|---|---|---|
 | 2026-11-25 | `a4fa611b8b7e4e2b8302eafd91b2ab93a766f1ef` | Halaman detail produk mobile-first, modal Anti-Hackback dan Cara Beli & Tips, statistik penjualan/pengiriman dari pesanan selesai | `frontend/src/app/catalog/page.jsx`, `frontend/src/app/globals.css`, `backend/routes/catalog.js`, `tests/core.test.js` | 50 test backend/core PASS; build Mini App PASS; API Worker dry-run PASS; production workflow SUCCESS. |
-| 2026-11-25 | `a4fa611b8b7e4e2b8302eafd91b2ab93a766f1ef` | Baseline awal dan change control | `docs/PROJECT_BASELINE.md` | Dibuat setelah implementasi detail terbaru; verifikasi browser langsung masih perlu dilakukan. |
+| 2026-11-25 | `0c7b03f91094c854189df77f946b043e16cdd6d0` | Membuat baseline pengendali dan mencatat acuan detail terbaru | `docs/PROJECT_BASELINE.md` | Dokumen saja; tidak mengubah aplikasi. |
 
 ## 9. Status audit data produksi (25 Nov 2026)
 
