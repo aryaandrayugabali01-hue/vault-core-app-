@@ -321,6 +321,11 @@ jobs:
             "/assets/03-categories/category-genshin.png"
             "/assets/04-tiers/tier-platinum.png"
             "/assets/05-states/empty-orders.png"
+            "/assets/catalog/mlbb/ml-001-primary.jpg"
+            "/assets/catalog/mlbb/ml-001-skins.jpg"
+            "/assets/catalog/mlbb/ml-001-emblem.webp"
+            "/assets/catalog/mlbb/ml-001-skins-detail.jpg"
+            "/assets/catalog/mlbb/ml-001-account-detail.jpg"
           )
           for asset in "${assets[@]}"; do
             status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' "https://vaultcore.biz.id${asset}")"
