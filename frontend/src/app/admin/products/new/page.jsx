@@ -240,7 +240,7 @@ export default function NewProductPage() {
         <div className="span-2 admin-form-hint">APPROVED merupakan persetujuan internal Owner. Hak pihak ketiga dan aturan penerbit tetap berlaku.</div>
         <div className="admin-section-head span-2"><div><span className="eyebrow muted">LANGKAH 3</span><h2>Stok awal</h2></div></div>
         <label className="span-2">Referensi sumber/vendor atau asal internal Owner<input value={stockSourceReference} onChange={e=>setStockSourceReference(e.target.value)} placeholder="Nomor dokumen / ID asal stok" /></label>
-        <label className="span-2">Data akun, satu JSON per baris <small className="field-hint">Data akun hanya disimpan setelah pemeriksaan internal Owner berstatus APPROVED.</small><textarea rows="6" value={stock} onChange={(e)=>setStock(e.target.value)} placeholder={'{"email":"akun@example.com","password":"...","recovery":"..."}'} /></label>
+        <label className="span-2">Data akun, satu JSON per baris <small className="field-hint">Data akun hanya disimpan setelah pemeriksaan internal Owner berstatus APPROVED.</small><textarea rows="6" value={stock} onChange={(e)=>setStock(e.target.value)} placeholder={'{"account_id":"...","account_password":"...","login_method":"..."}'} /></label>
         <div className="span-2 admin-form-hint">{splitInventoryPayloads(stock).length} unit stok siap disimpan.</div>
         <button className="admin-primary" disabled={busy}>{busy ? 'Menyimpan…' : savedProductId ? 'Lanjutkan penyimpanan SKU' : stock.trim() ? 'Simpan produk + stok awal' : 'Simpan produk sebagai Draf'}</button>
       </form>
