@@ -27,7 +27,7 @@ router.get('/variants', async (_req, res) => {
                   AND i.rights_review_id=p.current_rights_review_id
                   AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
               ) stock
-              WHERE p.variant_id=v.variant_id
+              WHERE v.kategori_produk='Akun' AND p.variant_id=v.variant_id
                 AND p.status='ACTIVE' AND COALESCE(p.is_test,FALSE)=FALSE
                 AND p.sale_price_xtr>1
                 AND rr.review_status='APPROVED' AND rr.owner_attested=TRUE
