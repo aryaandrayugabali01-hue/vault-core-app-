@@ -58,66 +58,18 @@ router.get('/marketplace-categories', async (_req,res) => {
             COUNT(p.id) FILTER (WHERE p.status='ACTIVE')::int AS active_product_count
      FROM marketplace_categories c
      LEFT JOIN products p ON p.marketplace_category_id=c.id
+     WHERE c.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun')
      GROUP BY c.id ORDER BY c.sort_order,c.name`
   );
   res.json({ categories:rows });
 });
 
-router.post('/marketplace-categories', async (req,res) => {
-  const result = validateMarketplaceCategory(req.body ?? {});
-  if (!result.ok) return res.status(400).json({ error:'INVALID_MARKETPLACE_CATEGORY', details:result.errors });
-  const c = result.value;
-  try {
-    const { rows } = await pool.query(
-      `INSERT INTO marketplace_categories (slug,name,description,icon,purchase_guide,sort_order,is_active)
-       VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7) RETURNING *`,
-      [c.slug,c.name,c.description,c.icon,JSON.stringify(c.purchaseGuide),c.sortOrder,c.isActive]
-    );
-    await audit(req,'MARKETPLACE_CATEGORY_CREATED','MARKETPLACE_CATEGORY',rows[0].id,{slug:c.slug});
-    return res.status(201).json({category:rows[0]});
-  } catch (error) {
-    if (error.code==='23505') return res.status(409).json({error:'MARKETPLACE_CATEGORY_SLUG_EXISTS'});
-    throw error;
-  }
+router.post('/marketplace-categories', async (_req,res) => {
+  return res.status(403).json({error:'ACCOUNT_CATEGORIES_LOCKED',message:'Kategori VAULT CORE ditetapkan: setiap game hanya memiliki subkategori Akun.'});
 });
 
-router.patch('/marketplace-categories/:id', async (req,res) => {
-  const id=Number(req.params.id);
-  if (!Number.isSafeInteger(id)||id<=0) return res.status(400).json({error:'INVALID_MARKETPLACE_CATEGORY'});
-  const current=await pool.query('SELECT * FROM marketplace_categories WHERE id=$1',[id]);
-  if (!current.rows[0]) return res.status(404).json({error:'MARKETPLACE_CATEGORY_NOT_FOUND'});
-  const existing=current.rows[0];
-  const merged={
-    slug:req.body?.slug ?? existing.slug,
-    name:req.body?.name ?? existing.name,
-    description:req.body?.description ?? existing.description,
-    icon:req.body?.icon ?? existing.icon,
-    purchaseGuide:req.body?.purchaseGuide ?? existing.purchase_guide,
-    sortOrder:req.body?.sortOrder ?? existing.sort_order,
-    isActive:req.body?.isActive ?? existing.is_active
-  };
-  const result=validateMarketplaceCategory(merged);
-  if (!result.ok) return res.status(400).json({error:'INVALID_MARKETPLACE_CATEGORY',details:result.errors});
-  const c=result.value;
-  if (!c.isActive && existing.is_active) {
-    const active=await pool.query("SELECT COUNT(*)::int AS count FROM products WHERE marketplace_category_id=$1 AND status='ACTIVE'",[id]);
-    if (Number(active.rows[0].count)>0) {
-      return res.status(409).json({error:'MARKETPLACE_CATEGORY_HAS_ACTIVE_PRODUCTS',message:'Jeda produk aktif dalam kategori ini sebelum menonaktifkan kategori.'});
-    }
-  }
-  try {
-    const {rows}=await pool.query(
-      `UPDATE marketplace_categories
-       SET slug=$1,name=$2,description=$3,icon=$4,purchase_guide=$5::jsonb,sort_order=$6,is_active=$7,updated_at=NOW()
-       WHERE id=$8 RETURNING *`,
-      [c.slug,c.name,c.description,c.icon,JSON.stringify(c.purchaseGuide),c.sortOrder,c.isActive,id]
-    );
-    await audit(req,'MARKETPLACE_CATEGORY_UPDATED','MARKETPLACE_CATEGORY',id,{slug:c.slug,isActive:c.isActive});
-    return res.json({category:rows[0]});
-  } catch (error) {
-    if (error.code==='23505') return res.status(409).json({error:'MARKETPLACE_CATEGORY_SLUG_EXISTS'});
-    throw error;
-  }
+router.patch('/marketplace-categories/:id', async (_req,res) => {
+  return res.status(403).json({error:'ACCOUNT_CATEGORIES_LOCKED',message:'Kategori VAULT CORE ditetapkan: setiap game hanya memiliki subkategori Akun.'});
 });
 
 router.get('/products', async (_req, res) => {
@@ -158,10 +110,10 @@ router.post('/products', async (req, res) => {
   if ((normalizedCategoryId !== null && (!Number.isSafeInteger(normalizedCategoryId) || normalizedCategoryId <= 0))
       || !gallery.ok || !productAttributes.ok
       || !/^[A-Z0-9][A-Z0-9_-]{1,79}$/.test(normalizedSku)
-      || !['MLBB','ROBLOX','FREE_FIRE','GENSHIN','OTHER'].includes(gameCategory)
-      || !['SILVER','GOLD','PLATINUM','SERVICE'].includes(tier)
+      || !['MLBB','ROBLOX','FREE_FIRE','GENSHIN'].includes(gameCategory)
+      || tier !== 'GOLD'
       || String(name ?? '').trim().length < 2 || String(name).trim().length > 160
-      || !['REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','GIFT_CODE','DIGITAL_FILE','SERVICE_INSTRUCTIONS','GAME_ACCOUNT_TRANSFER'].includes(fulfillmentType)
+      || fulfillmentType !== 'GAME_ACCOUNT_TRANSFER'
       || !Number.isSafeInteger(Number(salePriceXtr)) || Number(salePriceXtr) <= 1
       || !Number.isSafeInteger(Number(costPriceXtr)) || Number(costPriceXtr) < 0
       || String(description ?? '').length > 5000
@@ -170,9 +122,11 @@ router.post('/products', async (req, res) => {
       || !isSafeProductImageUrl(normalizedImageUrl)) {
     return res.status(400).json({ error: 'INVALID_PRODUCT_INPUT' });
   }
-  if (normalizedCategoryId !== null) {
-    const category = await pool.query('SELECT id FROM marketplace_categories WHERE id=$1 AND is_active=TRUE',[normalizedCategoryId]);
-    if (!category.rows[0]) return res.status(400).json({error:'MARKETPLACE_CATEGORY_INVALID'});
+  const expectedCategorySlug = ({MLBB:'mlbb-akun',FREE_FIRE:'free-fire-akun',ROBLOX:'roblox-akun',GENSHIN:'genshin-akun'})[gameCategory];
+  if (normalizedCategoryId === null) return res.status(400).json({error:'MARKETPLACE_CATEGORY_INVALID'});
+  const category = await pool.query('SELECT id,slug FROM marketplace_categories WHERE id=$1 AND is_active=TRUE',[normalizedCategoryId]);
+  if (!category.rows[0] || category.rows[0].slug !== expectedCategorySlug) {
+    return res.status(400).json({error:'MARKETPLACE_CATEGORY_INVALID',message:'Setiap game wajib menggunakan subkategori Akun yang sesuai.'});
   }
   let rows;
   try {
@@ -217,11 +171,11 @@ router.patch('/products/:id', async (req, res) => {
     if (key === 'sku') {
       value = String(value ?? '').trim().toUpperCase();
       if (!/^[A-Z0-9][A-Z0-9_-]{1,79}$/.test(value)) return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
-    } else if (key === 'gameCategory' && !['MLBB','ROBLOX','FREE_FIRE','GENSHIN','OTHER'].includes(value)) {
+    } else if (key === 'gameCategory' && !['MLBB','ROBLOX','FREE_FIRE','GENSHIN'].includes(value)) {
       return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
-    } else if (key === 'tier' && !['SILVER','GOLD','PLATINUM','SERVICE'].includes(value)) {
+    } else if (key === 'tier' && value !== 'GOLD') {
       return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
-    } else if (key === 'fulfillmentType' && !['REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','GIFT_CODE','DIGITAL_FILE','SERVICE_INSTRUCTIONS','GAME_ACCOUNT_TRANSFER'].includes(value)) {
+    } else if (key === 'fulfillmentType' && value !== 'GAME_ACCOUNT_TRANSFER') {
       return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
     } else if (key === 'name') {
       value = String(value ?? '').trim();
@@ -363,6 +317,15 @@ router.patch('/products/:id', async (req, res) => {
           message:'Rincian penting produk tidak dapat diubah selama masih ada pesanan aktif untuk SKU ini. Selesaikan atau rekonsiliasi pesanan terlebih dahulu.'
         });
       }
+    }
+    const mergedGame = pairs.some(([key])=>key==='gameCategory') ? req.body.gameCategory : existing.game_category;
+    const mergedFulfillment = pairs.some(([key])=>key==='fulfillmentType') ? req.body.fulfillmentType : existing.fulfillment_type;
+    const mergedCategoryId = pairs.some(([key])=>key==='marketplaceCategoryId') ? (req.body.marketplaceCategoryId==null||req.body.marketplaceCategoryId===''?null:Number(req.body.marketplaceCategoryId)) : existing.marketplace_category_id;
+    const expectedSlug = ({MLBB:'mlbb-akun',FREE_FIRE:'free-fire-akun',ROBLOX:'roblox-akun',GENSHIN:'genshin-akun'})[mergedGame];
+    const linkedCategory = mergedCategoryId ? await client.query('SELECT slug FROM marketplace_categories WHERE id=$1 AND is_active=TRUE',[mergedCategoryId]) : {rows:[]};
+    if (!expectedSlug || mergedFulfillment !== 'GAME_ACCOUNT_TRANSFER' || linkedCategory.rows[0]?.slug !== expectedSlug) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({error:'ACCOUNT_PRODUCT_ONLY',message:'Produk harus berupa akun game dengan kategori Akun yang sesuai.'});
     }
     const assignments = columns.map((column, index) => `${column}=${index + 1}${['image_gallery','attributes'].includes(column) ? '::jsonb' : ''}`);
     if (productReviewReset && current.rows[0].is_test !== true) {
