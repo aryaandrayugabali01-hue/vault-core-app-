@@ -7,7 +7,8 @@ import { GAME_ART, GAME_BACKGROUNDS } from '../../lib/marketplace.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const GROUPS = ['Akun','Jasa Joki','Item In-Game'];
-const GAME_NAMES = { MLBB:'Mobile Legends', FF:'Free Fire', ROBLOX:'Roblox', GI:'Genshin Impact' };\nconst MARKET_GAME_CODE = { MLBB:'MLBB', FF:'FREE_FIRE', ROBLOX:'ROBLOX', GI:'GENSHIN' };
+const GAME_NAMES = { MLBB:'Mobile Legends', FF:'Free Fire', ROBLOX:'Roblox', GI:'Genshin Impact' };
+const MARKET_GAME_CODE = { MLBB:'MLBB', FF:'FREE_FIRE', ROBLOX:'ROBLOX', GI:'GENSHIN' };
 const STATUS = {
   PENDING_PAYMENT:'Menunggu pembayaran',PAID:'Pembayaran diterima',FULFILLING:'Sedang diproses',
   FULFILLED:'Selesai',CANCELLED:'Dibatalkan',REFUND_PENDING:'Refund diproses',
