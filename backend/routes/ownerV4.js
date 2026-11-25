@@ -30,6 +30,7 @@ router.get('/products', async (req,res) => {
             p.display_stock_mode,p.display_stock_override,p.image_url,p.image_gallery,p.attributes,
             p.customer_terms,p.fulfillment_eta,p.current_rights_review_id,p.created_at,p.updated_at,
             v.kategori_produk AS variant_category,v.jenis_varian AS variant_name,v.nama_game AS game_name,
+            mc.slug AS legacy_category_slug,
             rr.review_status,rr.valid_until,rr.owner_attested,
             COUNT(DISTINCT q.pertanyaan_id)::int AS required_questions,
             COUNT(DISTINCT q.pertanyaan_id) FILTER(WHERE r.response_status IN ('ANSWERED','OWNER_VERIFIED','SECRET_IN_VAULT'))::int AS completed_questions,
@@ -37,13 +38,14 @@ router.get('/products', async (req,res) => {
             COUNT(DISTINCT s.id) FILTER(WHERE s.secret_scope='PRODUCT_ACCOUNT' AND s.secret_status='ACTIVE')::int AS vaulted_stock
      FROM products p
      LEFT JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
+     LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
      LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
      LEFT JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=p.variant_id
      LEFT JOIN vault_core_product_question_responses r ON r.product_id=p.id AND r.question_id=q.pertanyaan_id
      LEFT JOIN inventory_items i ON i.product_id=p.id
      LEFT JOIN vault_core_secret_payloads s ON s.inventory_item_id=i.id AND s.secret_status='ACTIVE'
      WHERE COALESCE(p.is_test,FALSE)=FALSE
-     GROUP BY p.id,v.variant_id,rr.id
+     GROUP BY p.id,v.variant_id,rr.id,mc.slug
      ORDER BY p.updated_at DESC,p.id DESC
      LIMIT 250`
   );
