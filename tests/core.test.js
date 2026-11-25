@@ -776,6 +776,29 @@ test('product lifecycle removes PENDING_REVIEW and publishes approved Owner prod
   assert.ok(accountOnlyMigration.includes("WHEN 'GENSHIN' THEN 'genshin-akun'"));
 });
 
+
+test('customer detail text converts escaped newlines into readable line breaks', async () => {
+  const { normalizeCustomerDisplayText } = await import('../frontend/src/lib/product-attributes.js');
+  assert.equal(normalizeCustomerDisplayText('Baris satu\\nBaris dua'), 'Baris satu\nBaris dua');
+  assert.equal(normalizeCustomerDisplayText('A\\r\\nB\\rC'), 'A\nB\nC');
+  assert.equal(normalizeCustomerDisplayText('Sudah\\nbaris\nbaru'), 'Sudah\nbaris\nbaru');
+  assert.equal(normalizeCustomerDisplayText(null), '');
+});
+
+test('product detail wraps long specification values and refreshes stock from the public catalog', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  assert.match(page, /normalizeCustomerDisplayText\\(selectedProduct\\.description/);
+  assert.match(page, /normalizeCustomerDisplayText\\(value\\)/);
+  assert.match(page, /detailCustomerTerms/);
+  assert.match(page, /async function openProductDetail\\(product\\)/);
+  assert.match(page, /fetch\\(API \\+ '\\/api\\/catalog', \\{ cache: 'no-store' \\}\\)/);
+  assert.match(page, /setSelectedProduct\\(\\(current\\) =>[\\s\\S]*latestProduct/);
+  assert.match(styles, /marketplace-detail-page \\.marketplace-attributes-v2 > div\\{[\\s\\S]*grid-template-columns: minmax\\(0, 39%\\) minmax\\(0, 1fr\\)/);
+  assert.match(styles, /marketplace-detail-page \\.marketplace-attributes-v2 dt,[\\s\\S]*overflow-wrap: anywhere/);
+  assert.match(styles, /marketplace-detail-page \\.marketplace-detail-section p,[\\s\\S]*white-space: pre-line/);
+});
+
 test('MLBB product detail follows the approved dark-gold reference and keeps policy sheets blue', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
