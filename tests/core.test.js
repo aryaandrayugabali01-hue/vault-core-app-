@@ -805,7 +805,7 @@ test('customer display text normalizes repeated escaped newline sequences', () =
 
 test('detail specification labels and values have independent wrapping columns', () => {
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  assert.match(styles, /grid-template-columns:minmax\\(132px,38%\\) minmax\\(0,1fr\\)/);
+  assert.ok(styles.includes('grid-template-columns:minmax(132px,38%) minmax(0,1fr)'));
   assert.match(styles, /grid-template-columns:18px minmax\\(0,1fr\\)/);
   assert.match(styles, /overflow-wrap:anywhere/);
   assert.match(styles, /dashboard-bottom-nav-embedded/);
@@ -829,14 +829,14 @@ test('product detail wraps long specification values and refreshes stock from th
   assert.ok(page.includes("fetch(API + '/api/catalog', { cache: 'no-store' })"));
   assert.ok(page.includes('latestProduct'));
   assert.ok(styles.includes('grid-template-columns:minmax(132px,38%) minmax(0,1fr)'));
-  assert.ok(styles.includes('overflow-wrap: anywhere'));
+  assert.ok(styles.includes('overflow-wrap:anywhere'));
   assert.ok(styles.includes('white-space: pre-line'));
 });;
 
 test('MLBB product detail follows the approved dark-gold reference and keeps policy sheets blue', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  assert.match(page, /StoreHeader searchValue=\\{query\\}/);
+  assert.ok(page.includes('StoreHeader searchValue={query}'));
   assert.match(page, /marketplace-detail-toolbar/);
   assert.match(page, /marketplace-detail-thumbnails/);
   assert.match(page, /marketplace-detail-cart-button/);
