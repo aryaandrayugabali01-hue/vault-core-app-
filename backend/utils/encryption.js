@@ -35,7 +35,7 @@ export function assertAllowedDigitalPayload(value) {
   if (!text || text.length > 3_500) throw new Error('Payload must contain 1–3500 characters.');
   const blockedPatterns = [
     /(?:email|e-mail)\s*[:=]\s*[^\s]+\s*[,;|:]\s*(?:password|pass|kata\s*sandi)\s*[:=]/i,
-    /(?:session\s*cookie|auth(?:entication)?\s*token|refresh\s*token|recovery\s*code|otp\s*seed)/i,
+    /(?:session[\s_-]*cookie|auth(?:entication)?[\s_-]*token|refresh[\s_-]*token|recovery[\s_-]*code|otp[\s_-]*seed)/i,
     /(?:username|email)\s*[:=][\s\S]{0,120}(?:password|pass)\s*[:=]/i,
     /(?:^|\s)[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}:[^\s]{6,}(?:$|\s)/i
   ];
