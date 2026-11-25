@@ -447,7 +447,19 @@ router.post('/products/:id/rights-review', async (req, res) => {
       `UPDATE products SET current_rights_review_id=$2,updated_at=NOW(),
        status=CASE
          WHEN $3='APPROVED' AND status IN ('DRAFT','PAUSED')
-           AND sale_price_xtr>1 AND fulfillment_type IS NOT NULL THEN 'ACTIVE'
+           AND sale_price_xtr>1
+           AND fulfillment_type='GAME_ACCOUNT_TRANSFER'
+           AND game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
+           AND EXISTS (
+             SELECT 1 FROM marketplace_categories mc
+             WHERE mc.id=products.marketplace_category_id AND mc.is_active=TRUE
+               AND mc.slug=CASE products.game_category
+                 WHEN 'MLBB' THEN 'mlbb-akun'
+                 WHEN 'FREE_FIRE' THEN 'free-fire-akun'
+                 WHEN 'ROBLOX' THEN 'roblox-akun'
+                 WHEN 'GENSHIN' THEN 'genshin-akun'
+               END
+           ) THEN 'ACTIVE'
          WHEN $3<>'APPROVED' AND status='ACTIVE' THEN 'PAUSED'
          ELSE status END
        WHERE id=$1`,
