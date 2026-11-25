@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getInitData } from '../../../lib/telegram';
+import { StoreHeader, StoreBottomNav } from '../../../components/store-navigation.jsx';
 
 const API=process.env.NEXT_PUBLIC_API_BASE_URL||'';
 const headers=()=>({'content-type':'application/json','x-telegram-init-data':getInitData()});
@@ -28,6 +29,7 @@ export default function MarketplaceCategoriesPage(){
   },[]);
 
   return <main className="admin-shell">
+    <StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="admin-logout" href="/admin">Dashboard</a>}/>
     <header className="admin-header">
       <div><span className="eyebrow muted">VAULT CORE / OWNER</span><h1>Struktur katalog</h1><p>Struktur kategori dikunci agar katalog pelanggan selalu konsisten.</p></div>
       <div className="admin-head-actions"><a className="admin-secondary-link" href="/admin">Kembali ke Dashboard Owner</a></div>
@@ -41,5 +43,6 @@ export default function MarketplaceCategoriesPage(){
         <div className="marketplace-category-admin-copy"><strong>{item.name}</strong><small>/{item.slug} · {item.product_count} produk · {item.active_product_count} aktif</small><p>{item.description||'Akun game'}</p><span className={'marketplace-category-admin-status '+(item.is_active?'active':'paused')}>{item.is_active?'AKTIF':'NONAKTIF'}</span></div>
       </article>):<div className="admin-loading">Memuat struktur katalog…</div>}
     </section>
+    <StoreBottomNav active="owner"/>
   </main>;
 }
