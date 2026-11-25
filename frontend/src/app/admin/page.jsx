@@ -381,7 +381,7 @@ export default function AdminPage() {
       <form className="admin-form" onSubmit={addStock}>
         <label className="span-2">Produk<select required value={stockProduct} onChange={e=>setStockProduct(e.target.value)}><option value="">Pilih produk yang siap menerima stok</option>{products.filter(p=>['DRAFT','ACTIVE'].includes(p.status) && p.rights_review_usable && !p.is_test).map(p=><option key={p.id} value={p.id}>{p.sku} · {p.name}</option>)}</select></label>
         <label className="span-2">Referensi sumber/vendor atau asal internal Owner<input required minLength="3" maxLength="2000" value={stockSourceReference} onChange={e=>setStockSourceReference(e.target.value)} placeholder="Nomor dokumen, vendor/ref sumber, atau ID asal internal" /></label>
-        <label className="span-2">Data akun, satu JSON per baris<textarea required rows="5" value={stockPayload} onChange={e=>setStockPayload(e.target.value)} placeholder={'{"email":"akun@example.com","password":"...","recovery":"..."}'} /></label>
+        <label className="span-2">Data akun, satu JSON per baris<textarea required rows="5" value={stockPayload} onChange={e=>setStockPayload(e.target.value)} placeholder={'{"account_id":"...","account_password":"...","login_method":"..."}'} /></label>
         <button className="admin-primary" disabled={busy || !stockSourceReference.trim()}>Enkripsi dan simpan stok</button>
       </form>
     </section>
