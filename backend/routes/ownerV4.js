@@ -75,8 +75,8 @@ router.post('/products', async (req, res) => {
     return res.status(400).json({ error: 'INVALID_PRODUCT_IMAGE_URL' });
   }
   const sensitiveAttribute = attributes.ok && Object.entries(attributes.value).some(([key, value]) =>
-    /(login|password|\\bpass\\b|sandi|otp|session|recovery|token|credential|email|username)/i.test(key)
-    || /(?:password|kata\\s*sandi|otp|session|recovery|token)\\s*[:=]/i.test(String(value))
+    /(login|password|\bpass\b|sandi|otp|session|recovery|token|credential|email|username)/i.test(key)
+    || /(?:password|kata\s*sandi|otp|session|recovery|token)\s*[:=]/i.test(String(value))
   );
   if (sensitiveAttribute) return res.status(400).json({ error: 'CREDENTIALS_MUST_USE_ENCRYPTED_VAULT' });
   if (!imageGallery.ok || !attributes.ok) {
