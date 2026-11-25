@@ -330,7 +330,6 @@ export default function AdminPage() {
       </>}
       <a className="owner-login-back" href="/">Kembali ke katalog</a>
     </section>
-    <StoreBottomNav active="owner"/>
   </main>;
   return <main className="admin-shell">
     <StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<button type="button" className="admin-logout" onClick={logoutOwner}>Keluar</button>}/>
@@ -439,6 +438,5 @@ export default function AdminPage() {
       </form>
       <p className="admin-footnote">Biaya operasional dicatat terpisah dan diperhitungkan dalam laba bersih.</p>
     </section>
-    <StoreBottomNav active="owner"/>
   </main>;
 }
