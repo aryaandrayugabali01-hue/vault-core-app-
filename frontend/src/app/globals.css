@@ -1931,3 +1931,58 @@ body, button, input, select, textarea { font-family: var(--vc-font-sans); }
 @media(prefers-reduced-motion:reduce){
   .catalog-info-details summary::after{transition:none}
 }
+
+
+/* Dashboard game cards — UniPin portrait carousel reference (approved 2026-11-25) */
+.dashboard-game-grid{
+  display:flex;
+  gap:14px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:2px 2px 14px;
+  margin-right:-2px;
+  scroll-snap-type:x mandatory;
+  overscroll-behavior-inline:contain;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.dashboard-game-grid::-webkit-scrollbar{display:none}
+.dashboard-game-card{
+  display:flex;
+  flex:0 0 clamp(230px,58vw,420px);
+  flex-direction:column;
+  aspect-ratio:0.53;
+  min-height:0;
+  border-radius:20px;
+  scroll-snap-align:start;
+}
+.dashboard-game-art{
+  flex:1 1 auto;
+  min-height:0;
+  height:auto;
+  background-position:center;
+}
+.dashboard-game-art img{
+  width:82%;
+  height:76%;
+  max-height:150px;
+  padding:0;
+  object-fit:contain;
+}
+.dashboard-game-copy{
+  flex:0 0 auto;
+  gap:7px;
+  padding:13px 15px 15px;
+  background:linear-gradient(180deg,rgba(12,19,32,.96),rgba(9,16,29,.99));
+}
+.dashboard-game-copy strong{font-size:clamp(15px,2.4vw,19px);line-height:1.3}
+.dashboard-game-copy small{min-height:0;font-size:11px;line-height:1.45}
+.dashboard-game-copy>span{font-size:10px;line-height:1.4}
+@media(min-width:640px){
+  .dashboard-game-grid{gap:18px;padding-bottom:18px}
+  .dashboard-game-card{flex-basis:clamp(300px,58vw,420px);border-radius:22px}
+  .dashboard-game-copy{padding:16px 18px 18px}
+}
+@media(max-width:360px){
+  .dashboard-game-card{flex-basis:78vw}
+}
