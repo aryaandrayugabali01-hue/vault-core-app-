@@ -19,9 +19,10 @@ export async function createOrder(req, res, { testMode = false } = {}) {
 
     const ids = cartItems.map((item) => item.productId);
     const { rows: products } = await client.query(
-      `SELECT p.*,mc.slug AS marketplace_category_slug,rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
+      `SELECT p.*,mc.slug AS marketplace_category_slug,v.kategori_produk AS variant_category,rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
        FROM products p
        LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
+       LEFT JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
        LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
        WHERE p.id=ANY($1::bigint[]) AND p.status='ACTIVE'
          AND ${testMode ? 'p.is_test=TRUE' : 'COALESCE(p.is_test,FALSE)=FALSE'}
