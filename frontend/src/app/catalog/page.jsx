@@ -930,7 +930,7 @@ export default function HomePage() {
                   <img src={product.image_url || GAME_ART[product.game_category] || GAME_ART.MLBB} alt="" loading="lazy" /><span><strong>{product.name}</strong><small>{Number(product.sale_price_xtr || 0).toLocaleString('en-US')} XTR</small></span>
                 </button>)}</div> : <p className="marketplace-related-empty">Belum ada produk lain pada subkategori ini.</p>}
               </section>
-              <div className="marketplace-detail-policy"><strong>Transaksi resmi Telegram Stars</strong><p>Website publik hanya menampilkan katalog dan detail produk. Pembuatan pesanan, checkout, invoice, dan pembayaran dilakukan melalui VAULT CORE Telegram Mini App. Harga dan stok diperiksa ulang oleh server.</p></div>
+              <div className="marketplace-detail-policy"><strong>Transaksi resmi Telegram Stars</strong><p>Produk ini dapat dipesan melalui VAULT CORE Telegram Mini App. Website publik hanya menampilkan katalog dan detail produk; pembuatan pesanan, checkout, invoice, dan pembayaran dilakukan melalui Mini App. Harga dan stok diperiksa ulang oleh server.</p></div>
             </div>
           </div>
           <footer className="marketplace-detail-stickybar">
