@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { getInitData, getTelegramWebApp, openInvoice } from '../../lib/telegram';
-import { getCustomerVisibleProductAttributes } from '../../lib/product-attributes';
+import { getCustomerVisibleProductAttributes, normalizeCustomerDisplayText } from '../../lib/product-attributes';
 import { GAME_ORDER, GAME_LABELS, GAME_ART, GAME_BACKGROUNDS } from '../../lib/marketplace.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
@@ -154,7 +154,7 @@ function getProductStockLabel(product) {
   return 'STOK TERSEDIA';
 }
 function getNonWarrantyTerms(value) {
-  return String(value ?? '').replace(/GARANSI ANTI[\s-]?HACKBACK VAULT CORE[\s\S]*$/i,'').trim();
+  return normalizeCustomerDisplayText(String(value ?? '').replace(/GARANSI ANTI[\s-]?HACKBACK VAULT CORE[\s\S]*$/i,'')).trim();
 }
 const ORDER_STATUS_LABELS = {
   PENDING_PAYMENT: 'Menunggu pembayaran',
@@ -351,6 +351,30 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
   }).filter(Boolean), [cart, products]);
   const cartCount = cart.reduce((sum,line)=>sum+line.quantity,0);
   const cartSubtotal = cartLines.reduce((sum,line)=>sum+line.subtotal,0);
+
+  async function openProductDetail(product) {
+    setActiveGalleryIndex(0);
+    setDetailSpecsExpanded(false);
+    setSelectedProduct(product);
+
+    // Test fixtures use a separate Owner-only endpoint and must keep their current flow.
+    if (product?.is_test) return;
+
+    try {
+      const response = await fetch(API + '/api/catalog', { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok || !Array.isArray(data.products)) return;
+      setProducts(data.products);
+      const latestProduct = data.products.find((item) => Number(item.id) === Number(product.id));
+      if (latestProduct) {
+        setSelectedProduct((current) =>
+          current && Number(current.id) === Number(product.id) ? latestProduct : current
+        );
+      }
+    } catch {
+      // Retain the last successful catalog snapshot; checkout revalidates stock server-side.
+    }
+  }
 
   function addToCart(product, quantity = 1) {
     if (!product || product.is_test || !product.is_available) return;
@@ -659,6 +683,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
   const isPinnedCatalogRoute = Boolean(initialCategorySlug);
 
   const detailWarrantyText = selectedProduct ? getWarrantyTerms(selectedProduct) : '';
+  const detailCustomerTerms = selectedProduct ? getNonWarrantyTerms(selectedProduct.customer_terms) : '';
   const detailWarrantySections = getWarrantySections(detailWarrantyText);
   const detailWarrantyDuration = detailWarrantyText.match(/(\d+)\s+hari kalender/i)?.[1] || '';
   const detailGallery = selectedProduct
@@ -766,7 +791,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
                 <div className="product-bottom">
                   <div className="product-price"><small>HARGA JUAL</small><strong>{Number(product.sale_price_xtr).toLocaleString('en-US')} XTR</strong></div>
                   <button className="buy-button" type="button" disabled={buyingId === product.id || activatingId === product.id}
-                    onClick={() => { if (isDraftTest) activateTestProduct(product.id); else { setActiveGalleryIndex(0); setDetailSpecsExpanded(false); setSelectedProduct(product); } }}>
+                    onClick={() => { if (isDraftTest) activateTestProduct(product.id); else openProductDetail(product); }}>
                     {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : product.is_available && product.is_purchaseable ? 'Detail & Beli' : 'Lihat detail'}
                   </button>
                 </div>
@@ -921,17 +946,17 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
               <button type="button" className="marketplace-detail-guide-trigger" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name || 'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide || []});setGuideOpen(true);}}>
                 <span aria-hidden="true">📖</span><strong>Cara Beli &amp; Tips</strong><span className="marketplace-detail-guide-chevron" aria-hidden="true">›</span>
               </button>
-              <section className="marketplace-detail-section"><h2>Deskripsi Produk</h2><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
+              <section className="marketplace-detail-section"><h2>Deskripsi Produk</h2><p>{normalizeCustomerDisplayText(selectedProduct.description || 'Deskripsi produk belum tersedia.')}</p></section>
               
               <section className="marketplace-detail-section">
                 <h2>Spesifikasi Akun</h2>
                 {detailSpecs.length ? <>
-                  <dl className="marketplace-attributes marketplace-attributes-v2">{(detailSpecsExpanded ? detailSpecs : detailSpecs.slice(0,6)).map(([key,value])=><div key={key}><dt><span aria-hidden="true">{detailAttributeIcon(key)}</span>{detailAttributeLabel(key)}</dt><dd>{String(value)}</dd></div>)}</dl>
+                  <dl className="marketplace-attributes marketplace-attributes-v2">{(detailSpecsExpanded ? detailSpecs : detailSpecs.slice(0,6)).map(([key,value])=><div key={key}><dt><span aria-hidden="true">{detailAttributeIcon(key)}</span>{detailAttributeLabel(key)}</dt><dd>{normalizeCustomerDisplayText(value)}</dd></div>)}</dl>
                   {detailSpecs.length > 6 && <button className="marketplace-detail-more" type="button" aria-expanded={detailSpecsExpanded} onClick={()=>setDetailSpecsExpanded((current)=>!current)}>{detailSpecsExpanded ? 'Tampilkan lebih sedikit' : 'Tampilkan lebih banyak'} <span>{detailSpecsExpanded ? '⌃' : '⌄'}</span></button>}
                 </> : <p>Spesifikasi akun belum tersedia pada data produk.</p>}
               </section>
               <div className="marketplace-detail-policy"><strong>Transaksi resmi Telegram Stars</strong><p>Produk ini dapat dipesan melalui VAULT CORE Telegram Mini App. Website publik hanya menampilkan katalog dan detail produk; pembuatan pesanan, checkout, invoice, dan pembayaran dilakukan melalui Mini App. Harga dan stok diperiksa ulang oleh server.</p></div>
-              {getNonWarrantyTerms(selectedProduct.customer_terms) && <section className="marketplace-detail-section marketplace-detail-terms-footer"><h2>Ketentuan Produk</h2><p>{getNonWarrantyTerms(selectedProduct.customer_terms)}</p></section>}
+              {detailCustomerTerms && <section className="marketplace-detail-section marketplace-detail-terms-footer"><h2>Ketentuan Produk</h2><p>{detailCustomerTerms}</p></section>}
             </div>
           </div>
           <footer className="marketplace-detail-stickybar">
