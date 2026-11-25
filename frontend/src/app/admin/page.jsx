@@ -60,7 +60,7 @@ export default function AdminPage() {
   const [rightsForm, setRightsForm] = useState({ rightsBasis:'', publisherPlatform:'', officialTermsUrl:'', authorizationEvidenceReference:'', chainOfTitle:'', transferMethod:'', region:'', validUntil:'', reviewStatus:'PENDING', reviewNotes:'', ownerAttested:false });
   const [displayCap, setDisplayCap] = useState({});
   const [editingProductId, setEditingProductId] = useState('');
-  const [editForm, setEditForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', marketplaceCategoryId:'', name:'', description:'', fulfillmentType:'REDEEM_CODE', salePriceXtr:'', costPriceXtr:'0', imageUrl:'', imageGalleryText:'', attributesText:'', customerTerms:'', fulfillmentEta:'' });
+  const [editForm, setEditForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', marketplaceCategoryId:'', name:'', description:'', fulfillmentType:'GAME_ACCOUNT_TRANSFER', salePriceXtr:'', costPriceXtr:'0', imageUrl:'', imageGalleryText:'', attributesText:'', customerTerms:'', fulfillmentEta:'' });
   const [busy, setBusy] = useState(false);
   const [authState, setAuthState] = useState('checking');
   const [botUsername, setBotUsername] = useState('');
