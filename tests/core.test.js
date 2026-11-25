@@ -192,6 +192,13 @@ test('catalog detail uses backend fulfillment metrics and keeps warranty and gui
   assert.match(page, /marketplace-detail-page/);
   assert.match(page, /marketplace-detail-stickybar/);
   assert.match(page, /marketplace-detail-thumbnails/);
+  assert.match(page, /marketplace-detail-brandbar/);
+  assert.match(page, /marketplace-detail-cart-button/);
+  const detail = page.slice(page.indexOf('marketplace-detail-backdrop'), page.indexOf('{ordersOpen &&'));
+  assert.doesNotMatch(detail, /marketplace-quantity-control/);
+  assert.match(styles, /#ffc928/);
+  assert.match(styles, /linear-gradient\(180deg,#ffdf36,#ffad00\)/);
+  assert.match(styles, /marketplace-info-modal:before/);
   assert.match(page, /Rating pelanggan[\s\S]*Belum tersedia/);
   assert.match(page, /getWarrantyTerms/);
   assert.match(page, /marketplace-info-modal/);
