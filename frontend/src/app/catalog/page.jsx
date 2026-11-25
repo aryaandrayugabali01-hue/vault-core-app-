@@ -19,14 +19,11 @@ const TRUST_ITEMS = [
 
 const TIER_LABELS = { SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Platinum', SERVICE: 'Layanan' };
 const CUSTOMER_FILTERS = [
-  { key: 'rank_current', label: 'Rank' },
-  { key: 'total_skins', label: 'Jumlah Skin' },
-  { key: 'total_heroes', label: 'Jumlah Hero' },
-  { key: 'win_rate', label: 'Win Rate' },
-  { key: 'emblem_status', label: 'Emblem' },
-  { key: 'main_hero', label: 'Hero Utama' },
-  { key: 'platform_support', label: 'Platform' },
-  { key: 'linked_account', label: 'Akun Tertaut' }
+  { key: 'win_rate', label: 'Winrate', short: 'Winrate' },
+  { key: 'total_skins', label: 'Jumlah Skin', short: 'Skin' },
+  { key: 'total_heroes', label: 'Jumlah Hero', short: 'Hero' },
+  { key: 'rank_current', label: 'Rank Saat Ini', short: 'Rank' },
+  { key: 'linked_platforms', label: 'Akun Terhubung Pada', short: 'Akun terhubung' }
 ];
 const CUSTOMER_ATTRIBUTE_LABELS = {
   ...Object.fromEntries(CUSTOMER_FILTERS.map(({key,label}) => [key,label])),
@@ -164,6 +161,7 @@ export default function HomePage() {
   }, [sourceProducts]);
   const activeFilterLabel = category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua game';
   const selectedGame = gameTabs.find((item) => item.id === category) || null;
+  const selectedMarketplaceCategory = gameMarketplaceCategories.find((item) => String(item.id) === marketplaceCategoryId) || null;
   const gameMarketplaceCategories = useMemo(() => marketplaceCategories.filter((item) => {
     if (category === 'ALL') return true;
     const prefix = category.toLowerCase().replaceAll('_','-') + '-';
@@ -181,19 +179,27 @@ export default function HomePage() {
       (category === 'ALL' || product.game_category === category)
       && (marketplaceCategoryId === 'ALL' || String(product.marketplace_category_id || '') === marketplaceCategoryId)
     );
-    return CUSTOMER_FILTERS.map(({key,label}) => {
-      const values = [...new Set(productsForFacets.map((product) =>
-        String(Object.fromEntries(getCustomerVisibleProductAttributes(product.attributes))[key] ?? '').trim()
-      ).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));
-      return {key,label,values};
-    }).filter((facet)=>facet.values.length > 0);
+    return CUSTOMER_FILTERS.map(({key,label,short}) => {
+      const rawValues = productsForFacets.flatMap((product) => {
+        const value = String(Object.fromEntries(getCustomerVisibleProductAttributes(product.attributes))[key] ?? '').trim();
+        return key === 'linked_platforms' ? value.split(',').map((item) => item.trim()).filter(Boolean) : (value ? [value] : []);
+      });
+      const values = [...new Set(rawValues)].sort((a,b)=>a.localeCompare(b,'id'));
+      return {key,label,short,values};
+    });
   }, [sourceProducts, category, marketplaceCategoryId]);
   const filtered = useMemo(() => {
     const list = sourceProducts.filter((p) =>
       (category === 'ALL' || p.game_category === category)
       && (tier === 'ALL' || p.tier === tier)
       && (marketplaceCategoryId === 'ALL' || String(p.marketplace_category_id || '') === marketplaceCategoryId)
-      && Object.entries(attributeFilters).every(([key, value]) => !value || String(Object.fromEntries(getCustomerVisibleProductAttributes(p.attributes))[key] ?? '') === value)
+      && Object.entries(attributeFilters).every(([key, value]) => {
+        if (!value) return true;
+        const attributeValue = String(Object.fromEntries(getCustomerVisibleProductAttributes(p.attributes))[key] ?? '');
+        return key === 'linked_platforms'
+          ? attributeValue.split(',').map((item) => item.trim().toLocaleLowerCase('id')).includes(value.toLocaleLowerCase('id'))
+          : attributeValue.toLocaleLowerCase('id') === value.toLocaleLowerCase('id');
+      })
       && (String(p.name || '') + ' ' + String(p.description || '') + ' ' + String(p.sku || '') + ' ' + String(p.marketplace_category_name || '')).toLowerCase().includes(query.toLowerCase())
     );
     if (sortBy === 'PRICE_ASC') return list.sort((a,b)=>Number(a.sale_price_xtr)-Number(b.sale_price_xtr));
@@ -533,10 +539,15 @@ export default function HomePage() {
       </aside>}
 
       <section className="marketplace-game-nav" id="home" style={{ "--marketplace-background": `url("${category === "ALL" ? "/assets/02-hero/hero-vaultcore-loop.webp" : (GAME_BACKGROUNDS[category] || GAME_BACKGROUNDS.OTHER)}")` }}>
+        <div className="marketplace-breadcrumb"><a href="/">Beranda</a><span>›</span><span>{selectedGame?.label || 'Semua game'}</span>{selectedMarketplaceCategory && <><span>›</span><strong>{selectedMarketplaceCategory.name}</strong></>}</div>
         <div className="marketplace-game-heading">
-          <span className="eyebrow muted">VAULT CORE · DIGITAL GAME STORE</span>
-          <h1>{selectedGame?.label || 'Semua game'}</h1>
-          <p>Jelajahi produk di katalog. Seluruh checkout, pembayaran XTR, dan pemantauan pesanan dilakukan hanya melalui VAULT CORE Telegram Mini App.</p>
+          <div className="marketplace-game-identity">
+            <img src={selectedGame?.icon || GAME_ART.OTHER} alt="" />
+            <div><h1>{category === 'MLBB' ? (selectedMarketplaceCategory?.name === 'Akun' || !selectedMarketplaceCategory ? 'Akun Mobile Legends' : selectedMarketplaceCategory.name + ' Mobile Legends') : (selectedGame?.label || 'Semua game')}</h1>
+              <div className="marketplace-trust-badges"><span><b>♢</b> Keamanan akun</span><span><b>◉</b> Anti-Hackback</span><span><b>✧</b> Pilihan</span></div>
+            </div>
+          </div>
+          <p>Periksa detail dan spesifikasi produk sebelum melanjutkan transaksi melalui VAULT CORE.</p>
         </div>
         <nav className="marketplace-game-tabs" aria-label="Pilih game">
           <button type="button" className={category === 'ALL' ? 'active' : ''} aria-pressed={category === 'ALL'} onClick={() => { setCategory('ALL'); setTier('ALL'); setMarketplaceCategoryId('ALL'); setAttributeFilters({}); setQuery(''); }}>Semua game</button>
@@ -553,27 +564,25 @@ export default function HomePage() {
       </section>
 
       <section className="section product-section" id="products">
-        <div className="section-heading">
-          <div><span className="eyebrow muted">PILIHAN UNTUK ANDA</span><h2>Katalog digital <span className="active-filter-badge">{activeFilterLabel}</span></h2></div>
-          <span className="section-count">{loading ? '—' : String(filtered.length).padStart(2, '0') + ' PRODUK'}</span>
+        <div className="marketplace-listing-heading">
+          <div><h2>{selectedMarketplaceCategory?.name || (category === 'MLBB' ? 'Akun Mobile Legends' : 'Semua produk')}</h2><span>{loading ? 'Memuat produk…' : `Hasil pencarian ditemukan: ${filtered.length.toLocaleString('id-ID')} produk`}</span></div>
+          <span className="marketplace-listing-count">{loading ? '—' : filtered.length.toLocaleString('id-ID') + ' produk'}</span>
         </div>
-        <div className="marketplace-filter-bar">
-          <button className={'marketplace-filter-toggle' + (filtersOpen ? ' active' : '')} type="button" aria-expanded={filtersOpen} onClick={()=>setFiltersOpen((value)=>!value)}>
-            <AppIcon name="categories" /> <span>Filter</span>{Object.values(attributeFilters).filter(Boolean).length > 0 && <b>{Object.values(attributeFilters).filter(Boolean).length}</b>}
-          </button>
-          <label className="marketplace-sort-control"><span>Urutkan</span><select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
-            <option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option>
-          </select></label>
-          {tier !== 'ALL' && <button className="marketplace-filter-chip" type="button" onClick={()=>setTier('ALL')}>{TIER_LABELS[tier]||tier} ×</button>}
-          {Object.entries(attributeFilters).filter(([,value])=>value).map(([key,value])=><button className="marketplace-filter-chip" type="button" key={key} onClick={()=>setAttributeFilters((current)=>({...current,[key]:''}))}>{customerAttributeLabel(key)}: {value} ×</button>)}
-          {(tier !== 'ALL' || Object.values(attributeFilters).some(Boolean)) && <button className="marketplace-reset-filter" type="button" onClick={()=>{setTier('ALL');setAttributeFilters({});}}>Reset</button>}
+        <div className="marketplace-filter-toolbar" aria-label="Filter katalog">
+          <button className="marketplace-filter-icon" type="button" aria-label="Reset seluruh filter" onClick={()=>{setAttributeFilters({});setTier('ALL');setQuery('');}}>⌁</button>
+          {attributeFacets.map((facet) => <label className="marketplace-inline-filter" key={facet.key}>
+            <span className="sr-only">{facet.label}</span>
+            <select aria-label={facet.label} value={attributeFilters[facet.key] || ''} onChange={(e)=>setAttributeFilters((current)=>({...current,[facet.key]:e.target.value}))}>
+              <option value="">{facet.label}</option>{facet.values.map((value)=><option value={value} key={value}>{value}</option>)}
+            </select><span className="marketplace-select-chevron">⌄</span>
+          </label>)}
+          <label className="marketplace-sort-icon"><span className="sr-only">Urutkan produk</span><select aria-label="Urutkan produk" value={sortBy} onChange={(e)=>setSortBy(e.target.value)}><option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option></select><b>↕</b></label>
+          <label className="marketplace-search-icon"><span className="sr-only">Cari produk</span><input aria-label="Cari produk" value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="⌕" /><b>⌕</b></label>
         </div>
-        {filtersOpen && <div className="marketplace-filter-panel">
-          <label><span>Tipe produk</span><select value={tier} onChange={(e)=>setTier(e.target.value)}>
-            <option value="ALL">Semua tipe</option>{availableTiers.map(([value,label])=><option key={value} value={value}>{label}</option>)}
-          </select></label>
-          {attributeFacets.map((facet) => <label key={facet.key}><span>{facet.label}</span><select value={attributeFilters[facet.key] || ''} onChange={(e)=>setAttributeFilters((current)=>({...current,[facet.key]:e.target.value}))}><option value="">Semua {facet.label.toLowerCase()}</option>{facet.values.map((value)=><option value={value} key={value}>{value}</option>)}</select></label>)}
-          <button className="marketplace-filter-apply" type="button" onClick={()=>setFiltersOpen(false)}>Tampilkan {filtered.length} produk</button>
+        {(Object.values(attributeFilters).some(Boolean) || tier !== 'ALL' || query) && <div className="marketplace-active-filters">
+          {Object.entries(attributeFilters).filter(([,value])=>value).map(([key,value])=><button type="button" key={key} onClick={()=>setAttributeFilters((current)=>({...current,[key]:''}))}>{customerAttributeLabel(key)}: {value} ×</button>)}
+          {tier !== 'ALL' && <button type="button" onClick={()=>setTier('ALL')}>{TIER_LABELS[tier]||tier} ×</button>}
+          <button type="button" onClick={()=>{setAttributeFilters({});setTier('ALL');setQuery('');}}>Hapus semua filter</button>
         </div>}
         {isTestMode && <div className="test-lane-notice">
           <div><strong>RUANG UJI OWNER</strong><span>Produk contoh terpisah dari katalog pelanggan. Invoice uji bernilai 1 XTR sungguhan.</span></div>
