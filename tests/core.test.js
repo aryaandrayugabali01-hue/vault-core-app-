@@ -219,7 +219,10 @@ test('all customer-sale product data is centralized at GET /api/catalog while Ow
   assert.match(home, /fetch\(API\+'\/api\/catalog'/);
   assert.match(route, /res\.json\(\{ products, categories \}\)/);
   assert.match(route, /display_stock: visibleStock/);
-  assert.match(route, /rights_review_active: Boolean\(purchaseable\)/);
+  const dtoStart = route.indexOf('    return {');
+  const dtoEnd = route.indexOf('\n    };', dtoStart);
+  const publicDto = route.slice(dtoStart, dtoEnd);
+  assert.doesNotMatch(publicDto, /rights_review_active|rights_review_status|rights_valid_until|rights_owner_attested|sellable_stock|cost_price_xtr/);
   assert.doesNotMatch(route, /sales\.sold_count|average_delivery_minutes|catalog_status_label/);
   assert.doesNotMatch(route, /return \{\s*\.\.\.product/);
   assert.match(ownerRoute, /router\.get\('\/products'/);
@@ -783,6 +786,39 @@ test('MLBB product detail follows the approved dark-gold reference and keeps pol
   assert.match(styles, /marketplace-info-modal:before/);
   const detail = page.slice(page.indexOf('marketplace-detail-backdrop'), page.indexOf('{ordersOpen &&'));
   assert.doesNotMatch(detail, /marketplace-detail-stats|marketplace-detail-quantity|marketplace-detail-store|marketplace-detail-related/);
+});
+
+test('MLBB account detail uses the public catalog DTO, last-stock label, and four-step security guide', () => {
+  const route = readFileSync(new URL('../frontend/src/app/catalog/mlbb-akun/page.jsx', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const catalogApi = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const guideMigration = readFileSync(new URL('../database/migrations/022_mlbb_account_purchase_guide.sql', import.meta.url), 'utf8');
+  const stockMigration = readFileSync(new URL('../database/migrations/023_mlbb_account_last_stock_display.sql', import.meta.url), 'utf8');
+  assert.match(route, /initialCategory="MLBB" initialCategorySlug="mlbb-akun"/);
+  assert.match(page, /isPinnedCatalogRoute/);
+  assert.match(page, /getProductStockLabel/);
+  assert.match(page, /STOK TERAKHIR/);
+  assert.match(page, /visibleStock === 1/);
+  assert.match(page, /Langkah-Langkah Pembelian/);
+  assert.match(page, /Ganti kata sandi akun setelah menerima data/);
+  assert.match(page, /Aktifkan verifikasi dua langkah/);
+  assert.match(page, /metode pemulihan/);
+  assert.match(page, /Keamanan Akun/);
+  assert.doesNotMatch(page, /detailReviewActive|rights_review_active/);
+  assert.doesNotMatch(page, /Status pengiriman|Jumlah terjual|Rata-rata pengiriman|Minimum pembelian|Jumlah pembelian|INFORMASI TOKO|Produk lain dari VAULT CORE|detailQuantity|marketplace-detail-store|marketplace-detail-related/);
+  const customerDtoStart = catalogApi.indexOf('    return {');
+  const customerDtoEnd = catalogApi.indexOf('\n    };', customerDtoStart);
+  const customerDto = catalogApi.slice(customerDtoStart, customerDtoEnd);
+  assert.doesNotMatch(customerDto, /rights_review_active|rights_review_status|rights_valid_until|rights_owner_attested|sellable_stock|cost_price_xtr|average_delivery_minutes|sold_count/);
+  assert.match(catalogApi, /display_stock: visibleStock/);
+  assert.match(styles, /marketplace-guide-security-list/);
+  assert.match(guideMigration, /Selesaikan pembayaran melalui VAULT CORE/);
+  assert.match(guideMigration, /Tunggu verifikasi pembayaran/);
+  assert.match(guideMigration, /melalui halaman pesanan/);
+  assert.match(guideMigration, /Login menggunakan data yang diberikan/);
+  assert.match(stockMigration, /display_stock_mode='EXACT_COUNT'/);
+  assert.match(stockMigration, /WHERE sku='ML-001'/);
 });
 
 test('account catalogue hides filters for all games and uses a unified dark filter sheet per selected game', () => {

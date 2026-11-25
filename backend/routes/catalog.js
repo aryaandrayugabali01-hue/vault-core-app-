@@ -67,7 +67,6 @@ router.get('/', async (_req, res) => {
       marketplace_category_icon: product.marketplace_category_icon,
       purchase_guide: product.purchase_guide,
       display_stock: visibleStock,
-      rights_review_active: Boolean(purchaseable),
       is_purchaseable: Boolean(purchaseable),
       is_available: Boolean(purchaseable && actual > 0)
     };
