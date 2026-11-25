@@ -22,7 +22,9 @@ router.get('/dashboard', async (_req, res) => {
       COUNT(*) FILTER (WHERE i.status='RESERVED')::int AS reserved,
       COUNT(*) FILTER (WHERE i.status='SOLD')::int AS sold
       FROM inventory_items i JOIN products p ON p.id=i.product_id
-      WHERE COALESCE(p.is_test,FALSE)=FALSE`),
+      WHERE COALESCE(p.is_test,FALSE)=FALSE AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER'
+        AND p.game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
+        AND EXISTS (SELECT 1 FROM marketplace_categories mc WHERE mc.id=p.marketplace_category_id AND mc.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun'))`),
     pool.query(`SELECT COUNT(*) FILTER (WHERE o.status='PENDING_PAYMENT')::int AS pending,
       COUNT(*) FILTER (WHERE o.status='FULFILLED')::int AS fulfilled,
       COUNT(*) FILTER (WHERE o.status='REFUND_PENDING')::int AS refund_pending
@@ -33,7 +35,9 @@ router.get('/dashboard', async (_req, res) => {
     pool.query(`SELECT COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE)::int AS total_products,
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='ACTIVE')::int AS active_products,
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='ACTIVE'
-        AND sale_price_xtr>1 AND fulfillment_type IS NOT NULL
+        AND sale_price_xtr>1 AND fulfillment_type='GAME_ACCOUNT_TRANSFER'
+        AND game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
+        AND EXISTS (SELECT 1 FROM marketplace_categories mc WHERE mc.id=products.marketplace_category_id AND mc.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun'))
         AND EXISTS (SELECT 1 FROM product_rights_reviews r
           WHERE r.id=products.current_rights_review_id AND r.product_id=products.id
             AND r.review_status='APPROVED' AND r.owner_attested=TRUE AND r.valid_until>NOW())
@@ -58,7 +62,7 @@ router.get('/marketplace-categories', async (_req,res) => {
             COUNT(p.id) FILTER (WHERE p.status='ACTIVE')::int AS active_product_count
      FROM marketplace_categories c
      LEFT JOIN products p ON p.marketplace_category_id=c.id
-     WHERE c.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun')
+     WHERE c.is_active=TRUE AND c.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun')
      GROUP BY c.id ORDER BY c.sort_order,c.name`
   );
   res.json({ categories:rows });
@@ -88,6 +92,11 @@ router.get('/products', async (_req, res) => {
        ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
      LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
      LEFT JOIN inventory_items i ON i.product_id=p.id
+     WHERE COALESCE(p.is_test,FALSE)=FALSE
+       AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER'
+       AND p.game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
+       AND mc.is_active=TRUE
+       AND mc.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun')
      GROUP BY p.id,rr.id,mc.id ORDER BY p.created_at DESC`
   );
   const products = rows.map((product) => ({
@@ -481,10 +490,10 @@ router.get('/test-fixtures', async (_req, res) => {
 
 router.post('/test-fixtures', async (req, res) => {
   const fixtures = [
-    { sku:'TEST-MLBB-001', gameCategory:'MLBB', tier:'SILVER', name:'TEST ONLY - MLBB Delivery Sample', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-MLBB-001' },
-    { sku:'TEST-ROBLOX-001', gameCategory:'ROBLOX', tier:'GOLD', name:'TEST ONLY - Roblox Delivery Sample', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-ROBLOX-001' },
-    { sku:'TEST-FREEFIRE-001', gameCategory:'FREE_FIRE', tier:'PLATINUM', name:'TEST ONLY - Free Fire Delivery Sample', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-FREEFIRE-001' },
-    { sku:'TEST-GENSHIN-001', gameCategory:'GENSHIN', tier:'SILVER', name:'TEST ONLY - Genshin Delivery Sample', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-GENSHIN-001' }
+    { sku:'TEST-MLBB-001', gameCategory:'MLBB', categorySlug:'mlbb-akun', name:'TEST ONLY - MLBB Account Transfer', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-MLBB-001', attributes:{win_rate:'58%',total_skins:120,total_heroes:85,rank_current:'Mythic',linked_account:'Moonton, Google'} },
+    { sku:'TEST-ROBLOX-001', gameCategory:'ROBLOX', categorySlug:'roblox-akun', name:'TEST ONLY - Roblox Account Transfer', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-ROBLOX-001', attributes:{rank_current:'Premium',linked_account:'Roblox'} },
+    { sku:'TEST-FREEFIRE-001', gameCategory:'FREE_FIRE', categorySlug:'free-fire-akun', name:'TEST ONLY - Free Fire Account Transfer', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-FREEFIRE-001', attributes:{win_rate:'54%',total_skins:40,rank_current:'Heroic',linked_account:'Google, Facebook'} },
+    { sku:'TEST-GENSHIN-001', gameCategory:'GENSHIN', categorySlug:'genshin-akun', name:'TEST ONLY - Genshin Account Transfer', payload:'VAULTCORE-TEST-ONLY-NOT-REDEEMABLE-GENSHIN-001', attributes:{rank_current:'Adventure Rank 55',linked_account:'HoYoverse'} }
   ];
   const result = [];
   let client = null;
@@ -500,17 +509,27 @@ router.post('/test-fixtures', async (req, res) => {
     stage = 'transaction-begin';
     await query('BEGIN');
     for (const fixture of fixtures) {
+      const category = await query('SELECT id FROM marketplace_categories WHERE slug=$1 AND is_active=TRUE',[fixture.categorySlug]);
+      if (!category.rows[0]) throw new Error('ACCOUNT_CATEGORY_MISSING:' + fixture.categorySlug);
+      const categoryId = Number(category.rows[0].id);
       const existing = await query('SELECT id,is_test,status FROM products WHERE sku=$1 FOR UPDATE', [fixture.sku]);
       let product = existing.rows[0];
       if (product && product.is_test !== true) throw new Error('TEST_FIXTURE_SKU_CONFLICT:' + fixture.sku);
+      const description = 'PRODUK CONTOH UJI INTERNAL UNTUK ALUR TRANSFER AKUN. Bukan produk komersial. Data dummy tidak dapat digunakan untuk login. Harga 1 XTR hanya untuk menguji invoice dan transaksi.';
       if (!product) {
         const inserted = await query(
-          `INSERT INTO products (sku,game_category,tier,name,description,fulfillment_type,sale_price_xtr,cost_price_xtr,rights_review_reference,is_test,status)
-           VALUES ($1,$2,$3,$4,$5,'SERVICE_INSTRUCTIONS',1,0,'INTERNAL_TEST_FIXTURE_ONLY',TRUE,'DRAFT') RETURNING id,status`,
-          [fixture.sku,fixture.gameCategory,fixture.tier,fixture.name,
-           'PRODUK CONTOH UJI INTERNAL. Bukan produk komersial. Kode dummy ini tidak dapat ditukarkan. Harga 1 XTR hanya untuk menguji alur invoice dan transaksi.']
+          `INSERT INTO products (sku,game_category,tier,name,description,fulfillment_type,sale_price_xtr,cost_price_xtr,rights_review_reference,is_test,status,marketplace_category_id,attributes)
+           VALUES ($1,$2,'GOLD',$3,$4,'GAME_ACCOUNT_TRANSFER',1,0,'INTERNAL_TEST_FIXTURE_ONLY',TRUE,'DRAFT',$5,$6::jsonb) RETURNING id,status`,
+          [fixture.sku,fixture.gameCategory,fixture.name,description,categoryId,JSON.stringify(fixture.attributes)]
         );
         product = inserted.rows[0];
+        changed = true;
+      } else {
+        await query(
+          `UPDATE products SET game_category=$2,tier='GOLD',name=$3,description=$4,fulfillment_type='GAME_ACCOUNT_TRANSFER',
+             marketplace_category_id=$5,attributes=$6::jsonb,updated_at=NOW() WHERE id=$1`,
+          [product.id,fixture.gameCategory,fixture.name,description,categoryId,JSON.stringify(fixture.attributes)]
+        );
         changed = true;
       }
       const stock = await query("SELECT id FROM inventory_items WHERE product_id=$1 AND status IN ('AVAILABLE','RESERVED') LIMIT 1", [product.id]);
@@ -633,6 +652,10 @@ router.get('/inventory', async (_req, res) => {
       COUNT(i.id) FILTER (WHERE i.status='SOLD')::int AS sold,
       COUNT(i.id) FILTER (WHERE i.status='UNAVAILABLE')::int AS unavailable
      FROM products p LEFT JOIN inventory_items i ON i.product_id=p.id
+     JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
+     WHERE COALESCE(p.is_test,FALSE)=FALSE AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER'
+       AND p.game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
+       AND mc.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun')
      GROUP BY p.id ORDER BY p.name`
   );
   res.json({ inventory: rows });
@@ -655,14 +678,20 @@ router.post('/products/:id/inventory', async (req, res) => {
   }
 
   const { rows: productRows } = await pool.query(
-    `SELECT p.id,p.status,p.is_test,p.current_rights_review_id,
+    `SELECT p.id,p.status,p.is_test,p.current_rights_review_id,p.game_category,p.fulfillment_type,
+            mc.slug AS marketplace_category_slug,
             rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
-     FROM products p LEFT JOIN product_rights_reviews rr
-       ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
+     FROM products p
+     LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
+     LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
      WHERE p.id=$1`, [productId]
   );
   const product = productRows[0];
   if (!product) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
+  const expectedAccountSlug = ({MLBB:'mlbb-akun',FREE_FIRE:'free-fire-akun',ROBLOX:'roblox-akun',GENSHIN:'genshin-akun'})[product.game_category];
+  if (product.is_test === true || product.fulfillment_type !== 'GAME_ACCOUNT_TRANSFER' || !expectedAccountSlug || product.marketplace_category_slug !== expectedAccountSlug) {
+    return res.status(400).json({error:'ACCOUNT_PRODUCT_ONLY',message:'Stok hanya dapat ditambahkan ke produk akun game dengan subkategori Akun yang sesuai.'});
+  }
   if (!canAddProductInventory(product, {
     id:product.review_id,review_status:product.review_status,
     valid_until:product.valid_until,owner_attested:product.owner_attested
