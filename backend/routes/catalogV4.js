@@ -26,6 +26,11 @@ router.get('/variants', async (_req, res) => {
                 WHERE i.product_id=p.id AND i.status='AVAILABLE'
                   AND i.rights_review_id=p.current_rights_review_id
                   AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
+                  AND (v.kategori_produk<>'Akun' OR EXISTS (
+                    SELECT 1 FROM vault_core_secret_payloads s
+                    WHERE s.inventory_item_id=i.id AND s.secret_scope='PRODUCT_ACCOUNT'
+                      AND s.secret_status='ACTIVE'
+                  ))
               ) stock
               WHERE p.variant_id=v.variant_id
                 AND p.status='ACTIVE' AND COALESCE(p.is_test,FALSE)=FALSE
