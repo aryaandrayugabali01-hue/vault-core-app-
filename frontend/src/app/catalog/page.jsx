@@ -506,7 +506,7 @@ export default function HomePage() {
                 </div>
                 <div className="product-card-meta">
                   <span className="account-product-badge">Akun Game</span>
-                  <span className={'stock-label ' + (product.is_available && product.is_purchaseable ? 'in-stock' : 'out-of-stock')}>{product.is_available && product.is_purchaseable ? 'Stok tersedia' : 'Stok habis'}</span>
+                  <span className={'stock-label ' + (product.is_available && (product.is_test || product.is_purchaseable) ? 'in-stock' : 'out-of-stock')}>{product.is_available && (product.is_test || product.is_purchaseable) ? 'Stok tersedia' : 'Stok habis'}</span>
                 </div>
                 {product.is_test && <span className="product-test-badge">CONTOH UJI</span>}
               </div>
