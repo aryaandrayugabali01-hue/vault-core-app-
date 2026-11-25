@@ -590,7 +590,7 @@ export default function HomePage() {
           <div><span className="eyebrow muted">PILIHAN UNTUK ANDA</span><h2>Katalog digital <span className="active-filter-badge">{activeFilterLabel}</span></h2></div>
           <span className="section-count">{loading ? '—' : String(filtered.length).padStart(2, '0') + ' PRODUK'}</span>
         </div>
-        <div className="catalog-controls">
+        <div className="catalog-controls catalog-controls-v2" data-catalog-mode={category === 'ALL' ? 'all-games' : 'single-game'}>
           {category !== 'ALL' && <button type="button" className="mlbb-filter-main" onClick={()=>openMlbbFilter('win_rate')} aria-label={'Buka filter akun '+(selectedGame?.label || '')}>
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5h16l-6.2 7v5.1l-3.6 1.9V12z"/></svg>
             <span>Filter akun</span>{activeAccountFilterCount>0&&<b>{activeAccountFilterCount}</b>}
