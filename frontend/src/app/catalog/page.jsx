@@ -98,6 +98,58 @@ function formatDate(value) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('id-ID');
 }
+function getWarrantyTerms(product) {
+  const terms = String(product?.customer_terms ?? '');
+  const match = /GARANSI ANTI[\s-]?HACKBACK VAULT CORE/i.exec(terms);
+  return match ? terms.slice(match.index + match[0].length).trim() : '';
+}
+function getWarrantySections(text) {
+  const source = String(text ?? '');
+  if (!source) return [];
+  const patterns = [
+    ['Masa berlaku', /Garansi berlaku otomatis[^.]*\./i],
+    ['Perlindungan', /Apabila ada indikasi[^.]*\./i],
+    ['Cara melapor', /pembeli menghubungi VAULT CORE[^.]*\./i],
+    ['Pemeriksaan', /VAULT CORE memeriksa[^.]*\./i],
+    ['Penyelesaian', /Klaim yang terbukti valid[^.]*\./i],
+    ['Waktu penanganan', /Waktu pemrosesan[^.]*\./i],
+    ['Batas pengajuan', /Klaim harus diajukan[^.]*\./i]
+  ];
+  return patterns.map(([label, pattern]) => {
+    const match = source.match(pattern);
+    return match ? {label, content:match[0]} : null;
+  }).filter(Boolean);
+}
+function detailAttributeEntries(product) {
+  const hidden = new Set(['kode_produk','sales_enabled','stock_model','subkategori','public_preview']);
+  return getCustomerVisibleProductAttributes(product?.attributes)
+    .filter(([key]) => !hidden.has(String(key).toLowerCase()));
+}
+const DETAIL_ATTRIBUTE_LABELS = Object.freeze({
+  win_rate:'Win Rate', total_skins:'Jumlah Skin', total_heroes:'Jumlah Hero',
+  rank_current:'Rank Saat Ini', linked_account:'Akun Terhubung Pada',
+  linked_platforms:'Platform Tertaut', platform_support:'Dukungan Platform',
+  main_hero:'Hero Utama', email_bundle:'Paket Gmail', emblem_status:'Status Emblem',
+  unbind_terms:'Ketentuan Unbind', season_note:'Catatan Season',
+  metode_penyerahan:'Metode Penyerahan'
+});
+function detailAttributeLabel(key) {
+  return DETAIL_ATTRIBUTE_LABELS[String(key)] ||
+    String(key).replaceAll('_',' ').replace(/\b\w/g,(letter)=>letter.toUpperCase());
+}
+function formatAverageDeliveryMinutes(value) {
+  if (value == null || value === '') return 'Belum tersedia';
+  const minutes = Number(value);
+  if (!Number.isFinite(minutes) || minutes < 0) return 'Belum tersedia';
+  const rounded = Math.round(minutes);
+  if (rounded < 60) return Math.max(1,rounded) + ' menit';
+  const hours = Math.floor(rounded / 60);
+  const remainder = rounded % 60;
+  return remainder ? hours + ' jam ' + remainder + ' menit' : hours + ' jam';
+}
+function getNonWarrantyTerms(value) {
+  return String(value ?? '').replace(/GARANSI ANTI[\s-]?HACKBACK VAULT CORE[\s\S]*$/i,'').trim();
+}
 const ORDER_STATUS_LABELS = {
   PENDING_PAYMENT: 'Menunggu pembayaran',
   PAID: 'Pembayaran diterima',
@@ -157,7 +209,10 @@ export default function HomePage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideCategory, setGuideCategory] = useState(null);
+  const [warrantyOpen, setWarrantyOpen] = useState(false);
   const [detailQuantity, setDetailQuantity] = useState(1);
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+  const [detailSpecsExpanded, setDetailSpecsExpanded] = useState(false);
   const [testProducts, setTestProducts] = useState([]);
   const [isTestMode, setIsTestMode] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -180,6 +235,30 @@ export default function HomePage() {
   const [setupBusy, setSetupBusy] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
   const [telegramContext, setTelegramContext] = useState(null);
+
+  useEffect(() => {
+    if (!selectedProduct && !guideOpen && !warrantyOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const previousOverscroll = document.body.style.overscrollBehavior;
+    document.body.style.overflow = 'hidden';
+    document.body.style.overscrollBehavior = 'none';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.overscrollBehavior = previousOverscroll;
+    };
+  }, [selectedProduct, guideOpen, warrantyOpen]);
+
+  useEffect(() => {
+    if (!selectedProduct && !guideOpen && !warrantyOpen) return;
+    function handleDetailEscape(event) {
+      if (event.key !== 'Escape') return;
+      if (warrantyOpen) setWarrantyOpen(false);
+      else if (guideOpen) setGuideOpen(false);
+      else setSelectedProduct(null);
+    }
+    window.addEventListener('keydown', handleDetailEscape);
+    return () => window.removeEventListener('keydown', handleDetailEscape);
+  }, [selectedProduct, guideOpen, warrantyOpen]);
 
   async function loadCatalog() {
     setLoading(true);
@@ -565,6 +644,25 @@ export default function HomePage() {
     : 'Belum terhubung';
   const profileInitials = profileName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'VC';
 
+  const detailWarrantyText = selectedProduct ? getWarrantyTerms(selectedProduct) : '';
+  const detailWarrantySections = getWarrantySections(detailWarrantyText);
+  const detailWarrantyDuration = detailWarrantyText.match(/(\d+)\s+hari kalender/i)?.[1] || '';
+  const detailReviewActive = Boolean(selectedProduct?.rights_review_status === 'APPROVED'
+    && selectedProduct?.rights_owner_attested === true
+    && selectedProduct?.rights_valid_until
+    && new Date(selectedProduct.rights_valid_until) > new Date());
+  const detailGallery = selectedProduct
+    ? (Array.isArray(selectedProduct.image_gallery) && selectedProduct.image_gallery.length
+      ? selectedProduct.image_gallery
+      : [selectedProduct.image_url || GAME_ART[selectedProduct.game_category] || GAME_ART.MLBB])
+    : [];
+  const detailSpecs = selectedProduct ? detailAttributeEntries(selectedProduct) : [];
+  const detailRelatedProducts = selectedProduct ? products.filter((product) =>
+    Number(product.id) !== Number(selectedProduct.id)
+    && product.game_category === selectedProduct.game_category
+    && String(product.marketplace_category_id || '') === String(selectedProduct.marketplace_category_id || '')
+  ).slice(0,4) : [];
+
   return <>
     <main className="shell">
       <header className="topbar">
@@ -661,7 +759,7 @@ export default function HomePage() {
                 <div className="product-bottom">
                   <div className="product-price"><small>HARGA JUAL</small><strong>{Number(product.sale_price_xtr).toLocaleString('en-US')} XTR</strong></div>
                   <button className="buy-button" type="button" disabled={buyingId === product.id || activatingId === product.id}
-                    onClick={() => { if (isDraftTest) activateTestProduct(product.id); else { setDetailQuantity(1); setSelectedProduct(product); } }}>
+                    onClick={() => { if (isDraftTest) activateTestProduct(product.id); else { setDetailQuantity(1); setActiveGalleryIndex(0); setDetailSpecsExpanded(false); setSelectedProduct(product); } }}>
                     {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : product.is_available && product.is_purchaseable ? 'Detail & Beli' : 'Lihat detail'}
                   </button>
                 </div>
@@ -702,7 +800,7 @@ export default function HomePage() {
           <div className="catalog-search-results">
             <p className="catalog-search-count" id="catalog-search-title">Hasil pencarian ditemukan: <strong>{filtered.length.toLocaleString('id-ID')} produk</strong></p>
             {filtered.length ? <div className="catalog-search-grid">
-              {filtered.map((product) => <button type="button" className="catalog-search-result" key={product.id} onClick={()=>{setSelectedProduct(product);setCatalogSearchOpen(false);}}>
+              {filtered.map((product) => <button type="button" className="catalog-search-result" key={product.id} onClick={()=>{setDetailQuantity(1);setActiveGalleryIndex(0);setDetailSpecsExpanded(false);setSelectedProduct(product);setCatalogSearchOpen(false);}}>
                 <img src={product.image_url || GAME_ART[product.game_category] || GAME_ART.MLBB} alt="" loading="lazy" />
                 <span className="catalog-search-result-copy">
                   <small>{GAME_LABELS[product.game_category] || product.game_category} · Akun</small>
@@ -766,36 +864,82 @@ export default function HomePage() {
         </section>
       </div>}
 
-{selectedProduct && <div className="modal-backdrop marketplace-detail-backdrop" onClick={() => setSelectedProduct(null)}>
-        <section className="product-detail-modal marketplace-detail-modal" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onClick={(e) => e.stopPropagation()}>
-          <div className="marketplace-sheet-grip" />
-          <div className="modal-head marketplace-detail-head"><div><span className="eyebrow muted">DETAIL PRODUK · {GAME_LABELS[selectedProduct.game_category]||selectedProduct.game_category}</span><h2 id="product-detail-title">{selectedProduct.name}</h2></div><button className="icon-button" type="button" onClick={() => setSelectedProduct(null)} aria-label="Tutup detail produk">×</button></div>
-          <div className="marketplace-detail-gallery">
-            {(Array.isArray(selectedProduct.image_gallery)&&selectedProduct.image_gallery.length?selectedProduct.image_gallery:[selectedProduct.image_url||GAME_ART[selectedProduct.game_category]||GAME_ART.MLBB]).map((src,index)=><img key={src+index} src={src} alt={selectedProduct.name+' '+(index+1)} loading={index?'lazy':'eager'} />)}
-          </div>
-          <div className="marketplace-detail-body">
-            <div className="marketplace-detail-title-row"><div><span className="detail-category">{GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · Akun</span><h3>{selectedProduct.name}</h3></div><strong className="marketplace-detail-price">{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
-            <div className="marketplace-detail-stats">
-              <div><span>Status stok</span><strong>{selectedProduct.is_available && selectedProduct.is_purchaseable ? 'Tersedia' : 'Stok habis'}</strong></div>
-              <div><span>Pemenuhan</span><strong>{FULFILLMENT_LABELS[selectedProduct.fulfillment_type] || 'Transfer akun'}</strong></div>
-              <div><span>Estimasi</span><strong>{selectedProduct.fulfillment_eta || 'Belum ditetapkan Owner'}</strong></div>
+{selectedProduct && <div className="modal-backdrop marketplace-detail-backdrop" onClick={() => { setSelectedProduct(null); setWarrantyOpen(false); }}>
+        <section className="product-detail-modal marketplace-detail-modal marketplace-detail-page" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onClick={(e) => e.stopPropagation()}>
+          <header className="marketplace-detail-header">
+            <button className="marketplace-detail-back" type="button" onClick={() => { setSelectedProduct(null); setWarrantyOpen(false); }} aria-label="Kembali ke katalog">‹</button>
+            <div className="marketplace-detail-header-brand"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /><span>DETAIL PRODUK</span></div>
+            <span className="marketplace-detail-header-category">{GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category}</span>
+          </header>
+          <div className="marketplace-detail-scroll">
+            <section className="marketplace-detail-media-section" aria-label="Galeri gambar produk">
+              <div className="marketplace-detail-gallery">
+                <img src={detailGallery[activeGalleryIndex] || GAME_ART[selectedProduct.game_category] || GAME_ART.MLBB} alt={selectedProduct.name + ' · gambar ' + (activeGalleryIndex + 1)} />
+                <span className="marketplace-gallery-count">{detailGallery.length ? (activeGalleryIndex + 1) + ' / ' + detailGallery.length : 'Gambar produk'}</span>
+              </div>
+              {detailGallery.length > 1 && <div className="marketplace-detail-thumbnails" role="group" aria-label="Pilih gambar produk">
+                {detailGallery.map((src,index)=><button type="button" key={src + index} className={activeGalleryIndex === index ? 'active' : ''} aria-pressed={activeGalleryIndex === index} onClick={()=>setActiveGalleryIndex(index)}><img src={src} alt={'Lihat gambar ' + (index + 1)} loading="lazy" /></button>)}
+              </div>}
+            </section>
+            <div className="marketplace-detail-body">
+              <div className="marketplace-detail-heading">
+                <span className="detail-category">{selectedProduct.marketplace_category_name || (GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category) + ' · Akun'}</span>
+                <h1 id="product-detail-title">{selectedProduct.name}</h1>
+                <div className="marketplace-detail-rating"><span className="marketplace-rating-mark">★</span><div><strong>Rating pelanggan</strong><small>Belum tersedia · Ulasan belum tersedia</small></div></div>
+              </div>
+              <div className="marketplace-detail-trust-grid">
+                <div className="marketplace-detail-trust-card"><span className="marketplace-detail-trust-icon">✓</span><div><strong>Pemeriksaan internal</strong><small>{detailReviewActive ? 'Review Owner masih aktif' : 'Status pemeriksaan belum aktif'}</small></div></div>
+                <button type="button" className={'marketplace-detail-trust-card marketplace-detail-trust-button ' + (detailWarrantyText ? 'is-available' : 'is-unset')} onClick={()=>setWarrantyOpen(true)}>
+                  <span className="marketplace-detail-trust-icon">♢</span><div><strong>Garansi Anti-Hackback</strong><small>{detailWarrantyText ? 'Ketentuan garansi tercatat untuk produk ini' : 'Ketentuan belum tersedia untuk SKU ini'}</small></div><span className="marketplace-detail-trust-arrow">›</span>
+                </button>
+                <div className="marketplace-detail-trust-card"><span className="marketplace-detail-trust-icon">▦</span><div><strong>Spesifikasi akun</strong><small>{detailSpecs.length ? detailSpecs.length + ' atribut produk tercatat' : 'Belum tersedia'}</small></div></div>
+              </div>
+              <section className="marketplace-detail-price-panel" aria-label="Harga produk"><div><small>HARGA PRODUK</small><strong>{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div><span>Harga dalam Telegram Stars (XTR)</span></section>
+              <section className="marketplace-detail-stats marketplace-detail-stats-v2" aria-label="Informasi penawaran">
+                <div><span>Status pengiriman</span><strong>{selectedProduct.fulfillment_type === 'GAME_ACCOUNT_TRANSFER' ? 'Manual oleh VAULT CORE' : 'Mengikuti metode produk'}</strong></div>
+                <div><span>Jumlah terjual</span><strong>{Number(selectedProduct.sold_count || 0).toLocaleString('id-ID')}</strong></div>
+                <div><span>Rata-rata pengiriman</span><strong>{formatAverageDeliveryMinutes(selectedProduct.average_delivery_minutes)}</strong></div>
+                <div><span>Minimum pembelian</span><strong>1 unit</strong></div>
+              </section>
+              <p className="marketplace-detail-fulfillment-note">{selectedProduct.fulfillment_eta || 'Waktu pemenuhan belum ditetapkan pada data produk.'}</p>
+              <section className="marketplace-detail-quantity" aria-label="Jumlah pembelian">
+                <div><strong>Jumlah pembelian</strong><small>Minimum 1 unit</small></div>
+                <div className="marketplace-quantity-control"><button type="button" disabled={detailQuantity <= 1} onClick={()=>setDetailQuantity(Math.max(1,detailQuantity - 1))} aria-label="Kurangi jumlah">−</button><strong>{detailQuantity}</strong><button type="button" disabled={detailQuantity >= 5} onClick={()=>setDetailQuantity(Math.min(5,detailQuantity + 1))} aria-label="Tambah jumlah">+</button></div>
+              </section>
+              <section className="marketplace-detail-section marketplace-detail-guide-callout">
+                <div><strong>Cara Beli &amp; Tips</strong><small>Panduan transaksi, penyerahan informasi, dan keamanan akun</small></div>
+                <button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name || 'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide || []});setGuideOpen(true);}}>Buka panduan <span>›</span></button>
+              </section>
+              <section className="marketplace-detail-section"><h2>Deskripsi Produk</h2><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
+              {getNonWarrantyTerms(selectedProduct.customer_terms) && <section className="marketplace-detail-section"><h2>Ketentuan Produk</h2><p>{getNonWarrantyTerms(selectedProduct.customer_terms)}</p></section>}
+              <section className="marketplace-detail-section">
+                <h2>Spesifikasi Akun</h2>
+                {detailSpecs.length ? <>
+                  <dl className="marketplace-attributes marketplace-attributes-v2">{(detailSpecsExpanded ? detailSpecs : detailSpecs.slice(0,6)).map(([key,value])=><div key={key}><dt>{detailAttributeLabel(key)}</dt><dd>{String(value)}</dd></div>)}</dl>
+                  {detailSpecs.length > 6 && <button className="marketplace-detail-more" type="button" aria-expanded={detailSpecsExpanded} onClick={()=>setDetailSpecsExpanded((current)=>!current)}>{detailSpecsExpanded ? 'Tampilkan lebih sedikit' : 'Tampilkan lebih banyak'} <span>{detailSpecsExpanded ? '⌃' : '⌄'}</span></button>}
+                </> : <p>Spesifikasi akun belum tersedia pada data produk.</p>}
+              </section>
+              <section className="marketplace-detail-store">
+                <div className="marketplace-detail-store-avatar">VC</div>
+                <div><small>INFORMASI TOKO</small><strong>VAULT CORE</strong><p>Penawaran, penyerahan informasi, dan layanan pembeli dikelola langsung oleh VAULT CORE.</p></div>
+                <span className="marketplace-store-badge">RESMI</span>
+              </section>
+              <section className="marketplace-detail-related">
+                <div className="marketplace-detail-section-heading"><div><small>REKOMENDASI</small><h2>Produk lain dari VAULT CORE</h2></div></div>
+                {detailRelatedProducts.length ? <div className="marketplace-related-grid">{detailRelatedProducts.map((product)=><button className="marketplace-related-card" type="button" key={product.id} onClick={()=>{setDetailQuantity(1);setActiveGalleryIndex(0);setDetailSpecsExpanded(false);setSelectedProduct(product);setWarrantyOpen(false);}}>
+                  <img src={product.image_url || GAME_ART[product.game_category] || GAME_ART.MLBB} alt="" loading="lazy" /><span><strong>{product.name}</strong><small>{Number(product.sale_price_xtr || 0).toLocaleString('en-US')} XTR</small></span>
+                </button>)}</div> : <p className="marketplace-related-empty">Belum ada produk lain pada subkategori ini.</p>}
+              </section>
+              <div className="marketplace-detail-policy"><strong>Transaksi resmi Telegram Stars</strong><p>Website publik hanya menampilkan katalog dan detail produk. Pembuatan pesanan, checkout, invoice, dan pembayaran dilakukan melalui VAULT CORE Telegram Mini App. Harga dan stok diperiksa ulang oleh server.</p></div>
             </div>
-            {accountSpecEntries(selectedProduct).length > 0 && <section className="marketplace-detail-section"><h3>Spesifikasi Akun</h3><dl className="marketplace-attributes">{accountSpecEntries(selectedProduct).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></section>}
-            <section className="marketplace-detail-section"><h3>Deskripsi Produk</h3><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
-            <section className="marketplace-detail-section"><h3>Ketentuan Produk</h3><p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p></section>
-            <section className="marketplace-detail-section marketplace-guide-link"><button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Cara Beli &amp; Tips <span>›</span></button></section>
-            <div className="marketplace-detail-policy"><strong>Transaksi resmi Telegram Stars</strong><p>Produk ini dapat dipesan melalui VAULT CORE Telegram Mini App. Harga dan stok diperiksa ulang oleh server sebelum invoice resmi Telegram Stars (XTR) dibuat. Pesanan diproses setelah Telegram mengonfirmasi pembayaran.</p></div>
-            {selectedProduct.is_purchaseable || selectedProduct.is_test ? <div className="detail-buy-row marketplace-quantity-row">
-              <label>Jumlah pembelian<div className="marketplace-quantity-control"><button type="button" disabled={detailQuantity<=1} onClick={()=>setDetailQuantity(Math.max(1,detailQuantity-1))}>−</button><strong>{detailQuantity}</strong><button type="button" disabled={detailQuantity>=5} onClick={()=>setDetailQuantity(Math.min(5,detailQuantity+1))}>+</button></div></label>
-              <div><small>Subtotal indikatif</small><strong>{(Number(selectedProduct.sale_price_xtr||0)*detailQuantity).toLocaleString('en-US')} XTR</strong></div>
-            </div> : null}
-            <div className="marketplace-detail-actions">
-              {telegramContext && <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available||selectedProduct.is_test||!selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,detailQuantity)}>+ Keranjang</button>}
-              <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || selectedProduct.is_test || !selectedProduct.is_purchaseable} onClick={() => { const product = selectedProduct; const quantity=detailQuantity; setSelectedProduct(null); buy(product,quantity); }}>
-                {buyingId === selectedProduct.id ? 'Menyiapkan…' : !telegramContext ? 'Lanjutkan di Telegram' : selectedProduct.is_available ? 'Beli sekarang' : 'Stok habis'}
-              </button>
-            </div>
           </div>
+          <footer className="marketplace-detail-stickybar">
+            <div className="marketplace-detail-sticky-price"><small>TOTAL</small><strong>{(Number(selectedProduct.sale_price_xtr || 0) * detailQuantity).toLocaleString('en-US')} XTR</strong></div>
+            <div className="marketplace-detail-sticky-actions">
+              {telegramContext && <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available || selectedProduct.is_test || !selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,detailQuantity)}>Keranjang</button>}
+              <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || selectedProduct.is_test || !selectedProduct.is_purchaseable} onClick={()=>{const product=selectedProduct;const quantity=detailQuantity;setSelectedProduct(null);setWarrantyOpen(false);buy(product,quantity);}}>{buyingId === selectedProduct.id ? 'Menyiapkan…' : !selectedProduct.is_available ? 'Stok habis' : !selectedProduct.is_purchaseable ? 'Belum dapat dibeli' : telegramContext ? 'Beli sekarang' : 'Beli melalui Telegram'}</button>
+            </div>
+          </footer>
         </section>
       </div>}
 
@@ -861,12 +1005,26 @@ export default function HomePage() {
         </section>
       </div>}
 
-      {guideOpen && <div className="modal-backdrop" onClick={()=>setGuideOpen(false)}>
-        <section className="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title" onClick={(e)=>e.stopPropagation()}>
-          <div className="modal-head"><div><span className="eyebrow muted">INFORMASI PEMBELIAN</span><h2 id="guide-title">Panduan Beli &amp; Tips</h2><small>{guideCategory?.name||'VAULT CORE'}</small></div><button className="icon-button" type="button" onClick={()=>setGuideOpen(false)} aria-label="Tutup panduan">×</button></div>
-          {guideCategory?.purchase_guide?.length ? <ol className="guide-steps">{guideCategory.purchase_guide.map((step,index)=><li key={index}><span>{index+1}</span><div><strong>{step.title}</strong><p>{step.content}</p></div></li>)}</ol> : <div className="empty-state"><strong>Panduan kategori belum tersedia</strong><p>Owner belum menambahkan langkah pembelian untuk kategori ini.</p></div>}
-          <div className="guide-security"><strong>Keamanan akun</strong><p>Jangan pernah membagikan kata sandi, OTP, kode pemulihan, atau kode login kepada siapa pun. Periksa kembali rincian produk dan jumlah sebelum membayar.</p></div>
-          <button className="cart-checkout-button" type="button" onClick={()=>setGuideOpen(false)}>Tutup panduan</button>
+      {warrantyOpen && selectedProduct && <div className="modal-backdrop marketplace-policy-backdrop" onClick={()=>setWarrantyOpen(false)}>
+        <section className="marketplace-info-modal" role="dialog" aria-modal="true" aria-labelledby="warranty-title" onClick={(event)=>event.stopPropagation()}>
+          <div className="marketplace-info-header"><div><small>PERLINDUNGAN PEMBELI</small><h2 id="warranty-title">Garansi Anti-Hackback</h2><p>{selectedProduct.name}</p></div><button className="icon-button" type="button" onClick={()=>setWarrantyOpen(false)} aria-label="Tutup garansi">×</button></div>
+          {detailWarrantyText ? <>
+            <div className="marketplace-warranty-intro"><span>✓</span><div><strong>Ketentuan garansi tercatat</strong><small>{detailWarrantyDuration ? 'Masa berlaku ' + detailWarrantyDuration : 'Masa berlaku mengikuti ketentuan produk'} sejak konfirmasi pesanan Selesai sesuai ketentuan produk.</small></div></div>
+            <div className="marketplace-info-section"><h3>Cakupan dan proses klaim</h3><div className="marketplace-policy-points">{detailWarrantySections.map((item,index)=><article key={item.label}><span>{String(index + 1).padStart(2,'0')}</span><div><strong>{item.label}</strong><p>{item.content}</p></div></article>)}</div>{!detailWarrantySections.length && <p className="marketplace-info-copy">{detailWarrantyText}</p>}</div>
+            <div className="marketplace-info-section"><h3>Ketentuan lengkap produk</h3><p className="marketplace-info-copy">{detailWarrantyText}</p></div>
+            <p className="marketplace-info-disclaimer">Klaim mengikuti cakupan dan masa berlaku yang tertulis pada SKU ini. Garansi ini bukan pernyataan bahwa semua risiko akun dapat dicegah. Bukti dan kronologi diperiksa oleh VAULT CORE sebelum keputusan klaim diberikan.</p>
+          </> : <div className="marketplace-info-empty"><strong>Ketentuan garansi belum tersedia</strong><p>SKU ini belum memiliki ketentuan Anti-Hackback yang tercatat pada data produk. VAULT CORE tidak menampilkan masa perlindungan, nilai refund, atau batas waktu penanganan yang belum ditetapkan.</p></div>}
+          <button className="marketplace-info-close" type="button" onClick={()=>setWarrantyOpen(false)}>Tutup</button>
+        </section>
+      </div>}
+
+      {guideOpen && <div className="modal-backdrop marketplace-policy-backdrop" onClick={()=>setGuideOpen(false)}>
+        <section className="guide-modal marketplace-info-modal marketplace-guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title" onClick={(e) => e.stopPropagation()}>
+          <div className="marketplace-info-header"><div><small>INFORMASI PEMBELIAN</small><h2 id="guide-title">Cara Beli &amp; Tips</h2><p>{guideCategory?.name || 'VAULT CORE'}</p></div><button className="icon-button" type="button" onClick={()=>setGuideOpen(false)} aria-label="Tutup panduan">×</button></div>
+          <div className="marketplace-guide-owner"><strong>Informasi dan data akun diberikan langsung oleh VAULT CORE</strong><p>Pembeli berkomunikasi, menerima informasi produk, dan memperoleh bantuan langsung dari VAULT CORE.</p></div>
+          {guideCategory?.purchase_guide?.length ? <ol className="guide-steps">{guideCategory.purchase_guide.map((step,index)=><li key={index}><span>{index+1}</span><div><strong>{step.title}</strong><p>{step.content}</p></div></li>)}</ol> : <div className="empty-state"><strong>Panduan kategori belum tersedia</strong><p>Panduan untuk subkategori ini belum tersedia pada data VAULT CORE.</p></div>}
+          <div className="guide-security"><strong>Tips keamanan akun</strong><p>Ikuti tahapan login yang tercantum pada panduan produk. Setelah akses diterima, periksa identitas dan spesifikasi akun, perbarui pengaturan keamanan yang tersedia, dan jangan membagikan OTP atau kode pemulihan kepada pihak lain.</p></div>
+          <button className="marketplace-info-close" type="button" onClick={()=>setGuideOpen(false)}>Tutup panduan</button>
         </section>
       </div>}
     </main>
