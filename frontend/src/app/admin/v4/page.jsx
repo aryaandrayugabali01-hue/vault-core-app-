@@ -8,6 +8,7 @@ const API=process.env.NEXT_PUBLIC_API_BASE_URL||'';
 const GAME_CATEGORY={MLBB:'MLBB',FF:'FREE_FIRE',ROBLOX:'ROBLOX',GI:'GENSHIN'};
 const FULFILLMENT={'Akun':'GAME_ACCOUNT_TRANSFER','Jasa Joki':'SERVICE_INSTRUCTIONS','Item In-Game':'SERVICE_INSTRUCTIONS'};
 const STATUS={DRAFT:'Draf',ACTIVE:'Aktif',PAUSED:'Dijeda',ARCHIVED:'Arsip'};
+const LEGACY_VARIANT_BY_SLUG={'mlbb-akun':1,'free-fire-akun':4,'roblox-akun':8,'genshin-akun':10,'roblox-blox-fruits':6,'roblox-adopt-me':7,'roblox-murder-mystery-2':7};
 const initialDraft={variantId:'',sku:'',name:'',description:'',variantSubtype:'',salePriceXtr:'',costPriceXtr:'0',customerTerms:'',fulfillmentEta:'',imageUrl:'',attributes:'{}'};
 const initialReview={rightsBasis:'',publisherPlatform:'INTERNAL_OWNER',officialTermsUrl:'',authorizationEvidenceReference:'',chainOfTitle:'',transferMethod:'',region:'Global',validUntil:'',reviewStatus:'PENDING',reviewNotes:'',ownerAttested:false};
 const blankAnswer=(question)=>({questionId:Number(question.question_id),responseText:'',proofUrls:[],confirmPostPaymentVault:false});
@@ -29,6 +30,7 @@ export default function OwnerV4Page(){
  const [variants,setVariants]=useState([]);
  const [products,setProducts]=useState([]);
  const [selectedId,setSelectedId]=useState('');
+ const [mappingVariantId,setMappingVariantId]=useState('');
  const [draft,setDraft]=useState(initialDraft);
  const [review,setReview]=useState(initialReview);
  const [questions,setQuestions]=useState([]);
@@ -84,6 +86,16 @@ export default function OwnerV4Page(){
  },[selected]);
  useEffect(()=>{loadQuestions();},[loadQuestions]);
 
+ async function mapLegacyProduct(event){
+  event.preventDefault();if(!selected)return;setBusy(true);setError('');setNotice('');
+  try{
+   const expected=LEGACY_VARIANT_BY_SLUG[selected.legacy_category_slug];
+   if(!expected||Number(mappingVariantId)!==expected)throw new Error('Pilih varian kanonis yang sesuai kategori produk lama.');
+   const data=await api('/api/admin/v4/products/'+selected.id+'/variant',{method:'PUT',body:JSON.stringify({variantId:Number(mappingVariantId)})});
+   await refresh();setNotice('SKU '+data.product.sku+' dipetakan ke varian v4 dan dipindahkan ke DRAFT untuk pemeriksaan ulang.');
+  }catch(e){setError(e.message);}finally{setBusy(false);}
+ }
+
  async function createDraft(event){
   event.preventDefault();setBusy(true);setNotice('');setError('');
   try{
@@ -127,9 +139,11 @@ export default function OwnerV4Page(){
   try{
    const payload={sourceReference:inventory.sourceReference};
    if(isAccount){
+    if(!inventory.replaceLegacyStock)throw new Error('Konfirmasi penggantian stok lama yang belum masuk vault.');
     let parsed;try{parsed=JSON.parse(inventory.payloads);}catch{throw new Error('Data stok akun harus berupa JSON array.');}
     if(!Array.isArray(parsed))throw new Error('Data stok akun harus berupa JSON array.');
     payload.payloads=parsed;
+    payload.replaceLegacyStock=true;
    }else{
     payload.quantity=Number(inventory.quantity);
    }
@@ -190,6 +204,13 @@ export default function OwnerV4Page(){
     <div className="vco-product-list">{products.map(p=><button type="button" key={p.id} className={String(p.id)===selectedId?'active':''} onClick={()=>setSelectedId(String(p.id))}><strong>{p.sku}</strong><span>{p.name}</span><small>{p.variant_name||'Belum dipetakan'} · {STATUS[p.status]||p.status}</small><small>{p.completed_questions}/{p.required_questions} pertanyaan · {p.available_stock} stok</small></button>)}</div>
     {selected?<div className="vco-selected">
       <div className="vco-selected-head"><div><span>SKU {selected.sku}</span><h3>{selected.name}</h3><p>{selected.game_name} · {selected.variant_category} · {selected.variant_name}</p></div><b className={selected.status==='ACTIVE'?'good':''}>{STATUS[selected.status]||selected.status}</b></div>
+      {!selected.variant_id&&<form className="vco-map-legacy" onSubmit={mapLegacyProduct}>
+       <div><strong>SKU legacy belum dipetakan</strong><small>Kategori sumber: {selected.legacy_category_slug||'tidak diketahui'}. SKU hanya dapat dipetakan bila kategori sumber mempunyai padanan v4 yang eksplisit.</small></div>
+       {LEGACY_VARIANT_BY_SLUG[selected.legacy_category_slug]?<>
+        <label>Varian kanonis<select required value={mappingVariantId} onChange={e=>setMappingVariantId(e.target.value)}><option value="">Pilih varian yang sesuai</option>{variants.filter(v=>Number(v.variant_id)===LEGACY_VARIANT_BY_SLUG[selected.legacy_category_slug]).map(v=><option key={v.variant_id} value={v.variant_id}>{v.variant_id}. {v.nama_game} · {v.kategori_produk} · {v.jenis_varian}</option>)}</select></label>
+        <button disabled={busy||!mappingVariantId}>Petakan dan pindahkan ke DRAFT</button>
+       </>:<p className="vco-map-blocked">Kategori legacy ini belum mempunyai varian v4 yang cocok. Jangan dipaksakan ke kategori lain.</p>}
+      </form>}
       <div className="vco-metrics"><span>Harga <b>{Number(selected.sale_price_xtr).toLocaleString('id-ID')} XTR</b></span><span>Stok <b>{selected.available_stock}</b></span><span>Vault <b>{selected.vaulted_stock}</b></span><span>Checklist <b>{selected.completed_questions}/{selected.required_questions}</b></span><span>Hak <b>{selected.rights_approved?'APPROVED':'BELUM DISETUJUI'}</b></span></div>
     </div>:<div className="vco-empty">Pilih SKU untuk melengkapi pemeriksaan Owner.</div>}
    </div>
@@ -237,6 +258,7 @@ export default function OwnerV4Page(){
     <div className="vco-section-head"><div><span>STEP 05</span><h2>Tambah stok dan data fulfillment</h2></div><small>{isAccount?'Data akses akun dienkripsi per record':'Slot fulfillment manual tanpa kredensial pelanggan'}</small></div>
     <form className="vco-grid" onSubmit={addInventory}>
      <label className="wide">Referensi sumber stok<input required value={inventory.sourceReference} onChange={e=>setInventory({...inventory,sourceReference:e.target.value})} placeholder={isAccount?'VAULTCORE_OWNER_ACCOUNT_STOCK_V1:INTERNAL-OWNER':'VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:OWNER-OPS'}/></label>
+     {isAccount&&<label className="wide vco-check"><input type="checkbox" checked={!!inventory.replaceLegacyStock} onChange={e=>setInventory({...inventory,replaceLegacyStock:e.target.checked})}/> Saya mengonfirmasi unit stok lama yang tidak memiliki record vault v4 aktif akan dinonaktifkan setelah kredensial pengganti berhasil dienkripsi.</label>}
      {isAccount?<label className="wide">JSON array kredensial akun (disimpan terenkripsi)<textarea rows="7" value={inventory.payloads} onChange={e=>setInventory({...inventory,payloads:e.target.value})}/><small>Contoh: [{'{'}"login":"...","password":"..."{'}'}]. Kredensial tidak masuk checklist atau atribut produk.</small></label>:<label>Jumlah slot manual<input type="number" min="1" max="100" value={inventory.quantity} onChange={e=>setInventory({...inventory,quantity:e.target.value})}/></label>}
      <div className="wide vco-form-actions"><button disabled={busy||!selected.rights_approved}>{busy?'Menyimpan…':'Tambahkan stok'}</button><small>Hak harus APPROVED dan masih berlaku sebelum stok dapat ditambahkan.</small></div>
     </form>
