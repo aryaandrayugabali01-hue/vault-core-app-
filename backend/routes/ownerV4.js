@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { pool } from '../db/pool.js';
 import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes } from '../services/productDetailsService.js';
 import { normalizeImageGallery } from '../services/marketplaceCategoryService.js';
+import { readJokiCustomerAccess } from '../controllers/secretController.js';
 
 const router = Router();
 const GAME_CATEGORY = Object.freeze({
@@ -16,6 +17,8 @@ const FULFILLMENT_BY_GROUP = Object.freeze({
   'Item In-Game': new Set(['SERVICE_INSTRUCTIONS','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','GIFT_CODE','DIGITAL_FILE'])
 });
 const SENSITIVE_QUESTION = /(login|password|\bpass\b|kata\s*sandi|otp|session|recovery|token)/i;
+
+router.post('/orders/:orderNumber/customer-access/:orderItemId/read', readJokiCustomerAccess);
 
 router.get('/variants', async (_req, res) => {
   const { rows } = await pool.query(
