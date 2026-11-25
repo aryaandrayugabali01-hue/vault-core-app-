@@ -1214,3 +1214,44 @@ body{
   background-size:cover;background-position:center;background-repeat:no-repeat;
 }
 @media(max-width:760px){body{background-attachment:scroll}}
+
+
+/* Account-only catalog refinement */
+.product-section{
+  background-image:linear-gradient(180deg,rgba(13,19,29,.91),rgba(13,19,29,.96)),url('/assets/02-hero/hero-vaultcore-loop.webp');
+}
+.product-art.product-art-brand{
+  background-image:linear-gradient(145deg,rgba(13,20,30,.26),rgba(9,14,22,.52)),var(--game-background,url('/assets/02-hero/hero-vaultcore-loop.webp'));
+}
+.account-filter-toolbar{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:9px;
+}
+.account-filter-toolbar label{min-width:0}
+.account-filter-toolbar select{width:100%;min-width:0}
+.product-card-meta{align-items:center}
+.account-product-badge,.stock-label{
+  display:inline-flex;align-items:center;max-width:100%;min-height:23px;padding:4px 8px;
+  border:1px solid rgba(255,255,255,.14);border-radius:999px;
+  background:rgba(10,16,25,.86);color:#e8edf5;font-size:8px;font-weight:800;
+  line-height:1.2;white-space:nowrap;backdrop-filter:blur(9px)
+}
+.account-product-badge{border-color:rgba(130,229,189,.25);color:#a5f0ce}
+.stock-label.in-stock{border-color:rgba(0,214,138,.28);color:#9ceac8}
+.stock-label.out-of-stock{border-color:rgba(255,177,102,.3);color:#ffd09f}
+.marketplace-category-nav{justify-content:flex-start}
+.marketplace-category-nav button{min-width:64px}
+.product-card .buy-button:disabled{opacity:.72;cursor:default}
+.marketplace-detail-stats>div strong{overflow-wrap:anywhere}
+@media(max-width:700px){
+  .account-filter-toolbar{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .account-filter-toolbar label span{font-size:9px}
+  .account-filter-toolbar select{font-size:10px}
+  .product-card-meta{right:6px;bottom:6px;left:6px;gap:4px}
+  .account-product-badge,.stock-label{min-height:20px;padding:3px 6px;font-size:7px}
+}
+@media(max-width:360px){
+  .account-filter-toolbar{grid-template-columns:minmax(0,1fr)}
+  .product-card-meta{flex-wrap:wrap}
+}
