@@ -270,3 +270,13 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - Preserve aspect ratio, full-bleed single official artwork, bottom text gradient, carousel behavior, game order, links, live account counts, and all other Dashboard sections.
 - Mobile flex-basis: `clamp(173px, 43.5vw, 315px)`; desktop flex-basis: `clamp(225px, 43.5vw, 315px)`; narrow-screen override: `58.5vw`.
 - Scope is card sizing only. Product data, backend, catalog, pricing, stock, and transaction behavior remain unchanged.
+
+## 21. Dashboard sizing alignment — 25 Nov 2026
+
+- Gunakan delapan screenshot UniPin yang disediakan pada 25 November 2026 sebagai referensi **ukuran dan ritme spacing saja**.
+- Acuan diterapkan pada area Dashboard mobile: gutter horizontal, jarak vertikal antarbagian, jarak heading ke grid, gap antargrid, padding isi kartu, ukuran gambar pada kartu produk/panduan, dan skala font.
+- Ukuran grid utama pada viewport mobile memakai gap 16px; grid Perlindungan Pembeli 14px. Pada viewport sangat sempit, grid dua kolom memakai gap 10px dan grid Perlindungan Pembeli memakai gap 8px.
+- Teks heading, label, harga, deskripsi, dan CTA dinaikkan ke skala yang mudah dibaca pada layar ponsel.
+- **Hanya nilai ukuran** yang boleh diambil dari referensi. Pertahankan seluruh warna, gradient, background, logo, ikon, artwork, border, radius, struktur konten, urutan section, dan perilaku carousel milik VAULT CORE.
+- Jangan menyalin identitas visual, komponen, copywriting, metode pembayaran, promo, maupun aset UniPin.
+- Area dashboard, katalog, detail produk, navigation, data produk, harga, stok, checkout XTR, dan perlindungan pembeli tetap mengikuti aturan LOCKED sebelumnya.

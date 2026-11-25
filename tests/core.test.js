@@ -1001,3 +1001,20 @@ test('dashboard buyer protection uses the official Vault Core logo and tagline w
   assert.ok(styles.includes('.dashboard-protection-card:nth-child(3)'));
   assert.ok(styles.includes('.dashboard-protection-logo'));
 });
+
+test('dashboard home spacing and typography follow the supplied size reference only', () => {
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const start = styles.indexOf('/* Dashboard home sizing alignment based on supplied UniPin mobile references.');
+  assert.ok(start >= 0);
+  const sizing = styles.slice(start);
+  for (const rule of [
+    '.dashboard-shell{padding-right:clamp(16px,3.2vw,22px);padding-left:clamp(16px,3.2vw,22px)}',
+    '.dashboard-games,.dashboard-featured,.dashboard-collection,.dashboard-guides,.dashboard-transactions,.dashboard-protection{margin:24px 0}',
+    '.dashboard-featured-grid,.dashboard-product-grid,.dashboard-guides-grid{gap:16px}',
+    '.dashboard-protection-grid{gap:14px}',
+    '.dashboard-guide-body h3{font-size:10px;line-height:1.45}',
+    '.dashboard-protection-card p{font-size:8px;line-height:1.5}',
+    '@media(max-width:390px)'
+  ]) assert.ok(sizing.includes(rule), 'Missing size reference rule: ' + rule);
+  assert.equal(/(?:^|[;{])\\s*(?:background|background-color|color|border-color)\\s*:/.test(sizing), false);
+});
