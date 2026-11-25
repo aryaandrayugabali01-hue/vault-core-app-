@@ -48,8 +48,22 @@ function readAccountAttribute(product, filter) {
   const attrs = getCustomerVisibleProductAttributes(product?.attributes);
   const normalize = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const accepted = new Set(filter.aliases.map(normalize));
-  const entry = attrs.find(([key]) => accepted.has(normalize(key)));
-  return entry ? String(entry[1] ?? '').trim() : '';
+  const entries = attrs.filter(([key]) => accepted.has(normalize(key)));
+  if (filter.id === 'linked_account') {
+    const seen = new Set();
+    const values = [];
+    for (const [, rawValue] of entries) {
+      for (const value of String(rawValue ?? '').split(/[;,|]/).map((item) => item.trim()).filter(Boolean)) {
+        const key = normalize(value);
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          values.push(value);
+        }
+      }
+    }
+    return values.join(', ');
+  }
+  return entries.length ? String(entries[0][1] ?? '').trim() : '';
 }
 function accountSpecEntries(product) {
   return ACCOUNT_FILTERS.map((filter) => [filter.label, readAccountAttribute(product, filter)]).filter(([,value]) => value);
@@ -136,6 +150,8 @@ export default function HomePage() {
   const [activeFilterSection, setActiveFilterSection] = useState('win_rate');
   const [filterDraft, setFilterDraft] = useState({...EMPTY_MLBB_FILTERS,linked_account:[]});
   const [linkedProviderSearch, setLinkedProviderSearch] = useState('');
+  const [rankOptionsExpanded, setRankOptionsExpanded] = useState(true);
+  const [providerOptionsExpanded, setProviderOptionsExpanded] = useState(true);
   const [sortBy, setSortBy] = useState('NAME');
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -219,6 +235,12 @@ export default function HomePage() {
     if (id === 'linked_account') return Boolean(attributeFilters.linked_account?.length);
     return Boolean(String(attributeFilters[id+'_min']??'').trim() || String(attributeFilters[id+'_max']??'').trim());
   };
+  const activeRankOptions = category === 'MLBB'
+    ? MLBB_RANKS
+    : (accountFilterOptions.find((item)=>item.id==='rank_current')?.values || []);
+  const activeProviderOptions = category === 'MLBB'
+    ? MLBB_LINKED_PROVIDERS
+    : (accountFilterOptions.find((item)=>item.id==='linked_account')?.values || []);
   const filtered = useMemo(() => {
     const list = sourceProducts.filter((p) =>
       ['MLBB','FREE_FIRE','ROBLOX','GENSHIN'].includes(p.game_category)
@@ -462,6 +484,8 @@ export default function HomePage() {
     setFilterDraft({...EMPTY_MLBB_FILTERS,...attributeFilters,linked_account:Array.isArray(attributeFilters.linked_account)?[...attributeFilters.linked_account]:[]});
     setActiveFilterSection(id);
     setLinkedProviderSearch('');
+    setRankOptionsExpanded(true);
+    setProviderOptionsExpanded(true);
     setFilterSheetOpen(true);
   }
 
@@ -591,10 +615,23 @@ export default function HomePage() {
           <span className="section-count">{loading ? '—' : String(filtered.length).padStart(2, '0') + ' PRODUK'}</span>
         </div>
         <div className="catalog-controls catalog-controls-v2" data-catalog-mode={category === 'ALL' ? 'all-games' : 'single-game'}>
-          {category !== 'ALL' && <button type="button" className="mlbb-filter-main" onClick={()=>openMlbbFilter('win_rate')} aria-label={'Buka filter akun '+(selectedGame?.label || '')}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5h16l-6.2 7v5.1l-3.6 1.9V12z"/></svg>
-            <span>Filter akun</span>{activeAccountFilterCount>0&&<b>{activeAccountFilterCount}</b>}
-          </button>}
+          {category !== 'ALL' && <>
+            <button type="button" className="mlbb-filter-main" onClick={()=>openMlbbFilter('win_rate')} aria-label={'Buka filter akun '+(selectedGame?.label || '')}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5h16l-6.2 7v5.1l-3.6 1.9V12z"/></svg>
+              {activeAccountFilterCount>0&&<b>{activeAccountFilterCount}</b>}
+            </button>
+            <div className="mlbb-filter-strip" role="group" aria-label="Filter spesifikasi akun">
+              {MLBB_FILTER_GROUPS.map((filter) => <button
+                key={filter.id}
+                type="button"
+                className={'mlbb-filter-chip' + (activeAccountFilter(filter.id) ? ' is-active' : '')}
+                aria-pressed={activeAccountFilter(filter.id)}
+                onClick={() => openMlbbFilter(filter.id)}
+              >
+                <span>{filter.label}</span><span className="mlbb-filter-chip-chevron" aria-hidden="true">⌄</span>
+              </button>)}
+            </div>
+          </>}
           <label className="mlbb-sort-control"><span>Urutkan</span><select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
             <option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option>
           </select></label>
@@ -687,19 +724,23 @@ export default function HomePage() {
             </section>}
             {activeFilterSection === 'rank_current' && <section className="mlbb-filter-section">
               <h3>Rank Saat Ini</h3>
-              <div className="mlbb-choice-grid">{accountFilterOptions.find((item)=>item.id==='rank_current')?.values?.length ? accountFilterOptions.find((item)=>item.id==='rank_current').values.map((rank)=><label key={rank} className="mlbb-choice-row">
+              <div className="mlbb-choice-grid">{activeRankOptions.length ? activeRankOptions.slice(0,rankOptionsExpanded ? Number.MAX_SAFE_INTEGER : 10).map((rank)=><label key={rank} className="mlbb-choice-row">
                 <input type="radio" name="account-rank-current" value={rank} checked={filterDraft.rank_current===rank} onChange={()=>setFilterDraft((current)=>({...current,rank_current:rank}))} />
                 <span>{rank}</span>
               </label>) : <p className="mlbb-filter-empty">Pilihan rank belum tersedia untuk game ini.</p>}</div>
+              {activeRankOptions.length > 10 && <button type="button" className="mlbb-choice-toggle" aria-expanded={rankOptionsExpanded} onClick={()=>setRankOptionsExpanded((current)=>!current)}>{rankOptionsExpanded ? 'Sembunyikan' : 'Tampilkan semua'}</button>}
             </section>}
             {activeFilterSection === 'linked_account' && <section className="mlbb-filter-section">
               <h3>Akun Terhubung Pada</h3>
               <label className="mlbb-provider-search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Cari" value={linkedProviderSearch} onChange={(e)=>setLinkedProviderSearch(e.target.value)} /></label>
-              <div className="mlbb-choice-grid">{(category === 'MLBB' ? MLBB_LINKED_PROVIDERS : accountFilterOptions.find((item)=>item.id==='linked_account')?.values || [])
-                .filter((provider)=>String(provider).toLowerCase().includes(linkedProviderSearch.toLowerCase())).map((provider)=><label key={provider} className="mlbb-choice-row">
+              <div className="mlbb-choice-grid">{activeProviderOptions
+                .filter((provider)=>String(provider).toLowerCase().includes(linkedProviderSearch.toLowerCase()))
+                .slice(0,providerOptionsExpanded ? Number.MAX_SAFE_INTEGER : 6)
+                .map((provider)=><label key={provider} className="mlbb-choice-row">
                 <input type="checkbox" checked={(filterDraft.linked_account||[]).includes(provider)} onChange={()=>toggleLinkedProvider(provider)} />
                 <span>{provider}</span>
               </label>)}</div>
+              {activeProviderOptions.length > 6 && <button type="button" className="mlbb-choice-toggle" aria-expanded={providerOptionsExpanded} onClick={()=>setProviderOptionsExpanded((current)=>!current)}>{providerOptionsExpanded ? 'Sembunyikan' : 'Tampilkan semua'}</button>}
             </section>}
           </div>
           <footer className="mlbb-filter-footer"><button type="button" onClick={clearMlbbFilters}>Hapus Filter</button><button type="button" onClick={applyMlbbFilters}>Terapkan</button></footer>

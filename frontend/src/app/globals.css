@@ -1322,3 +1322,22 @@ body{
   .catalog-controls .mlbb-sort-control select{max-width:145px}
   .mlbb-filter-sheet{max-height:min(91dvh,900px)}
 }
+
+/* Ordered account filters aligned to the approved MLBB catalogue reference. */
+.catalog-controls.catalog-controls-v2{flex-wrap:nowrap;gap:8px;min-width:0}
+.catalog-controls-v2 .mlbb-filter-main{flex:0 0 42px;width:42px;min-height:42px;height:42px;justify-content:center;padding:0}
+.catalog-controls.catalog-controls-v2 .mlbb-sort-control{flex:0 0 auto;margin-left:0;gap:6px}
+.catalog-controls-v2 .mlbb-sort-control select{max-width:112px}
+.mlbb-filter-strip{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0;overflow-x:auto;padding:0 1px 4px;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.mlbb-filter-strip::-webkit-scrollbar{display:none}
+.mlbb-filter-chip{display:inline-flex;align-items:center;justify-content:space-between;gap:9px;flex:0 0 auto;min-height:42px;padding:0 12px;border:1px solid #35465c;border-radius:12px;background:#111b29;color:#d5deeb;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
+.mlbb-filter-chip.is-active{border-color:#00c98b;background:rgba(0,201,139,.1);color:#7ce6bd}
+.mlbb-filter-chip-chevron{color:#9ba9bc;font-size:17px;line-height:1}
+.mlbb-choice-toggle{display:inline-flex;align-items:center;min-height:28px;margin-top:16px;padding:0;border:0;background:transparent;color:#53b4ff;font-size:14px;font-weight:800;text-align:left;cursor:pointer}
+@media(max-width:420px){
+  .catalog-controls.catalog-controls-v2{gap:6px}
+  .catalog-controls-v2 .mlbb-filter-main{flex-basis:40px;width:40px}
+  .mlbb-filter-chip{gap:7px;min-height:40px;padding:0 10px;font-size:12px}
+  .catalog-controls-v2 .mlbb-sort-control{font-size:9px}
+  .catalog-controls-v2 .mlbb-sort-control select{max-width:92px;padding:0 6px}
+}

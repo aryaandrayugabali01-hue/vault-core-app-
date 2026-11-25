@@ -731,7 +731,11 @@ test('account catalogue hides filters for all games and uses a unified dark filt
   for (const label of ['Win Rate','Jumlah Skin','Jumlah Hero','Rank Saat Ini','Akun Terhubung Pada']) {
     assert.ok(page.includes(label), 'Missing account filter group: ' + label);
   }
-  assert.match(page, /category !== 'ALL' && <button[^>]*className="mlbb-filter-main"/);
+  assert.match(page, /category !== 'ALL' && <>/);
+  assert.match(page, /MLBB_FILTER_GROUPS\.map/);
+  assert.match(page, /activeRankOptions/);
+  assert.match(page, /activeProviderOptions/);
+  assert.match(page, /Sembunyikan/);
   assert.match(page, /category !== 'ALL' \? matchesAccountFilters\(p, attributeFilters\) : true/);
   assert.match(page, /filterSheetOpen && category !== 'ALL'/);
   assert.match(page, /type="radio" name="account-rank-current"/);

@@ -48,6 +48,26 @@ jobs:
           echo "Brand logo, all game category images, trust icons, favicon, PWA icon and social cover are present."
           cat "$public_dir/README.md"
           cat "$public_dir/asset-manifest.json"
+      - name: Extract MLBB product images from the committed catalogue source
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="frontend/src/app/catalog/ML.zip"
+          temp_dir="$RUNNER_TEMP/mlbb-product-assets"
+          target_dir="frontend/public/assets/catalog/mlbb"
+          test -s "$archive"
+          rm -rf "$temp_dir" "$target_dir"
+          mkdir -p "$temp_dir" "$target_dir"
+          unzip -oq "$archive" 'ML/250/*' -d "$temp_dir"
+          install -m 644 "$temp_dir/ML/250/bzvk6k6266lwo82h1pn0q.jpg" "$target_dir/ml-001-primary.jpg"
+          install -m 644 "$temp_dir/ML/250/cqeqw0smpt5v9x6052g1me.jpg" "$target_dir/ml-001-skins.jpg"
+          install -m 644 "$temp_dir/ML/250/download (5).webp" "$target_dir/ml-001-emblem.webp"
+          install -m 644 "$temp_dir/ML/250/szq89uuikvkjhaxo0x6ri.jpg" "$target_dir/ml-001-skins-detail.jpg"
+          install -m 644 "$temp_dir/ML/250/zktvmqe40kkgh6ft8jogfa.jpg" "$target_dir/ml-001-account-detail.jpg"
+          for asset in ml-001-primary.jpg ml-001-skins.jpg ml-001-emblem.webp ml-001-skins-detail.jpg ml-001-account-detail.jpg; do
+            test -s "$target_dir/$asset" || { echo "::error::Missing MLBB product asset: $asset"; exit 1; }
+          done
+          echo "All original ML-001 product assets from ML.zip are present."
       - name: Verify every storefront asset URL resolves
         shell: bash
         run: |
