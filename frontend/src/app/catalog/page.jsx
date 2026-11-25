@@ -129,7 +129,7 @@ export default function HomePage() {
       id,
       label: GAME_LABELS[id] || id.replaceAll('_', ' '),
       short: id === 'FREE_FIRE' ? 'FREE FIRE' : (id === 'OTHER' ? 'LAINNYA' : id),
-      icon: GAME_ART[id] || GAME_ART.OTHER
+      icon: GAME_ART[id] || GAME_ART.MLBB
     }));
   }, [sourceProducts]);
   const activeFilterLabel = category !== 'ALL' ? (GAME_LABELS[category] || category) : 'Semua game';
@@ -161,6 +161,7 @@ export default function HomePage() {
       .map((product) => readAccountAttribute(product, filter)).filter(Boolean))]
       .sort((a,b)=>a.localeCompare(b,'id'))
   })), [sourceProducts, category, marketplaceCategoryId]);
+  const accountSpecEntries = (product) => accountFilters.map((filter) => [filter.label, readAccountAttribute(product, filter)]).filter(([,value]) => value);
   const filtered = useMemo(() => {
     const list = sourceProducts.filter((p) =>
       ['MLBB','FREE_FIRE','ROBLOX','GENSHIN'].includes(p.game_category)
@@ -457,7 +458,7 @@ export default function HomePage() {
         <span>Website ini hanya untuk melihat katalog dan detail produk. Untuk membuat pesanan, membayar dengan invoice resmi Telegram Stars (XTR), dan memantau pesanan, buka VAULT CORE melalui bot Telegram.</span>
       </aside>}
 
-      <section className="marketplace-game-nav" id="home" style={{ "--marketplace-background": `url("${category === "ALL" ? "/assets/02-hero/hero-vaultcore-loop.webp" : (GAME_BACKGROUNDS[category] || GAME_BACKGROUNDS.OTHER)}")` }}>
+      <section className="marketplace-game-nav" id="home" style={{ "--marketplace-background": `url("${category === "ALL" ? "/assets/02-hero/hero-vaultcore-loop.webp" : (GAME_BACKGROUNDS[category] || GAME_BACKGROUNDS.MLBB)}")` }}>
         <div className="marketplace-game-heading">
           <span className="eyebrow muted">VAULT CORE · DIGITAL GAME STORE</span>
           <h1>{selectedGame?.label || 'Semua game'}</h1>
@@ -561,7 +562,7 @@ export default function HomePage() {
               <div><span>Pemenuhan</span><strong>{FULFILLMENT_LABELS[selectedProduct.fulfillment_type] || selectedProduct.fulfillment_type || 'Belum ditentukan'}</strong></div>
               <div><span>Estimasi</span><strong>{selectedProduct.fulfillment_eta || 'Belum ditetapkan Owner'}</strong></div>
             </div>
-            {getCustomerVisibleProductAttributes(selectedProduct.attributes).length > 0 && <section className="marketplace-detail-section"><h3>Spesifikasi Produk</h3><dl className="marketplace-attributes">{getCustomerVisibleProductAttributes(selectedProduct.attributes).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></section>}
+            {accountSpecEntries(selectedProduct).length > 0 && <section className="marketplace-detail-section"><h3>Spesifikasi Akun</h3><dl className="marketplace-attributes">{accountSpecEntries(selectedProduct).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></section>}
             <section className="marketplace-detail-section"><h3>Deskripsi Produk</h3><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
             <section className="marketplace-detail-section"><h3>Ketentuan Produk</h3><p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p></section>
             <section className="marketplace-detail-section marketplace-guide-link"><button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Cara Beli &amp; Tips <span>›</span></button></section>
