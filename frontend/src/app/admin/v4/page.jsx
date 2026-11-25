@@ -34,7 +34,7 @@ export default function OwnerV4Page(){
  const [questions,setQuestions]=useState([]);
  const [answers,setAnswers]=useState({});
  const [inventory,setInventory]=useState({sourceReference:'',quantity:'1',payloads:'[\n  {"login":"","password":""}\n]'});
- const [busy,setBusy]=useState(false);
+ const [secretRequest,setSecretRequest]=useState({orderNumber:'',orderItemId:'',reason:'Pemenuhan layanan Joki'});\n const [secretResult,setSecretResult]=useState(null);\n const [showSecretPassword,setShowSecretPassword]=useState(false);\n const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
 
  const selected=useMemo(()=>products.find(p=>String(p.id)===String(selectedId))||null,[products,selectedId]);
@@ -137,6 +137,16 @@ export default function OwnerV4Page(){
   }catch(e){setError(e.message);}finally{setBusy(false);}
  }
 
+ async function readJokiAccess(event){
+  event.preventDefault();setBusy(true);setError('');setNotice('');setSecretResult(null);
+  try{
+   if(!secretRequest.orderNumber.trim()||!Number(secretRequest.orderItemId)||secretRequest.reason.trim().length<3)throw new Error('Isi nomor pesanan, Order Item ID, dan alasan akses.');
+   const data=await api('/api/admin/v4/orders/'+encodeURIComponent(secretRequest.orderNumber.trim())+'/customer-access/'+Number(secretRequest.orderItemId)+'/read',{method:'POST',body:JSON.stringify({reason:secretRequest.reason})});
+   setSecretResult(data.credentials);
+   setShowSecretPassword(false);
+   setNotice('Data akses dibuka melalui audit Owner dan dicatat pada access log.');
+  }catch(e){setError(e.message);}finally{setBusy(false);}
+ }
  async function publish(){
   if(!selected)return;setBusy(true);setError('');setNotice('');
   try{
@@ -234,6 +244,16 @@ export default function OwnerV4Page(){
     <button type="button" disabled={busy||selected.status==='ACTIVE'} onClick={publish}>{busy?'Memproses…':'Terbitkan SKU'}</button>
    </section>
   </>}
+  <section className="vco-card">
+   <div className="vco-section-head"><div><span>OWNER SECURE ACCESS</span><h2>Buka data akses Joki</h2></div><small>Setiap pembacaan dicatat pada audit log</small></div>
+   <form className="vco-grid" onSubmit={readJokiAccess}>
+    <label>Nomor pesanan<input required value={secretRequest.orderNumber} onChange={e=>setSecretRequest({...secretRequest,orderNumber:e.target.value.toUpperCase()})} placeholder="VC-…"/></label>
+    <label>Order Item ID<input required type="number" min="1" value={secretRequest.orderItemId} onChange={e=>setSecretRequest({...secretRequest,orderItemId:e.target.value})}/></label>
+    <label className="wide">Alasan akses<input required minLength="3" maxLength="500" value={secretRequest.reason} onChange={e=>setSecretRequest({...secretRequest,reason:e.target.value})}/></label>
+    <div className="wide vco-form-actions"><button disabled={busy}>{busy?'Mengambil melalui vault…':'Buka kredensial Joki'}</button><small>Hanya Owner yang telah login dapat mengakses data order berstatus PAID/FULFILLING.</small></div>
+   </form>
+   {secretResult&&<div className="vco-secret-result"><div><span>LOGIN / EMAIL</span><strong>{secretResult.login}</strong></div><div><span>PASSWORD</span><div className="vco-secret-password"><input readOnly type={showSecretPassword?'text':'password'} value={secretResult.password||''}/><button type="button" onClick={()=>setShowSecretPassword(v=>!v)}>{showSecretPassword?'Sembunyikan':'Tampilkan'}</button></div></div><button type="button" className="vco-clear-secret" onClick={()=>{setSecretResult(null);setShowSecretPassword(false);}}>Tutup dan bersihkan tampilan</button></div>}
+  </section>
   <footer className="vco-footer">VAULT CORE · Owner authority · Telegram Stars (XTR)</footer>
  </main>;
 }
