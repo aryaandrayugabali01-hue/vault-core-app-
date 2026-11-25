@@ -1132,7 +1132,7 @@ margin-top:37px
 .dashboard-payment-note{color:#c6cce0;font-size:9px;font-weight:700}
 .dashboard-hero-trust{display:flex;flex-wrap:wrap;gap:15px;margin-top:15px;color:#cbd4e2;font-size:8px;font-weight:800}
 .dashboard-hero-trust span{display:inline-flex;align-items:center;gap:5px}
-.dashboard-hero-trust b{display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:rgba(0,220,163,.14);color:#20e8b4;font-size:10px}
+.dashboard-hero-trust img{display:block;width:13px;height:13px;object-fit:contain;filter:drop-shadow(0 0 5px rgba(35,226,196,.35))}
 .dashboard-overview{display:grid;grid-template-columns:1fr;gap:12px;margin:0 0 22px}
 .dashboard-overview-title h2,.dashboard-section-heading h2{margin:4px 0 3px;color:#f4f5fa;font-size:clamp(18px,2.7vw,24px);font-weight:900;letter-spacing:-.04em}
 .dashboard-overview-title p{margin:0;color:#9aa8bd;font-size:10px;line-height:1.5}
