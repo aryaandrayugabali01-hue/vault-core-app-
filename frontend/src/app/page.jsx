@@ -18,7 +18,7 @@ function ProductCard({product}){
   const detailUrl='/catalog?q='+encodeURIComponent(product.name||'')+'#products';
   return <article className="dashboard-product-card">
     <div className="dashboard-product-media" style={style}>
-      {product.image_url?<img src={product.image_url} alt={product.name||gameLabel(game)} loading="lazy"/>:<img className="dashboard-product-mark" src={logo} alt={gameLabel(game)+' logo'} loading="lazy"/>}
+      {product.image_url?<img src={product.image_url} alt={product.name||gameLabel(game)} loading="lazy"/>:<img className="dashboard-product-mark product-category-logo" src={logo} alt={gameLabel(game)+' logo'} loading="lazy"/>}
       <div className="dashboard-product-badges"><span>Akun Game</span><span className={inStock?'':'out'}>{inStock?'Stok tersedia':'Stok habis'}</span></div>
     </div>
     <div className="dashboard-product-body">
