@@ -394,8 +394,8 @@ router.post('/products/:productId/publish', async (req, res) => {
          ON s.inventory_item_id=i.id AND s.secret_scope='PRODUCT_ACCOUNT' AND s.secret_status='ACTIVE'
        WHERE i.product_id=$1 AND i.status='AVAILABLE'
          AND i.rights_review_id=$2 AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
-         AND ($3=FALSE OR s.id IS NOT NULL)`,
-      [product.id,product.current_rights_review_id,account]
+`,
+      [product.id,product.current_rights_review_id]
     );
     if (stock[0].available < 1 || (account && stock[0].protected !== stock[0].available)) {
       await client.query('ROLLBACK');
