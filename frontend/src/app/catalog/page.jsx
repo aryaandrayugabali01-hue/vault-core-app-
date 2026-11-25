@@ -137,12 +137,15 @@ function detailAttributeLabel(key) {
   return DETAIL_ATTRIBUTE_LABELS[String(key)] ||
     String(key).replaceAll('_',' ').replace(/\b\w/g,(letter)=>letter.toUpperCase());
 }
-function getProductStockLabel(product) {
-  if (!product?.is_available || !product?.is_purchaseable) return 'STOK HABIS';
-  const visibleStock = product.display_stock;
-  if (typeof visibleStock === 'number' && visibleStock === 1) return 'STOK TERAKHIR';
-  if (typeof visibleStock === 'number' && visibleStock > 1) return 'STOK ' + visibleStock.toLocaleString('id-ID') + ' TERSEDIA';
-  return 'STOK TERSEDIA';
+function formatAverageDeliveryMinutes(value) {
+  if (value == null || value === '') return 'Belum tersedia';
+  const minutes = Number(value);
+  if (!Number.isFinite(minutes) || minutes < 0) return 'Belum tersedia';
+  const rounded = Math.round(minutes);
+  if (rounded < 60) return Math.max(1,rounded) + ' menit';
+  const hours = Math.floor(rounded / 60);
+  const remainder = rounded % 60;
+  return remainder ? hours + ' jam ' + remainder + ' menit' : hours + ' jam';
 }
 function getNonWarrantyTerms(value) {
   return String(value ?? '').replace(/GARANSI ANTI[\s-]?HACKBACK VAULT CORE[\s\S]*$/i,'').trim();
@@ -190,7 +193,7 @@ function OrderSkeleton() {
   </div>;
 }
 
-export default function HomePage({ initialCategory = 'ALL', initialCategorySlug = null } = {}) {
+export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [marketplaceCategories, setMarketplaceCategories] = useState([]);
   const [marketplaceCategoryId, setMarketplaceCategoryId] = useState('ALL');
@@ -207,13 +210,14 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideCategory, setGuideCategory] = useState(null);
   const [warrantyOpen, setWarrantyOpen] = useState(false);
+  const [detailQuantity, setDetailQuantity] = useState(1);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const [detailSpecsExpanded, setDetailSpecsExpanded] = useState(false);
   const [testProducts, setTestProducts] = useState([]);
   const [isTestMode, setIsTestMode] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activatingId, setActivatingId] = useState(null);
-  const [category, setCategory] = useState(initialCategory);
+  const [category, setCategory] = useState('ALL');
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -273,12 +277,6 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
   }
 
   useEffect(() => {
-    if (!initialCategorySlug) return;
-    const pinnedCategory = marketplaceCategories.find((item) => item.slug === initialCategorySlug);
-    if (pinnedCategory) setMarketplaceCategoryId(String(pinnedCategory.id));
-  }, [initialCategorySlug, marketplaceCategories]);
-
-  useEffect(() => {
     const tg = getTelegramWebApp();
     setTelegramContext(Boolean(getInitData()));
     tg?.ready();
@@ -329,7 +327,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
       && (category === 'ALL' || p.game_category === category)
       && (marketplaceCategoryId === 'ALL' || String(p.marketplace_category_id || '') === marketplaceCategoryId)
       && (category !== 'ALL' ? matchesAccountFilters(p, attributeFilters) : true)
-      && (String(p.name || '') + ' ' + String(p.description || '') + ' ' + String(p.marketplace_category_name || '') + ' ' + accountSpecEntries(p).map(([,value])=>value).join(' ')).toLowerCase().includes(query.toLowerCase())
+      && (String(p.name || '') + ' ' + String(p.sku || '') + ' ' + String(p.description || '') + ' ' + String(p.marketplace_category_name || '') + ' ' + accountSpecEntries(p).map(([,value])=>value).join(' ')).toLowerCase().includes(query.toLowerCase())
     );
     return list.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id'));
   }, [sourceProducts, category, marketplaceCategoryId, attributeFilters, query, isTestMode]);
@@ -645,18 +643,25 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
     ? ([profileUser.first_name, profileUser.last_name].filter(Boolean).join(' ') || 'Pengguna Telegram')
     : 'Belum terhubung';
   const profileInitials = profileName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'VC';
-  const isPinnedCatalogRoute = Boolean(initialCategorySlug);
 
   const detailWarrantyText = selectedProduct ? getWarrantyTerms(selectedProduct) : '';
   const detailWarrantySections = getWarrantySections(detailWarrantyText);
   const detailWarrantyDuration = detailWarrantyText.match(/(\d+)\s+hari kalender/i)?.[1] || '';
-  const detailReviewActive = selectedProduct?.rights_review_active === true;
+  const detailReviewActive = Boolean(selectedProduct?.rights_review_status === 'APPROVED'
+    && selectedProduct?.rights_owner_attested === true
+    && selectedProduct?.rights_valid_until
+    && new Date(selectedProduct.rights_valid_until) > new Date());
   const detailGallery = selectedProduct
     ? (Array.isArray(selectedProduct.image_gallery) && selectedProduct.image_gallery.length
       ? selectedProduct.image_gallery
       : [selectedProduct.image_url || GAME_ART[selectedProduct.game_category] || GAME_ART.MLBB])
     : [];
   const detailSpecs = selectedProduct ? detailAttributeEntries(selectedProduct) : [];
+  const detailRelatedProducts = selectedProduct ? products.filter((product) =>
+    Number(product.id) !== Number(selectedProduct.id)
+    && product.game_category === selectedProduct.game_category
+    && String(product.marketplace_category_id || '') === String(selectedProduct.marketplace_category_id || '')
+  ).slice(0,4) : [];
 
   return <>
     <main className="shell">
@@ -666,7 +671,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
         </a>
         <label className="top-searchbox" aria-label="Cari katalog">
           <AppIcon name="search" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari game atau nama akun…" aria-label="Cari game atau nama akun" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari game, nama akun, atau SKU…" aria-label="Cari game, nama akun, atau SKU" />
           {query && <button className="clear-search" type="button" onClick={() => setQuery('')} aria-label="Hapus pencarian">×</button>}
         </label>
         {telegramContext && <><button className="top-cart-button" type="button" onClick={()=>setCartOpen(true)} aria-label={'Buka keranjang, '+cartCount+' item'}><AppIcon name="orders" /><span>Keranjang</span><b>{cartCount}</b></button>
@@ -684,9 +689,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
           <h1>{selectedGame?.label || 'Semua game'}</h1>
           <p>Jelajahi produk di katalog. Seluruh checkout, pembayaran XTR, dan pemantauan pesanan dilakukan hanya melalui VAULT CORE Telegram Mini App.</p>
         </div>
-        {isPinnedCatalogRoute && !isTestMode ? <nav className="marketplace-game-tabs marketplace-game-tabs-locked" aria-label="Kategori terkunci">
-          <button type="button" className="active" aria-current="page" disabled><img className="game-tab-icon" src={GAME_ART.MLBB} alt="" loading="lazy" />MOBILE LEGENDS</button>
-        </nav> : <nav className="marketplace-game-tabs" aria-label="Pilih game">
+        <nav className="marketplace-game-tabs" aria-label="Pilih game">
           <button type="button" className={category === 'ALL' ? 'active' : ''} aria-pressed={category === 'ALL'} onClick={() => { setCategory('ALL'); setMarketplaceCategoryId('ALL'); setAttributeFilters({}); setQuery(''); }}>Semua game</button>
           {gameTabs.map((game) => <button key={game.id} type="button" className={category === game.id ? 'active' : ''} aria-pressed={category === game.id} onClick={() => {
             const slug = ({MLBB:'mlbb-akun',FREE_FIRE:'free-fire-akun',ROBLOX:'roblox-akun',GENSHIN:'genshin-akun'})[game.id];
@@ -695,7 +698,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
           }}>
             <img className="game-tab-icon" src={game.icon} alt="" loading="lazy" />{game.short}
           </button>)}
-        </nav>}
+        </nav>
         {category !== 'ALL' && <nav className="marketplace-category-nav" id="categories" aria-label="Subkategori produk">
           {gameMarketplaceCategories.map((item) => <button key={item.id} type="button" className="active" aria-current="true" onClick={() => selectMarketplaceCategory(String(item.id))}><span>{item.icon || '◇'}</span>Akun</button>)}
           {!gameMarketplaceCategories.length && !loading && <span className="marketplace-no-categories">Subkategori Akun belum tersedia.</span>}
@@ -733,7 +736,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
           <img className="state-illustration" src="/assets/05-states/product-not-found.png" alt="" />
           <strong>Produk tidak ditemukan</strong>
           <p>Coba kata kunci lain atau sesuaikan filter spesifikasi akun.</p>
-          <button className="reset-filters" type="button" onClick={() => { setQuery(''); setAttributeFilters({}); setFilterDraft({...EMPTY_MLBB_FILTERS,linked_account:[]}); if (isPinnedCatalogRoute && !isTestMode) { const pinned = marketplaceCategories.find((item) => item.slug === initialCategorySlug); setCategory(initialCategory); setMarketplaceCategoryId(pinned ? String(pinned.id) : 'ALL'); } else { setCategory('ALL'); setMarketplaceCategoryId('ALL'); } }}>Reset filter</button>
+          <button className="reset-filters" type="button" onClick={() => { setQuery(''); setCategory('ALL');  setMarketplaceCategoryId('ALL'); setAttributeFilters({}); }}>Reset filter</button>
         </div> : <div className="product-grid">
           {filtered.map((product) => {
             const game = product.game_category || 'MLBB';
@@ -756,7 +759,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
                 <div className="product-bottom">
                   <div className="product-price"><small>HARGA JUAL</small><strong>{Number(product.sale_price_xtr).toLocaleString('en-US')} XTR</strong></div>
                   <button className="buy-button" type="button" disabled={buyingId === product.id || activatingId === product.id}
-                    onClick={() => { if (isDraftTest) activateTestProduct(product.id); else { setActiveGalleryIndex(0); setDetailSpecsExpanded(false); setSelectedProduct(product); } }}>
+                    onClick={() => { if (isDraftTest) activateTestProduct(product.id); else { setDetailQuantity(1); setActiveGalleryIndex(0); setDetailSpecsExpanded(false); setSelectedProduct(product); } }}>
                     {activatingId === product.id ? 'Mengaktifkan…' : isDraftTest ? 'Aktifkan' : product.is_available && product.is_purchaseable ? 'Detail & Beli' : 'Lihat detail'}
                   </button>
                 </div>
@@ -797,7 +800,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
           <div className="catalog-search-results">
             <p className="catalog-search-count" id="catalog-search-title">Hasil pencarian ditemukan: <strong>{filtered.length.toLocaleString('id-ID')} produk</strong></p>
             {filtered.length ? <div className="catalog-search-grid">
-              {filtered.map((product) => <button type="button" className="catalog-search-result" key={product.id} onClick={()=>{setActiveGalleryIndex(0);setDetailSpecsExpanded(false);setSelectedProduct(product);setCatalogSearchOpen(false);}}>
+              {filtered.map((product) => <button type="button" className="catalog-search-result" key={product.id} onClick={()=>{setDetailQuantity(1);setActiveGalleryIndex(0);setDetailSpecsExpanded(false);setSelectedProduct(product);setCatalogSearchOpen(false);}}>
                 <img src={product.image_url || GAME_ART[product.game_category] || GAME_ART.MLBB} alt="" loading="lazy" />
                 <span className="catalog-search-result-copy">
                   <small>{GAME_LABELS[product.game_category] || product.game_category} · Akun</small>
@@ -882,21 +885,26 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
               <div className="marketplace-detail-heading">
                 <span className="detail-category">{selectedProduct.marketplace_category_name || (GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category) + ' · Akun'}</span>
                 <h1 id="product-detail-title">{selectedProduct.name}</h1>
-                <div className="marketplace-detail-stock-row">
-                  <span className={'marketplace-detail-stock-pill ' + (selectedProduct.is_available && selectedProduct.is_purchaseable ? 'in-stock' : 'out-of-stock')}>{getProductStockLabel(selectedProduct)}</span>
-                </div>
                 <div className="marketplace-detail-rating"><span className="marketplace-rating-mark">★</span><div><strong>Rating pelanggan</strong><small>Belum tersedia · Ulasan belum tersedia</small></div></div>
               </div>
               <div className="marketplace-detail-trust-grid">
-                <div className="marketplace-detail-trust-card"><span className="marketplace-detail-trust-icon">✓</span><div><strong>Pemeriksaan internal</strong><small>{detailReviewActive ? 'Review VAULT CORE masih aktif' : 'Status pemeriksaan belum tersedia'}</small></div></div>
+                <div className="marketplace-detail-trust-card"><span className="marketplace-detail-trust-icon">✓</span><div><strong>Pemeriksaan internal</strong><small>{detailReviewActive ? 'Review Owner masih aktif' : 'Status pemeriksaan belum aktif'}</small></div></div>
                 <button type="button" className={'marketplace-detail-trust-card marketplace-detail-trust-button ' + (detailWarrantyText ? 'is-available' : 'is-unset')} onClick={()=>setWarrantyOpen(true)}>
                   <span className="marketplace-detail-trust-icon">♢</span><div><strong>Garansi Anti-Hackback</strong><small>{detailWarrantyText ? 'Ketentuan garansi tercatat untuk produk ini' : 'Ketentuan belum tersedia untuk SKU ini'}</small></div><span className="marketplace-detail-trust-arrow">›</span>
                 </button>
                 <div className="marketplace-detail-trust-card"><span className="marketplace-detail-trust-icon">▦</span><div><strong>Spesifikasi akun</strong><small>{detailSpecs.length ? detailSpecs.length + ' atribut produk tercatat' : 'Belum tersedia'}</small></div></div>
               </div>
-              <section className="marketplace-detail-price-panel" aria-label="Harga produk">
-                <div><small>HARGA PRODUK</small><strong>{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
-                <span>Harga dalam Telegram Stars (XTR)</span>
+              <section className="marketplace-detail-price-panel" aria-label="Harga produk"><div><small>HARGA PRODUK</small><strong>{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div><span>Harga dalam Telegram Stars (XTR)</span></section>
+              <section className="marketplace-detail-stats marketplace-detail-stats-v2" aria-label="Informasi penawaran">
+                <div><span>Status pengiriman</span><strong>{selectedProduct.fulfillment_type === 'GAME_ACCOUNT_TRANSFER' ? 'Manual oleh VAULT CORE' : 'Mengikuti metode produk'}</strong></div>
+                <div><span>Jumlah terjual</span><strong>{Number(selectedProduct.sold_count || 0).toLocaleString('id-ID')}</strong></div>
+                <div><span>Rata-rata pengiriman</span><strong>{formatAverageDeliveryMinutes(selectedProduct.average_delivery_minutes)}</strong></div>
+                <div><span>Minimum pembelian</span><strong>1 unit</strong></div>
+              </section>
+              <p className="marketplace-detail-fulfillment-note">{selectedProduct.fulfillment_eta || 'Waktu pemenuhan belum ditetapkan pada data produk.'}</p>
+              <section className="marketplace-detail-quantity" aria-label="Jumlah pembelian">
+                <div><strong>Jumlah pembelian</strong><small>Minimum 1 unit</small></div>
+                <div className="marketplace-quantity-control"><button type="button" disabled={detailQuantity <= 1} onClick={()=>setDetailQuantity(Math.max(1,detailQuantity - 1))} aria-label="Kurangi jumlah">−</button><strong>{detailQuantity}</strong><button type="button" disabled={detailQuantity >= 5} onClick={()=>setDetailQuantity(Math.min(5,detailQuantity + 1))} aria-label="Tambah jumlah">+</button></div>
               </section>
               <section className="marketplace-detail-section marketplace-detail-guide-callout">
                 <div><strong>Cara Beli &amp; Tips</strong><small>Panduan transaksi, penyerahan informasi, dan keamanan akun</small></div>
@@ -911,14 +919,25 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
                   {detailSpecs.length > 6 && <button className="marketplace-detail-more" type="button" aria-expanded={detailSpecsExpanded} onClick={()=>setDetailSpecsExpanded((current)=>!current)}>{detailSpecsExpanded ? 'Tampilkan lebih sedikit' : 'Tampilkan lebih banyak'} <span>{detailSpecsExpanded ? '⌃' : '⌄'}</span></button>}
                 </> : <p>Spesifikasi akun belum tersedia pada data produk.</p>}
               </section>
+              <section className="marketplace-detail-store">
+                <div className="marketplace-detail-store-avatar">VC</div>
+                <div><small>INFORMASI TOKO</small><strong>VAULT CORE</strong><p>Penawaran, penyerahan informasi, dan layanan pembeli dikelola langsung oleh VAULT CORE.</p></div>
+                <span className="marketplace-store-badge">RESMI</span>
+              </section>
+              <section className="marketplace-detail-related">
+                <div className="marketplace-detail-section-heading"><div><small>REKOMENDASI</small><h2>Produk lain dari VAULT CORE</h2></div></div>
+                {detailRelatedProducts.length ? <div className="marketplace-related-grid">{detailRelatedProducts.map((product)=><button className="marketplace-related-card" type="button" key={product.id} onClick={()=>{setDetailQuantity(1);setActiveGalleryIndex(0);setDetailSpecsExpanded(false);setSelectedProduct(product);setWarrantyOpen(false);}}>
+                  <img src={product.image_url || GAME_ART[product.game_category] || GAME_ART.MLBB} alt="" loading="lazy" /><span><strong>{product.name}</strong><small>{Number(product.sale_price_xtr || 0).toLocaleString('en-US')} XTR</small></span>
+                </button>)}</div> : <p className="marketplace-related-empty">Belum ada produk lain pada subkategori ini.</p>}
+              </section>
               <div className="marketplace-detail-policy"><strong>Transaksi resmi Telegram Stars</strong><p>Produk ini dapat dipesan melalui VAULT CORE Telegram Mini App. Website publik hanya menampilkan katalog dan detail produk; pembuatan pesanan, checkout, invoice, dan pembayaran dilakukan melalui Mini App. Harga dan stok diperiksa ulang oleh server.</p></div>
             </div>
           </div>
           <footer className="marketplace-detail-stickybar">
-            <div className="marketplace-detail-sticky-price"><small>HARGA</small><strong>{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
+            <div className="marketplace-detail-sticky-price"><small>TOTAL</small><strong>{(Number(selectedProduct.sale_price_xtr || 0) * detailQuantity).toLocaleString('en-US')} XTR</strong></div>
             <div className="marketplace-detail-sticky-actions">
-              {telegramContext && <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available || !selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,1)}>Keranjang</button>}
-              <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || !selectedProduct.is_purchaseable} onClick={()=>{const product=selectedProduct;setSelectedProduct(null);setWarrantyOpen(false);buy(product,1);}}>{buyingId === selectedProduct.id ? 'Menyiapkan…' : !selectedProduct.is_available ? 'Stok habis' : !selectedProduct.is_purchaseable ? 'Tidak tersedia' : telegramContext ? 'Beli sekarang' : 'Beli melalui Telegram'}</button>
+              {telegramContext && <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available || selectedProduct.is_test || !selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,detailQuantity)}>Keranjang</button>}
+              <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || selectedProduct.is_test || !selectedProduct.is_purchaseable} onClick={()=>{const product=selectedProduct;const quantity=detailQuantity;setSelectedProduct(null);setWarrantyOpen(false);buy(product,quantity);}}>{buyingId === selectedProduct.id ? 'Menyiapkan…' : !selectedProduct.is_available ? 'Stok habis' : !selectedProduct.is_purchaseable ? 'Tidak tersedia' : telegramContext ? 'Beli sekarang' : 'Beli melalui Telegram'}</button>
             </div>
           </footer>
         </section>
