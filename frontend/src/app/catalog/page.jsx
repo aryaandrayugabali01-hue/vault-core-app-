@@ -18,8 +18,32 @@ const ACCOUNT_FILTERS = Object.freeze([
   { id:'total_skins', label:'Jumlah Skin', aliases:['jumlah skin','total_skins','skins'] },
   { id:'total_heroes', label:'Jumlah Hero', aliases:['jumlah hero','total_heroes','heroes'] },
   { id:'rank_current', label:'Rank Saat Ini', aliases:['rank saat ini','rank_current','rank'] },
-  { id:'linked_account', label:'Akun Terhubung Pada', aliases:['akun terhubung pada','linked_account','linked platform','platform akun'] }
+  { id:'linked_account', label:'Akun Terhubung Pada', aliases:['akun terhubung pada','linked_account','linked_accounts','linked_platforms','linked_platform','linked platform','platform akun'] }
 ]);
+const MLBB_RANKS = Object.freeze([
+  'Warrior 1','Warrior 2','Warrior 3','Elite 1','Elite 2','Elite 3',
+  'Master 1','Master 2','Master 3','Master 4',
+  'Grandmaster 1','Grandmaster 2','Grandmaster 3','Grandmaster 4','Grandmaster 5',
+  'Epic 1','Epic 2','Epic 3','Epic 4','Epic 5',
+  'Legend 1','Legend 2','Legend 3','Legend 4','Legend 5',
+  'Mythic','Mythical Honor','Mythical Glory','Mythical Immortal'
+]);
+const MLBB_LINKED_PROVIDERS = Object.freeze([
+  'Moonton','Google','Apple','Facebook','Twitter','VK','TikTok','Telegram','WhatsApp'
+]);
+const MLBB_FILTER_GROUPS = Object.freeze([
+  {id:'win_rate',label:'Winrate',kind:'range',suffix:'%'},
+  {id:'total_skins',label:'Jumlah Skin',kind:'range'},
+  {id:'total_heroes',label:'Jumlah Hero',kind:'range'},
+  {id:'rank_current',label:'Rank Saat Ini',kind:'single'},
+  {id:'linked_account',label:'Akun Terhubung Pada',kind:'multiple'}
+]);
+const EMPTY_MLBB_FILTERS = Object.freeze({
+  win_rate_min:'',win_rate_max:'',
+  total_skins_min:'',total_skins_max:'',
+  total_heroes_min:'',total_heroes_max:'',
+  rank_current:'',linked_account:[]
+});
 function readAccountAttribute(product, filter) {
   const attrs = getCustomerVisibleProductAttributes(product?.attributes);
   const normalize = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -29,6 +53,28 @@ function readAccountAttribute(product, filter) {
 }
 function accountSpecEntries(product) {
   return ACCOUNT_FILTERS.map((filter) => [filter.label, readAccountAttribute(product, filter)]).filter(([,value]) => value);
+}
+function numericAttribute(value) {
+  const parsed = Number(String(value ?? '').replace(/,/g,'').replace(/[^0-9.+-]/g,''));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+function matchesMlbbFilters(product, filters = {}) {
+  for (const [id] of [['win_rate'],['total_skins'],['total_heroes']]) {
+    const minimum = String(filters[id+'_min'] ?? '').trim();
+    const maximum = String(filters[id+'_max'] ?? '').trim();
+    if (!minimum && !maximum) continue;
+    const actual = numericAttribute(readAccountAttribute(product, ACCOUNT_FILTERS.find((item)=>item.id===id)));
+    if (actual === null) return false;
+    if (minimum && actual < Number(minimum)) return false;
+    if (maximum && actual > Number(maximum)) return false;
+  }
+  if (filters.rank_current && readAccountAttribute(product, ACCOUNT_FILTERS.find((item)=>item.id==='rank_current')).toLowerCase() !== String(filters.rank_current).toLowerCase()) return false;
+  const selectedProviders = Array.isArray(filters.linked_account) ? filters.linked_account : [];
+  if (selectedProviders.length) {
+    const linked = readAccountAttribute(product, ACCOUNT_FILTERS.find((item)=>item.id==='linked_account')).toLowerCase().replace(/[^a-z0-9]/g,'');
+    if (!selectedProviders.some((provider)=>linked.includes(String(provider).toLowerCase().replace(/[^a-z0-9]/g,'')))) return false;
+  }
+  return true;
 }
 function formatDate(value) {
   if (!value) return '';
@@ -83,6 +129,10 @@ export default function HomePage() {
   const [marketplaceCategories, setMarketplaceCategories] = useState([]);
   const [marketplaceCategoryId, setMarketplaceCategoryId] = useState('ALL');
   const [attributeFilters, setAttributeFilters] = useState({});
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [activeFilterSection, setActiveFilterSection] = useState('win_rate');
+  const [filterDraft, setFilterDraft] = useState({...EMPTY_MLBB_FILTERS,linked_account:[]});
+  const [linkedProviderSearch, setLinkedProviderSearch] = useState('');
   const [sortBy, setSortBy] = useState('NAME');
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -155,14 +205,27 @@ export default function HomePage() {
       .map((product) => readAccountAttribute(product, filter)).filter(Boolean))]
       .sort((a,b)=>a.localeCompare(b,'id'))
   })), [sourceProducts, category, marketplaceCategoryId]);
+  const mlbbActiveFilterCount = useMemo(() => {
+    const numericKeys=['win_rate_min','win_rate_max','total_skins_min','total_skins_max','total_heroes_min','total_heroes_max'];
+    return numericKeys.filter((key)=>String(attributeFilters[key]??'').trim()!=='').length
+      + (attributeFilters.rank_current ? 1 : 0)
+      + (Array.isArray(attributeFilters.linked_account) ? attributeFilters.linked_account.length : 0);
+  }, [attributeFilters]);
+  const activeMlbbFilter = (id) => {
+    if (id === 'rank_current') return Boolean(attributeFilters.rank_current);
+    if (id === 'linked_account') return Boolean(attributeFilters.linked_account?.length);
+    return Boolean(String(attributeFilters[id+'_min']??'').trim() || String(attributeFilters[id+'_max']??'').trim());
+  };
   const filtered = useMemo(() => {
     const list = sourceProducts.filter((p) =>
       ['MLBB','FREE_FIRE','ROBLOX','GENSHIN'].includes(p.game_category)
       && p.fulfillment_type === 'GAME_ACCOUNT_TRANSFER'
       && (category === 'ALL' || p.game_category === category)
       && (marketplaceCategoryId === 'ALL' || String(p.marketplace_category_id || '') === marketplaceCategoryId)
-      && ACCOUNT_FILTERS.every((filter) => !attributeFilters[filter.id]
-        || readAccountAttribute(p, filter) === attributeFilters[filter.id])
+      && (category === 'MLBB'
+        ? matchesMlbbFilters(p, attributeFilters)
+        : ACCOUNT_FILTERS.every((filter) => !attributeFilters[filter.id]
+          || readAccountAttribute(p, filter) === attributeFilters[filter.id]))
       && (String(p.name || '') + ' ' + String(p.sku || '') + ' ' + String(p.description || '') + ' ' + String(p.marketplace_category_name || '') + ' ' + accountSpecEntries(p).map(([,value])=>value).join(' ')).toLowerCase().includes(query.toLowerCase())
     );
     if (sortBy === 'PRICE_ASC') return list.sort((a,b)=>Number(a.sale_price_xtr)-Number(b.sale_price_xtr));
@@ -395,9 +458,41 @@ export default function HomePage() {
     }
   }
 
+  function openMlbbFilter(id) {
+    setFilterDraft({...EMPTY_MLBB_FILTERS,...attributeFilters,linked_account:Array.isArray(attributeFilters.linked_account)?[...attributeFilters.linked_account]:[]});
+    setActiveFilterSection(id);
+    setLinkedProviderSearch('');
+    setFilterSheetOpen(true);
+  }
+
+  function setMlbbRange(id, bound, value) {
+    setFilterDraft((current)=>({...current,[id+'_'+bound]:value}));
+  }
+
+  function toggleLinkedProvider(provider) {
+    setFilterDraft((current)=>{
+      const selected=Array.isArray(current.linked_account)?current.linked_account:[];
+      return {...current,linked_account:selected.includes(provider)?selected.filter((item)=>item!==provider):[...selected,provider]};
+    });
+  }
+
+  function applyMlbbFilters() {
+    setAttributeFilters({...filterDraft,linked_account:[...(filterDraft.linked_account||[])]});
+    setFilterSheetOpen(false);
+  }
+
+  function clearMlbbFilters() {
+    const cleared={...EMPTY_MLBB_FILTERS,linked_account:[]};
+    setFilterDraft(cleared);
+    setAttributeFilters(cleared);
+    setFilterSheetOpen(false);
+  }
+
   function selectMarketplaceCategory(id) {
     setMarketplaceCategoryId(String(id));
     setAttributeFilters({});
+    setFilterDraft({...EMPTY_MLBB_FILTERS,linked_account:[]});
+    setFilterSheetOpen(false);
     const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     document.getElementById('products')?.scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'});
   }
@@ -478,12 +573,20 @@ export default function HomePage() {
           <div><span className="eyebrow muted">PILIHAN UNTUK ANDA</span><h2>Katalog digital <span className="active-filter-badge">{activeFilterLabel}</span></h2></div>
           <span className="section-count">{loading ? '—' : String(filtered.length).padStart(2, '0') + ' PRODUK'}</span>
         </div>
-        <div className="catalog-toolbar marketplace-toolbar account-filter-toolbar">
+        {category === 'MLBB' ? <div className="mlbb-filter-toolbar" aria-label="Filter akun Mobile Legends">
+          <button type="button" className="mlbb-filter-main" onClick={()=>openMlbbFilter('win_rate')} aria-label="Buka seluruh filter akun MLBB">⚙ <span>Filter</span>{mlbbActiveFilterCount>0&&<b>{mlbbActiveFilterCount}</b>}</button>
+          {MLBB_FILTER_GROUPS.map((filter)=><button key={filter.id} type="button" className={'mlbb-filter-chip '+(activeMlbbFilter(filter.id)?'selected':'')} aria-pressed={activeMlbbFilter(filter.id)} onClick={()=>openMlbbFilter(filter.id)}>
+            <span>{filter.label}</span><span className="mlbb-filter-chevron">⌄</span>
+          </button>)}
+          <label className="mlbb-sort-control"><span>Urutkan</span><select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
+            <option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option>
+          </select></label>
+        </div> : <div className="catalog-toolbar marketplace-toolbar account-filter-toolbar">
           {accountFilterOptions.map((filter) => <label key={filter.id}><span>{filter.label}</span><select value={attributeFilters[filter.id] || ''} onChange={(e)=>setAttributeFilters((current)=>({...current,[filter.id]:e.target.value}))}><option value="">Semua</option>{filter.values.map((value)=><option value={value} key={value}>{value}</option>)}</select></label>)}
           <label><span>Urutkan</span><select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
             <option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option>
           </select></label>
-        </div>
+        </div>}
         {isTestMode && <div className="test-lane-notice">
           <div><strong>RUANG UJI OWNER</strong><span>Produk contoh terpisah dari katalog pelanggan. Invoice uji bernilai 1 XTR sungguhan.</span></div>
           <button type="button" onClick={() => { setIsTestMode(false); setSelectedProduct(null); setNotice('Kembali ke katalog publik. Produk uji tidak ditampilkan kepada pelanggan.'); }}>Katalog publik</button>
@@ -543,6 +646,52 @@ export default function HomePage() {
       </nav>}
 
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Tutup">×</button></div>}
+
+      {filterSheetOpen && category === 'MLBB' && <div className="modal-backdrop mlbb-filter-backdrop" onClick={()=>setFilterSheetOpen(false)}>
+        <section className="mlbb-filter-sheet" role="dialog" aria-modal="true" aria-labelledby="mlbb-filter-title" onClick={(e)=>e.stopPropagation()}>
+          <div className="mlbb-filter-grip" />
+          <header className="mlbb-filter-header"><h2 id="mlbb-filter-title">Filter</h2><button type="button" onClick={()=>setFilterSheetOpen(false)} aria-label="Tutup filter">×</button></header>
+          <div className="mlbb-filter-content">
+            {activeFilterSection === 'win_rate' && <section className="mlbb-filter-section">
+              <h3>Winrate</h3>
+              <div className="mlbb-range-grid">
+                <label><span>Minimum</span><div><input type="number" min="0" max="100" step="0.1" inputMode="decimal" placeholder="0" value={filterDraft.win_rate_min||''} onChange={(e)=>setMlbbRange('win_rate','min',e.target.value)} /><b>%</b></div></label>
+                <label><span>Maksimum</span><div><input type="number" min="0" max="100" step="0.1" inputMode="decimal" placeholder="100" value={filterDraft.win_rate_max||''} onChange={(e)=>setMlbbRange('win_rate','max',e.target.value)} /><b>%</b></div></label>
+              </div>
+            </section>}
+            {activeFilterSection === 'total_skins' && <section className="mlbb-filter-section">
+              <h3>Jumlah Skin</h3>
+              <div className="mlbb-range-grid">
+                <label><span>Minimum</span><input type="number" min="0" step="1" inputMode="numeric" placeholder="0" value={filterDraft.total_skins_min||''} onChange={(e)=>setMlbbRange('total_skins','min',e.target.value)} /></label>
+                <label><span>Maksimum</span><input type="number" min="0" step="1" inputMode="numeric" placeholder="0" value={filterDraft.total_skins_max||''} onChange={(e)=>setMlbbRange('total_skins','max',e.target.value)} /></label>
+              </div>
+            </section>}
+            {activeFilterSection === 'total_heroes' && <section className="mlbb-filter-section">
+              <h3>Jumlah Hero</h3>
+              <div className="mlbb-range-grid">
+                <label><span>Minimum</span><input type="number" min="0" step="1" inputMode="numeric" placeholder="0" value={filterDraft.total_heroes_min||''} onChange={(e)=>setMlbbRange('total_heroes','min',e.target.value)} /></label>
+                <label><span>Maksimum</span><input type="number" min="0" step="1" inputMode="numeric" placeholder="0" value={filterDraft.total_heroes_max||''} onChange={(e)=>setMlbbRange('total_heroes','max',e.target.value)} /></label>
+              </div>
+            </section>}
+            {activeFilterSection === 'rank_current' && <section className="mlbb-filter-section">
+              <h3>Rank Saat Ini</h3>
+              <div className="mlbb-choice-grid">{MLBB_RANKS.map((rank)=><label key={rank} className="mlbb-choice-row">
+                <input type="radio" name="mlbb-rank-current" value={rank} checked={filterDraft.rank_current===rank} onChange={()=>setFilterDraft((current)=>({...current,rank_current:rank}))} />
+                <span>{rank}</span>
+              </label>)}</div>
+            </section>}
+            {activeFilterSection === 'linked_account' && <section className="mlbb-filter-section">
+              <h3>Akun Terhubung Pada</h3>
+              <label className="mlbb-provider-search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Cari" value={linkedProviderSearch} onChange={(e)=>setLinkedProviderSearch(e.target.value)} /></label>
+              <div className="mlbb-choice-grid">{MLBB_LINKED_PROVIDERS.filter((provider)=>provider.toLowerCase().includes(linkedProviderSearch.toLowerCase())).map((provider)=><label key={provider} className="mlbb-choice-row">
+                <input type="checkbox" checked={(filterDraft.linked_account||[]).includes(provider)} onChange={()=>toggleLinkedProvider(provider)} />
+                <span>{provider}</span>
+              </label>)}</div>
+            </section>}
+          </div>
+          <footer className="mlbb-filter-footer"><button type="button" onClick={clearMlbbFilters}>Hapus Filter</button><button type="button" onClick={applyMlbbFilters}>Terapkan</button></footer>
+        </section>
+      </div>}
 
 {selectedProduct && <div className="modal-backdrop marketplace-detail-backdrop" onClick={() => setSelectedProduct(null)}>
         <section className="product-detail-modal marketplace-detail-modal" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onClick={(e) => e.stopPropagation()}>
