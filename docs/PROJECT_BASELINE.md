@@ -95,6 +95,18 @@ Referensi terbaru ini menetapkan acuan detail produk MLBB dan menggantikan statu
 3. Pertahankan API dan database kompatibel.
 4. Jangan membuat fitur, produk, atau data statis di frontend di luar ruang lingkup.
 
+### Sistem desain global (LOCKED, 25 November 2026)
+
+Seluruh halaman menggunakan satu sistem desain bersama. Aturan visual berlaku global; struktur, urutan elemen, data, dan alur pada area LOCKED tetap dipertahankan.
+
+- **Font utama:** Plus Jakarta Sans, bobot 400–900. Font dimuat satu kali dari root layout dan diwariskan ke seluruh teks, tombol, input, select, dan textarea. Fallback sistem hanya berlaku saat font eksternal tidak dapat dimuat.
+- **CTA utama tunggal:** emas `#FFC928` dengan teks gelap `#111827`. Hover `#FFDF36`, pressed `#E7B516`. Semua aksi utama pembelian, checkout, konfirmasi, beranda, dan Owner memakai satu token ini. CTA utama tidak boleh hijau atau ungu.
+- **Aksi sekunder:** permukaan navy/transparent, border netral, teks terang. Tidak memakai fill warna CTA utama.
+- **Warna semantik:** hijau `#00D68A` hanya untuk sukses/tersedia/terpenuhi; merah untuk error/stok habis; biru untuk informasi dan modal panduan/kebijakan; emas untuk brand, aksi utama, harga, dan state terpilih.
+- **Permukaan:** keluarga charcoal/black/navy. Latar gambar per game/halaman tetap dipertahankan; geometri visual baseline yang telah disetujui tidak diubah.
+- **Kontrol:** radius CTA 11px, shadow CTA bersama, focus ring emas, dan state disabled netral. Ukuran CTA boleh mengikuti kebutuhan komponen mobile yang telah disetujui.
+- **Sumber token:** warna, tipografi, radius, shadow, dan motion global berada di `frontend/src/app/globals.css`. Komponen menggunakan token, bukan warna CTA literal baru.
+
 ### Setelah coding
 1. Periksa diff dan file yang berubah.
 2. Jalankan lint/type-check/build/test yang tersedia.

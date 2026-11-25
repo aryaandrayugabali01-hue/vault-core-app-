@@ -177,7 +177,7 @@ border:1px solid rgba(255,255,255,.13);border-bottom:0;border-radius:25px 25px 0
    Existing catalogue, authentication, order and XTR flows stay intact.
    ========================================================= */
 :root{
---red:#ff8f9b;;
+--red:#ff8f9b;
 color-scheme:dark;
 
   --panel2:#282a2d;
@@ -188,16 +188,45 @@ color-scheme:dark;
   --subtle:#85858c;
 
   --green:#00d68a;
+  /* VAULT CORE global design tokens */
+  --vc-font-sans: "Plus Jakarta Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --vc-font-weight-regular: 400;
+  --vc-font-weight-medium: 500;
+  --vc-font-weight-semibold: 600;
+  --vc-font-weight-bold: 700;
+  --vc-font-weight-extrabold: 800;
+  --vc-font-weight-black: 900;
+  --vc-color-canvas: #131314;
+  --vc-color-detail: #030b15;
+  --vc-color-surface: #101825;
+  --vc-color-surface-raised: #172338;
+  --vc-color-text: #f6f7fb;
+  --vc-color-muted: #9aa9bd;
+  --vc-color-border: rgba(255,255,255,.10);
+  --vc-color-brand: #ffc928;
+  --vc-color-brand-hover: #ffdf36;
+  --vc-color-brand-active: #e7b516;
+  --vc-color-brand-foreground: #111827;
+  --vc-color-brand-soft: rgba(255,201,40,.14);
+  --vc-color-brand-border: rgba(255,201,40,.4);
+  --vc-color-success: #00d68a;
+  --vc-color-danger: #ff8f9b;
+  --vc-color-info: #27bfff;
+  --vc-cta-border: #ffe07a;
+  --vc-cta-shadow: 0 3px 13px rgba(255,181,0,.18);
+  --vc-cta-shadow-hover: 0 8px 22px rgba(255,181,0,.24);
+  --vc-cta-radius: 11px;
+  --vc-motion-fast: .16s ease;
 }
 html{
-min-width:320px;scroll-behavior:smooth;;
-background:#131314;scroll-padding-top:94px
+min-width:320px;scroll-behavior:smooth;
+background:var(--vc-color-canvas);scroll-padding-top:94px
 }
 body{
 min-width:320px;min-height:100vh;margin:0;overflow-x:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
-background:#131314;color:#f7f7f7;font-family:"Plus Jakarta Sans",Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+background:var(--vc-color-canvas);color:var(--vc-color-text);font-family:var(--vc-font-sans)
 }
-button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #00b77d;outline-offset:3px}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--vc-color-brand);outline-offset:3px}
 .shell{
 margin:0 auto;;
 padding-bottom:calc(126px + env(safe-area-inset-bottom,0px));
@@ -1696,3 +1725,21 @@ body{
 .marketplace-guide-security-list li>span{color:#27c7ff;font-size:17px;font-weight:900;line-height:1.1}
 .marketplace-guide-security-list p{margin:0;color:#d5deea;font-size:10px;line-height:1.5}
 .marketplace-guide-modal .marketplace-info-close{margin-top:13px}
+
+/* VAULT CORE global visual contract. Preserve approved page geometry and artwork. */
+body, button, input, select, textarea { font-family: var(--vc-font-sans); }
+/* One primary CTA color: gold, across every application surface. */
+:is(.buy-button, .product-bottom .buy-button, .marketplace-detail-actions .buy-button, .marketplace-detail-sticky-actions .buy-button, .marketplace-detail-stickybar > .buy-button, .admin-primary, .hero-cta, .dashboard-primary-cta, .cart-checkout-button, .marketplace-info-close, .mlbb-filter-footer button:last-child) { border:1px solid var(--vc-cta-border); border-radius:var(--vc-cta-radius); background:var(--vc-color-brand); color:var(--vc-color-brand-foreground); box-shadow:var(--vc-cta-shadow); }
+:is(.buy-button, .product-bottom .buy-button, .marketplace-detail-actions .buy-button, .marketplace-detail-sticky-actions .buy-button, .marketplace-detail-stickybar > .buy-button, .admin-primary, .hero-cta, .dashboard-primary-cta, .cart-checkout-button, .marketplace-info-close, .mlbb-filter-footer button:last-child):hover:not(:disabled) { background:var(--vc-color-brand-hover); color:var(--vc-color-brand-foreground); box-shadow:var(--vc-cta-shadow-hover); }
+:is(.buy-button, .product-bottom .buy-button, .marketplace-detail-actions .buy-button, .marketplace-detail-sticky-actions .buy-button, .marketplace-detail-stickybar > .buy-button, .admin-primary, .hero-cta, .dashboard-primary-cta, .cart-checkout-button, .marketplace-info-close, .mlbb-filter-footer button:last-child):active:not(:disabled) { background:var(--vc-color-brand-active); }
+:is(.buy-button, .product-bottom .buy-button, .marketplace-detail-actions .buy-button, .marketplace-detail-sticky-actions .buy-button, .marketplace-detail-stickybar > .buy-button, .admin-primary, .hero-cta, .dashboard-primary-cta, .cart-checkout-button, .marketplace-info-close, .mlbb-filter-footer button:last-child):disabled, :is(.buy-button, .product-bottom .buy-button, .marketplace-detail-actions .buy-button, .marketplace-detail-sticky-actions .buy-button, .marketplace-detail-stickybar > .buy-button, .admin-primary, .hero-cta, .dashboard-primary-cta, .cart-checkout-button, .marketplace-info-close, .mlbb-filter-footer button:last-child)[aria-disabled=true] { border-color:var(--vc-color-border); background:var(--vc-color-surface-raised); color:var(--vc-color-muted); box-shadow:none; opacity:.62; cursor:not-allowed; }
+/* Secondary controls are neutral. Green remains a semantic success/status color. */
+.detail-secondary-button, .marketplace-detail-sticky-actions .detail-secondary-button, .profile-orders-button, .reset-filters, .marketplace-detail-actions .detail-secondary-button { border-color:var(--vc-color-border); background:var(--vc-color-surface-raised); color:var(--vc-color-text); }
+/* Gold is the shared brand accent for pricing and selected/active navigation. */
+.eyebrow, .hero h1 span, .dashboard-eyebrow, .dashboard-hero h1 span, .product-price strong, .product-bottom strong, .marketplace-detail-price-panel strong, .marketplace-detail-price-icon, .marketplace-detail-sticky-price strong, .marketplace-rating-mark, .marketplace-guide-link .guide-open-button, .marketplace-detail-guide-callout .guide-open-button, .marketplace-detail-more { color:var(--vc-color-brand); }
+.nav-item.active, .store-tab.active, .marketplace-game-tabs button.active, .marketplace-category-nav button.active { color:var(--vc-color-brand); }
+.store-tab.active { border-color:var(--vc-color-brand-border); background:var(--vc-color-brand-soft); }
+.marketplace-game-tabs button.active:after, .marketplace-category-nav button.active:after { background:var(--vc-color-brand); }
+.marketplace-detail-thumbnails button.active { border-color:var(--vc-color-brand); box-shadow:0 0 0 1px rgba(255,201,40,.28); }
+.category-card.selected { border-color:var(--vc-color-brand-border); background:linear-gradient(135deg,var(--vc-color-brand-soft),#1e1f22 82%); }
+.marketplace-detail-trust-button.is-available { border-color:var(--vc-color-border); background:var(--vc-color-surface-raised); }
