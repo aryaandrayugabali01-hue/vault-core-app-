@@ -55,7 +55,9 @@ function accountSpecEntries(product) {
   return ACCOUNT_FILTERS.map((filter) => [filter.label, readAccountAttribute(product, filter)]).filter(([,value]) => value);
 }
 function numericAttribute(value) {
-  const parsed = Number(String(value ?? '').replace(/,/g,'').replace(/[^0-9.+-]/g,''));
+  const raw=String(value ?? '').trim();
+  if (!raw) return null;
+  const parsed = Number(raw.replace(/,/g,'').replace(/[^0-9.+-]/g,''));
   return Number.isFinite(parsed) ? parsed : null;
 }
 function matchesMlbbFilters(product, filters = {}) {
@@ -672,7 +674,7 @@ export default function HomePage() {
               <h3>Winrate</h3>
               <div className="mlbb-range-grid">
                 <label><span>Minimum</span><div><input type="number" min="0" max="100" step="0.1" inputMode="decimal" placeholder="0" value={filterDraft.win_rate_min||''} onChange={(e)=>setMlbbRange('win_rate','min',e.target.value)} /><b>%</b></div></label>
-                <label><span>Maksimum</span><div><input type="number" min="0" max="100" step="0.1" inputMode="decimal" placeholder="100" value={filterDraft.win_rate_max||''} onChange={(e)=>setMlbbRange('win_rate','max',e.target.value)} /><b>%</b></div></label>
+                <label><span>Maksimum</span><div><input type="number" min="0" max="100" step="0.1" inputMode="decimal" placeholder="0" value={filterDraft.win_rate_max||''} onChange={(e)=>setMlbbRange('win_rate','max',e.target.value)} /><b>%</b></div></label>
               </div>
             </section>}
             {activeFilterSection === 'total_skins' && <section className="mlbb-filter-section">
