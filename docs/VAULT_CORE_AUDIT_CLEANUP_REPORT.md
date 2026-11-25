@@ -173,3 +173,32 @@ Gate berikut:
 - Jalur existing XTR: source verifikasi pembayaran sudah ada; transaksi nyata tidak diverifikasi melalui audit ini.
 
 Semua status BELUM DIUJI tetap dinyatakan belum diuji, bukan dianggap lulus.
+
+## 13. Tindak lanjut 26 November 2026 — template produk dan keputusan live
+
+### Template Excel
+Workbook `VAULT_CORE_TEMPLATE_12_VARIAN_47_PERTANYAAN.xlsx` telah disiapkan sebagai artefak pengisian Owner, berisi:
+- `PETUNJUK`, `MASTER_VARIAN`, `INPUT_PRODUK`, `CHECKLIST_PRODUK`, `BANK_47`, dan `REFERENSI`.
+- 200 baris SKU kosong, dropdown ID 1–12, status produk/review, XTR, stok, bukti hak, data gambar, dan checklist per-SKU.
+- Rumus kesiapan yang memerlukan jumlah baris checklist tepat sesuai varian, semua pertanyaan berstatus Lengkap, harga/stok positif, dan rights review APPROVED.
+- Tidak ada ruang untuk menulis password/OTP/recovery code/session. Kredensial harus menunggu vault terenkripsi.
+
+Workbook adalah template persiapan, bukan importer otomatis atau sumber data produk komersial.
+
+### Verifikasi data produksi saat ini
+Pembacaan Neon `vault_core.main` menemukan 20 baris produk: 4 test fixtures dan 16 produk non-test. Terdapat 7 produk non-test berstatus ACTIVE; produk aktif yang ditemukan berada pada kategori Akun dan memakai `GAME_ACCOUNT_TRANSFER`. Produk Joki v4 belum tersedia sebagai produk aktif. Produk item/asset lama masih berstatus PAUSED. Tabel `products` belum memiliki `variant_id`.
+
+Nama/slug produk lama tidak digunakan sebagai dasar untuk menebak subvarian atau memindahkan status produk. SKU aktif hanya dapat dipetakan ke master group game + kategori Akun; pilihan subtipe/atribut detail tetap harus dikonfirmasi Owner melalui template.
+
+### Pemeriksaan integrasi storefront
+Paket v4 menyediakan `storefront/index.html` statis; tombolnya hanya memancarkan event `vaultcore:buy` dengan `variant_id` dan `sku_id`. Paket tidak berisi listener yang menghubungkan event tersebut ke endpoint order aplikasi saat ini. `data/catalog.js` pada paket juga memuat `skus: []` untuk semua 12 varian.
+
+Aplikasi aktif memakai React/Vinext `frontend/src/app/catalog/page.jsx`, mengambil data dari `GET /api/catalog`, mempertahankan filter akun MLBB (Win Rate, Jumlah Skin, Jumlah Hero, Rank Saat Ini, Akun Terhubung Pada), cart, order history, dan checkout `POST /api/orders` yang menghasilkan invoice XTR. API saat ini membatasi produk publik pada empat kategori Akun. Menimpa route ini langsung dengan file HTML v4 akan menghilangkan fungsi/flow tersebut dan tombol beli tidak akan tersambung ke order API.
+
+### Pipeline produksi
+Workflow `.github/workflows/deploy-production.yml` melakukan deploy API Worker dan frontend Worker pada push ke `main` bila path runtime/migrasi berubah, serta memperbarui Worker secrets, gateway configuration, domain checks, dan Telegram webhook. Workflow tidak menjalankan `npm run migrate`; migrasi harus memiliki jalur eksekusi dan verifikasi terpisah. CI terakhir untuk commit laporan audit `0e93219165a20c5e4d88f8bced6fe157ecedfc41` berstatus success. Deployment produksi terakhir yang tercatat sukses menggunakan commit `7b5ba71cb7a6be996335cf7d4eee01f295de78ab`.
+
+### Keputusan perubahan live
+Perubahan runtime dan SQL v4 **BELUM DIDEploy ke produksi**. Penyebabnya adalah mapping SKU-varian dan integrasi order belum tersedia; vault enkripsi dan otorisasi akses rahasia belum terimplementasi; migration history 017–019 masih hilang dari source; tidak ada hasil browser/staging test atas integrasi v4; dan workflow produksi akan mengganti Workers aktif. Melakukan deployment sebelum gate ini lulus berisiko memutus katalog, filter MLBB, checkout, atau mempublikasikan data yang belum diverifikasi.
+
+Tidak ada migration produksi, data produk, status stok/harga, secret, Worker, domain, Telegram webhook, atau kode runtime yang diubah pada tindak lanjut ini. Status kesiapan live tetap **NOT READY**.
