@@ -28,7 +28,15 @@ const CUSTOMER_FILTERS = [
   { key: 'platform_support', label: 'Platform' },
   { key: 'linked_account', label: 'Akun Tertaut' }
 ];
-const CUSTOMER_ATTRIBUTE_LABELS = Object.fromEntries(CUSTOMER_FILTERS.map(({key,label}) => [key,label]));
+const CUSTOMER_ATTRIBUTE_LABELS = {
+  ...Object.fromEntries(CUSTOMER_FILTERS.map(({key,label}) => [key,label])),
+  email_bundle: 'Email yang disertakan',
+  linked_platforms: 'Platform tertaut',
+  unbind_terms: 'Ketentuan pelepasan tautan',
+  season_note: 'Catatan season',
+  metode_penyerahan: 'Metode penyerahan',
+  subkategori: 'Subkategori'
+};
 function customerAttributeLabel(key) {
   return CUSTOMER_ATTRIBUTE_LABELS[key] || String(key).replaceAll('_',' ').replace(/\\b\\w/g, (letter) => letter.toUpperCase());
 }
