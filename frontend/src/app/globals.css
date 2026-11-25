@@ -1842,29 +1842,35 @@ body, button, input, select, textarea { font-family: var(--vc-font-sans); }
 @media(max-width:360px){.marketplace-detail-page .marketplace-detail-trust-item strong{font-size:7px}.marketplace-detail-page .marketplace-detail-rating>div{display:grid;gap:1px}}
 
 
-/* Detail page content safety: readable long values and escaped line breaks. */
-.marketplace-detail-page .marketplace-detail-section p,
-.marketplace-detail-page .marketplace-detail-terms-footer p {
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-  word-break: normal;
-}
-.marketplace-detail-page .marketplace-attributes-v2 > div {
-  grid-template-columns: minmax(0, 39%) minmax(0, 1fr);
-  align-items: start;
-}
-.marketplace-detail-page .marketplace-attributes-v2 dt,
-.marketplace-detail-page .marketplace-attributes-v2 dd {
-  min-width: 0;
-  line-height: 1.45;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-  word-break: normal;
-}
-.marketplace-detail-page .marketplace-attributes-v2 dt {
-  align-items: flex-start;
-}
-.marketplace-detail-page .marketplace-attributes-v2 dd {
-  margin: 0;
-  text-align: right;
-}
+/* Customer navigation: one approved shell across storefront and Owner routes. */
+.dashboard-header-label{flex:1;min-width:0;color:#e8e4ff;text-align:center;font-size:10px;font-weight:950;letter-spacing:.12em}
+.dashboard-header-actions>a,.dashboard-header-actions>button{flex:0 0 auto;cursor:pointer}
+.admin-shell{padding-bottom:calc(112px + env(safe-area-inset-bottom,0px))}
+
+/* Detail context header reuses the shared VAULT CORE header frame. */
+.marketplace-detail-header{position:relative;z-index:5;flex:0 0 auto;display:flex;flex-direction:column;gap:0;min-height:0;padding:0;border-bottom:1px solid rgba(151,124,255,.18);background:rgba(5,10,20,.97)}
+.marketplace-detail-header .dashboard-topbar{position:relative;top:auto;z-index:2;min-height:58px;margin:0;padding:7px 12px;border-bottom:0;background:transparent}
+.marketplace-detail-header .dashboard-brand img{width:112px;max-width:25vw}
+.marketplace-detail-header .dashboard-search{height:36px;padding:0 9px}
+.marketplace-detail-header .dashboard-header-actions{gap:5px}
+.marketplace-detail-header .dashboard-icon-button{width:34px;height:34px;border-radius:10px}
+.marketplace-detail-toolbar{display:flex;align-items:center;gap:9px;min-height:50px;padding:5px 12px 8px;border-top:1px solid rgba(151,124,255,.12);background:rgba(5,10,20,.97)}
+.marketplace-detail-toolbar-title{flex:1;min-width:0;display:grid;gap:2px}
+.marketplace-detail-toolbar-title strong{overflow:hidden;color:#f4f6fb;font-size:12px;line-height:1.25;text-overflow:ellipsis;white-space:nowrap}
+.marketplace-detail-toolbar-title small{color:#9aa9bd;font-size:9px}
+.marketplace-detail-toolbar .marketplace-detail-tool-action{width:34px;height:34px;flex:0 0 34px}
+
+/* Keep the product purchase action above the same global bottom navigation. */
+.marketplace-detail-footer-stack{flex:0 0 auto;display:flex;flex-direction:column}
+.marketplace-detail-footer-stack .marketplace-detail-stickybar{position:relative}
+.marketplace-detail-footer-stack .dashboard-bottom-nav-embedded{position:relative;inset:auto;width:100%;margin:0;padding:5px 8px calc(5px + env(safe-area-inset-bottom,0px));border:0;border-top:1px solid rgba(147,112,255,.28);border-radius:0;box-shadow:0 -3px 16px rgba(0,0,0,.2)}
+.marketplace-detail-footer-stack .dashboard-bottom-nav-embedded a{min-height:48px}
+
+/* Detail text and specification rows: no overlapping labels or values. */
+.marketplace-detail-page .marketplace-detail-section p,.marketplace-detail-page .marketplace-detail-terms-footer p{white-space:pre-line;overflow-wrap:anywhere;word-break:normal}
+.marketplace-detail-page .marketplace-attributes-v2>div{display:grid;grid-template-columns:minmax(132px,38%) minmax(0,1fr);align-items:start;gap:12px}
+.marketplace-detail-page .marketplace-attributes-v2 dt{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:start;gap:8px;min-width:0;line-height:1.45;white-space:normal;overflow-wrap:anywhere}
+.marketplace-detail-page .marketplace-attributes-v2 dt span{width:18px;flex:0 0 18px}
+.marketplace-detail-page .marketplace-attributes-v2 dd{min-width:0;margin:0;line-height:1.45;text-align:right;white-space:pre-line;overflow-wrap:anywhere;word-break:normal}
+@media(max-width:420px){.marketplace-detail-page .marketplace-attributes-v2>div{grid-template-columns:minmax(112px,40%) minmax(0,1fr);gap:8px}}
+@media(max-width:380px){.marketplace-detail-header .dashboard-brand img{width:96px}.marketplace-detail-header .dashboard-search{gap:5px}.marketplace-detail-header .dashboard-search input{font-size:8px}.marketplace-detail-header .dashboard-icon-button{width:30px;height:30px}}
