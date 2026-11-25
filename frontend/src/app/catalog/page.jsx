@@ -538,7 +538,7 @@ export default function HomePage() {
               <div className="marketplace-trust-badges"><span><b>♢</b> Keamanan akun</span><span><b>◉</b> Anti-Hackback</span><span><b>✧</b> Pilihan</span></div>
             </div>
           </div>
-          <p>Periksa detail dan spesifikasi produk sebelum melanjutkan transaksi melalui VAULT CORE.</p>
+          <p>Periksa detail dan spesifikasi produk sebelum melanjutkan transaksi. Seluruh checkout, pembayaran XTR, dan pemantauan pesanan dilakukan hanya melalui VAULT CORE Telegram Mini App.</p>
         </div>
         <nav className="marketplace-game-tabs" aria-label="Pilih game">
           <button type="button" className={category === 'ALL' ? 'active' : ''} aria-pressed={category === 'ALL'} onClick={() => { setCategory('ALL'); setTier('ALL'); setMarketplaceCategoryId('ALL'); setAttributeFilters({}); setQuery(''); }}>Semua game</button>
