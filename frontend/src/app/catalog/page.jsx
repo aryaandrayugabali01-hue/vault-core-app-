@@ -61,6 +61,7 @@ function AppIcon({ name }) {
   const common = { viewBox: '0 0 24 24', width: 21, height: 21, fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
   if (name === 'home') return <svg {...common}><path d="m3.5 10 8.5-7 8.5 7" /><path d="M5.5 9v11h13V9M9.5 20v-6h5v6" /></svg>;
   if (name === 'categories') return <svg {...common}><rect x="3.5" y="3.5" width="7" height="7" rx="1.7" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.7" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.7" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.7" /></svg>;
+  if (name === 'filter') return <svg {...common}><path d="M3.5 5h17l-6.5 7.3v5.2l-4 2v-7.2z" /></svg>;
   if (name === 'orders') return <svg {...common}><path d="M6 3.5h9l3 3V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20z" /><path d="M14.5 3.5V7h3.5M9 11h6M9 15h6" /></svg>;
   if (name === 'search') return <svg {...common}><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></svg>;
   return <svg {...common}><circle cx="12" cy="8" r="3.4" /><path d="M4.5 20c.7-3.3 3.4-5.2 7.5-5.2s6.8 1.9 7.5 5.2" /></svg>;
@@ -567,7 +568,7 @@ export default function HomePage() {
           <span className="marketplace-listing-count">{loading ? '—' : filtered.length.toLocaleString('id-ID') + ' produk'}</span>
         </div>
         <div className="marketplace-filter-toolbar" aria-label="Filter katalog">
-          <button className="marketplace-filter-icon" type="button" aria-label="Reset seluruh filter" onClick={()=>{setAttributeFilters({});setTier('ALL');setQuery('');}}>⌁</button>
+          <button className="marketplace-filter-icon" type="button" aria-label="Reset seluruh filter" onClick={()=>{setAttributeFilters({});setTier('ALL');setQuery('');}}><AppIcon name="filter" /></button>
           {attributeFacets.map((facet) => <label className="marketplace-inline-filter" key={facet.key}>
             <span className="sr-only">{facet.label}</span>
             <select aria-label={facet.label} value={attributeFilters[facet.key] || ''} onChange={(e)=>setAttributeFilters((current)=>({...current,[facet.key]:e.target.value}))}>
