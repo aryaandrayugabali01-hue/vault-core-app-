@@ -250,7 +250,7 @@ test('MLBB public catalog listing is not checkout-enabled without publisher auth
   assert.match(route, /public_preview/);
   assert.match(route, /sales_enabled/);
   assert.match(order, /rr\.rights_basis/);
-  assert.match(delivery, /MLBB_ACCOUNT_TRANSFER/);
+  assert.match(delivery, /GAME_ACCOUNT_TRANSFER/);
   assert.match(migration, /MLBB_ACCOUNT_TRANSFER_PUBLISHER_AUTHORIZATION_REQUIRED/);
   assert.match(migration, /'sales_enabled', false/);
   assert.match(migration, /- 'cost_price_note'[\s\S]*- 'authorization_evidence_status'/);
@@ -725,7 +725,6 @@ test('customer catalog hides private price, ownership and XTR conversion metadat
     price_max_idr:200000
   });
   assert.deepEqual(visible, [
-    ['kode_produk','ML-001'],
     ['subkategori','Akun Collector'],
     ['metode_penyerahan','Transfer resmi']
   ]);
