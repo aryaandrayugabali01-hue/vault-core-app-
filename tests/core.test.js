@@ -984,7 +984,7 @@ test('dashboard buyer protection uses the official Vault Core logo and tagline w
   const page = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   const start = page.indexOf('<section className="dashboard-protection"');
-  const end = page.indexOf('<StoreBottomNav active="dashboard"', start);
+  const end = page.indexOf("</section>", start);
   assert.ok(start >= 0 && end > start);
   const section = page.slice(start, end);
   assert.ok(section.includes('src="/assets/01-brand/vaultcore-horizontal.svg"'));
@@ -1029,11 +1029,15 @@ test('shared footer and c.html bottom navigation are global across route layouts
   for (const label of ['Beranda', 'Produk', 'Bantuan', 'Akun', 'Katalog', 'Kategori', 'Cara Beli', 'Syarat & Ketentuan', 'Kebijakan Refund']) {
     assert.ok(navigation.includes(label), 'Missing navigation label: ' + label);
   }
-  assert.ok(layout.includes('<StoreFooter />'));
+  assert.ok(layout.includes('<StoreChrome />'));
   assert.match(navigation, /catalog-footer-buy-guide/);
   assert.match(navigation, /catalog-footer-support/);
-  assert.ok(notFound.includes('<StoreBottomNav active="dashboard"/>'));
+  assert.match(navigation, /usePathname/);
+  assert.match(navigation, /store-bottom-nav-shell/);
+  assert.match(navigation, /position:relative/);
+  assert.ok(!notFound.includes("StoreBottomNav"));
   assert.match(catalog, /openProfileFromFooter/);
+  assert.ok(!catalog.includes('<footer className="footer">'));
   assert.match(home, /id="terms-and-conditions"/);
   assert.match(home, /id="refund-policy"/);
 });
