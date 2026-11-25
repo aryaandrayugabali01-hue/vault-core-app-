@@ -5,6 +5,7 @@ import { getInitData } from '../../../../lib/telegram';
 import { splitInventoryPayloads } from '../../../../lib/inventory';
 import { parseProductAttributesText } from '../../../../lib/product-attributes';
 import { GAME_NAMES } from '../../../../lib/marketplace.js';
+import { StoreHeader, StoreBottomNav } from '../../../../components/store-navigation.jsx';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const CATEGORIES = [
@@ -193,13 +194,10 @@ export default function NewProductPage() {
     }
   }
 
-  if (!ready) return <main className="admin-shell"><div className="admin-notice">{error || 'Memverifikasi akses Owner…'}</div></main>;
+  if (!ready) return <main className="admin-shell"><StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="admin-logout" href="/admin">Dashboard</a>}/><div className="admin-notice">{error || 'Memverifikasi akses Owner…'}</div><StoreBottomNav active="owner"/></main>;
 
   return <main className="admin-shell">
-    <header className="admin-head">
-      <a className="brand" href="/"><span className="brand-mark">V</span><span>VAULT<span className="brand-light">CORE</span></span></a>
-      <div className="admin-head-actions"><span className="admin-pill">PANEL PEMILIK</span><a className="admin-logout" href="/admin">Dashboard</a></div>
-    </header>
+    <StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="admin-logout" href="/admin">Dashboard</a>}/>
     <section className="admin-title">
       <span className="eyebrow muted">KATALOG / PRODUK BARU</span>
       <h1>Input produk</h1>
@@ -245,5 +243,6 @@ export default function NewProductPage() {
         <button className="admin-primary" disabled={busy}>{busy ? 'Menyimpan…' : savedProductId ? 'Lanjutkan penyimpanan SKU' : stock.trim() ? 'Simpan produk + stok awal' : 'Simpan produk sebagai Draf'}</button>
       </form>
     </section>
+    <StoreBottomNav active="owner"/>
   </main>;
 }
