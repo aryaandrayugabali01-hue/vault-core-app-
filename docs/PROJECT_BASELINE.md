@@ -262,3 +262,11 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - The official artwork fills the entire card area edge-to-edge using `object-fit: cover`. The game name, “Subkategori Akun”, and live account count sit over a dark bottom gradient for legibility.
 - Preserve the existing game ordering, category links, backend-derived account counts, card dimensions, carousel behavior, shared header/bottom navigation, and all other approved Dashboard sections.
 - Scope is limited to artwork composition and card copy overlay. Do not change catalog/product data, backend behavior, pricing, stock, routes, or transaction flow.
+
+
+## 20. Dashboard game-card size adjustment — 25 Nov 2026
+
+- Reduce portrait game-card dimensions to 75% of the prior approved size across mobile and desktop.
+- Preserve aspect ratio, full-bleed single official artwork, bottom text gradient, carousel behavior, game order, links, live account counts, and all other Dashboard sections.
+- Mobile flex-basis: `clamp(173px, 43.5vw, 315px)`; desktop flex-basis: `clamp(225px, 43.5vw, 315px)`; narrow-screen override: `58.5vw`.
+- Scope is card sizing only. Product data, backend, catalog, pricing, stock, and transaction behavior remain unchanged.
