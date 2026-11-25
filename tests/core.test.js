@@ -979,3 +979,25 @@ test('customer catalog footer follows the approved XTR, account-security, and wa
   assert.ok(layout.includes('title: \'VAULT CORE | Lebih Yakin Bersama Vault Core\''));
   assert.ok(layout.includes('Lebih Yakin Bersama Vault Core. Marketplace akun game'));
 });
+
+test('dashboard buyer protection uses the official Vault Core logo and tagline while preserving three trust cards', () => {
+  const page = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const start = page.indexOf('<section className="dashboard-protection"');
+  const end = page.indexOf('<StoreBottomNav active="dashboard"', start);
+  assert.ok(start >= 0 && end > start);
+  const section = page.slice(start, end);
+  assert.ok(section.includes('src="/assets/01-brand/vaultcore-horizontal.svg"'));
+  assert.ok(section.includes('alt="VAULT CORE"'));
+  assert.ok(section.includes('Lebih Yakin Bersama Vault Core'));
+  for (const copy of [
+    'Perlindungan sesuai masa garansi dan ketentuan produk.',
+    'Detail akun diperiksa VAULT CORE sebelum ditampilkan.',
+    'Refund atau penggantian mengikuti ketentuan produk.'
+  ]) assert.ok(section.includes(copy), 'Missing approved protection copy: ' + copy);
+  for (const title of ['Anti-Hackback','Akun Dicek Manual','Garansi Refund']) assert.ok(section.includes(title));
+  assert.ok(styles.includes('.dashboard-protection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}'));
+  assert.ok(styles.includes('.dashboard-protection-card:nth-child(2)'));
+  assert.ok(styles.includes('.dashboard-protection-card:nth-child(3)'));
+  assert.ok(styles.includes('.dashboard-protection-logo'));
+});

@@ -232,3 +232,14 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - Gunakan persis seperti penulisan di atas pada identitas brand, footer, metadata SEO, Open Graph, materi promosi, dan komunikasi pelanggan.
 - Tagline ini adalah identitas brand utama, bukan tagline sementara atau opsi copywriting.
 - Jangan mengganti, memparafrasekan, menambahkan klausa, atau menggunakan tagline alternatif pada kanal resmi tanpa instruksi eksplisit pemilik proyek.
+
+## 18. Dashboard buyer protection brand lockup — 25 Nov 2026
+
+- Header section **Perlindungan Pembeli** memakai aset logo resmi `/assets/01-brand/vaultcore-horizontal.svg`.
+- Tagline yang tampil persis: **Lebih Yakin Bersama Vault Core**.
+- Tiga kartu mempertahankan gaya dan urutan yang disetujui: Anti-Hackback (hijau), Akun Dicek Manual (biru), dan Garansi Refund (ungu). Pertahankan ikon, gradien, border, radius, serta grid tiga kolom.
+- Teks kartu customer-facing:
+  - Anti-Hackback: “Perlindungan sesuai masa garansi dan ketentuan produk.”
+  - Akun Dicek Manual: “Detail akun diperiksa VAULT CORE sebelum ditampilkan.”
+  - Garansi Refund: “Refund atau penggantian mengikuti ketentuan produk.”
+- Lingkup perubahan hanya brand lockup, tagline, dan copy singkat tiga kartu. Struktur Dashboard, katalog, detail, navigasi, data produk, serta alur transaksi tetap dipertahankan.
