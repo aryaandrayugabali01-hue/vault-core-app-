@@ -449,6 +449,7 @@ router.post('/products/:id/rights-review', async (req, res) => {
          WHEN $3='APPROVED' AND status IN ('DRAFT','PAUSED')
            AND sale_price_xtr>1
            AND fulfillment_type='GAME_ACCOUNT_TRANSFER'
+           AND variant_id IS NULL
            AND game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
            AND EXISTS (
              SELECT 1 FROM marketplace_categories mc
