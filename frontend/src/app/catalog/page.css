@@ -131,3 +131,4 @@ body:has(.vc4-shell) .store-global-footer,body:has(.vc4-shell) .store-bottom-nav
 }
 
 .vc4-game-tile{background-size:cover;background-position:center;background-repeat:no-repeat}.vc4-game-tile img{max-width:58%;max-height:58%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.25))}.vc4-card-art{background-size:cover;background-position:center}.vc4-card-art img{width:62px;height:62px;object-fit:contain;filter:drop-shadow(0 3px 10px rgba(0,0,0,.22))}.vc4-product-terms,.vc4-security-guide{border-top:1px solid var(--vc4-soft);margin-top:17px;padding-top:15px}.vc4-security-guide ol{padding-left:21px;color:var(--vc4-muted);font-size:12px;line-height:1.7}.vc4-eta{font-size:12px!important;color:var(--vc4-blue)!important}
+.vc4-details strong{overflow-wrap:anywhere;word-break:break-word;max-width:62%}.vc4-product-terms p{white-space:pre-line;overflow-wrap:anywhere}.vc4-security-guide li{margin:5px 0}
