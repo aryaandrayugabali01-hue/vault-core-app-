@@ -650,7 +650,6 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
   const detailWarrantyText = selectedProduct ? getWarrantyTerms(selectedProduct) : '';
   const detailWarrantySections = getWarrantySections(detailWarrantyText);
   const detailWarrantyDuration = detailWarrantyText.match(/(\d+)\s+hari kalender/i)?.[1] || '';
-  const detailReviewActive = selectedProduct?.rights_review_active === true;
   const detailGallery = selectedProduct
     ? (Array.isArray(selectedProduct.image_gallery) && selectedProduct.image_gallery.length
       ? selectedProduct.image_gallery
@@ -999,11 +998,18 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
 
       {guideOpen && <div className="modal-backdrop marketplace-policy-backdrop" onClick={()=>setGuideOpen(false)}>
         <section className="guide-modal marketplace-info-modal marketplace-guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title" onClick={(e) => e.stopPropagation()}>
-          <div className="marketplace-info-header"><div><small>INFORMASI PEMBELIAN</small><h2 id="guide-title">Cara Beli &amp; Tips</h2><p>{guideCategory?.name || 'VAULT CORE'}</p></div><button className="icon-button" type="button" onClick={()=>setGuideOpen(false)} aria-label="Tutup panduan">×</button></div>
-          <div className="marketplace-guide-owner"><strong>Informasi dan data akun diberikan langsung oleh VAULT CORE</strong><p>Pembeli berkomunikasi, menerima informasi produk, dan memperoleh bantuan langsung dari VAULT CORE.</p></div>
+          <div className="marketplace-info-header"><div><small>PANDUAN PEMBELIAN</small><h2 id="guide-title">Cara Beli &amp; Tips</h2><p>{guideCategory?.name || 'MLBB · Akun'}</p></div><button className="icon-button" type="button" onClick={()=>setGuideOpen(false)} aria-label="Tutup panduan">×</button></div>
+          <h3 className="marketplace-guide-section-title">Langkah-Langkah Pembelian</h3>
           {guideCategory?.purchase_guide?.length ? <ol className="guide-steps">{guideCategory.purchase_guide.map((step,index)=><li key={index}><span>{index+1}</span><div><strong>{step.title}</strong><p>{step.content}</p></div></li>)}</ol> : <div className="empty-state"><strong>Panduan kategori belum tersedia</strong><p>Panduan untuk subkategori ini belum tersedia pada data VAULT CORE.</p></div>}
-          <div className="guide-security"><strong>Tips keamanan akun</strong><p>Ikuti tahapan login yang tercantum pada panduan produk. Setelah akses diterima, periksa identitas dan spesifikasi akun, perbarui pengaturan keamanan yang tersedia, dan jangan membagikan OTP atau kode pemulihan kepada pihak lain.</p></div>
-          <button className="marketplace-info-close" type="button" onClick={()=>setGuideOpen(false)}>Tutup panduan</button>
+          <section className="guide-security marketplace-guide-security">
+            <h3 className="marketplace-guide-section-title">Tips Keamanan</h3>
+            <ul className="marketplace-guide-security-list">
+              <li><span aria-hidden="true">✓</span><p>Ganti kata sandi akun setelah menerima data.</p></li>
+              <li><span aria-hidden="true">✓</span><p>Aktifkan verifikasi dua langkah (2FA) pada akun Moonton, Google, atau platform terkait.</p></li>
+              <li><span aria-hidden="true">✓</span><p>Periksa dan kelola perangkat yang terhubung serta metode pemulihan (Email/No. HP) agar akun tetap aman.</p></li>
+            </ul>
+          </section>
+          <button className="marketplace-info-close" type="button" onClick={()=>setGuideOpen(false)}>Mengerti</button>
         </section>
       </div>}
     </main>

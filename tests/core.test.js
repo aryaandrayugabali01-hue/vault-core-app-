@@ -785,6 +785,37 @@ test('MLBB product detail follows the approved dark-gold reference and keeps pol
   assert.doesNotMatch(detail, /marketplace-detail-stats|marketplace-detail-quantity|marketplace-detail-store|marketplace-detail-related/);
 });
 
+test('MLBB account detail uses the public catalog DTO, last-stock label, and four-step security guide', () => {
+  const route = readFileSync(new URL('../frontend/src/app/catalog/mlbb-akun/page.jsx', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const catalogApi = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const guideMigration = readFileSync(new URL('../database/migrations/022_mlbb_account_purchase_guide.sql', import.meta.url), 'utf8');
+  const stockMigration = readFileSync(new URL('../database/migrations/023_mlbb_account_last_stock_display.sql', import.meta.url), 'utf8');
+  assert.match(route, /initialCategory="MLBB" initialCategorySlug="mlbb-akun"/);
+  assert.match(page, /isPinnedCatalogRoute/);
+  assert.match(page, /getProductStockLabel/);
+  assert.match(page, /STOK TERAKHIR/);
+  assert.match(page, /visibleStock === 1/);
+  assert.match(page, /Langkah-Langkah Pembelian/);
+  assert.match(page, /Ganti kata sandi akun setelah menerima data/);
+  assert.match(page, /Aktifkan verifikasi dua langkah/);
+  assert.match(page, /metode pemulihan/);
+  assert.match(page, /Keamanan Akun/);
+  assert.doesNotMatch(page, /detailReviewActive|rights_review_active/);
+  assert.doesNotMatch(page, /Status pengiriman|Jumlah terjual|Rata-rata pengiriman|Minimum pembelian|Jumlah pembelian|INFORMASI TOKO|Produk lain dari VAULT CORE|detailQuantity|marketplace-detail-store|marketplace-detail-related/);
+  assert.doesNotMatch(catalogApi, /rights_review_active\\s*:/);
+  assert.doesNotMatch(catalogApi, /(?:^|\\n)\\s*(?:sellable_stock|cost_price_xtr|average_delivery_minutes|sold_count)\\s*:/);
+  assert.match(catalogApi, /display_stock: visibleStock/);
+  assert.match(styles, /marketplace-guide-security-list/);
+  assert.match(guideMigration, /Selesaikan pembayaran melalui VAULT CORE/);
+  assert.match(guideMigration, /Tunggu verifikasi pembayaran/);
+  assert.match(guideMigration, /melalui halaman pesanan/);
+  assert.match(guideMigration, /Login menggunakan data yang diberikan/);
+  assert.match(stockMigration, /display_stock_mode='EXACT_COUNT'/);
+  assert.match(stockMigration, /WHERE sku='ML-001'/);
+});
+
 test('account catalogue hides filters for all games and uses a unified dark filter sheet per selected game', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');

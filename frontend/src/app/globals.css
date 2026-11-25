@@ -1679,3 +1679,20 @@ body{
  .marketplace-detail-trust-item strong{font-size:8px}
  .marketplace-detail-stickybar>.buy-button{font-size:12px}
 }
+
+
+/* Compact purchase steps and three security tips in the approved guide sheet. */
+.marketplace-guide-modal .marketplace-guide-section-title{display:flex;align-items:center;gap:8px;margin:14px 0 10px;color:#f0f4fa;font-size:13px;font-weight:850;line-height:1.35}
+.marketplace-guide-modal .marketplace-guide-section-title:before{content:"";width:4px;height:18px;flex:0 0 4px;border-radius:99px;background:#17bfff}
+.marketplace-guide-modal .guide-steps{gap:10px;margin:0;padding:3px 0 2px}
+.marketplace-guide-modal .guide-steps li{grid-template-columns:29px minmax(0,1fr);gap:10px}
+.marketplace-guide-modal .guide-steps li>div{min-width:0}
+.marketplace-guide-modal .guide-steps li>span{width:28px;height:28px;border:1px solid #21baff;background:rgba(0,150,255,.17);color:#45caff;box-shadow:0 0 8px rgba(0,150,255,.15)}
+.marketplace-guide-modal .guide-steps li p{font-size:10px;line-height:1.5}
+.marketplace-guide-modal .marketplace-guide-security{margin-top:12px;padding:11px 12px;border:1px solid rgba(33,186,255,.22);border-radius:13px;background:rgba(0,113,255,.07)}
+.marketplace-guide-modal .marketplace-guide-security .marketplace-guide-section-title{margin:0 0 10px}
+.marketplace-guide-security-list{display:grid;gap:9px;margin:0;padding:0;list-style:none}
+.marketplace-guide-security-list li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:9px;align-items:start}
+.marketplace-guide-security-list li>span{color:#27c7ff;font-size:17px;font-weight:900;line-height:1.1}
+.marketplace-guide-security-list p{margin:0;color:#d5deea;font-size:10px;line-height:1.5}
+.marketplace-guide-modal .marketplace-info-close{margin-top:13px}

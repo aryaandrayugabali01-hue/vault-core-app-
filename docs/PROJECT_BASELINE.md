@@ -61,7 +61,7 @@ Referensi terbaru yang diberikan pada 25 November 2026 terdiri dari tiga tampila
 - Endpoint publik tunggal daftar produk jual: `GET /api/catalog`. Respons mempertahankan bentuk `{ products, categories }`.
 - Halaman utama dan seluruh katalog customer membaca data jual melalui `/api/catalog`; detail produk menggunakan objek produk dari respons yang sama. Tidak diperlukan endpoint publik detail produk terpisah.
 - `GET /api/admin/products` tetap merupakan jalur privat Owner untuk manajemen katalog, bukan sumber data halaman penjualan customer.
-- DTO publik hanya menyertakan ID, nama, game, kategori Akun, deskripsi, harga XTR, galeri, atribut customer-visible, ketentuan, panduan, status pembelian, status review aktif, dan nilai stok yang memang boleh ditampilkan.
+- DTO publik hanya menyertakan ID, nama, game, kategori Akun, deskripsi, harga XTR, galeri, atribut customer-visible, ketentuan, panduan, status pembelian, dan nilai stok yang memang boleh ditampilkan. Metadata pemeriksaan hak hanya digunakan internal di query backend.
 - SKU internal, status database mentah, metadata pemeriksaan hak, stok aktual mentah, harga modal, jumlah terjual, dan rata-rata pengiriman tidak dikirim ke DTO publik.
 - Detail tidak memiliki panel status pengiriman, jumlah terjual, rata-rata pengiriman, minimum pembelian, catatan penyerahan manual, kontrol kuantitas, informasi toko, atau rekomendasi produk.
 - Pembelian dari detail dilakukan satu akun per aksi. Indikator stok menggunakan `display_stock`: angka 1 ditampilkan sebagai `STOK TERAKHIR`; mode penyembunyian angka tetap hanya menampilkan `STOK TERSEDIA`. Checkout tetap memvalidasi stok aktual di server.
@@ -136,7 +136,8 @@ Rilis hanya setelah ruang lingkup terpenuhi, area LOCKED aman, test/build lulus,
 |---|---|---|---|---|
 | 2026-11-25 | `a4fa611b8b7e4e2b8302eafd91b2ab93a766f1ef` | Halaman detail produk mobile-first, modal Anti-Hackback dan Cara Beli & Tips, statistik penjualan/pengiriman dari pesanan selesai | `frontend/src/app/catalog/page.jsx`, `frontend/src/app/globals.css`, `backend/routes/catalog.js`, `tests/core.test.js` | 50 test backend/core PASS; build Mini App PASS; API Worker dry-run PASS; production workflow SUCCESS. |
 | 2026-11-25 | `0c7b03f91094c854189df77f946b043e16cdd6d0` | Membuat baseline pengendali dan mencatat acuan detail terbaru | `docs/PROJECT_BASELINE.md` | Dokumen saja; tidak mengubah aplikasi. |
-| 2026-11-25 | PENDING PR | Mengunci route `/catalog/mlbb-akun`, menyederhanakan detail sesuai acuan terbaru, membersihkan DTO `/api/catalog`, dan membuang statistik/panel yang tidak diminta | `frontend/src/app/catalog/mlbb-akun/page.jsx`, `frontend/src/app/catalog/page.jsx`, `frontend/src/app/globals.css`, `backend/routes/catalog.js`, `tests/core.test.js`, `docs/PROJECT_BASELINE.md` | Menunggu CI, deployment, dan verifikasi produksi. |
+| 2026-11-25 | `0c240e841ceb198aebb5e48a501be057f84336af` | Mengunci route `/catalog/mlbb-akun`, menyederhanakan detail, membersihkan DTO `/api/catalog`, dan menghapus statistik/panel yang tidak diminta | `frontend/src/app/catalog/mlbb-akun/page.jsx`, `frontend/src/app/catalog/page.jsx`, `frontend/src/app/globals.css`, `frontend/src/app/page.jsx`, `backend/routes/catalog.js`, `tests/core.test.js`, `docs/PROJECT_BASELINE.md` | CI dan deployment produksi SUCCESS. |
+| 2026-11-25 | PENDING PR | Panduan MLBB 4 langkah + 3 tips keamanan, mode stok terakhir SKU ML-001, dan pembersihan metadata internal pada DTO customer | `database/migrations/022_mlbb_account_purchase_guide.sql`, `database/migrations/023_mlbb_account_last_stock_display.sql`, `frontend/src/app/catalog/page.jsx`, `frontend/src/app/globals.css`, `backend/routes/catalog.js`, `tests/core.test.js`, `docs/PROJECT_BASELINE.md` | Menunggu CI, migration, deployment dan verifikasi live. |
 
 ## 9. Status audit data produksi (25 Nov 2026)
 
@@ -144,6 +145,8 @@ Rilis hanya setelah ruang lingkup terpenuhi, area LOCKED aman, test/build lulus,
 - SKU MLBB `ML-001` memuat ketentuan Anti-Hackback 14 hari kalender, klaim melalui dukungan resmi dengan nomor pesanan/kronologi/bukti, refund 100% untuk klaim valid, dan pemrosesan maksimal 48 jam sejak bukti lengkap diterima.
 - SKU aktif lainnya memiliki ketentuan masing-masing; jangan menampilkan garansi Anti-Hackback ML-001 seolah berlaku untuk semua SKU.
 - Tabel klaim garansi ada di database, tetapi endpoint klaim belum terpasang pada API aplikasi saat audit.
+- SKU `ML-001` menggunakan `EXACT_COUNT` agar sisa satu unit tampil sebagai `STOK TERAKHIR`; perubahan hanya berlaku untuk SKU tersebut.
+- Panduan `mlbb-akun` berisi 4 langkah pembelian dan 3 tips keamanan, disimpan pada migration `022_mlbb_account_purchase_guide.sql`.
 - Rating/ulasan belum tersedia di model/data backend yang diperiksa.
 - Model toko adalah single-vendor; tampilkan VAULT CORE.
 - Lima order yang tercatat pada saat audit tidak menghasilkan penjualan FULFILLED; statistik terjual harus mengikuti data aktual.
