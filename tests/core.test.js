@@ -81,7 +81,7 @@ test('public catalog declares Telegram Mini App as the only transaction channel'
   assert.match(page, /if \(!initData\)/);
   assert.match(page, /telegramContext && <>[\s\S]*top-cart-button/);
   assert.match(page, /telegramContext && <nav className="bottom-nav"/);
-  assert.match(page, /telegramContext && <button className="detail-secondary-button"/);
+  assert.match(page, /<button className="detail-secondary-button" data-visual="marketplace-detail-cart-button"/);
 });
 
 test('expired pending orders are atomically cancelled, unreserved, and hidden from stock counts', async () => {
@@ -200,6 +200,9 @@ test('MLBB account detail matches the locked compact layout and removes unrelate
   assert.match(detail, /buy\(product,1\)/);
   assert.doesNotMatch(detail, /Status pengiriman|Jumlah terjual|Rata-rata pengiriman|Minimum pembelian|Jumlah pembelian|Minimum 1 unit|Penyerahan manual oleh VAULT CORE|INFORMASI TOKO|Produk lain dari VAULT CORE/);
   assert.doesNotMatch(page, /detailQuantity|formatAverageDeliveryMinutes|detailRelatedProducts/);
+  assert.match(detail, /marketplace-detail-stats-v2/);
+  assert.match(detail, /Terjual:<\/span><strong>Belum tersedia/);
+  assert.match(detail, /Rata-rata kirim:<\/span><strong>Belum tersedia/);
   assert.match(page, /Garansi Anti-Hackback/);
   assert.match(page, /Cara Beli &amp; Tips/);
   assert.match(page, /marketplace-info-modal/);
@@ -785,7 +788,10 @@ test('MLBB product detail follows the approved dark-gold reference and keeps pol
   assert.match(styles, /linear-gradient\(180deg,#ffdf36,#ffad00\)/);
   assert.match(styles, /marketplace-info-modal:before/);
   const detail = page.slice(page.indexOf('marketplace-detail-backdrop'), page.indexOf('{ordersOpen &&'));
-  assert.doesNotMatch(detail, /marketplace-detail-stats|marketplace-detail-quantity|marketplace-detail-store|marketplace-detail-related/);
+  assert.match(detail, /marketplace-detail-stats-v2/);
+  assert.match(detail, /marketplace-detail-warranty-trigger/);
+  assert.match(detail, /marketplace-detail-guide-trigger/);
+  assert.doesNotMatch(detail, /marketplace-detail-quantity|marketplace-detail-store|marketplace-detail-related/);
 });
 
 test('MLBB account detail uses the public catalog DTO, last-stock label, and four-step security guide', () => {
@@ -807,6 +813,9 @@ test('MLBB account detail uses the public catalog DTO, last-stock label, and fou
   assert.match(page, /Keamanan Akun/);
   assert.doesNotMatch(page, /detailReviewActive|rights_review_active/);
   assert.doesNotMatch(page, /Status pengiriman|Jumlah terjual|Rata-rata pengiriman|Minimum pembelian|Jumlah pembelian|INFORMASI TOKO|Produk lain dari VAULT CORE|detailQuantity|marketplace-detail-store|marketplace-detail-related/);
+  assert.match(page, /marketplace-detail-stats-v2/);
+  assert.match(page, /Terjual:<\/span><strong>Belum tersedia/);
+  assert.match(page, /Rata-rata kirim:<\/span><strong>Belum tersedia/);
   const customerDtoStart = catalogApi.indexOf('    return {');
   const customerDtoEnd = catalogApi.indexOf('\n    };', customerDtoStart);
   const customerDto = catalogApi.slice(customerDtoStart, customerDtoEnd);

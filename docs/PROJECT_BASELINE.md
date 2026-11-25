@@ -179,7 +179,7 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - Use a short landscape gallery and thumbnail strip.
 - Use near-black/navy surfaces with gold price and purchase CTA.
 - Main content order: product title and stock; truthful rating status; three inline trust indicators; left-aligned gold XTR price with final-price note; separate blue Anti-Hackback trigger; compact three-row sales/delivery/minimum-purchase panel; full-width single-row Cara Beli & Tips trigger; description; account specifications with contextual emoji; remaining product content and terms.
-- Sales, delivery time, minimum quantity, price, stock, attributes, warranty terms, and guide steps must remain backed by selected-product data or approved constants.
+- Sales and average-delivery values are shown as “Belum tersedia” while the public catalog DTO does not expose those fields; minimum purchase is the approved constant 1. Price, stock, attributes, warranty terms, and guide steps remain backed by selected-product data or approved constants.
 - Rating and review counts remain “Belum tersedia” until a real backend source exists; do not copy sample values from the reference.
 - Both information sheets remain dark-navy blue-neon bottom sheets with gold “Mengerti” actions.
 - Sticky purchase area has a separate cart icon button and a wide gold buy button.
