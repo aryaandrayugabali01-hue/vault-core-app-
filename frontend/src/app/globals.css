@@ -1357,3 +1357,25 @@ body{
   .catalog-controls .mlbb-sort-control select{max-width:145px}
   .mlbb-filter-sheet{max-height:min(91dvh,900px)}
 }
+
+
+/* Final production guard: no inline account filters on the all-games catalogue */
+.account-filter-toolbar,.mlbb-filter-toolbar{display:none!important}
+.catalog-controls-v2{display:flex!important}
+.catalog-controls-v2 .mlbb-filter-main{display:inline-flex;align-items:center;gap:9px}
+.mlbb-filter-sheet{
+  background:#111a26!important;
+  background-image:linear-gradient(155deg,#1a2635 0%,#111a26 70%,#0b121c 100%)!important;
+  color:#edf3fb!important;border:1px solid rgba(166,184,210,.18)!important;
+}
+.mlbb-filter-header,.mlbb-filter-content,.mlbb-filter-section,.mlbb-filter-footer{
+  background-color:transparent!important;color:#edf3fb!important;
+}
+.mlbb-filter-header h2,.mlbb-filter-section h3,.mlbb-choice-row,.mlbb-range-grid label{
+  color:#edf3fb!important;
+}
+.mlbb-range-grid input,.mlbb-provider-search,.mlbb-provider-search input{
+  background:#0c1420!important;color:#edf3fb!important;border-color:#35465c!important;
+}
+.mlbb-filter-footer{background:#0c1420!important;border-top:1px solid rgba(180,196,218,.18)!important}
+html,body{background-color:#0b111a}
