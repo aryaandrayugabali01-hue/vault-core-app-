@@ -1,6 +1,6 @@
 import { isSafeProductImageUrl, normalizeProductText } from './productDetailsService.js';
 
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const ALLOWED_ACCOUNT_CATEGORY_SLUGS = new Set(['mlbb-akun','free-fire-akun','roblox-akun','genshin-akun']);
 
 export function validateMarketplaceCategory(input = {}) {
   const name = normalizeProductText(input.name, 80);
@@ -13,7 +13,7 @@ export function validateMarketplaceCategory(input = {}) {
   const errors = [];
 
   if (name.length < 2) errors.push('CATEGORY_NAME_REQUIRED');
-  if (!SLUG_PATTERN.test(slug) || slug.length > 64) errors.push('CATEGORY_SLUG_INVALID');
+  if (!ALLOWED_ACCOUNT_CATEGORY_SLUGS.has(slug)) errors.push('CATEGORY_SLUG_NOT_ALLOWED');
   if (!icon) errors.push('CATEGORY_ICON_REQUIRED');
   if (!Number.isSafeInteger(sortOrder) || sortOrder < 0 || sortOrder > 10000) errors.push('CATEGORY_SORT_ORDER_INVALID');
   if (typeof isActive !== 'boolean') errors.push('CATEGORY_ACTIVE_INVALID');
