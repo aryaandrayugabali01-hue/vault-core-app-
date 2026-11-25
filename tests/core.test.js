@@ -1025,6 +1025,7 @@ test('dashboard home spacing and typography follow the supplied size reference o
 
 test('shared footer and c.html bottom navigation are global across route layouts', () => {
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   const notFound = readFileSync(new URL('../frontend/src/app/not-found.jsx', import.meta.url), 'utf8');
   const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
@@ -1037,7 +1038,7 @@ test('shared footer and c.html bottom navigation are global across route layouts
   assert.match(navigation, /catalog-footer-support/);
   assert.match(navigation, /usePathname/);
   assert.match(navigation, /store-bottom-nav-shell/);
-  assert.match(navigation, /position:relative/);
+  assert.ok(styles.includes('position:relative;inset:auto'));
   assert.ok(!notFound.includes("StoreBottomNav"));
   assert.match(catalog, /openProfileFromFooter/);
   assert.ok(!catalog.includes('<footer className="footer">'));
