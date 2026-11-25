@@ -125,7 +125,7 @@ export default function DashboardPage(){
         <h1>Marketplace akun game, <span>dalam satu tempat.</span></h1>
         <p>Temukan akun game Mobile Legends, Free Fire, Roblox, dan Genshin Impact. Periksa spesifikasi, stok, serta ketentuan sebelum membayar dengan Telegram Stars.</p>
         <div className="dashboard-hero-actions"><a href="/catalog" className="dashboard-primary-cta">Jelajahi Katalog <span>↗</span></a><span className="dashboard-payment-note">Pembayaran Telegram Stars · XTR</span></div>
-        <div className="dashboard-hero-trust"><span><b>✓</b> Transaksi Aman</span><span><b>✓</b> Proses Cepat</span><span><b>✓</b> Dukungan Responsif</span><span><b>✓</b> Pembayaran Telegram Stars (XTR)</span></div>
+        <div className="dashboard-hero-trust"><span><img src="/assets/06-icons/icon-shield.svg" alt="" loading="lazy"/> Transaksi Aman</span><span><img src="/assets/06-icons/icon-orders.svg" alt="" loading="lazy"/> Proses Cepat</span><span><img src="/assets/06-icons/icon-wallet.svg" alt="" loading="lazy"/> Pembayaran Telegram Stars (XTR)</span></div>
       </div>
     </section>
 
