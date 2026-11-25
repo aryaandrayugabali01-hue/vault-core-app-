@@ -184,3 +184,10 @@ The latest three-screen owner reference controls the MLBB product detail visual.
 - Do not add sales/delivery statistics, minimum-purchase panels, quantity controls, store panels, or related-product panels to customer detail.
 - Keep the sticky purchase action to one account per action.
 - Keep Anti-Hackback and Cara Beli & Tips as separate blue-neon bottom sheets with yellow confirmation CTA.
+
+## 13. Product terms footer — 25 Nov 2026
+
+- The customer-facing `Ketentuan Produk` section is the last content section in the detail page scroll area.
+- Place it after the Telegram Stars transaction notice and immediately before the scroll area closes; the sticky purchase bar remains the bottom-fixed purchase control.
+- Preserve the exact customer_terms text from the selected product backend record. Render the section only when non-warranty terms exist; do not hardcode product-specific account claims across other SKUs.
+- Use a subtle top divider and the global design tokens. Preserve paragraph line breaks.

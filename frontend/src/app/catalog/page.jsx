@@ -903,7 +903,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
                 <button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name || 'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide || []});setGuideOpen(true);}}>Buka panduan <span>›</span></button>
               </section>
               <section className="marketplace-detail-section"><h2>Deskripsi Produk</h2><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
-              {getNonWarrantyTerms(selectedProduct.customer_terms) && <section className="marketplace-detail-section"><h2>Ketentuan Produk</h2><p>{getNonWarrantyTerms(selectedProduct.customer_terms)}</p></section>}
+              
               <section className="marketplace-detail-section">
                 <h2>Spesifikasi Akun</h2>
                 {detailSpecs.length ? <>
@@ -912,6 +912,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
                 </> : <p>Spesifikasi akun belum tersedia pada data produk.</p>}
               </section>
               <div className="marketplace-detail-policy"><strong>Transaksi resmi Telegram Stars</strong><p>Produk ini dapat dipesan melalui VAULT CORE Telegram Mini App. Website publik hanya menampilkan katalog dan detail produk; pembuatan pesanan, checkout, invoice, dan pembayaran dilakukan melalui Mini App. Harga dan stok diperiksa ulang oleh server.</p></div>
+              {getNonWarrantyTerms(selectedProduct.customer_terms) && <section className="marketplace-detail-section marketplace-detail-terms-footer"><h2>Ketentuan Produk</h2><p>{getNonWarrantyTerms(selectedProduct.customer_terms)}</p></section>}
             </div>
           </div>
           <footer className="marketplace-detail-stickybar">

@@ -1743,3 +1743,19 @@ body, button, input, select, textarea { font-family: var(--vc-font-sans); }
 .marketplace-detail-thumbnails button.active { border-color:var(--vc-color-brand); box-shadow:0 0 0 1px rgba(255,201,40,.28); }
 .category-card.selected { border-color:var(--vc-color-brand-border); background:linear-gradient(135deg,var(--vc-color-brand-soft),#1e1f22 82%); }
 .marketplace-detail-trust-button.is-available { border-color:var(--vc-color-border); background:var(--vc-color-surface-raised); }
+
+/* Customer terms are the final scrollable section above the fixed purchase bar. */
+.marketplace-detail-terms-footer {
+  margin-top: 14px;
+  padding: 15px 0 2px;
+  border-top: 1px solid var(--vc-color-border);
+  border-bottom: 0;
+}
+.marketplace-detail-terms-footer h2 {
+  margin: 0 0 8px;
+  color: var(--vc-color-brand);
+}
+.marketplace-detail-terms-footer p {
+  margin-bottom: 0;
+  white-space: pre-line;
+}
