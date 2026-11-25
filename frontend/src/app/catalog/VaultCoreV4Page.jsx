@@ -1,0 +1,372 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { getInitData, getTelegramWebApp, openInvoice } from '../../../lib/telegram';
+import './page.css';
+
+const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+const GROUPS = ['Akun','Jasa Joki','Item In-Game'];
+const GAME_NAMES = { MLBB:'Mobile Legends', FF:'Free Fire', ROBLOX:'Roblox', GI:'Genshin Impact' };
+const STATUS = {
+  PENDING_PAYMENT:'Menunggu pembayaran',PAID:'Pembayaran diterima',FULFILLING:'Sedang diproses',
+  FULFILLED:'Selesai',CANCELLED:'Dibatalkan',REFUND_PENDING:'Refund diproses',
+  REFUNDED:'Refund selesai',FAILED:'Gagal'
+};
+const RANKS = [
+  'Warrior 1','Warrior 2','Warrior 3','Elite 1','Elite 2','Elite 3','Master 1','Master 2','Master 3','Master 4',
+  'Grandmaster 1','Grandmaster 2','Grandmaster 3','Grandmaster 4','Grandmaster 5',
+  'Epic 1','Epic 2','Epic 3','Epic 4','Epic 5','Legend 1','Legend 2','Legend 3','Legend 4','Legend 5',
+  'Mythic','Mythical Honor','Mythical Glory','Mythical Immortal'
+];
+const PROVIDERS = ['Moonton','Google','Apple','Facebook','TikTok','VK'];
+const safeAttrs = (source = {}) => Object.entries(source || {}).filter(([key]) =>
+  !/(login|password|pass|sandi|otp|session|recovery|token|credential|email|username)/i.test(key)
+);
+const fmt = (value) => Number(value || 0).toLocaleString('id-ID');
+const normalize = (value) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g,'');
+function getAttr(product, keys) {
+  const entries = safeAttrs(product.attributes);
+  const set = new Set(keys.map(normalize));
+  const found = entries.find(([key]) => set.has(normalize(key)));
+  return found ? String(found[1] ?? '') : '';
+}
+function matchesMlbb(product, filters) {
+  const checks = [
+    ['win_rate',['win_rate','win rate','winrate'],filters.winMin,filters.winMax],
+    ['total_skins',['total_skins','jumlah skin','skins'],filters.skinMin,filters.skinMax],
+    ['total_heroes',['total_heroes','jumlah hero','heroes'],filters.heroMin,filters.heroMax]
+  ];
+  for (const [,keys,min,max] of checks) {
+    if (!min && !max) continue;
+    const actual = Number(getAttr(product,keys).replace(/[^0-9.]/g,''));
+    if (!Number.isFinite(actual)) return false;
+    if (min && actual < Number(min)) return false;
+    if (max && actual > Number(max)) return false;
+  }
+  if (filters.rank && getAttr(product,['rank_current','rank saat ini','rank']).toLowerCase() !== filters.rank.toLowerCase()) return false;
+  if (filters.providers.length) {
+    const actual = normalize(getAttr(product,['linked_account','akun terhubung pada','linked_platforms']));
+    if (!filters.providers.some((item) => actual.includes(normalize(item)))) return false;
+  }
+  return true;
+}
+
+export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
+  const [variants,setVariants] = useState([]);
+  const [game,setGame] = useState(initialCategory === 'ALL' ? 'ALL' : initialCategory);
+  const [group,setGroup] = useState('ALL');
+  const [search,setSearch] = useState('');
+  const [loading,setLoading] = useState(true);
+  const [error,setError] = useState('');
+  const [filtersOpen,setFiltersOpen] = useState(false);
+  const [filters,setFilters] = useState({winMin:'',winMax:'',skinMin:'',skinMax:'',heroMin:'',heroMax:'',rank:'',providers:[]});
+  const [selected,setSelected] = useState(null);
+  const [cart,setCart] = useState([]);
+  const [cartOpen,setCartOpen] = useState(false);
+  const [buying,setBuying] = useState(false);
+  const [notice,setNotice] = useState('');
+  const [ordersOpen,setOrdersOpen] = useState(false);
+  const [orders,setOrders] = useState([]);
+  const [ordersLoading,setOrdersLoading] = useState(false);
+  const [ordersError,setOrdersError] = useState('');
+  const [accessTarget,setAccessTarget] = useState(null);
+  const [accessForm,setAccessForm] = useState({login:'',password:''});
+  const [accessSaving,setAccessSaving] = useState(false);
+  const [accessNotice,setAccessNotice] = useState('');
+
+  const loadCatalog = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(API + '/api/catalog/v4/variants',{cache:'no-store'});
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Katalog belum dapat dimuat.');
+      setVariants(Array.isArray(data.variants) ? data.variants : []);
+    } catch (e) {
+      setError(e.message || 'Katalog belum dapat dimuat.');
+    } finally {
+      setLoading(false);
+    }
+  },[]);
+
+  const loadOrders = useCallback(async () => {
+    const initData = getInitData();
+    if (!initData) throw new Error('Buka VAULT CORE melalui Telegram untuk melihat pesanan.');
+    const response = await fetch(API + '/api/orders/mine',{
+      headers:{'x-telegram-init-data':initData},cache:'no-store'
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Riwayat pesanan tidak dapat dimuat.');
+    setOrders(data.orders || []);
+    return data.orders || [];
+  },[]);
+
+  useEffect(() => {
+    const tg = getTelegramWebApp();
+    tg?.ready();
+    tg?.expand();
+    loadCatalog();
+    const paid = () => {
+      setNotice('Telegram mengonfirmasi pembayaran. Memperbarui pesanan…');
+      loadOrders().catch(() => {});
+    };
+    window.addEventListener('vault:payment-paid',paid);
+    return () => window.removeEventListener('vault:payment-paid',paid);
+  },[loadCatalog,loadOrders]);
+
+  const flatProducts = useMemo(() => variants.flatMap((variant) =>
+    (variant.skus || []).map((sku) => ({
+      ...sku,
+      id:Number(sku.id),
+      variant_id:Number(variant.variant_id),
+      variant_name:variant.name,
+      game_code:variant.game_code,
+      game:variant.game,
+      group:variant.category
+    }))
+  ),[variants]);
+
+  const visibleProducts = useMemo(() => flatProducts.filter((product) => {
+    if (game !== 'ALL' && product.game_code !== game) return false;
+    if (group !== 'ALL' && product.group !== group) return false;
+    const haystack = [product.name,product.description,product.sku,product.variant_name,product.game].join(' ').toLowerCase();
+    if (search && !haystack.includes(search.toLowerCase())) return false;
+    if (product.game_code === 'MLBB' && product.group === 'Akun' && !matchesMlbb(product,filters)) return false;
+    return true;
+  }),[flatProducts,game,group,search,filters]);
+
+  const visibleVariants = useMemo(() => variants.filter((variant) =>
+    (game === 'ALL' || variant.game_code === game) &&
+    (group === 'ALL' || variant.category === group) &&
+    (!search || [variant.name,variant.game,variant.category].join(' ').toLowerCase().includes(search.toLowerCase()))
+  ),[variants,game,group,search]);
+
+  const addToCart = (product) => {
+    setCart((current) => {
+      const found = current.find((item) => item.productId === product.id);
+      if (found) return current.map((item) => item.productId === product.id ? {...item,quantity:Math.min(5,item.quantity+1)} : item);
+      if (current.length >= 10) {
+        setNotice('Keranjang maksimal 10 SKU.');
+        return current;
+      }
+      return [...current,{productId:product.id,sku:product.sku,name:product.name,price:Number(product.sale_price_xtr),quantity:1}];
+    });
+    setNotice(product.name + ' ditambahkan ke keranjang.');
+    setSelected(null);
+  };
+
+  const setQuantity = (productId,quantity) => {
+    setCart((current) => quantity < 1 ? current.filter((item) => item.productId !== productId) :
+      current.map((item) => item.productId === productId ? {...item,quantity:Math.min(5,quantity)} : item));
+  };
+
+  const checkout = async () => {
+    const initData = getInitData();
+    if (!initData) {
+      setNotice('Checkout hanya tersedia di VAULT CORE Telegram Mini App.');
+      return;
+    }
+    if (!cart.length) return;
+    setBuying(true);
+    setNotice('Menyiapkan invoice Telegram Stars…');
+    try {
+      const response = await fetch(API + '/api/orders',{
+        method:'POST',
+        headers:{'content-type':'application/json','x-telegram-init-data':initData},
+        body:JSON.stringify({items:cart.map(({productId,quantity}) => ({productId,quantity}))})
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Checkout gagal dibuat.');
+      setCart([]);
+      setCartOpen(false);
+      setNotice('Invoice ' + data.orderNumber + ' siap dibuka. Total ' + fmt(data.totalXtr) + ' XTR.');
+      openInvoice(data.invoiceUrl,data.orderNumber);
+    } catch(e) {
+      setNotice(e.message || 'Checkout gagal dibuat.');
+    } finally {
+      setBuying(false);
+    }
+  };
+
+  const showOrders = async () => {
+    setOrdersOpen(true);
+    setOrdersLoading(true);
+    setOrdersError('');
+    try { await loadOrders(); }
+    catch(e) { setOrdersError(e.message || 'Riwayat pesanan tidak dapat dimuat.'); }
+    finally { setOrdersLoading(false); }
+  };
+
+  const submitJokiAccess = async () => {
+    const initData = getInitData();
+    if (!initData || !accessTarget || !accessForm.login.trim() || accessForm.password.length < 6) {
+      setAccessNotice('Lengkapi login dan kata sandi dengan benar.');
+      return;
+    }
+    setAccessSaving(true);
+    setAccessNotice('');
+    try {
+      const response = await fetch(API + '/api/orders/' + encodeURIComponent(accessTarget.orderNumber) + '/customer-access',{
+        method:'POST',
+        headers:{'content-type':'application/json','x-telegram-init-data':initData},
+        body:JSON.stringify({orderItemId:accessTarget.orderItemId,login:accessForm.login,password:accessForm.password})
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || data.error || 'Data akses tidak dapat disimpan.');
+      setAccessForm({login:'',password:''});
+      setAccessNotice('Akses tersimpan dengan enkripsi. Owner akan memproses layanan.');
+      setNotice('Data akses pesanan ' + accessTarget.orderNumber + ' tersimpan aman.');
+    } catch(e) { setAccessNotice(e.message || 'Data akses tidak dapat disimpan.'); }
+    finally { setAccessSaving(false); }
+  };
+
+  const totalXtr = cart.reduce((sum,item) => sum + item.price * item.quantity,0);
+  const activeVariant = selected ? variants.find((item) => Number(item.variant_id) === selected.variant_id) : null;
+  const noActiveSku = visibleProducts.length === 0;
+
+  return (
+    <div className="vc4-shell">
+      <header className="vc4-nav">
+        <a href="/" className="vc4-brand" aria-label="VAULT CORE Beranda">
+          <img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/>
+        </a>
+        <nav className="vc4-nav-links" aria-label="Kategori game">
+          <button type="button" className={game==='ALL'?'active':''} onClick={() => setGame('ALL')}>Semua</button>
+          {Object.entries(GAME_NAMES).map(([code,label]) => <button type="button" key={code} className={game===code?'active':''} onClick={() => setGame(code)}>{label}</button>)}
+        </nav>
+        <div className="vc4-nav-actions">
+          <button type="button" onClick={showOrders}>Pesanan</button>
+          <button type="button" className="vc4-cart-button" onClick={() => setCartOpen(true)}>Keranjang <span>{cart.reduce((n,item)=>n+item.quantity,0)}</span></button>
+        </div>
+      </header>
+
+      <main className="vc4-main">
+        <section className="vc4-page-head">
+          <h1>Katalog<span>.</span></h1>
+          <div>
+            <h2>Akun, jasa joki, dan item game dalam satu tempat.</h2>
+            <p>Pilih kategori dan varian. Harga dan stok ditampilkan setelah produk disetujui Owner.</p>
+          </div>
+        </section>
+
+        <section className="vc4-game-row" aria-label="Pilih game">
+          <button type="button" className={game==='ALL'?'selected':''} onClick={() => setGame('ALL')}>
+            <span className="vc4-game-tile">VC</span><span>Semua</span>
+          </button>
+          {Object.entries(GAME_NAMES).map(([code,label]) => <button type="button" key={code} className={game===code?'selected':''} onClick={() => setGame(code)}>
+            <span className="vc4-game-tile">{code==='FREE_FIRE'?'FF':code==='ROBLOX'?'RB':code==='GENSHIN'?'GI':'ML'}</span><span>{label}</span>
+          </button>)}
+        </section>
+
+        <section className="vc4-filter-bar" aria-label="Jenis produk">
+          {['ALL',...GROUPS].map((item) => <button type="button" key={item} className={group===item?'active':''} onClick={() => setGroup(item)}>
+            {item==='ALL'?'Semua jenis':item}
+          </button>)}
+          <input type="search" value={search} onChange={(event)=>setSearch(event.target.value)} placeholder="Cari varian atau SKU…" aria-label="Cari varian atau SKU"/>
+        </section>
+
+        {game==='MLBB' && group==='Akun' && <section className="vc4-mlbb-filters">
+          <div className="vc4-mlbb-head"><strong>Filter akun MLBB</strong><button type="button" onClick={()=>setFiltersOpen((v)=>!v)}>{filtersOpen?'Tutup filter':'Tampilkan filter'}</button></div>
+          {filtersOpen && <div className="vc4-mlbb-grid">
+            <label>Win Rate (%)<span><input type="number" min="0" max="100" placeholder="Min" value={filters.winMin} onChange={(e)=>setFilters({...filters,winMin:e.target.value})}/><input type="number" min="0" max="100" placeholder="Maks" value={filters.winMax} onChange={(e)=>setFilters({...filters,winMax:e.target.value})}/></span></label>
+            <label>Jumlah Skin<span><input type="number" min="0" placeholder="Min" value={filters.skinMin} onChange={(e)=>setFilters({...filters,skinMin:e.target.value})}/><input type="number" min="0" placeholder="Maks" value={filters.skinMax} onChange={(e)=>setFilters({...filters,skinMax:e.target.value})}/></span></label>
+            <label>Jumlah Hero<span><input type="number" min="0" placeholder="Min" value={filters.heroMin} onChange={(e)=>setFilters({...filters,heroMin:e.target.value})}/><input type="number" min="0" placeholder="Maks" value={filters.heroMax} onChange={(e)=>setFilters({...filters,heroMax:e.target.value})}/></span></label>
+            <label>Rank Saat Ini<select value={filters.rank} onChange={(e)=>setFilters({...filters,rank:e.target.value})}><option value="">Semua rank</option>{RANKS.map((rank)=><option key={rank}>{rank}</option>)}</select></label>
+            <fieldset><legend>Akun Terhubung Pada</legend>{PROVIDERS.map((provider)=><label key={provider} className="vc4-check"><input type="checkbox" checked={filters.providers.includes(provider)} onChange={(e)=>setFilters({...filters,providers:e.target.checked?[...filters.providers,provider]:filters.providers.filter((v)=>v!==provider)})}/>{provider}</label>)}</fieldset>
+            <button type="button" className="vc4-reset" onClick={()=>setFilters({winMin:'',winMax:'',skinMin:'',skinMax:'',heroMin:'',heroMax:'',rank:'',providers:[]})}>Reset filter</button>
+          </div>}
+        </section>}
+
+        {notice && <div className="vc4-notice" role="status">{notice}<button type="button" onClick={()=>setNotice('')} aria-label="Tutup">×</button></div>}
+        {error && <div className="vc4-error">{error}<button type="button" onClick={loadCatalog}>Coba lagi</button></div>}
+        {loading ? <div className="vc4-loading"><span/><span/><span/></div> : GROUPS.filter((category)=>group==='ALL'||group===category).map((category) => {
+          const list = visibleVariants.filter((variant)=>variant.category===category);
+          if (!list.length) return null;
+          return <section className="vc4-shelf" key={category}>
+            <div className="vc4-shelf-head"><div><span>VAULT CORE · {category.toUpperCase()}</span><h2>{category}.</h2></div><p>{category==='Akun'?'Akun dengan detail dan status hak yang ditinjau.':category==='Jasa Joki'?'Pengerjaan layanan oleh tenaga operasional internal.':'Item in-game dengan metode fulfillment yang ditetapkan Owner.'}</p></div>
+            <div className="vc4-grid">
+              {list.map((variant) => {
+                const products = visibleProducts.filter((product)=>product.variant_id===Number(variant.variant_id));
+                return <article className="vc4-card" key={variant.variant_id}>
+                  <button type="button" className="vc4-card-main" onClick={()=>setSelected({variant_id:Number(variant.variant_id)})}>
+                    <div className="vc4-card-art"><span>{variant.game_code==='MLBB'?'ML':variant.game_code==='FF'?'FF':variant.game_code==='ROBLOX'?'RB':'GI'}</span><small>{variant.category}</small></div>
+                    <div className="vc4-card-copy"><span className="vc4-eyebrow">{variant.game}</span><h3>{variant.name}</h3><p>{products.length ? products.length + ' SKU aktif' : 'Produk disiapkan Owner'}</p></div>
+                    <div className="vc4-card-foot"><strong>{products.length ? 'Lihat produk' : 'Detail varian'}</strong><span>↗</span></div>
+                  </button>
+                  {products.length>0 && <div className="vc4-sku-list">{products.map((product)=><div className="vc4-sku" key={product.id}>
+                    <button type="button" className="vc4-sku-info" onClick={()=>setSelected({variant_id:Number(variant.variant_id),product})}>
+                      {product.image_url ? <img src={product.image_url} alt="" loading="lazy"/> : <span className="vc4-sku-thumb">◇</span>}
+                      <span><strong>{product.name}</strong><small>{product.sku} · {product.display_stock===null?'Stok tersedia':typeof product.display_stock==='number'?fmt(product.display_stock)+' stok':product.display_stock}</small></span>
+                    </button>
+                    <div className="vc4-sku-buy"><strong>★ {fmt(product.sale_price_xtr)} XTR</strong><button type="button" onClick={()=>addToCart(product)}>Tambah</button></div>
+                  </div>)}</div>}
+                </article>;
+              })}
+            </div>
+          </section>;
+        })}
+
+        {!loading && visibleVariants.length===0 && <div className="vc4-empty"><h2>Varian belum ditemukan.</h2><p>Ubah pilihan game, jenis produk, atau kata pencarian.</p></div>}
+        {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada SKU v4 yang diaktifkan. Owner dapat menyiapkan produk melalui panel pengelolaan berdasarkan 12 varian dan 47 pertanyaan wajib.</p>}
+        <footer className="vc4-footer">
+          <p>VAULT CORE adalah penjual tunggal. Pembayaran menggunakan Telegram Stars (XTR) melalui invoice resmi Telegram.</p>
+          <p>Status pembayaran hanya ditetapkan setelah konfirmasi sistem. Data akses akun disimpan melalui vault terenkripsi.</p>
+        </footer>
+      </main>
+
+      {selected && <div className="vc4-overlay" role="presentation" onClick={()=>setSelected(null)}>
+        <section className="vc4-dialog" role="dialog" aria-modal="true" aria-label="Detail produk" onClick={(e)=>e.stopPropagation()}>
+          <button className="vc4-close" type="button" onClick={()=>setSelected(null)}>×</button>
+          <span className="vc4-eyebrow">{activeVariant?.game} · {activeVariant?.category}</span>
+          <h2>{activeVariant?.name}</h2>
+          {selected.product ? <>
+            <h3>{selected.product.name}</h3>
+            <p>{selected.product.description}</p>
+            <div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ')}</span><strong>{String(value)}</strong></div>)}</div>
+            <p className="vc4-price-large">★ {fmt(selected.product.sale_price_xtr)} XTR</p>
+            <button className="vc4-primary" type="button" onClick={()=>addToCart(selected.product)}>Tambah ke keranjang</button>
+          </> : <p>Produk pada varian ini akan tampil setelah Owner menyelesaikan SKU, harga, stok, dan verifikasi yang diwajibkan.</p>}
+        </section>
+      </div>}
+
+      {cartOpen && <div className="vc4-overlay" onClick={()=>setCartOpen(false)}>
+        <section className="vc4-dialog vc4-cart" role="dialog" aria-modal="true" aria-label="Keranjang" onClick={(e)=>e.stopPropagation()}>
+          <button className="vc4-close" type="button" onClick={()=>setCartOpen(false)}>×</button>
+          <span className="vc4-eyebrow">VAULT CORE</span><h2>Keranjang.</h2>
+          {cart.length===0 ? <p>Keranjang masih kosong.</p> : cart.map((item)=><div className="vc4-cart-row" key={item.productId}>
+            <div><strong>{item.name}</strong><small>{item.sku} · ★ {fmt(item.price)} XTR</small></div>
+            <div><button type="button" onClick={()=>setQuantity(item.productId,item.quantity-1)}>−</button><b>{item.quantity}</b><button type="button" onClick={()=>setQuantity(item.productId,item.quantity+1)}>+</button></div>
+          </div>)}
+          <div className="vc4-total"><span>Total</span><strong>★ {fmt(totalXtr)} XTR</strong></div>
+          <button className="vc4-primary" type="button" disabled={!cart.length||buying} onClick={checkout}>{buying?'Menyiapkan invoice…':'Bayar dengan Telegram Stars'}</button>
+        </section>
+      </div>}
+
+      {ordersOpen && <div className="vc4-overlay" onClick={()=>setOrdersOpen(false)}>
+        <section className="vc4-dialog vc4-orders" role="dialog" aria-modal="true" aria-label="Pesanan" onClick={(e)=>e.stopPropagation()}>
+          <button className="vc4-close" type="button" onClick={()=>setOrdersOpen(false)}>×</button>
+          <span className="vc4-eyebrow">AKUN PEMBELI</span><h2>Pesanan.</h2>
+          {ordersLoading ? <p>Memuat pesanan…</p> : ordersError ? <p className="vc4-error-text">{ordersError}</p> : orders.length===0 ? <p>Belum ada pesanan.</p> : orders.map((order)=><article className="vc4-order" key={order.order_number}>
+            <header><strong>{order.order_number}</strong><span>{STATUS[order.status]||order.status}</span></header>
+            {(order.items||[]).map((item)=><div className="vc4-order-item" key={item.orderItemId||item.name}><span>{item.name} × {item.quantity}</span>
+              {item.category==='Jasa Joki' && ['PAID','FULFILLING'].includes(order.status) && <button type="button" onClick={()=>{setAccessTarget({orderNumber:order.order_number,orderItemId:item.orderItemId});setAccessNotice('');}}>Kirim akses untuk Joki</button>}
+            </div>)}
+            <footer>★ {fmt(order.total_xtr)} XTR · {new Date(order.created_at).toLocaleString('id-ID')}</footer>
+          </article>)}
+        </section>
+      </div>}
+
+      {accessTarget && <div className="vc4-overlay" onClick={()=>setAccessTarget(null)}>
+        <section className="vc4-dialog" role="dialog" aria-modal="true" aria-label="Akses layanan Joki" onClick={(e)=>e.stopPropagation()}>
+          <button className="vc4-close" type="button" onClick={()=>setAccessTarget(null)}>×</button>
+          <span className="vc4-eyebrow">JOKI · AKSES PESANAN</span><h2>Data akses.</h2>
+          <p>Data login dikirim langsung ke VAULT CORE dan disimpan terenkripsi untuk pesanan ini.</p>
+          <label>Username / Email<input value={accessForm.login} onChange={(e)=>setAccessForm({...accessForm,login:e.target.value})} autoComplete="off"/></label>
+          <label>Kata sandi<input type="password" value={accessForm.password} onChange={(e)=>setAccessForm({...accessForm,password:e.target.value})} autoComplete="new-password"/></label>
+          {accessNotice && <p className="vc4-access-notice">{accessNotice}</p>}
+          <button className="vc4-primary" type="button" disabled={accessSaving} onClick={submitJokiAccess}>{accessSaving?'Menyimpan terenkripsi…':'Kirim akses aman'}</button>
+        </section>
+      </div>}
+    </div>
+  );
+}
