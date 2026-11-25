@@ -31,8 +31,9 @@ test('storefront and Owner branding use the supplied VAULT CORE logo and mapped 
   const owner = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   const marketplace = readFileSync(new URL('../frontend/src/lib/marketplace.js', import.meta.url), 'utf8');
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const logo = '/assets/01-brand/vaultcore-horizontal.svg';
-  for (const page of [dashboard, catalog, owner]) assert.ok(page.includes(logo), 'Every surface must use the supplied VAULT CORE logo');
+  assert.ok(navigation.includes(logo), 'Shared header must use the supplied VAULT CORE logo');
   assert.ok(dashboard.includes("from '../lib/marketplace.js'"));
   assert.ok(catalog.includes("from '../../lib/marketplace.js'"));
   assert.ok(owner.includes("from '../../lib/marketplace.js'"));
@@ -827,7 +828,7 @@ test('product detail wraps long specification values and refreshes stock from th
   assert.ok(page.includes('async function openProductDetail(product)'));
   assert.ok(page.includes("fetch(API + '/api/catalog', { cache: 'no-store' })"));
   assert.ok(page.includes('latestProduct'));
-  assert.ok(styles.includes('grid-template-columns: minmax(0, 39%) minmax(0, 1fr)'));
+  assert.ok(styles.includes('grid-template-columns:minmax(132px,38%) minmax(0,1fr)'));
   assert.ok(styles.includes('overflow-wrap: anywhere'));
   assert.ok(styles.includes('white-space: pre-line'));
 });;
@@ -835,7 +836,8 @@ test('product detail wraps long specification values and refreshes stock from th
 test('MLBB product detail follows the approved dark-gold reference and keeps policy sheets blue', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  assert.match(page, /marketplace-detail-brandbar/);
+  assert.match(page, /StoreHeader searchValue=\\{query\\}/);
+  assert.match(page, /marketplace-detail-toolbar/);
   assert.match(page, /marketplace-detail-thumbnails/);
   assert.match(page, /marketplace-detail-cart-button/);
   assert.match(page, /getProductStockLabel\(selectedProduct\)/);
