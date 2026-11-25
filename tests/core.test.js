@@ -25,69 +25,41 @@ test('Owner dashboard has no stale product-form effect references', () => {
   assert.doesNotMatch(ownerPage, /\b(?:skuManual|setForm|suggestedSku)\b/);
 });
 
-test('storefront and Owner branding use the supplied VAULT CORE logo and mapped image assets', () => {
+test('v4 storefront and Owner branding use the supplied logo and mapped game artwork', () => {
   const dashboard = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
-  const catalog = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const catalogRoute = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const owner = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const ownerV4 = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
   const marketplace = readFileSync(new URL('../frontend/src/lib/marketplace.js', import.meta.url), 'utf8');
-  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const logo = '/assets/01-brand/vaultcore-horizontal.svg';
-  assert.ok(navigation.includes(logo), 'Shared header must use the supplied VAULT CORE logo');
-  assert.ok(dashboard.includes("from '../lib/marketplace.js'"));
-  assert.ok(catalog.includes("from '../../lib/marketplace.js'"));
+  assert.ok(catalogRoute.includes("import VaultCoreV4Catalog from './VaultCoreV4Page.jsx'"));
+  assert.ok(catalog.includes(logo));
+  assert.ok(catalog.includes('GAME_BACKGROUNDS[MARKET_GAME_CODE[code]]'));
+  assert.ok(catalog.includes('GAME_ART[MARKET_GAME_CODE[code]]'));
+  assert.ok(catalog.includes('GAME_BACKGROUNDS[MARKET_GAME_CODE[variant.game_code]]'));
   assert.ok(owner.includes("from '../../lib/marketplace.js'"));
-  const newProduct = readFileSync(new URL('../frontend/src/app/admin/products/new/page.jsx', import.meta.url), 'utf8');
-  assert.ok(newProduct.includes("from '../../../../lib/marketplace.js'"));
+  assert.ok(ownerV4.includes('OWNER V4'));
   assert.ok(marketplace.includes('export const GAME_BACKGROUNDS'));
   assert.ok(marketplace.includes('export const GAME_ART'));
-  assert.doesNotMatch(catalog + owner, /brand-mark[^>]*>V</);
-  assert.doesNotMatch(dashboard + catalog, /GAME_MARKS|g\.mark/);
-  const itemkuGameLogos = [
+  for (const asset of [
     'https://d1x91p7vw3vuq8.cloudfront.net/game/2024109/rcks2r0xntbibkh7gf72p.png',
     'https://d1x91p7vw3vuq8.cloudfront.net/game/2025124/vhyvvmjoekra0kyu3a2af4.svg',
     'https://d1x91p7vw3vuq8.cloudfront.net/game/2024711/93cu2pbsceeiior5v9yc2q.png',
     'https://d1x91p7vw3vuq8.cloudfront.net/game/2025118/z9t30wkd81lxiwmaio40v.webp'
-  ];
-  for (const asset of itemkuGameLogos) {
-    assert.ok(marketplace.includes(asset), 'The shared marketplace module must preserve the exact supplied game image URL: ' + asset);
-  }
-  assert.doesNotMatch(dashboard + catalog, /https:\/\/d1x91p7vw3vuq8\.cloudfront\.net\/game\//);
-  assert.doesNotMatch(dashboard + catalog, /const GAME_ART/);
-  assert.match(catalog, /game-category-logo/);
-  assert.match(catalog, /product-photo-image/);
-  assert.match(dashboard, /product-category-logo/);
-  assert.match(styles, /\.dashboard-game-art img\{[^}]*object-fit:contain/);
-  assert.match(styles, /\.dashboard-featured-card>img\.product-category-logo\{[^}]*object-fit:contain/);
-  for (const icon of ['icon-wallet.svg','icon-shield.svg','icon-orders.svg']) {
-    assert.ok(dashboard.includes('/assets/06-icons/' + icon), 'Missing matching trust icon: ' + icon);
-  }
-  assert.match(styles, /\.game-tab-icon\{[^}]*background:transparent/);
-  assert.match(styles, /\.product-art\.product-art-brand img[,\{][^}]*object-fit:contain/);
-  assert.match(styles, /\.dashboard-hero\{[\s\S]*?url\('\/assets\/02-hero\/hero-vaultcore-loop\.webp'\)/);
-  assert.match(styles, /\.marketplace-game-nav\{[\s\S]*?var\(--marketplace-background/);
-  assert.match(styles, /\.dashboard-game-art\{[\s\S]*?var\(--game-background/);
-  assert.match(styles, /\.product-art\.product-art-brand\{[\s\S]*?var\(--game-background/);
-  assert.ok(dashboard.includes('GAME_BACKGROUNDS[g.id]'));
-  assert.ok(catalog.includes('GAME_BACKGROUNDS[category]'));
-  assert.ok(catalog.includes('GAME_BACKGROUNDS[game]'));
-});
-
-test('public catalog declares Telegram Mini App as the only transaction channel', () => {
-  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  assert.match(page, /Seluruh checkout, pembayaran XTR, dan pemantauan pesanan dilakukan hanya melalui VAULT CORE Telegram Mini App/);
-  assert.match(page, /Transaksi hanya tersedia di VAULT CORE Telegram Mini App/);
+  ]) assert.ok(marketplace.includes(asset));
+  assert.ok(dashboard.includes('/assets/01-brand/vaultcore-horizontal.svg'));
+});test('v4 public catalog uses Telegram Mini App and official Telegram Stars checkout', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  const route = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  assert.ok(route.includes('VaultCoreV4Catalog'));
+  assert.match(page, /Seluruh checkout dan pemantauan pesanan dilakukan melalui VAULT CORE Telegram Mini App/);
   assert.match(page, /invoice resmi Telegram Stars \(XTR\)/);
-  assert.doesNotMatch(page, /Rekber|Escrow|transfer bank|direct transfer/i);
   assert.match(page, /if \(!initData\)/);
-  assert.match(page, /NavigationIcon name="cart"/);
-  assert.match(page, /<StoreBottomNav active=/);
-  assert.match(page, /StoreHeader searchValue=\{query\}/);
-  assert.match(page, /<StoreBottomNav active=/);
-  assert.match(page, /<button className="detail-secondary-button" data-visual="marketplace-detail-cart-button"/);
-});
-
-test('expired pending orders are atomically cancelled, unreserved, and hidden from stock counts', async () => {
+  assert.match(page, /openInvoice\(data\.invoiceUrl,data\.orderNumber\)/);
+  assert.doesNotMatch(page, /Rekber|Escrow|transfer bank|direct transfer|QRIS|PayLater/i);
+  assert.ok(page.includes("fetch(API + '/api/orders'"));
+});test('expired pending orders are atomically cancelled, unreserved, and hidden from stock counts', async () => {
   let statement = '';
   const db = {
     async query(sql) {
@@ -184,64 +156,44 @@ test('public catalog only exposes active, priced, approved commercial products',
   assert.ok(route.includes("rr.valid_until>NOW()"));
 });
 
-test('MLBB account detail matches the locked compact layout and removes unrelated sales blocks', () => {
-  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+test('v4 MLBB route opens the Apple catalog and account details use the public product DTO', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const routePage = readFileSync(new URL('../frontend/src/app/catalog/mlbb-akun/page.jsx', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  const detailStart = page.indexOf('{selectedProduct && <div className="modal-backdrop marketplace-detail-backdrop"');
-  const detailEnd = page.indexOf('\n\n            {ordersOpen &&', detailStart);
-  assert.ok(detailStart >= 0 && detailEnd > detailStart);
-  const detail = page.slice(detailStart, detailEnd);
+  const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   assert.match(routePage, /initialCategory="MLBB"/);
   assert.match(routePage, /initialCategorySlug="mlbb-akun"/);
-  assert.match(page, /isPinnedCatalogRoute/);
-  assert.match(page, /getProductStockLabel/);
-  assert.match(page, /STOK TERAKHIR/);
-  assert.match(detail, /marketplace-detail-stock-pill/);
-  assert.match(detail, /marketplace-detail-thumbnails/);
-  assert.match(detail, /marketplace-detail-price-panel/);
-  assert.match(detail, /buy\(product,1\)/);
-  assert.doesNotMatch(detail, /Status pengiriman|Jumlah terjual|Rata-rata pengiriman|Minimum pembelian|Jumlah pembelian|Minimum 1 unit|Penyerahan manual oleh VAULT CORE|INFORMASI TOKO|Produk lain dari VAULT CORE/);
-  assert.doesNotMatch(page, /detailQuantity|formatAverageDeliveryMinutes|detailRelatedProducts/);
-  assert.match(detail, /marketplace-detail-stats-v2/);
-  assert.match(detail, /Terjual:<\/span><strong>Belum tersedia/);
-  assert.match(detail, /Rata-rata kirim:<\/span><strong>Belum tersedia/);
-  assert.match(page, /Garansi Anti-Hackback/);
-  assert.match(page, /Cara Beli &amp; Tips/);
-  assert.match(page, /marketplace-info-modal/);
-  assert.match(styles, /marketplace-detail-page \.marketplace-detail-body\{width:100%/);
-  assert.match(styles, /marketplace-detail-stock-pill/);
-});
-
-test('all customer-sale product data is centralized at GET /api/catalog while Owner management stays protected', () => {
+  assert.match(page, /selected\.product/);
+  assert.match(page, /selected\.product\.description/);
+  assert.match(page, /safeAttrs\(selected\.product\.attributes\)/);
+  assert.match(page, /vc4-details/);
+  assert.match(page, /vc4-product-terms/);
+  assert.match(page, /vc4-security-guide/);
+  assert.match(page, /Tambah ke keranjang/);
+  assert.match(styles, /overflow-wrap:anywhere/);
+});test('v4 customer catalog and Owner product routes are mounted behind the correct policies', () => {
   const app = readFileSync(new URL('../backend/app.js', import.meta.url), 'utf8');
-  const route = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
-  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
-  const ownerRoute = readFileSync(new URL('../backend/routes/admin.js', import.meta.url), 'utf8');
-  assert.match(app, /app\.use\('\/api\/catalog', apiRateLimit, catalogRoutes\)/);
-  assert.match(app, /app\.use\('\/api\/admin', apiRateLimit, ownerRateLimit, requireOwnerSession, requireOwner, adminRoutes\)/);
-  assert.match(page, /fetch\(API \+ '\/api\/catalog'/);
-  assert.match(home, /fetch\(API\+'\/api\/catalog'/);
-  assert.match(route, /res\.json\(\{ products, categories \}\)/);
-  assert.match(route, /display_stock: visibleStock/);
-  const dtoStart = route.indexOf('    return {');
-  const dtoEnd = route.indexOf('\n    };', dtoStart);
-  const publicDto = route.slice(dtoStart, dtoEnd);
-  assert.doesNotMatch(publicDto, /rights_review_active|rights_review_status|rights_valid_until|rights_owner_attested|sellable_stock|cost_price_xtr/);
-  assert.doesNotMatch(route, /sales\.sold_count|average_delivery_minutes|catalog_status_label/);
-  assert.doesNotMatch(route, /return \{\s*\.\.\.product/);
+  const route = readFileSync(new URL('../backend/routes/catalogV4.js', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  const ownerRoute = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
+  assert.match(app, /app\.use\('\/api\/catalog\/v4', apiRateLimit, catalogV4Routes\)/);
+  assert.match(app, /app\.use\('\/api\/admin\/v4', apiRateLimit, ownerRateLimit, requireOwnerSession, requireOwner, ownerV4Routes\)/);
+  assert.match(page, /fetch\(API \+ '\/api\/catalog\/v4\/variants'/);
+  assert.match(route, /p\.status='ACTIVE'/);
+  assert.match(route, /COALESCE\(p\.is_test,FALSE\)=FALSE/);
+  assert.match(route, /p\.sale_price_xtr>1/);
+  assert.match(route, /rr\.review_status='APPROVED'/);
+  assert.match(route, /rr\.owner_attested=TRUE/);
+  assert.match(route, /rr\.valid_until>NOW\(\)/);
+  assert.match(route, /stock\.available_stock>0/);
+  assert.match(route, /login\|password\|pass\|sandi\|otp\|session\|recovery\|token/);
   assert.match(ownerRoute, /router\.get\('\/products'/);
-  assert.match(app, /requireOwnerSession, requireOwner, adminRoutes/);
-});
-
-test('customer catalog displays product prices only in Telegram Stars XTR', () => {
-  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(page, /formatIdrRange|price_min_idr|price_max_idr|Referensi pasar/);
+  assert.match(ownerRoute, /router\.post\('\/products\/:[^']+\/publish'/);
+});test('v4 customer catalog displays product prices only in Telegram Stars XTR', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   assert.match(page, /sale_price_xtr\)[^\n]*XTR/);
-});
-
-test('test products require the Owner-only test checkout lane', () => {
+  assert.match(page, /openInvoice\(data\.invoiceUrl,data\.orderNumber\)/);
+  assert.doesNotMatch(page, /formatIdrRange|price_min_idr|price_max_idr|Referensi pasar|Rp\s?\d/i);
+});test('test products require the Owner-only test checkout lane', () => {
   const commercial = { status:'ACTIVE',is_test:false,sale_price_xtr:2,game_category:'MLBB',fulfillment_type:'GAME_ACCOUNT_TRANSFER',marketplace_category_slug:'mlbb-akun' };
   const fixture = { status:'ACTIVE',is_test:true,sale_price_xtr:1,game_category:'MLBB',fulfillment_type:'GAME_ACCOUNT_TRANSFER',marketplace_category_slug:'mlbb-akun' };
   assert.equal(isEligibleCheckoutProduct(commercial), true);
@@ -759,47 +711,45 @@ test('cart normalization preserves legacy checkout and merges valid product line
 });
 
 
-test('product lifecycle removes PENDING_REVIEW and publishes approved Owner products automatically', () => {
+test('v4 product lifecycle requires Owner rights review, all questions, stock and explicit publication', () => {
   const adminRoute = readFileSync(new URL('../backend/routes/admin.js', import.meta.url), 'utf8');
-  const ownerPage = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
-  const catalogPage = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  const rightsService = readFileSync(new URL('../backend/services/rightsReviewService.js', import.meta.url), 'utf8');
+  const ownerRoute = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
+  const ownerPage = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
+  const catalogPage = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const migration = readFileSync(new URL('../database/migrations/016_remove_pending_review_product_status.sql', import.meta.url), 'utf8');
-  assert.doesNotMatch(adminRoute + ownerPage + catalogPage + rightsService, /PENDING_REVIEW|MENUNGGU REVIEW|belum dapat dibeli/i);
-  assert.ok(adminRoute.includes('buyable_products'));
-  assert.ok(adminRoute.includes("WHEN $3='APPROVED'"));
-  assert.ok(adminRoute.includes("THEN 'ACTIVE'"));
-  assert.match(ownerPage, /SKU siap dijual/);
-  assert.match(catalogPage, /Produk ini dapat dipesan melalui VAULT CORE Telegram Mini App/);
+  assert.doesNotMatch(adminRoute + ownerRoute + ownerPage + catalogPage, /PENDING_REVIEW|MENUNGGU REVIEW|belum dapat dibeli/i);
+  assert.match(adminRoute, /variant_id IS NULL/);
+  assert.match(ownerRoute, /review_status='APPROVED'/);
+  assert.match(ownerRoute, /completed_questions|response_status IN/);
+  assert.match(ownerRoute, /vault_core_secret_payloads/);
+  assert.match(ownerRoute, /V4_PRODUCT_PUBLICATION_REQUIREMENTS_NOT_MET/);
+  assert.match(ownerPage, /Simpan pemeriksaan hak/);
+  assert.match(ownerPage, /Simpan semua jawaban wajib/);
+  assert.match(ownerPage, /Tambahkan stok/);
+  assert.match(ownerPage, /Terbitkan SKU/);
   assert.ok(migration.includes('DROP CONSTRAINT IF EXISTS products_status_check'));
   assert.ok(migration.includes("'DRAFT','ACTIVE','PAUSED','ARCHIVED'"));
   const accountOnlyMigration = readFileSync(new URL('../database/migrations/021_pause_legacy_active_products.sql', import.meta.url), 'utf8');
   assert.ok(accountOnlyMigration.includes("IS DISTINCT FROM 'GAME_ACCOUNT_TRANSFER'"));
-  assert.ok(accountOnlyMigration.includes("WHEN 'MLBB' THEN 'mlbb-akun'"));
-  assert.ok(accountOnlyMigration.includes("WHEN 'GENSHIN' THEN 'genshin-akun'"));
-});
-
-
-
-test('storefront and Owner routes share the approved header and four-item bottom navigation', () => {
+});test('v4 storefront and Owner routes retain global chrome while using the approved Apple catalog shell', () => {
   const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
-  const catalog = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const owner = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
-  const categories = readFileSync(new URL('../frontend/src/app/admin/categories/page.jsx', import.meta.url), 'utf8');
-  const newProduct = readFileSync(new URL('../frontend/src/app/admin/products/new/page.jsx', import.meta.url), 'utf8');
+  const ownerV4 = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
-  for (const page of [home, catalog, owner, categories, newProduct]) {
-    assert.ok(page.includes('StoreHeader'), 'Shared header is missing from a route');
-    assert.doesNotMatch(page.replace('<StoreBottomNav active="catalog" embedded/>', ''), /<StoreBottomNav active=/, 'Global bottom navigation must not be duplicated per route');
-  }
-  for (const label of ['Beranda','Produk','Bantuan','Akun']) assert.ok(navigation.includes(label));
+  const catalogStyles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
+  assert.ok(home.includes('StoreHeader'));
+  assert.ok(owner.includes('StoreHeader'));
+  assert.ok(owner.includes('/admin/v4'));
+  assert.ok(ownerV4.includes('Dashboard Owner'));
   assert.ok(layout.includes('<StoreChrome />'));
-  assert.match(navigation, /<StoreBottomNav active=\{active\}\/>/);
-  assert.match(catalog, /StoreBottomNav active="catalog" embedded/);
-});
-
-test('customer display text normalizes repeated escaped newline sequences', () => {
+  for (const label of ['Beranda','Produk','Bantuan','Akun']) assert.ok(navigation.includes(label));
+  assert.ok(catalog.includes('className="vc4-nav"'));
+  assert.ok(catalog.includes('className="vc4-main"'));
+  assert.ok(catalogStyles.includes('body:has(.vc4-shell) .store-bottom-nav-shell'));
+  assert.ok(catalogStyles.includes('backdrop-filter:saturate(180%) blur(18px)'));
+});test('customer display text normalizes repeated escaped newline sequences', () => {
   assert.equal(normalizeCustomerDisplayText('Baris satu\\nBaris dua'), 'Baris satu\nBaris dua');
   assert.equal(normalizeCustomerDisplayText('A\\\\nB'), 'A\nB');
   assert.equal(normalizeCustomerDisplayText('A\\\\r\\\\nB'), 'A\nB');
@@ -821,169 +771,93 @@ test('customer detail text converts escaped newlines into readable line breaks',
   assert.equal(normalizeCustomerDisplayText(null), '');
 });
 
-test('product detail wraps long specification values and refreshes stock from the public catalog', () => {
-  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  assert.ok(page.includes('normalizeCustomerDisplayText(selectedProduct.description'));
-  assert.ok(page.includes('normalizeCustomerDisplayText(value)'));
-  assert.ok(page.includes('detailCustomerTerms'));
-  assert.ok(page.includes('async function openProductDetail(product)'));
-  assert.ok(page.includes("fetch(API + '/api/catalog', { cache: 'no-store' })"));
-  assert.ok(page.includes('latestProduct'));
-  assert.ok(styles.includes('grid-template-columns:minmax(132px,38%) minmax(0,1fr)'));
+test('v4 product details wrap long specifications and refresh inventory from the public catalog', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
+  assert.ok(page.includes("fetch(API + '/api/catalog/v4/variants'"));
+  assert.ok(page.includes('selected.product.description'));
+  assert.ok(page.includes('safeAttrs(selected.product.attributes)'));
+  assert.ok(page.includes('image_gallery'));
+  assert.ok(page.includes('display_stock'));
+  assert.ok(page.includes('loadCatalog'));
   assert.ok(styles.includes('overflow-wrap:anywhere'));
-  assert.ok(styles.includes('white-space: pre-line'));
-});;
-
-test('MLBB product detail follows the approved dark-gold reference and keeps policy sheets blue', () => {
-  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  assert.ok(page.includes('StoreHeader searchValue={query}'));
-  assert.match(page, /marketplace-detail-toolbar/);
-  assert.match(page, /marketplace-detail-thumbnails/);
-  assert.match(page, /marketplace-detail-cart-button/);
-  assert.match(page, /getProductStockLabel\(selectedProduct\)/);
-  assert.match(page, /Rating pelanggan[\s\S]*Belum tersedia/);
-  assert.match(styles, /#ffc928/);
-  assert.match(styles, /linear-gradient\(180deg,#ffdf36,#ffad00\)/);
-  assert.match(styles, /marketplace-info-modal:before/);
-  const detail = page.slice(page.indexOf('marketplace-detail-backdrop'), page.indexOf('{ordersOpen &&'));
-  assert.match(detail, /marketplace-detail-stats-v2/);
-  assert.match(detail, /marketplace-detail-warranty-trigger/);
-  assert.match(detail, /marketplace-detail-guide-trigger/);
-  assert.doesNotMatch(detail, /marketplace-detail-quantity|marketplace-detail-store|marketplace-detail-related/);
-});
-
-test('MLBB account detail uses the public catalog DTO, last-stock label, and four-step security guide', () => {
+  assert.ok(styles.includes('vc4-details'));
+});test('Apple v4 product detail follows the approved light catalog layout', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
+  assert.ok(page.includes('vc4-nav'));
+  assert.ok(page.includes('vc4-card-art'));
+  assert.ok(page.includes('vc4-sku-list'));
+  assert.ok(page.includes('vc4-dialog'));
+  assert.ok(page.includes('vc4-product-terms'));
+  assert.ok(page.includes('vc4-security-guide'));
+  assert.match(styles, /--vc4-page:#f5f5f7/);
+  assert.match(styles, /--vc4-card:#fff/);
+  assert.match(styles, /--vc4-blue:#0071e3/);
+  assert.match(styles, /vc4-overlay/);
+  assert.match(styles, /vc4-grid/);
+});test('MLBB account detail uses the public v4 DTO, last-stock label, and four-step security guide', () => {
   const route = readFileSync(new URL('../frontend/src/app/catalog/mlbb-akun/page.jsx', import.meta.url), 'utf8');
-  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  const catalogApi = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  const guideMigration = readFileSync(new URL('../database/migrations/022_mlbb_account_purchase_guide.sql', import.meta.url), 'utf8');
-  const stockMigration = readFileSync(new URL('../database/migrations/023_mlbb_account_last_stock_display.sql', import.meta.url), 'utf8');
-  assert.match(route, /initialCategory="MLBB" initialCategorySlug="mlbb-akun"/);
-  assert.match(page, /isPinnedCatalogRoute/);
-  assert.match(page, /getProductStockLabel/);
+  const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  const catalogApi = readFileSync(new URL('../backend/routes/catalogV4.js', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
+  const guard = readFileSync(new URL('../database/migrations/026_vault_question_plaintext_guard_regex.sql', import.meta.url), 'utf8');
+  assert.match(route, /initialCategory="MLBB"/);
+  for (const label of ['Win Rate','Jumlah Skin','Jumlah Hero','Rank Saat Ini','Akun Terhubung Pada']) assert.ok(page.includes(label));
+  assert.match(page, /game==='MLBB' && group==='Akun'/);
   assert.match(page, /STOK TERAKHIR/);
-  assert.match(page, /visibleStock === 1/);
-  assert.match(page, /Langkah-Langkah Pembelian/);
-  assert.match(page, /Ganti kata sandi akun setelah menerima data/);
+  assert.match(page, /Keamanan Akun/);
+  assert.match(page, /Ganti kata sandi setelah menerima akses akun/);
   assert.match(page, /Aktifkan verifikasi dua langkah/);
   assert.match(page, /metode pemulihan/);
-  assert.match(page, /Keamanan Akun/);
-  assert.doesNotMatch(page, /detailReviewActive|rights_review_active/);
-  assert.doesNotMatch(page, /Status pengiriman|Jumlah terjual|Rata-rata pengiriman|Minimum pembelian|Jumlah pembelian|INFORMASI TOKO|Produk lain dari VAULT CORE|detailQuantity|marketplace-detail-store|marketplace-detail-related/);
-  assert.match(page, /marketplace-detail-stats-v2/);
-  assert.match(page, /Terjual:<\/span><strong>Belum tersedia/);
-  assert.match(page, /Rata-rata kirim:<\/span><strong>Belum tersedia/);
-  const customerDtoStart = catalogApi.indexOf('    return {');
-  const customerDtoEnd = catalogApi.indexOf('\n    };', customerDtoStart);
-  const customerDto = catalogApi.slice(customerDtoStart, customerDtoEnd);
-  assert.doesNotMatch(customerDto, /rights_review_active|rights_review_status|rights_valid_until|rights_owner_attested|sellable_stock|cost_price_xtr|average_delivery_minutes|sold_count/);
-  assert.match(catalogApi, /display_stock: visibleStock/);
-  assert.match(styles, /marketplace-guide-security-list/);
-  assert.match(guideMigration, /Selesaikan pembayaran melalui VAULT CORE/);
-  assert.match(guideMigration, /Tunggu verifikasi pembayaran/);
-  assert.match(guideMigration, /melalui halaman pesanan/);
-  assert.match(guideMigration, /Login menggunakan data yang diberikan/);
-  assert.match(stockMigration, /display_stock_mode='EXACT_COUNT'/);
-  assert.match(stockMigration, /WHERE sku='ML-001'/);
-});
-
-test('account catalogue hides filters for all games and uses a unified dark filter sheet per selected game', () => {
-  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  for (const label of ['Win Rate','Jumlah Skin','Jumlah Hero','Rank Saat Ini','Akun Terhubung Pada']) {
-    assert.ok(page.includes(label), 'Missing account filter group: ' + label);
-  }
-  assert.match(page, /category !== 'ALL' && <div className="mlbb-filter-strip"/);
-  assert.match(page, /MLBB_FILTER_GROUPS\.map/);
-  assert.match(page, /activeRankOptions/);
-  assert.match(page, /activeProviderOptions/);
-  assert.match(page, /Sembunyikan/);
-  assert.match(page, /category !== 'ALL' \? matchesAccountFilters\(p, attributeFilters\) : true/);
-  assert.match(page, /filterSheetOpen && category !== 'ALL'/);
-  assert.match(page, /type="radio" name="account-rank-current"/);
-  assert.match(page, /type="checkbox"/);
-  assert.match(page, /Hapus Filter/);
-  assert.match(page, /Terapkan/);
-  assert.match(page, /function matchesAccountFilters/);
-  assert.doesNotMatch(page, /className="catalog-toolbar marketplace-toolbar account-filter-toolbar"/);
-  assert.match(page, /catalog-controls/);
-  assert.match(page, /data-catalog-mode=\{category === 'ALL' \? 'all-games' : 'single-game'\}/);
-  assert.match(page, /className="catalog-search-trigger"/);
-  assert.match(page, /setCatalogSearchOpen\(true\)/);
-  assert.match(page, /catalog-search-panel/);
-  assert.match(page, /Hasil pencarian ditemukan:/);
-  assert.match(page, /className="catalog-search-cancel".*Batal/);
-  assert.doesNotMatch(page, /className="mlbb-filter-main"/);
-  assert.doesNotMatch(page, /className="mlbb-sort-control"/);
-  assert.doesNotMatch(styles, /\.account-filter-toolbar|\.mlbb-filter-toolbar/);
-  assert.match(styles, /background:linear-gradient\(155deg,#1a2635/);
-  assert.match(styles, /\.mlbb-filter-sheet/);
-  assert.match(styles, /\.mlbb-filter-footer/);
-  assert.doesNotMatch(styles, /background:#fff|background:white|color:#17191f/);
-  assert.doesNotMatch(styles, /\.tier-label|\.product-sku|\.art-other|\.cat-tier-platinum/);
-  const admin = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
-  const adminRoutes = readFileSync(new URL('../backend/routes/admin.js', import.meta.url), 'utf8');
-  assert.doesNotMatch(admin, /fulfillmentType:'REDEEM_CODE'/);
-  assert.doesNotMatch(adminRoutes, /fulfillment_type IS NOT NULL THEN 'ACTIVE'/);
-  assert.match(adminRoutes, /fulfillment_type='GAME_ACCOUNT_TRANSFER'[\s\S]*?game_category IN \('MLBB','FREE_FIRE','ROBLOX','GENSHIN'\)/);
-});
-
-
-test('MLBB detail page matches the approved mobile reference composition', () => {
-  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  const trust = page.indexOf('marketplace-detail-trust-grid');
-  const price = page.indexOf('marketplace-detail-price-panel', trust);
-  const warranty = page.indexOf('marketplace-detail-warranty-trigger', price);
-  const stats = page.indexOf('marketplace-detail-stats-v2', warranty);
-  const guide = page.indexOf('marketplace-detail-guide-trigger', stats);
-  const description = page.indexOf('Deskripsi Produk', guide);
-  const specs = page.indexOf('Spesifikasi Akun', description);
-  assert.ok(trust < price && price < warranty && warranty < stats && stats < guide && guide < description && description < specs);
-  for (const icon of ['🛡️','🔐','🧩','🪙','🛒','⚡','📦','📖','🎮','👕','👥','👑','🔗']) assert.ok(page.includes(icon), 'Missing reference icon: ' + icon);
-  assert.ok(page.includes('navigator.share'));
-  assert.ok(page.includes('marketplace-detail-tool-action'));
-  assert.ok(page.includes('Belum tersedia · Ulasan belum tersedia'));
-  assert.ok(page.includes('Perlindungan<br/>Anti-Hackback'));
-  assert.ok(page.includes('>Mengerti</button>'));
-  assert.ok(styles.includes('.marketplace-detail-warranty-trigger'));
-  assert.ok(styles.includes('.marketplace-detail-guide-trigger'));
-  assert.ok(styles.includes('.marketplace-detail-stickybar .detail-secondary-button'));
-});
-
-test('customer catalog footer follows the approved XTR, account-security, and warranty rules', () => {
-  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  const start = page.indexOf('<section className="catalog-info-footer"');
-  const end = page.indexOf('\n      </section>', start);
-  assert.ok(start >= 0 && end > start);
-  const footer = page.slice(start, end);
-  assert.ok(footer.includes('Telegram Stars · XTR'));
-  assert.ok(footer.includes('Detail &amp; Beli'));
-  assert.ok(footer.includes('myaccount.google.com'));
-  assert.ok(footer.includes('14 hari kalender'));
-  assert.ok(footer.includes('48 jam'));
-  assert.ok(footer.includes('pengembalian dana 100%'));
-  assert.ok(footer.includes('500 Diamond'));
-  assert.ok(footer.includes('Informasi akun diserahkan oleh <strong>VAULT CORE</strong>'));
-  for (const unsupportedMethod of ['BCA','Mandiri','BNI','Maybank','PermataBank','BRI','Indomaret','Alfamart','QRIS','ShopeePay','PayLater']) {
-    assert.equal(footer.includes(unsupportedMethod), false, 'Unsupported payment method in footer: ' + unsupportedMethod);
-  }
-  assert.equal(footer.includes('PT. Five Jack'), false);
-  assert.ok(styles.includes('.catalog-info-footer'));
-  assert.ok(styles.includes('.catalog-info-details[open] summary'));
-  assert.ok(styles.includes('@media(max-width:680px)'));
-  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
-  assert.ok(navigation.includes('Lebih Yakin Bersama <span>Vault Core</span>'));
-  const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
-  assert.ok(layout.includes('title: \'VAULT CORE | Lebih Yakin Bersama Vault Core\''));
-  assert.ok(layout.includes('Lebih Yakin Bersama Vault Core. Marketplace akun game'));
-});
-
-test('dashboard buyer protection uses the official Vault Core logo and tagline while preserving three trust cards', () => {
+  assert.match(catalogApi, /display_stock:/);
+  assert.match(catalogApi, /login\|password\|pass\|sandi/);
+  assert.match(styles, /vc4-mlbb-filters/);
+  assert.match(styles, /vc4-mlbb-grid/);
+  assert.match(guard, /login\|password\|pass\|sandi\|otp\|session\|recovery\|token/);
+});test('v4 account catalogue shows MLBB filters only for MLBB accounts', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
+  for (const label of ['Win Rate','Jumlah Skin','Jumlah Hero','Rank Saat Ini','Akun Terhubung Pada']) assert.ok(page.includes(label));
+  assert.match(page, /game==='MLBB' && group==='Akun'/);
+  assert.match(page, /filtersOpen &&/);
+  assert.match(page, /filters\.providers/);
+  assert.match(page, /filters\.rank/);
+  assert.match(page, /matchesMlbb\(product,filters\)/);
+  assert.match(page, /filters\.winMin/);
+  assert.match(page, /filters\.skinMin/);
+  assert.match(page, /filters\.heroMin/);
+  assert.match(styles, /vc4-mlbb-filters/);
+  assert.match(styles, /vc4-mlbb-grid/);
+  assert.match(styles, /vc4-check/);
+  const ownerV4 = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
+  const ownerRoutes = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
+  assert.match(ownerV4, /Pilih 12 varian resmi/);
+  assert.match(ownerV4, /Simpan semua jawaban wajib/);
+  assert.match(ownerRoutes, /vault_core_pertanyaan_wajib_only/);
+});test('Apple v4 mobile product detail preserves SKU price, attributes, terms and secure purchase action', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
+  assert.ok(page.includes('vc4-card-foot'));
+  assert.ok(page.includes('vc4-price-large'));
+  assert.ok(page.includes('vc4-details'));
+  assert.ok(page.includes('vc4-product-terms'));
+  assert.ok(page.includes('vc4-security-guide'));
+  assert.ok(page.includes('Tambah ke keranjang'));
+  assert.ok(page.includes('Bayar dengan Telegram Stars'));
+  assert.ok(styles.includes('@media(max-width:760px)'));
+  assert.ok(styles.includes('.vc4-grid{grid-template-columns:1fr}'));
+  assert.ok(styles.includes('.vc4-dialog{padding:28px 20px}'));
+});test('v4 customer catalog footer follows XTR, account-security and Telegram payment rules', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
+  assert.ok(page.includes('Telegram Mini App'));
+  assert.ok(page.includes('Telegram Stars (XTR)'));
+  assert.ok(page.includes('Status pembayaran hanya ditetapkan setelah konfirmasi sistem'));
+  assert.ok(page.includes('vault terenkripsi'));
+  for (const unsupportedMethod of ['BCA','Mandiri','BNI','Maybank','BRI','Indomaret','Alfamart','QRIS','ShopeePay','PayLater']) assert.equal(page.includes(unsupportedMethod),false);
+  assert.ok(styles.includes('.vc4-footer'));
+});test('dashboard buyer protection uses the official Vault Core logo and tagline while preserving three trust cards', () => {
   const page = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   const start = page.indexOf('<section className="dashboard-protection"');
@@ -1023,28 +897,21 @@ test('dashboard home spacing and typography follow the supplied size reference o
 });
 
 
-test('shared footer and c.html bottom navigation are global across route layouts', () => {
+test('global legacy chrome remains available while the v4 storefront owns its Apple header', () => {
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   const notFound = readFileSync(new URL('../frontend/src/app/not-found.jsx', import.meta.url), 'utf8');
   const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
-  const catalog = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  for (const label of ['Beranda', 'Produk', 'Bantuan', 'Akun', 'Katalog', 'Kategori', 'Cara Beli', 'Syarat & Ketentuan', 'Kebijakan Refund']) {
-    assert.ok(navigation.includes(label), 'Missing navigation label: ' + label);
-  }
+  const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  for (const label of ['Beranda','Produk','Bantuan','Akun','Katalog','Kategori','Cara Beli','Syarat & Ketentuan','Kebijakan Refund']) assert.ok(navigation.includes(label));
   assert.ok(layout.includes('<StoreChrome />'));
-  assert.match(navigation, /catalog-footer-buy-guide/);
-  assert.match(navigation, /catalog-footer-support/);
-  assert.match(navigation, /usePathname/);
-  assert.match(navigation, /vaultcore:navigation-active/);
-  assert.match(navigation, /active === 'account'/);
-  assert.match(catalog, /vaultcore:navigation-active/);
-  assert.match(navigation, /store-bottom-nav-shell/);
-  assert.ok(styles.includes('position:relative;inset:auto'));
-  assert.ok(!notFound.includes("StoreBottomNav"));
-  assert.match(catalog, /openProfileFromFooter/);
-  assert.ok(!catalog.includes('<footer className="footer">'));
-  assert.match(home, /id="terms-and-conditions"/);
-  assert.match(home, /id="refund-policy"/);
+  assert.match(navigation,/catalog-footer-buy-guide/);
+  assert.match(navigation,/usePathname/);
+  assert.match(navigation,/store-bottom-nav-shell/);
+  assert.ok(!notFound.includes('StoreBottomNav'));
+  assert.ok(home.includes('StoreHeader'));
+  assert.ok(catalog.includes('className="vc4-nav"'));
+  assert.ok(styles.includes('body:has(.vc4-shell) .store-global-footer'));
+  assert.ok(styles.includes('body:has(.vc4-shell) .store-bottom-nav-shell'));
 });
