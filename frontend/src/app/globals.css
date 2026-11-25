@@ -1473,3 +1473,8 @@ body{
 @media(max-width:639px){
  .shell:has(.marketplace-game-nav) .topbar{grid-template-columns:minmax(0,1fr) auto auto}
 }
+
+
+.shell:has(.marketplace-game-nav .mlbb-subcategory-nav) .marketplace-game-tabs{display:none}
+.shell:has(.marketplace-game-nav .mlbb-subcategory-nav) .marketplace-category-nav button:first-child{display:none}
+.shell:has(.marketplace-game-nav) .marketplace-filter-icon svg{width:22px;height:22px}
