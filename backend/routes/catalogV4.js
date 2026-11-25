@@ -27,7 +27,7 @@ router.get('/variants', async (_req, res) => {
                   AND i.rights_review_id=p.current_rights_review_id
                   AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
               ) stock
-              WHERE v.kategori_produk='Akun' AND p.variant_id=v.variant_id
+              WHERE p.variant_id=v.variant_id
                 AND p.status='ACTIVE' AND COALESCE(p.is_test,FALSE)=FALSE
                 AND p.sale_price_xtr>1
                 AND rr.review_status='APPROVED' AND rr.owner_attested=TRUE
@@ -36,7 +36,7 @@ router.get('/variants', async (_req, res) => {
                   (v.kategori_produk='Akun' AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER')
                   OR (v.kategori_produk='Jasa Joki' AND p.fulfillment_type='SERVICE_INSTRUCTIONS')
                   OR (v.kategori_produk='Item In-Game' AND p.fulfillment_type IN
-                    ('SERVICE_INSTRUCTIONS','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','GIFT_CODE','DIGITAL_FILE'))
+                    ('SERVICE_INSTRUCTIONS'))
                 )
                 AND stock.available_stock>0
             ),'[]'::jsonb) AS skus
