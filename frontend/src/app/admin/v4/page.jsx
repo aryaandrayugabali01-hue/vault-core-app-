@@ -34,7 +34,8 @@ export default function OwnerV4Page(){
  const [questions,setQuestions]=useState([]);
  const [answers,setAnswers]=useState({});
  const [inventory,setInventory]=useState({sourceReference:'',quantity:'1',payloads:'[\n  {"login":"","password":""}\n]'});
- const [secretRequest,setSecretRequest]=useState({orderNumber:'',orderItemId:'',reason:'Pemenuhan layanan Joki'});\n const [secretResult,setSecretResult]=useState(null);\n const [showSecretPassword,setShowSecretPassword]=useState(false);\n const [busy,setBusy]=useState(false);
+ const [secretRequest,setSecretRequest]=useState({orderNumber:'',orderItemId:'',reason:'Pemenuhan layanan Joki'});
+ const [secretResult,setSecretResult]=useState(null);\n const [showSecretPassword,setShowSecretPassword]=useState(false);\n const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
 
  const selected=useMemo(()=>products.find(p=>String(p.id)===String(selectedId))||null,[products,selectedId]);
