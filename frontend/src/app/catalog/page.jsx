@@ -910,7 +910,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
                 <strong>{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong>
                 <span>Harga final <span aria-hidden="true">ⓘ</span></span>
               </section>
-              <button type="button" className="marketplace-detail-warranty-trigger" onClick={()=>setWarrantyOpen(true)} aria-label="Buka perlindungan Anti-Hackback">🛡️ Anti-Hackback <span aria-hidden="true">ⓘ</span></button>
+              <button type="button" className="marketplace-detail-warranty-trigger" onClick={()=>setWarrantyOpen(true)} aria-label="Buka Garansi Anti-Hackback">🛡️ Anti-Hackback <span aria-hidden="true">ⓘ</span></button>
               <section className="marketplace-detail-stats marketplace-detail-stats-v2" aria-label="Informasi penawaran">
                 <div><span>🛒　Terjual:</span><strong>Belum tersedia</strong></div>
                 <div><span>⚡　Rata-rata kirim:</span><strong>Belum tersedia</strong></div>
