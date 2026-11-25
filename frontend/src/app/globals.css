@@ -1874,3 +1874,5 @@ body, button, input, select, textarea { font-family: var(--vc-font-sans); }
 .marketplace-detail-page .marketplace-attributes-v2 dd{min-width:0;margin:0;line-height:1.45;text-align:right;white-space:pre-line;overflow-wrap:anywhere;word-break:normal}
 @media(max-width:420px){.marketplace-detail-page .marketplace-attributes-v2>div{grid-template-columns:minmax(112px,40%) minmax(0,1fr);gap:8px}}
 @media(max-width:380px){.marketplace-detail-header .dashboard-brand img{width:96px}.marketplace-detail-header .dashboard-search{gap:5px}.marketplace-detail-header .dashboard-search input{font-size:8px}.marketplace-detail-header .dashboard-icon-button{width:30px;height:30px}}
+
+.owner-login-screen{padding-bottom:calc(112px + env(safe-area-inset-bottom,0px))}
