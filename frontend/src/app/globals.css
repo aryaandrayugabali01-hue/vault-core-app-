@@ -1629,7 +1629,7 @@ body{
 .marketplace-detail-page .marketplace-detail-policy strong{color:#ffd45a;font-size:10px}
 .marketplace-detail-page .marketplace-detail-policy p{font-size:10px}
 .marketplace-detail-stickybar{justify-content:stretch;gap:9px;min-height:72px;padding:9px 12px calc(9px + env(safe-area-inset-bottom,0px));background:#030b15;box-shadow:0 -8px 25px rgba(0,0,0,.45)}
-.marketplace-detail-cart-button{width:53px;height:47px;flex:0 0 53px;border:1px solid #ffc928;border-radius:10px;background:#071321;color:#ffc928;font-size:22px}
+.marketplace-detail-stickybar .detail-secondary-button[data-visual="marketplace-detail-cart-button"]{width:53px;height:47px;min-height:47px;flex:0 0 53px;padding:0;border:1px solid #ffc928;border-radius:10px;background:#071321;color:#ffc928;font-size:22px}
 .marketplace-detail-stickybar>.buy-button{flex:1;min-height:47px;border:1px solid #ffe07a;border-radius:11px;background:linear-gradient(180deg,#ffdf36,#ffad00);color:#111827;font-size:14px;font-weight:950;box-shadow:0 3px 12px rgba(255,180,0,.18)}
 .modal-backdrop.marketplace-policy-backdrop{background:rgba(0,5,15,.82);backdrop-filter:blur(7px)}
 .marketplace-info-modal{position:relative;padding:27px 17px 17px;border:1px solid rgba(55,160,255,.65);border-radius:25px 25px 17px 17px;background:linear-gradient(155deg,#101f35 0%,#071321 62%,#06101c 100%);box-shadow:0 0 24px rgba(0,132,255,.16),0 22px 75px rgba(0,0,0,.65)}

@@ -916,7 +916,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
             </div>
           </div>
           <footer className="marketplace-detail-stickybar">
-            {telegramContext && <button className="detail-secondary-button marketplace-detail-cart-button" type="button" aria-label="Tambahkan ke keranjang" disabled={!selectedProduct.is_available || !selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,1)}>🛒</button>}
+            {telegramContext && <button className="detail-secondary-button" data-visual="marketplace-detail-cart-button" type="button" aria-label="Tambahkan ke keranjang" disabled={!selectedProduct.is_available || !selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,1)}>🛒</button>}
             <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || !selectedProduct.is_purchaseable} onClick={()=>{const product=selectedProduct;setSelectedProduct(null);setWarrantyOpen(false);buy(product,1);}}>{buyingId === selectedProduct.id ? 'Menyiapkan…' : !selectedProduct.is_available ? 'Stok habis' : !selectedProduct.is_purchaseable ? 'Tidak tersedia' : 'Beli · ' + Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US') + ' XTR'}</button>
           </footer>
         </section>
