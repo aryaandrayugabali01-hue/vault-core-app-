@@ -99,6 +99,7 @@ export default function DashboardPage(){
   const filteredOrders=orders.filter(activeGroup.match);
   const groupCount=group=>orders.filter(group.match).length;
   const gameCards=GAME_ORDER.map(id=>({id,name:gameLabel(id),image:GAME_ART[id],count:accountProducts.filter(p=>p.game_category===id).length}));
+  const gameBackgrounds=Object.fromEntries(gameCards.map(g=>[g.id,GAME_BACKGROUNDS[g.id]||GAME_BACKGROUNDS.MLBB]));
   const collections=[
     {id:'for-you',title:'Pilihan untukmu',icon:'✦',subtitle:'Rekomendasi akun dari seluruh game.',products:recommendedProducts},
     {id:'best-today',title:'Terbaik Hari Ini',icon:'🔥',subtitle:'Produk tersedia dengan spesifikasi paling lengkap.',products:bestTodayProducts},
@@ -142,7 +143,7 @@ export default function DashboardPage(){
       <SectionHeading eyebrow="PILIH GAME" title="Game dan subkategori Akun" href="/catalog#categories"/>
       <div className="dashboard-game-grid">
         {loading?<div className="dashboard-product-placeholder">Memuat kategori game…</div>:gameCards.map(game=><a className="dashboard-game-card" href={game.id==='MLBB'?'/catalog/mlbb-akun':'/catalog'} key={game.id}>
-          <div className="dashboard-game-art" style={{'--game-background':'url("'+(GAME_BACKGROUNDS[game.id]||GAME_BACKGROUNDS.MLBB)+'")'}}><img src={game.image} alt={game.name+' logo'} loading="lazy"/></div>
+          <div className="dashboard-game-art" style={{'--game-background':'url("'+gameBackgrounds[game.id]+'")'}}><img src={game.image} alt={game.name+' logo'} loading="lazy"/></div>
           <div className="dashboard-game-copy"><strong>{game.name}</strong><small>Subkategori Akun</small><span>{game.count?game.count+' akun terdaftar':'Akun segera tersedia'} <b>↗</b></span></div>
         </a>)}
       </div>
