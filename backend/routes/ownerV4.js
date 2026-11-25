@@ -31,10 +31,10 @@ router.get('/products', async (req,res) => {
             p.customer_terms,p.fulfillment_eta,p.current_rights_review_id,p.created_at,p.updated_at,
             v.kategori_produk AS variant_category,v.jenis_varian AS variant_name,v.nama_game AS game_name,
             rr.review_status,rr.valid_until,rr.owner_attested,
-            COUNT(q.pertanyaan_id)::int AS required_questions,
-            COUNT(q.pertanyaan_id) FILTER(WHERE r.response_status IN ('ANSWERED','OWNER_VERIFIED','SECRET_IN_VAULT'))::int AS completed_questions,
-            COUNT(i.id) FILTER(WHERE i.status='AVAILABLE' AND i.rights_review_id=p.current_rights_review_id)::int AS available_stock,
-            COUNT(s.id) FILTER(WHERE s.secret_scope='PRODUCT_ACCOUNT' AND s.secret_status='ACTIVE')::int AS vaulted_stock
+            COUNT(DISTINCT q.pertanyaan_id)::int AS required_questions,
+            COUNT(DISTINCT q.pertanyaan_id) FILTER(WHERE r.response_status IN ('ANSWERED','OWNER_VERIFIED','SECRET_IN_VAULT'))::int AS completed_questions,
+            COUNT(DISTINCT i.id) FILTER(WHERE i.status='AVAILABLE' AND i.rights_review_id=p.current_rights_review_id)::int AS available_stock,
+            COUNT(DISTINCT s.id) FILTER(WHERE s.secret_scope='PRODUCT_ACCOUNT' AND s.secret_status='ACTIVE')::int AS vaulted_stock
      FROM products p
      LEFT JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
      LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
