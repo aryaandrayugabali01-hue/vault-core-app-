@@ -1933,10 +1933,10 @@ body, button, input, select, textarea { font-family: var(--vc-font-sans); }
 }
 
 
-/* Dashboard game cards — four primary games in a fixed 2×2 grid. */
+/* Dashboard game cards — four primary games stacked in a vertical list. */
 .dashboard-game-grid{
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-columns:minmax(0,1fr);
   gap:12px;
   overflow:visible;
   padding:2px;
@@ -1946,7 +1946,8 @@ body, button, input, select, textarea { font-family: var(--vc-font-sans); }
 .dashboard-game-card{
   position:relative;
   display:block;
-  aspect-ratio:4 / 5;
+  aspect-ratio:auto;
+  height:clamp(132px,24vw,172px);
   min-width:0;
   min-height:0;
   overflow:hidden;
@@ -2017,7 +2018,7 @@ body, button, input, select, textarea { font-family: var(--vc-font-sans); }
   .dashboard-section-heading h2{font-size:clamp(18px,3vw,21px)}
   .dashboard-section-heading>a{font-size:10px}
   .dashboard-eyebrow{font-size:8px}
-  .dashboard-game-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;overflow:visible}
+  .dashboard-game-grid{grid-template-columns:minmax(0,1fr);gap:12px;overflow:visible}
   .dashboard-featured-grid,.dashboard-product-grid,.dashboard-guides-grid{gap:16px}
   .dashboard-product-media{height:104px}
   .dashboard-product-body{gap:6px;padding:10px}
