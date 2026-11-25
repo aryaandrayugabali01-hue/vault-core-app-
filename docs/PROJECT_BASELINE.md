@@ -280,3 +280,23 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - **Hanya nilai ukuran** yang boleh diambil dari referensi. Pertahankan seluruh warna, gradient, background, logo, ikon, artwork, border, radius, struktur konten, urutan section, dan perilaku carousel milik VAULT CORE.
 - Jangan menyalin identitas visual, komponen, copywriting, metode pembayaran, promo, maupun aset UniPin.
 - Area dashboard, katalog, detail produk, navigation, data produk, harga, stok, checkout XTR, dan perlindungan pembeli tetap mengikuti aturan LOCKED sebelumnya.
+
+
+## 22. Global footer and bottom navigation — 26 Nov 2026
+
+- Global footer dan bottom navigation dipasang melalui `StoreChrome` pada root `frontend/src/app/layout.jsx`; seluruh route menerima susunan global yang sama, termasuk halaman 404.
+- Urutan global: footer terlebih dahulu, lalu empat item bottom navigation dalam container terpisah. Posisi akhir navigasi mengikuti alur dokumen (`position: relative`), bukan fixed overlay yang menutupi footer.
+- Label dan tujuan navigasi customer:
+  - **Beranda** → `/`
+  - **Produk** → `/catalog`
+  - **Bantuan** → anchor pusat bantuan pada katalog
+  - **Akun** → membuka modal profil Telegram melalui `/catalog#profile`
+- Pada route `/admin` dan subroute Owner, item **Akun** tetap mengarah ke portal Owner dan menjadi item aktif. Konteks Owner tidak dialihkan ke profil customer.
+- State aktif Bantuan mengikuti anchor bantuan, panduan beli, dan garansi. State aktif Akun mengikuti saat modal profil terbuka; setelah modal ditutup, state kembali ke Produk.
+- Halaman detail produk tetap memiliki navigation embedded di dalam detail footer stack, tepat di bawah sticky purchase bar. Navigation global berasal dari root layout.
+- Ukuran implementasi VAULT CORE saat ini (bukan hasil pengukuran UniPin): ikon nav 36px, label 10.5px, tinggi minimum item 74px, radius container 26px, footer max-width 1200px. Inner footer padding 16px, menjadi 32px mulai viewport 768px, dan 12px pada viewport <=380px.
+- CSS memiliki selector yang berulang karena beberapa lapisan responsive/state. Audit statis menemukan 354 selector berulang dari 1.657 blok aturan; ini bukan bukti bahwa seluruhnya konflik. Jangan melakukan penghapusan massal. Aturan awal `.dashboard-bottom-nav` masih memuat deklarasi fixed lama, tetapi aturan akhir `.dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded)` menetapkan posisi relatif sebagai hasil cascade.
+- Regression fix untuk status aktif navigasi dicatat pada commit `aead14c1d0d8fae8cf2202fdf59a9a21d09ea909`. File: `frontend/src/components/store-navigation.jsx`, `frontend/src/app/catalog/page.jsx`, dan `tests/core.test.js`.
+- Verifikasi: CI run `45672178434` **SUCCESS**; 63 test lulus, 0 gagal; build Mini App lulus; API Worker dry-run lulus. Production deployment run `45672178761` **SUCCESS**; API/frontend Worker, kesehatan Worker/database, gateway/domain, 13 aset publik, Telegram webhook, dan empat fixture Owner terenkripsi non-redeemable terverifikasi. Tidak ada invoice atau pembayaran yang dibuat oleh fixture bootstrap.
+- Screenshot Android langsung dan uji interaksi manual pada perangkat: **NOT TESTED** pada eksekusi ini.
+- File ZIP UniPin yang diunggah tidak tersedia pada path runtime sesi ini, dan file sumber `c.html` tidak ditemukan di repository. Karena itu, ukuran UniPin serta struktur asli `c.html` tetap **BELUM TERVERIFIKASI**. Nilai ukuran eksternal tidak boleh direka. Lanjutkan perbandingan setelah kedua sumber tersedia.
