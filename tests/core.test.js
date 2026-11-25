@@ -953,3 +953,30 @@ test('v4 account catalog and checkout require a live per-item encrypted vault re
   assert.match(orders, /s\.secret_status='ACTIVE'/);
   assert.match(orders, /FOR UPDATE SKIP LOCKED/);
 });
+
+
+test('legacy SKU mapping is explicit, canonical-category-bound and keeps products in draft', () => {
+  const ownerRoute = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
+  const ownerPage = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
+  assert.match(ownerRoute, /router\.put\('\/products\/:[^']+\/variant'/);
+  for (const slug of ['mlbb-akun','free-fire-akun','roblox-akun','genshin-akun','roblox-blox-fruits','roblox-adopt-me','roblox-murder-mystery-2']) assert.ok(ownerRoute.includes("'" + slug + "'"));
+  assert.match(ownerRoute, /LEGACY_CATEGORY_HAS_NO_V4_VARIANT/);
+  assert.match(ownerRoute, /VARIANT_MAPPING_DOES_NOT_MATCH_LEGACY_PRODUCT/);
+  assert.match(ownerRoute, /PRODUCT_VARIANT_ALREADY_ASSIGNED/);
+  assert.match(ownerRoute, /status=CASE WHEN status='ACTIVE' THEN 'DRAFT' ELSE status END/);
+  assert.match(ownerRoute, /V4_LEGACY_PRODUCT_VARIANT_MAPPED/);
+  assert.match(ownerPage, /LEGACY_VARIANT_BY_SLUG/);
+  assert.match(ownerPage, /Pindahkan ke DRAFT/);
+});
+
+test('legacy unvaulted account stock is retired only after explicit Owner confirmation and encrypted replacement', () => {
+  const ownerRoute = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
+  const ownerPage = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
+  assert.match(ownerRoute, /replaceLegacyStock !== true/);
+  assert.match(ownerRoute, /LEGACY_STOCK_REPLACEMENT_ACK_REQUIRED/);
+  assert.match(ownerRoute, /SET status='UNAVAILABLE'/);
+  assert.match(ownerRoute, /NOT EXISTS \([\s\S]*secret_scope='PRODUCT_ACCOUNT'[\s\S]*secret_status='ACTIVE'/);
+  assert.match(ownerPage, /replaceLegacyStock/);
+  assert.match(ownerPage, /unit stok lama yang tidak memiliki record vault v4 aktif akan dinonaktifkan/);
+  assert.match(ownerPage, /data\.replacedLegacyStockCount/);
+});
