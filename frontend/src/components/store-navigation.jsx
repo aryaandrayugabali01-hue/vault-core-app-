@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 function NavigationIcon({ name }) {
@@ -40,7 +41,7 @@ export function StoreBottomNav({ active = 'dashboard', embedded = false }) {
     dashboard: active === 'dashboard',
     catalog: active === 'catalog' || active === 'categories',
     help: active === 'help',
-    account: accountView
+    account: accountView || active === 'account'
   };
   const items = [
     { id: 'dashboard', label: 'Beranda', icon: 'home', href: '/' },
@@ -104,7 +105,37 @@ export function StoreFooter() {
 
 export function StoreChrome() {
   const pathname = usePathname() || '/';
-  const active = pathname.startsWith('/admin') ? 'owner' : pathname.startsWith('/catalog') ? 'catalog' : 'dashboard';
+  const [activeOverride, setActiveOverride] = useState(null);
+
+  useEffect(() => {
+    const syncHash = () => {
+      const hash = window.location.hash;
+      if (hash === '#catalog-footer-support' || hash === '#catalog-footer-buy-guide' || hash === '#catalog-footer-warranty') {
+        setActiveOverride('help');
+      } else if (hash === '#categories') {
+        setActiveOverride('catalog');
+      } else {
+        setActiveOverride(null);
+      }
+    };
+    const syncNavigationState = (event) => {
+      const next = event.detail;
+      if (next === 'account' || next === 'catalog' || next === 'help') setActiveOverride(next);
+    };
+
+    syncHash();
+    window.addEventListener('hashchange', syncHash);
+    window.addEventListener('vaultcore:navigation-active', syncNavigationState);
+    return () => {
+      window.removeEventListener('hashchange', syncHash);
+      window.removeEventListener('vaultcore:navigation-active', syncNavigationState);
+    };
+  }, [pathname]);
+
+  const active = pathname.startsWith('/admin')
+    ? 'owner'
+    : activeOverride || (pathname.startsWith('/catalog') ? 'catalog' : 'dashboard');
+
   return <>
     <StoreFooter/>
     <div className="store-bottom-nav-shell">
