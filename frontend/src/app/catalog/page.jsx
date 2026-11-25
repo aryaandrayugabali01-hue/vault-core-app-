@@ -901,7 +901,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
                 <div className="marketplace-detail-rating"><span className="marketplace-rating-mark" aria-hidden="true">☆☆☆☆☆</span><div><strong>Rating pelanggan</strong><small>Belum tersedia · Ulasan belum tersedia</small></div></div>
               </div>
               <div className="marketplace-detail-trust-grid" aria-label="Keunggulan VAULT CORE">
-                <div className="marketplace-detail-trust-item"><span className="marketplace-detail-trust-icon" aria-hidden="true">🛡️</span><strong>Keamanan<br/>Akun</strong></div>
+                <div className="marketplace-detail-trust-item"><span className="marketplace-detail-trust-icon" aria-hidden="true">🛡️</span><strong>Keamanan Akun</strong></div>
                 <div className="marketplace-detail-trust-item"><span className="marketplace-detail-trust-icon" aria-hidden="true">🔐</span><strong>Anti-Hackback</strong></div>
                 <div className="marketplace-detail-trust-item"><span className="marketplace-detail-trust-icon" aria-hidden="true">🧩</span><strong>Pilihan<br/>Lengkap</strong></div>
               </div>
@@ -912,8 +912,8 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
               </section>
               <button type="button" className="marketplace-detail-warranty-trigger" onClick={()=>setWarrantyOpen(true)} aria-label="Buka perlindungan Anti-Hackback">🛡️ Anti-Hackback <span aria-hidden="true">ⓘ</span></button>
               <section className="marketplace-detail-stats marketplace-detail-stats-v2" aria-label="Informasi penawaran">
-                <div><span>🛒　Terjual:</span><strong>{Number(selectedProduct.sold_count || 0).toLocaleString('id-ID')}</strong></div>
-                <div><span>⚡　Rata-rata kirim:</span><strong>{formatAverageDeliveryMinutes(selectedProduct.average_delivery_minutes)}</strong></div>
+                <div><span>🛒　Terjual:</span><strong>Belum tersedia</strong></div>
+                <div><span>⚡　Rata-rata kirim:</span><strong>Belum tersedia</strong></div>
                 <div><span>📦　Min. beli:</span><strong>1</strong></div>
               </section>
               <button type="button" className="marketplace-detail-guide-trigger" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name || 'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide || []});setGuideOpen(true);}}>
