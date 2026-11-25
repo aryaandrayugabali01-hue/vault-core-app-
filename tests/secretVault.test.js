@@ -27,7 +27,7 @@ test('v4 vault binds ciphertext to scope and record context', () => {
     /authenticate|Unsupported state|unable to authenticate/i
   );
   assert.throws(
-    () => decryptSecretPayload(encrypted, { ...accountContext, scope:'JOKI_CUSTOMER_ACCESS', orderId:1, orderItemId:2, customerId:3 }),
+    () => decryptSecretPayload(encrypted, { scope:'JOKI_CUSTOMER_ACCESS',productId:10,inventoryItemId:null,orderId:1,orderItemId:2,customerId:3 }),
     /authenticate|Unsupported state|unable to authenticate/i
   );
 });
