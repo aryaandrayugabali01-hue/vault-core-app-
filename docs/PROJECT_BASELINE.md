@@ -243,3 +243,13 @@ The latest three-screen owner reference controls the MLBB product detail visual 
   - Akun Dicek Manual: “Detail akun diperiksa VAULT CORE sebelum ditampilkan.”
   - Garansi Refund: “Refund atau penggantian mengikuti ketentuan produk.”
 - Lingkup perubahan hanya brand lockup, tagline, dan copy singkat tiga kartu. Struktur Dashboard, katalog, detail, navigasi, data produk, serta alur transaksi tetap dipertahankan.
+
+
+## 19. Dashboard game cards — 25 Nov 2026
+
+- Section **Game dan subkategori Akun** on the Dashboard uses a horizontal, touch-scrollable portrait carousel for the four existing games: Mobile Legends, Free Fire, Roblox, and Genshin Impact.
+- Card width follows approximately 58% of the mobile viewport (with bounded sizing), with portrait aspect ratio `0.53`, horizontal scroll-snap, and the existing game-specific background artwork and official logo assets.
+- The four game entries, product counts, and catalog destinations remain data-driven from the existing catalog state. No API, database, product, payment, or navigation behavior was changed.
+- Implementation commit: `34060e754517c05fa0f68ca8f3d4784929896d81`.
+- CI run `45635391740`: **SUCCESS**. Production deployment run `45635391811`: **SUCCESS**; the existing `vault-core-web` Worker was deployed, and public root/www/API, TLS, API/database health, and storefront asset checks passed.
+- Direct Android screenshot comparison: `NOT TESTED` in this execution; deployment and public endpoint checks are verified, but a rendered device screenshot was not captured.
