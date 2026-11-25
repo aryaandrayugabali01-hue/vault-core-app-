@@ -150,6 +150,7 @@ Rilis hanya setelah ruang lingkup terpenuhi, area LOCKED aman, test/build lulus,
 | 2026-11-25 | `0c7b03f91094c854189df77f946b043e16cdd6d0` | Membuat baseline pengendali dan mencatat acuan detail terbaru | `docs/PROJECT_BASELINE.md` | Dokumen saja; tidak mengubah aplikasi. |
 | 2026-11-25 | `0c240e841ceb198aebb5e48a501be057f84336af` | Mengunci route `/catalog/mlbb-akun`, menyederhanakan detail, membersihkan DTO `/api/catalog`, dan menghapus statistik/panel yang tidak diminta | `frontend/src/app/catalog/mlbb-akun/page.jsx`, `frontend/src/app/catalog/page.jsx`, `frontend/src/app/globals.css`, `frontend/src/app/page.jsx`, `backend/routes/catalog.js`, `tests/core.test.js`, `docs/PROJECT_BASELINE.md` | CI dan deployment produksi SUCCESS. |
 | 2026-11-25 | `cf78e1dd8e97d68658dadf26e4895dd38cc7e08e` | Panduan MLBB 4 langkah + 3 tips keamanan, mode stok terakhir SKU ML-001, dan pembersihan metadata internal pada DTO customer | `database/migrations/022_mlbb_account_purchase_guide.sql`, `database/migrations/023_mlbb_account_last_stock_display.sql`, `frontend/src/app/catalog/page.jsx`, `frontend/src/app/globals.css`, `backend/routes/catalog.js`, `tests/core.test.js`, `docs/PROJECT_BASELINE.md` | CI SUCCESS (run 45576618965); production deployment SUCCESS (run 45576775159); migration 022/023 applied and verified on Neon. |
+| 2026-11-25 | `f2a8b8ddac5bdcd36fce04db1e3eae8c4a5a7922` | Perbaikan wrapping spesifikasi panjang, konversi newline literal pada deskripsi/atribut/ketentuan, dan refresh data katalog saat membuka detail produk | `frontend/src/app/catalog/page.jsx`, `frontend/src/app/globals.css`, `frontend/src/lib/product-attributes.js`, `tests/core.test.js` | 56/56 backend/core tests PASS; Mini App build PASS; API dry-run PASS; production workflow SUCCESS. |
 
 ## 9. Status audit data produksi (25 Nov 2026)
 
@@ -190,3 +191,10 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - Place it after the Telegram Stars transaction notice and immediately before the scroll area closes; the sticky purchase bar remains the bottom-fixed purchase control.
 - Preserve the exact customer_terms text from the selected product backend record. Render the section only when non-warranty terms exist; do not hardcode product-specific account claims across other SKUs.
 - Use a subtle top divider and the global design tokens. Preserve paragraph line breaks.
+
+## 14. Detail content safety and stock freshness — 25 Nov 2026
+
+- Convert escaped customer text sequences (\`\\n\`, \`\\r\\n\`, \`\\r\`) into real line breaks for product descriptions, visible account attributes, and customer terms. Keep the original backend content; only normalize its display representation.
+- The mobile account-specification rows use a constrained two-column grid. Long labels and values wrap inside their own columns without overlapping adjacent rows.
+- Refresh the public catalog snapshot when a customer opens a product detail. The displayed availability, stock badge, price, description, gallery, and attributes then use the latest customer DTO. If refresh fails, retain the last successful snapshot; checkout continues to validate price and stock on the server.
+- Preserve the approved detail composition, XTR checkout flow, Telegram Mini App transaction restriction, image gallery source URLs, and sticky purchase bar.
