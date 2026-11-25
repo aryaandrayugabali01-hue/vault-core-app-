@@ -770,6 +770,21 @@ test('product lifecycle removes PENDING_REVIEW and publishes approved Owner prod
   assert.ok(accountOnlyMigration.includes("WHEN 'GENSHIN' THEN 'genshin-akun'"));
 });
 
+test('MLBB product detail follows the approved dark-gold reference and keeps policy sheets blue', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  assert.match(page, /marketplace-detail-brandbar/);
+  assert.match(page, /marketplace-detail-thumbnails/);
+  assert.match(page, /marketplace-detail-cart-button/);
+  assert.match(page, /getProductStockLabel\(selectedProduct\)/);
+  assert.match(page, /Rating pelanggan[\s\S]*Belum tersedia/);
+  assert.match(styles, /#ffc928/);
+  assert.match(styles, /linear-gradient\(180deg,#ffdf36,#ffad00\)/);
+  assert.match(styles, /marketplace-info-modal:before/);
+  const detail = page.slice(page.indexOf('marketplace-detail-backdrop'), page.indexOf('{ordersOpen &&'));
+  assert.doesNotMatch(detail, /marketplace-detail-stats|marketplace-detail-quantity|marketplace-detail-store|marketplace-detail-related/);
+});
+
 test('account catalogue hides filters for all games and uses a unified dark filter sheet per selected game', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
