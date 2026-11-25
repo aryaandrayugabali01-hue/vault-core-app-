@@ -143,9 +143,14 @@ export async function getMyOrders(req, res) {
   await releaseExpiredPendingOrders();
   const { rows } = await pool.query(
     `SELECT o.order_number, o.status, o.total_xtr, o.created_at, o.paid_at, o.fulfilled_at,
-            COALESCE(json_agg(json_build_object('name', oi.product_name_snapshot, 'quantity', oi.quantity))
-              FILTER (WHERE oi.id IS NOT NULL), '[]') AS items
-     FROM orders o LEFT JOIN order_items oi ON oi.order_id=o.id
+            COALESCE(json_agg(json_build_object(
+              'orderItemId',oi.id,'name',oi.product_name_snapshot,'quantity',oi.quantity,
+              'category',v.kategori_produk
+            )) FILTER (WHERE oi.id IS NOT NULL), '[]') AS items
+     FROM orders o
+     LEFT JOIN order_items oi ON oi.order_id=o.id
+     LEFT JOIN products p ON p.id=oi.product_id
+     LEFT JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
      WHERE o.customer_id=$1 GROUP BY o.id ORDER BY o.created_at DESC LIMIT 50`,
     [req.customer.id]
   );
