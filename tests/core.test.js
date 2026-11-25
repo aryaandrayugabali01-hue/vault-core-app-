@@ -736,6 +736,10 @@ test('account catalogue hides filters for all games and uses a unified dark filt
   assert.match(page, /Terapkan/);
   assert.match(page, /function matchesAccountFilters/);
   assert.doesNotMatch(page, /className="catalog-toolbar marketplace-toolbar account-filter-toolbar"/);
+  assert.match(page, /catalog-controls-v2/);
+  assert.match(page, /data-catalog-mode=\{category === 'ALL' \? 'all-games' : 'single-game'\}/);
+  assert.match(styles, /\.account-filter-toolbar,\.mlbb-filter-toolbar\{display:none!important\}/);
+  assert.match(styles, /background-image:linear-gradient\(155deg,#1a2635/);
   assert.match(styles, /\.mlbb-filter-sheet/);
   assert.match(styles, /\.mlbb-filter-footer/);
   assert.match(styles, /\.mlbb-filter-sheet\{[\s\S]*?background:linear-gradient\(155deg,#1a2230/);
