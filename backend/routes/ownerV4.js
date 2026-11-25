@@ -60,6 +60,77 @@ router.get('/products', async (req,res) => {
   })) });
 });
 
+router.put('/products/:productId/variant', async (req,res) => {
+  const productId=Number(req.params.productId);
+  const variantId=Number(req.body?.variantId);
+  const subtype=normalizeProductText(req.body?.variantSubtype,120)||null;
+  if(!Number.isSafeInteger(productId)||productId<=0||!Number.isSafeInteger(variantId)||variantId<=0){
+    return res.status(400).json({error:'INVALID_PRODUCT_VARIANT_MAPPING'});
+  }
+
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const {rows:products}=await client.query(
+      `SELECT p.id,p.sku,p.game_category,p.fulfillment_type,p.variant_id,
+              mc.slug AS legacy_category_slug
+       FROM products p
+       LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
+       WHERE p.id=$1 AND COALESCE(p.is_test,FALSE)=FALSE
+       FOR UPDATE OF p`,
+      [productId]
+    );
+    const product=products[0];
+    if(!product){await client.query('ROLLBACK');return res.status(404).json({error:'V4_PRODUCT_NOT_FOUND'});}
+    if(product.variant_id!==null){await client.query('ROLLBACK');return res.status(409).json({error:'PRODUCT_VARIANT_ALREADY_ASSIGNED'});}
+
+    const legacyMap={
+      'mlbb-akun':{game_category:'MLBB',game_code:'MLBB',variant_id:1,group:'Akun',fulfillment:'GAME_ACCOUNT_TRANSFER'},
+      'free-fire-akun':{game_category:'FREE_FIRE',game_code:'FF',variant_id:4,group:'Akun',fulfillment:'GAME_ACCOUNT_TRANSFER'},
+      'roblox-akun':{game_category:'ROBLOX',game_code:'ROBLOX',variant_id:8,group:'Akun',fulfillment:'GAME_ACCOUNT_TRANSFER'},
+      'genshin-akun':{game_category:'GENSHIN',game_code:'GI',variant_id:10,group:'Akun',fulfillment:'GAME_ACCOUNT_TRANSFER'},
+      'roblox-blox-fruits':{game_category:'ROBLOX',game_code:'ROBLOX',variant_id:6,group:'Item In-Game',fulfillment:'SERVICE_INSTRUCTIONS'},
+      'roblox-adopt-me':{game_category:'ROBLOX',game_code:'ROBLOX',variant_id:7,group:'Item In-Game',fulfillment:'SERVICE_INSTRUCTIONS'},
+      'roblox-murder-mystery-2':{game_category:'ROBLOX',game_code:'ROBLOX',variant_id:7,group:'Item In-Game',fulfillment:'SERVICE_INSTRUCTIONS'}
+    };
+    const allowed=legacyMap[product.legacy_category_slug];
+    if(!allowed){
+      await client.query('ROLLBACK');
+      return res.status(409).json({error:'LEGACY_CATEGORY_HAS_NO_V4_VARIANT',legacyCategory:product.legacy_category_slug||null});
+    }
+    if(product.game_category!==allowed.game_category||product.fulfillment_type!==allowed.fulfillment||variantId!==allowed.variant_id){
+      await client.query('ROLLBACK');
+      return res.status(409).json({error:'VARIANT_MAPPING_DOES_NOT_MATCH_LEGACY_PRODUCT',expectedVariantId:allowed.variant_id});
+    }
+    const {rows:variantRows}=await client.query(
+      'SELECT variant_id,game_code,kategori_produk,jenis_varian FROM vault_core_varian_wajib WHERE variant_id=$1',
+      [variantId]
+    );
+    const variant=variantRows[0];
+    if(!variant||variant.game_code!==allowed.game_code||variant.kategori_produk!==allowed.group){
+      await client.query('ROLLBACK');
+      return res.status(409).json({error:'MASTER_VARIANT_MISMATCH'});
+    }
+    const {rows:updated}=await client.query(
+      `UPDATE products SET variant_id=$2,variant_subtype=COALESCE($3,variant_subtype),updated_at=NOW()
+       WHERE id=$1 AND variant_id IS NULL
+       RETURNING id,sku,game_category,fulfillment_type,variant_id,variant_subtype,status`,
+      [productId,variantId,subtype]
+    );
+    await client.query(
+      `INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata)
+       VALUES($1,'V4_LEGACY_PRODUCT_VARIANT_MAPPED','PRODUCT',$2,$3::jsonb)`,
+      [String(req.telegramUser.id),String(productId),JSON.stringify({sku:product.sku,legacyCategory:product.legacy_category_slug,variantId,variantName:variant.jenis_varian})]
+    );
+    await client.query('COMMIT');
+    return res.json({product:updated[0],publication:'OWNER_REVIEW_AND_VAULT_REQUIRED'});
+  }catch(error){
+    try{await client.query('ROLLBACK');}catch{}
+    console.error('[v4-legacy-variant-map]',error.message);
+    return res.status(500).json({error:'V4_VARIANT_MAPPING_FAILED'});
+  }finally{client.release();}
+});
+
 router.get('/variants', async (_req, res) => {
   const { rows } = await pool.query(
     `SELECT v.variant_id,v.game_code,v.nama_game,v.kategori_produk,v.jenis_varian,
