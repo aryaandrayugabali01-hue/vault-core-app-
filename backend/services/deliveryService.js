@@ -1,5 +1,6 @@
 import { pool } from '../db/pool.js';
 import { decryptPayload } from '../utils/encryption.js';
+import { decryptSecretPayload } from '../utils/secretVault.js';
 import { telegramCall } from './telegramApi.js';
 
 const MANUAL_FULFILLMENT_SOURCE_PREFIX = 'VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:';
@@ -67,11 +68,16 @@ export async function deliverPaidOrder(orderNumber) {
   }
 
   const { rows: eligible } = await pool.query(
-    `SELECT d.id AS delivery_id, d.inventory_item_id, p.name AS product_name,
-            i.payload_ciphertext, i.payload_nonce, i.payload_tag, i.source_reference
+    `SELECT d.id AS delivery_id,d.inventory_item_id,p.id AS product_id,p.name AS product_name,
+            i.payload_ciphertext,i.payload_nonce,i.payload_tag,i.source_reference,
+            s.id AS vault_secret_id,s.payload_ciphertext AS secret_payload_ciphertext,
+            s.payload_nonce AS secret_payload_nonce,s.payload_auth_tag AS secret_payload_auth_tag,
+            s.wrapped_data_key,s.key_wrap_nonce,s.key_wrap_auth_tag,s.encryption_key_version
      FROM deliveries d
      JOIN inventory_items i ON i.id=d.inventory_item_id
      JOIN products p ON p.id=i.product_id
+     LEFT JOIN vault_core_secret_payloads s
+       ON s.inventory_item_id=i.id AND s.secret_scope='PRODUCT_ACCOUNT' AND s.secret_status='ACTIVE'
      LEFT JOIN product_rights_reviews rr
        ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
      WHERE d.order_id=$1 AND d.status IN ('PENDING','FAILED')
@@ -187,6 +193,17 @@ export async function deliverPaidOrder(orderNumber) {
              delivered_at=NOW(), last_error=NULL WHERE id=$1 AND status='READY'`,
           [item.delivery_id, result.message_id]
         );
+        if (item.vault_secret_id) {
+          await completion.query(
+            `UPDATE vault_core_secret_payloads SET last_accessed_at=NOW(),updated_at=NOW() WHERE id=$1`,
+            [item.vault_secret_id]
+          );
+          await completion.query(
+            `INSERT INTO vault_core_secret_access_logs(secret_payload_id,actor_telegram_user_id,action,reason,request_reference)
+             VALUES($1,0,'DELIVER','Automated delivery after Telegram Stars payment confirmation',$2)`,
+            [item.vault_secret_id,`${order.order_number}:${item.inventory_item_id}`]
+          );
+        }
         await completion.query('COMMIT');
       } catch (error) {
         await completion.query('ROLLBACK');
