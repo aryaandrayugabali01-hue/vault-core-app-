@@ -525,6 +525,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
     setOwnerCheck('checking');
     setProfileOpen(true);
     setActiveTab('profile');
+    window.dispatchEvent(new CustomEvent('vaultcore:navigation-active', { detail: 'account' }));
     const initData = getInitData();
     if (!initData) { setOwnerCheck('telegram_required'); return; }
     fetch(API + '/api/session', { headers: { 'x-telegram-init-data': initData }, cache: 'no-store' })
@@ -667,6 +668,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
   function closeProfile() {
     setProfileOpen(false);
     setActiveTab('home');
+    window.dispatchEvent(new CustomEvent('vaultcore:navigation-active', { detail: 'catalog' }));
   }
 
   function navigate(tab) {
