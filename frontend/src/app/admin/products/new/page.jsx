@@ -15,13 +15,13 @@ const ACCOUNT_CATEGORY_SLUGS = {MLBB:'mlbb-akun',FREE_FIRE:'free-fire-akun',ROBL
 const apiMessage = (data) => ({
   TELEGRAM_AUTH_REQUIRED:'Sesi Telegram tidak ditemukan. Masuk kembali melalui Telegram.',
   ADMIN_ACCESS_REQUIRED:'Akun Telegram ini tidak memiliki izin Owner.',
-  INVALID_PRODUCT_INPUT:'Periksa SKU, kategori, nama, metode pemenuhan, dan harga produk.',
+  INVALID_PRODUCT_INPUT:'Periksa SKU, game, subkategori Akun, spesifikasi akun, dan harga.',
   INVALID_PRODUCT_IMAGE_URL:'Gunakan URL gambar HTTPS atau path lokal /assets/ yang valid.',
   PRODUCT_SKU_ALREADY_EXISTS:'SKU tersebut sudah digunakan produk lain.',
   PRODUCT_REVIEW_REQUIRED_AFTER_DETAIL_CHANGE:'Metode pemenuhan berubah. Simpan review CR-05 baru sebelum mengaktifkan SKU.',
   PRODUCT_HAS_OPEN_ORDERS:'Metode pemenuhan belum dapat diubah karena masih ada pesanan aktif untuk SKU ini. Selesaikan atau rekonsiliasi pesanan terlebih dahulu.',
-  INVALID_ASSET_PAYLOAD:'Ada baris stok yang tidak sesuai format kode digital yang didukung.',
-  INVALID_INVENTORY_INPUT:'Masukkan 1 sampai 100 unit stok, satu kode pada setiap baris.'
+  INVALID_ASSET_PAYLOAD:'Ada baris stok yang tidak sesuai format data akun yang didukung.',
+  INVALID_INVENTORY_INPUT:'Masukkan 1 sampai 100 data akun, satu akun pada setiap baris.'
 }[data?.error] || data?.message || 'Permintaan tidak dapat diproses.');
 
 function nextSku(category, products) {
@@ -203,7 +203,7 @@ export default function NewProductPage() {
     <section className="admin-title">
       <span className="eyebrow muted">KATALOG / PRODUK BARU</span>
       <h1>Input produk</h1>
-      <p>Isi informasi produk, tentukan harga, lalu tambahkan stok digital dalam satu proses.</p>
+      <p>Isi informasi akun game, tentukan harga, lalu simpan data akun secara terenkripsi.</p>
     </section>
     {notice && <div className="admin-notice" role="status">{notice}</div>}
     {savedProductId && <div className="admin-form-hint">Melanjutkan SKU tersimpan #{savedProductId}. Pengiriman ulang formulir memperbarui SKU yang sama, bukan membuat produk baru.</div>}
@@ -240,7 +240,7 @@ export default function NewProductPage() {
         <div className="span-2 admin-form-hint">APPROVED merupakan persetujuan internal Owner. Hak pihak ketiga dan aturan penerbit tetap berlaku.</div>
         <div className="admin-section-head span-2"><div><span className="eyebrow muted">LANGKAH 3</span><h2>Stok awal</h2></div></div>
         <label className="span-2">Referensi sumber/vendor atau asal internal Owner<input value={stockSourceReference} onChange={e=>setStockSourceReference(e.target.value)} placeholder="Nomor dokumen / ID asal stok" /></label>
-        <label className="span-2">Kode digital, satu unit per baris <small className="field-hint">Stok hanya disimpan jika pemeriksaan internal Owner berstatus APPROVED.</small><textarea rows="6" value={stock} onChange={(e)=>setStock(e.target.value)} placeholder={"KODE-REDEEM-001\nKODE-REDEEM-002"} /></label>
+        <label className="span-2">Data akun, satu JSON per baris <small className="field-hint">Data akun hanya disimpan setelah pemeriksaan internal Owner berstatus APPROVED.</small><textarea rows="6" value={stock} onChange={(e)=>setStock(e.target.value)} placeholder={'{"email":"akun@example.com","password":"...","recovery":"..."}'} /></label>
         <div className="span-2 admin-form-hint">{splitInventoryPayloads(stock).length} unit stok siap disimpan.</div>
         <button className="admin-primary" disabled={busy}>{busy ? 'Menyimpan…' : savedProductId ? 'Lanjutkan penyimpanan SKU' : stock.trim() ? 'Simpan produk + stok awal' : 'Simpan produk sebagai Draf'}</button>
       </form>
