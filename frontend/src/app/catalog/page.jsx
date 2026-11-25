@@ -477,6 +477,22 @@ export default function HomePage() {
   }
 
   function applyMlbbFilters() {
+    for (const [id,label,maximum] of [['win_rate','Winrate',100],['total_skins','Jumlah Skin',null],['total_heroes','Jumlah Hero',null]]) {
+      const minimum=String(filterDraft[id+'_min']??'').trim();
+      const maximumValue=String(filterDraft[id+'_max']??'').trim();
+      if (minimum && (!Number.isFinite(Number(minimum)) || Number(minimum)<0 || (maximum!==null && Number(minimum)>maximum))) {
+        setNotice('Nilai minimum '+label+' tidak valid.');
+        return;
+      }
+      if (maximumValue && (!Number.isFinite(Number(maximumValue)) || Number(maximumValue)<0 || (maximum!==null && Number(maximumValue)>maximum))) {
+        setNotice('Nilai maksimum '+label+' tidak valid.');
+        return;
+      }
+      if (minimum && maximumValue && Number(minimum)>Number(maximumValue)) {
+        setNotice('Minimum '+label+' tidak boleh melebihi maksimum.');
+        return;
+      }
+    }
     setAttributeFilters({...filterDraft,linked_account:[...(filterDraft.linked_account||[])]});
     setFilterSheetOpen(false);
   }
@@ -574,7 +590,7 @@ export default function HomePage() {
           <span className="section-count">{loading ? '—' : String(filtered.length).padStart(2, '0') + ' PRODUK'}</span>
         </div>
         {category === 'MLBB' ? <div className="mlbb-filter-toolbar" aria-label="Filter akun Mobile Legends">
-          <button type="button" className="mlbb-filter-main" onClick={()=>openMlbbFilter('win_rate')} aria-label="Buka seluruh filter akun MLBB">⚙ <span>Filter</span>{mlbbActiveFilterCount>0&&<b>{mlbbActiveFilterCount}</b>}</button>
+          <button type="button" className="mlbb-filter-main" onClick={()=>openMlbbFilter('win_rate')} aria-label="Buka seluruh filter akun MLBB"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5h16l-6.2 7v5.1l-3.6 1.9V12z"/></svg><span>Filter</span>{mlbbActiveFilterCount>0&&<b>{mlbbActiveFilterCount}</b>}</button>
           {MLBB_FILTER_GROUPS.map((filter)=><button key={filter.id} type="button" className={'mlbb-filter-chip '+(activeMlbbFilter(filter.id)?'selected':'')} aria-pressed={activeMlbbFilter(filter.id)} onClick={()=>openMlbbFilter(filter.id)}>
             <span>{filter.label}</span><span className="mlbb-filter-chevron">⌄</span>
           </button>)}
