@@ -12,7 +12,6 @@ export const GAME_NAMES = Object.freeze({
   ROBLOX: 'Roblox',
   FREE_FIRE: 'Free Fire',
   GENSHIN: 'Genshin Impact',
-  OTHER: 'Lainnya'
 });
 
 // Canonical source for original game marks referenced by the supplied Itemku ZIP.
@@ -29,5 +28,4 @@ export const GAME_BACKGROUNDS = Object.freeze({
   ROBLOX: '/assets/03-categories/category-roblox.png',
   FREE_FIRE: '/assets/03-categories/category-free-fire.png',
   GENSHIN: '/assets/03-categories/category-genshin.png',
-  OTHER: '/assets/03-categories/category-other.png'
 });
