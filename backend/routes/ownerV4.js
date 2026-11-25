@@ -114,7 +114,7 @@ router.put('/products/:productId/variant', async (req,res) => {
       return res.status(409).json({error:'MASTER_VARIANT_MISMATCH'});
     }
     const {rows:updated}=await client.query(
-      `UPDATE products SET variant_id=$2,variant_subtype=COALESCE($3,variant_subtype),updated_at=NOW()
+      `UPDATE products SET variant_id=$2,variant_subtype=COALESCE($3,variant_subtype),status=CASE WHEN status='ACTIVE' THEN 'DRAFT' ELSE status END,updated_at=NOW()
        WHERE id=$1 AND variant_id IS NULL
        RETURNING id,sku,game_category,fulfillment_type,variant_id,variant_subtype,status`,
       [productId,variantId,subtype]
