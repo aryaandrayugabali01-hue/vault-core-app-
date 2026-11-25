@@ -152,7 +152,7 @@ export default function HomePage() {
   const [linkedProviderSearch, setLinkedProviderSearch] = useState('');
   const [rankOptionsExpanded, setRankOptionsExpanded] = useState(true);
   const [providerOptionsExpanded, setProviderOptionsExpanded] = useState(true);
-  const [sortBy, setSortBy] = useState('NAME');
+  const [catalogSearchOpen, setCatalogSearchOpen] = useState(false);
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -250,10 +250,8 @@ export default function HomePage() {
       && (category !== 'ALL' ? matchesAccountFilters(p, attributeFilters) : true)
       && (String(p.name || '') + ' ' + String(p.sku || '') + ' ' + String(p.description || '') + ' ' + String(p.marketplace_category_name || '') + ' ' + accountSpecEntries(p).map(([,value])=>value).join(' ')).toLowerCase().includes(query.toLowerCase())
     );
-    if (sortBy === 'PRICE_ASC') return list.sort((a,b)=>Number(a.sale_price_xtr)-Number(b.sale_price_xtr));
-    if (sortBy === 'PRICE_DESC') return list.sort((a,b)=>Number(b.sale_price_xtr)-Number(a.sale_price_xtr));
     return list.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'id'));
-  }, [sourceProducts, category, marketplaceCategoryId, attributeFilters, query, sortBy, isTestMode]);
+  }, [sourceProducts, category, marketplaceCategoryId, attributeFilters, query, isTestMode]);
 
   const cartLines = useMemo(() => cart.map((line) => {
     const product = products.find((item) => Number(item.id) === Number(line.productId));
@@ -615,26 +613,20 @@ export default function HomePage() {
           <span className="section-count">{loading ? '—' : String(filtered.length).padStart(2, '0') + ' PRODUK'}</span>
         </div>
         <div className="catalog-controls catalog-controls-v2" data-catalog-mode={category === 'ALL' ? 'all-games' : 'single-game'}>
-          {category !== 'ALL' && <>
-            <button type="button" className="mlbb-filter-main" onClick={()=>openMlbbFilter('win_rate')} aria-label={'Buka filter akun '+(selectedGame?.label || '')}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5h16l-6.2 7v5.1l-3.6 1.9V12z"/></svg>
-              {activeAccountFilterCount>0&&<b>{activeAccountFilterCount}</b>}
-            </button>
-            <div className="mlbb-filter-strip" role="group" aria-label="Filter spesifikasi akun">
-              {MLBB_FILTER_GROUPS.map((filter) => <button
-                key={filter.id}
-                type="button"
-                className={'mlbb-filter-chip' + (activeAccountFilter(filter.id) ? ' is-active' : '')}
-                aria-pressed={activeAccountFilter(filter.id)}
-                onClick={() => openMlbbFilter(filter.id)}
-              >
-                <span>{filter.label}</span><span className="mlbb-filter-chip-chevron" aria-hidden="true">⌄</span>
-              </button>)}
-            </div>
-          </>}
-          <label className="mlbb-sort-control"><span>Urutkan</span><select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
-            <option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option>
-          </select></label>
+          {category !== 'ALL' && <div className="mlbb-filter-strip" role="group" aria-label="Filter spesifikasi akun">
+            {MLBB_FILTER_GROUPS.map((filter) => <button
+              key={filter.id}
+              type="button"
+              className={'mlbb-filter-chip' + (activeAccountFilter(filter.id) ? ' is-active' : '')}
+              aria-pressed={activeAccountFilter(filter.id)}
+              onClick={() => openMlbbFilter(filter.id)}
+            >
+              <span>{filter.label}</span><span className="mlbb-filter-chip-chevron" aria-hidden="true">⌄</span>
+            </button>)}
+          </div>}
+          <button type="button" className="catalog-search-trigger" onClick={()=>setCatalogSearchOpen(true)} aria-label="Cari produk" title="Cari produk">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
+          </button>
         </div>
         {isTestMode && <div className="test-lane-notice">
           <div><strong>RUANG UJI OWNER</strong><span>Produk contoh terpisah dari katalog pelanggan. Invoice uji bernilai 1 XTR sungguhan.</span></div>
@@ -695,6 +687,33 @@ export default function HomePage() {
       </nav>}
 
       {notice && <div className="toast" role="status"><span>{notice}</span><button onClick={() => setNotice('')} aria-label="Tutup">×</button></div>}
+
+
+      {catalogSearchOpen && <div className="catalog-search-backdrop" onClick={()=>setCatalogSearchOpen(false)}>
+        <section className="catalog-search-panel" role="dialog" aria-modal="true" aria-labelledby="catalog-search-title" onClick={(e)=>e.stopPropagation()}>
+          <div className="catalog-search-topline">
+            <label className="catalog-search-input-wrap" htmlFor="catalog-search-input">
+              <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
+              <input id="catalog-search-input" autoFocus type="search" value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Cari" aria-label="Cari produk katalog" />
+              {query && <button type="button" className="catalog-search-clear" onClick={()=>setQuery('')} aria-label="Hapus pencarian">×</button>}
+            </label>
+            <button type="button" className="catalog-search-cancel" onClick={()=>setCatalogSearchOpen(false)}>Batal</button>
+          </div>
+          <div className="catalog-search-results">
+            <p className="catalog-search-count" id="catalog-search-title">Hasil pencarian ditemukan: <strong>{filtered.length.toLocaleString('id-ID')} produk</strong></p>
+            {filtered.length ? <div className="catalog-search-grid">
+              {filtered.map((product) => <button type="button" className="catalog-search-result" key={product.id} onClick={()=>{setSelectedProduct(product);setCatalogSearchOpen(false);}}>
+                <img src={product.image_url || GAME_ART[product.game_category] || GAME_ART.MLBB} alt="" loading="lazy" />
+                <span className="catalog-search-result-copy">
+                  <small>{GAME_LABELS[product.game_category] || product.game_category} · Akun</small>
+                  <strong>{product.name}</strong>
+                  <b>{Number(product.sale_price_xtr || 0).toLocaleString('en-US')} XTR</b>
+                </span>
+              </button>)}
+            </div> : <div className="catalog-search-empty">Produk tidak ditemukan. Coba kata kunci lain.</div>}
+          </div>
+        </section>
+      </div>}
 
       {filterSheetOpen && category !== 'ALL' && <div className="modal-backdrop mlbb-filter-backdrop" onClick={()=>setFilterSheetOpen(false)}>
         <section className="mlbb-filter-sheet" role="dialog" aria-modal="true" aria-labelledby="mlbb-filter-title" onClick={(e)=>e.stopPropagation()}>

@@ -746,6 +746,13 @@ test('account catalogue hides filters for all games and uses a unified dark filt
   assert.doesNotMatch(page, /className="catalog-toolbar marketplace-toolbar account-filter-toolbar"/);
   assert.match(page, /catalog-controls/);
   assert.match(page, /data-catalog-mode=\{category === 'ALL' \? 'all-games' : 'single-game'\}/);
+  assert.match(page, /className="catalog-search-trigger"/);
+  assert.match(page, /setCatalogSearchOpen\(true\)/);
+  assert.match(page, /catalog-search-panel/);
+  assert.match(page, /Hasil pencarian ditemukan:/);
+  assert.match(page, /className="catalog-search-cancel".*Batal/);
+  assert.doesNotMatch(page, /className="mlbb-filter-main"/);
+  assert.doesNotMatch(page, /className="mlbb-sort-control"/);
   assert.doesNotMatch(styles, /\.account-filter-toolbar|\.mlbb-filter-toolbar/);
   assert.match(styles, /background:linear-gradient\(155deg,#1a2635/);
   assert.match(styles, /\.mlbb-filter-sheet/);
