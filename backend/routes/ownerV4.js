@@ -357,6 +357,7 @@ router.post('/products/:productId/inventory', async (req, res) => {
   let quantity = 0;
   if (isAccount) {
     payloads = req.body?.payloads;
+    if (req.body?.replaceLegacyStock !== true) return res.status(409).json({ error:'LEGACY_STOCK_REPLACEMENT_ACK_REQUIRED' });
     if (!Array.isArray(payloads) || payloads.length < 1 || payloads.length > 100
         || !/^VAULTCORE_OWNER_ACCOUNT_STOCK_V1:[A-Za-z0-9._:/-]{1,160}$/.test(sourceReference)) {
       return res.status(400).json({ error:'ACCOUNT_VAULT_INVENTORY_REQUIRED' });
@@ -423,6 +424,25 @@ router.post('/products/:productId/inventory', async (req, res) => {
       inserted.push({ id:inventoryItem.id,status:inventoryItem.status });
     }
 
+    let replacedLegacyStockCount=0;
+    if (isAccount && req.body?.replaceLegacyStock===true) {
+      const { rows: retired } = await client.query(
+        `UPDATE inventory_items i
+         SET status='UNAVAILABLE',reserved_order_id=NULL,reserved_until=NULL
+         WHERE i.product_id=$1 AND i.rights_review_id=$2
+           AND i.status='AVAILABLE'
+           AND i.reserved_order_id IS NULL AND i.reserved_until IS NULL
+           AND NOT EXISTS (
+             SELECT 1 FROM vault_core_secret_payloads s
+             WHERE s.inventory_item_id=i.id AND s.secret_scope='PRODUCT_ACCOUNT'
+               AND s.secret_status='ACTIVE'
+           )
+         RETURNING i.id`,
+        [product.id,product.current_rights_review_id]
+      );
+      replacedLegacyStockCount=retired.length;
+    }
+
     if (isAccount) {
       const { rows: counts } = await client.query(
         `SELECT COUNT(*) FILTER (WHERE i.status='AVAILABLE')::int AS available,
@@ -458,9 +478,9 @@ router.post('/products/:productId/inventory', async (req, res) => {
   await pool.query(
     `INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata)
      VALUES($1,'V4_INVENTORY_ADDED','PRODUCT',$2,$3::jsonb)`,
-    [String(req.telegramUser.id),String(product.id),JSON.stringify({ count:inserted.length,variantId:product.variant_id,encrypted:isAccount })]
+    [String(req.telegramUser.id),String(product.id),JSON.stringify({ count:inserted.length,variantId:product.variant_id,encrypted:isAccount,replacedLegacyStockCount:typeof replacedLegacyStockCount==='number'?replacedLegacyStockCount:0 })]
   );
-  return res.status(201).json({ productId:product.id,inserted:inserted.length,items:inserted });
+  return res.status(201).json({ productId:product.id,inserted:inserted.length,replacedLegacyStockCount:typeof replacedLegacyStockCount==='number'?replacedLegacyStockCount:0,items:inserted });
 });
 
 router.post('/products/:productId/publish', async (req, res) => {
