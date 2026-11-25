@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { createOrder, getMyOrders } from '../controllers/orderController.js';
 import { requireOwner } from '../middleware/adminAuth.js';
+import { submitJokiCustomerAccess } from '../controllers/secretController.js';
 const router = Router();
 router.post('/', createOrder);
 router.post('/test', requireOwner, (req, res) => createOrder(req, res, { testMode: true }));
 router.get('/mine', getMyOrders);
+router.post('/:orderNumber/customer-access', submitJokiCustomerAccess);
 export default router;
