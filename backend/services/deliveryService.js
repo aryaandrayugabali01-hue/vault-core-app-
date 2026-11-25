@@ -177,8 +177,8 @@ export async function deliverPaidOrder(orderNumber) {
           },context)
         : decryptPayload(item);
       const payload = typeof decrypted === 'string' ? decrypted
-        : Object.entries(decrypted ?? {}).map(([key,value]) => `${key}: ${String(value ?? '')}`).join('\\n');
-      const text = `✅ <b>Pembayaran berhasil</b>\\n\\nProduk: ${escapeHtml(item.product_name)}\\n\\n<code>${escapeHtml(payload)}</code>\\n\\nSimpan detail ini dengan aman. Hubungi pengelola VAULT CORE jika mengalami kendala.`;
+        : Object.entries(decrypted ?? {}).map(([key,value]) => `${key}: ${String(value ?? '')}`).join('\n');
+      const text = `✅ <b>Pembayaran berhasil</b>\n\nProduk: ${escapeHtml(item.product_name)}\n\n<code>${escapeHtml(payload)}</code>\n\nSimpan detail ini dengan aman. Hubungi pengelola VAULT CORE jika mengalami kendala.`;
       const result = await telegramCall('sendMessage', {
         chat_id: order.telegram_user_id,
         text,
