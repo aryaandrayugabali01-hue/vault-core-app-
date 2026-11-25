@@ -538,6 +538,17 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
       .catch(() => setOwnerCheck('error'));
   }
 
+  useEffect(() => {
+    const openProfileFromFooter = () => {
+      if (window.location.hash !== '#profile') return;
+      window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+      openProfile();
+    };
+    openProfileFromFooter();
+    window.addEventListener('hashchange', openProfileFromFooter);
+    return () => window.removeEventListener('hashchange', openProfileFromFooter);
+  }, []);
+
   async function loadOwnerTestProducts(initData = getInitData()) {
     const response = await fetch(API + '/api/admin/test-fixtures', {
       headers: { 'x-telegram-init-data': initData }, cache: 'no-store'

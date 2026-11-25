@@ -1001,3 +1001,39 @@ test('dashboard buyer protection uses the official Vault Core logo and tagline w
   assert.ok(styles.includes('.dashboard-protection-card:nth-child(3)'));
   assert.ok(styles.includes('.dashboard-protection-logo'));
 });
+
+test('dashboard home spacing and typography follow the supplied size reference only', () => {
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const start = styles.indexOf('/* Dashboard home sizing alignment based on supplied UniPin mobile references.');
+  assert.ok(start >= 0);
+  const sizing = styles.slice(start);
+  for (const rule of [
+    '.dashboard-shell{padding-right:clamp(16px,3.2vw,22px);padding-left:clamp(16px,3.2vw,22px)}',
+    '.dashboard-games,.dashboard-featured,.dashboard-collection,.dashboard-guides,.dashboard-transactions,.dashboard-protection{margin:24px 0}',
+    '.dashboard-featured-grid,.dashboard-product-grid,.dashboard-guides-grid{gap:16px}',
+    '.dashboard-protection-grid{gap:14px}',
+    '.dashboard-guide-body h3{font-size:10px;line-height:1.45}',
+    '.dashboard-protection-card p{font-size:8px;line-height:1.5}',
+    '@media(max-width:390px)'
+  ]) assert.ok(sizing.includes(rule), 'Missing size reference rule: ' + rule);
+  assert.equal(/(?:^|[;{])\\s*(?:background|background-color|color|border-color)\\s*:/.test(sizing), false);
+});
+
+
+test('shared navigation footer and bottom menu are wired across application routes', () => {
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
+  const notFound = readFileSync(new URL('../frontend/src/app/not-found.jsx', import.meta.url), 'utf8');
+  const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
+  const catalog = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  for (const label of ['Beranda', 'Produk', 'Bantuan', 'Akun', 'Katalog', 'Kategori', 'Cara Beli', 'Syarat & Ketentuan', 'Kebijakan Refund']) {
+    assert.ok(navigation.includes(label), 'Missing shared navigation label: ' + label);
+  }
+  assert.match(layout, /<StoreFooter\s*\/>/);
+  assert.match(navigation, /catalog-footer-buy-guide/);
+  assert.match(navigation, /catalog-footer-support/);
+  assert.match(notFound, /<StoreBottomNav active="dashboard"\/>/);
+  assert.match(catalog, /openProfileFromFooter/);
+  assert.match(home, /id="terms-and-conditions"/);
+  assert.match(home, /id="refund-policy"/);
+});
