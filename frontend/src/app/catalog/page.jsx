@@ -903,11 +903,11 @@ export default function HomePage() {
               <div className="marketplace-detail-heading">
                 <span className="detail-category">{selectedProduct.marketplace_category_name || (GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category) + ' · Akun'}</span>
                 <h1 id="product-detail-title">{selectedProduct.name}</h1>
-                <div className="marketplace-detail-rating"><span className="marketplace-rating-mark" aria-hidden="true">★★★★★</span><div><strong>Rating pelanggan</strong><small>Belum tersedia · Ulasan belum tersedia</small></div></div>
+                <div className="marketplace-detail-rating"><span className="marketplace-rating-mark" aria-hidden="true">☆☆☆☆☆</span><div><strong>Rating pelanggan</strong><small>Belum tersedia · Ulasan belum tersedia</small></div></div>
               </div>
               <div className="marketplace-detail-trust-grid" aria-label="Keunggulan VAULT CORE">
                 <div className="marketplace-detail-trust-item"><span className="marketplace-detail-trust-icon" aria-hidden="true">🛡️</span><strong>Keamanan<br/>Akun</strong></div>
-                <div className="marketplace-detail-trust-item"><span className="marketplace-detail-trust-icon" aria-hidden="true">🔐</span><strong>Perlindungan<br/>Pembeli</strong></div>
+                <div className="marketplace-detail-trust-item"><span className="marketplace-detail-trust-icon" aria-hidden="true">🔐</span><strong>Anti-Hackback</strong></div>
                 <div className="marketplace-detail-trust-item"><span className="marketplace-detail-trust-icon" aria-hidden="true">🧩</span><strong>Pilihan<br/>Lengkap</strong></div>
               </div>
               <section className="marketplace-detail-price-panel" aria-label="Harga produk">

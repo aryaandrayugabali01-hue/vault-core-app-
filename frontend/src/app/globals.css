@@ -1723,3 +1723,5 @@ body{
  .marketplace-detail-page .marketplace-detail-trust-item strong{font-size:7px}
  .marketplace-detail-page .marketplace-detail-rating>div{display:grid;gap:1px}
 }
+
+.marketplace-detail-page .marketplace-rating-mark{color:#7d8ca2;font-size:15px;letter-spacing:1px}
