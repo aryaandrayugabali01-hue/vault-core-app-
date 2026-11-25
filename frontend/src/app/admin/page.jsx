@@ -5,6 +5,7 @@ import { getInitData } from '../../lib/telegram';
 import { GAME_LABELS } from '../../lib/marketplace.js';
 import { splitInventoryPayloads } from '../../lib/inventory';
 import { parseProductAttributesText, formatProductAttributesText } from '../../lib/product-attributes';
+import { StoreHeader, StoreBottomNav } from '../../components/store-navigation.jsx';
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 const STATUS_LABELS = {
@@ -315,8 +316,8 @@ export default function AdminPage() {
     return min === max ? fmt(min) : fmt(min) + ' – ' + fmt(max);
   };
   if (authState !== 'authenticated') return <main className="owner-login-screen">
+    <StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="dashboard-icon-button" href="/" aria-label="Kembali ke Dashboard">⌂</a>}/>
     <section className="owner-login-card">
-      <a className="brand" href="/" aria-label="VAULT CORE"><img className="brand-logo owner-brand-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /></a>
       <span className="eyebrow muted">OWNER SECURE ACCESS</span>
       <h1>Masuk dengan Telegram</h1>
       <p>Gunakan akun Telegram Owner yang sudah terdaftar. Telegram memverifikasi identitas Anda, lalu VAULT CORE memeriksa izin Owner secara otomatis.</p>
@@ -329,9 +330,10 @@ export default function AdminPage() {
       </>}
       <a className="owner-login-back" href="/">Kembali ke katalog</a>
     </section>
+    <StoreBottomNav active="owner"/>
   </main>;
   return <main className="admin-shell">
-    <header className="admin-head"><a className="brand" href="/" aria-label="VAULT CORE"><img className="brand-logo owner-brand-logo" src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /></a><div className="admin-head-actions"><span className="admin-pill">PANEL PEMILIK</span><button type="button" className="admin-logout" onClick={logoutOwner}>Keluar</button></div></header>
+    <StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<button type="button" className="admin-logout" onClick={logoutOwner}>Keluar</button>}/>
     <section className="admin-title"><span className="eyebrow muted">PANEL KONTROL / PEMILIK</span><h1>Dashboard pemilik</h1><p>Kelola katalog, stok, harga, pesanan, dan laporan usaha dalam XTR.</p></section>
     {notice && <div className="admin-notice">{notice}</div>}
     {stats && <section className="admin-stats">
@@ -437,5 +439,6 @@ export default function AdminPage() {
       </form>
       <p className="admin-footnote">Biaya operasional dicatat terpisah dan diperhitungkan dalam laba bersih.</p>
     </section>
+    <StoreBottomNav active="owner"/>
   </main>;
 }
