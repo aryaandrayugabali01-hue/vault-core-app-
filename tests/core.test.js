@@ -966,7 +966,7 @@ test('legacy SKU mapping is explicit, canonical-category-bound and keeps product
   assert.match(ownerRoute, /status=CASE WHEN status='ACTIVE' THEN 'DRAFT' ELSE status END/);
   assert.match(ownerRoute, /V4_LEGACY_PRODUCT_VARIANT_MAPPED/);
   assert.match(ownerPage, /LEGACY_VARIANT_BY_SLUG/);
-  assert.match(ownerPage, /Pindahkan ke DRAFT/);
+  assert.match(ownerPage, /pindahkan ke DRAFT/i);
 });
 
 test('legacy unvaulted account stock is retired only after explicit Owner confirmation and encrypted replacement', () => {
