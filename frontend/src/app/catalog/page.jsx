@@ -459,7 +459,11 @@ export default function HomePage() {
         </div>
         <nav className="marketplace-game-tabs" aria-label="Pilih game">
           <button type="button" className={category === 'ALL' ? 'active' : ''} aria-pressed={category === 'ALL'} onClick={() => { setCategory('ALL'); setMarketplaceCategoryId('ALL'); setAttributeFilters({}); setQuery(''); }}>Semua game</button>
-          {gameTabs.map((game) => <button key={game.id} type="button" className={category === game.id ? 'active' : ''} aria-pressed={category === game.id} onClick={() => { setCategory(game.id); setMarketplaceCategoryId('ALL'); setAttributeFilters({}); setQuery(''); }}>
+          {gameTabs.map((game) => <button key={game.id} type="button" className={category === game.id ? 'active' : ''} aria-pressed={category === game.id} onClick={() => {
+            const slug = ({MLBB:'mlbb-akun',FREE_FIRE:'free-fire-akun',ROBLOX:'roblox-akun',GENSHIN:'genshin-akun'})[game.id];
+            const accountCategory = marketplaceCategories.find((item) => item.slug === slug);
+            setCategory(game.id); setMarketplaceCategoryId(accountCategory ? String(accountCategory.id) : 'ALL'); setAttributeFilters({}); setQuery('');
+          }}>
             <img className="game-tab-icon" src={game.icon} alt="" loading="lazy" />{game.short}
           </button>)}
         </nav>
