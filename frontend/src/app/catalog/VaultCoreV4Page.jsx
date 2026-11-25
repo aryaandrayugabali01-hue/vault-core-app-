@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getInitData, getTelegramWebApp, openInvoice } from '../../../lib/telegram';
 import './page.css';
+import { GAME_ART, GAME_BACKGROUNDS } from '../../lib/marketplace.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const GROUPS = ['Akun','Jasa Joki','Item In-Game'];
-const GAME_NAMES = { MLBB:'Mobile Legends', FF:'Free Fire', ROBLOX:'Roblox', GI:'Genshin Impact' };
+const GAME_NAMES = { MLBB:'Mobile Legends', FF:'Free Fire', ROBLOX:'Roblox', GI:'Genshin Impact' };\nconst MARKET_GAME_CODE = { MLBB:'MLBB', FF:'FREE_FIRE', ROBLOX:'ROBLOX', GI:'GENSHIN' };
 const STATUS = {
   PENDING_PAYMENT:'Menunggu pembayaran',PAID:'Pembayaran diterima',FULFILLING:'Sedang diproses',
   FULFILLED:'Selesai',CANCELLED:'Dibatalkan',REFUND_PENDING:'Refund diproses',
@@ -251,10 +252,10 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
 
         <section className="vc4-game-row" aria-label="Pilih game">
           <button type="button" className={game==='ALL'?'selected':''} onClick={() => setGame('ALL')}>
-            <span className="vc4-game-tile">VC</span><span>Semua</span>
+            <span className="vc4-game-tile vc4-all-games">VC</span><span>Semua</span>
           </button>
           {Object.entries(GAME_NAMES).map(([code,label]) => <button type="button" key={code} className={game===code?'selected':''} onClick={() => setGame(code)}>
-            <span className="vc4-game-tile">{code==='FREE_FIRE'?'FF':code==='ROBLOX'?'RB':code==='GENSHIN'?'GI':'ML'}</span><span>{label}</span>
+            <span className="vc4-game-tile" style={{backgroundImage:`url(${GAME_BACKGROUNDS[MARKET_GAME_CODE[code]]})`}}><img src={GAME_ART[MARKET_GAME_CODE[code]]} alt="" loading="lazy"/></span><span>{label}</span>
           </button>)}
         </section>
 
@@ -289,7 +290,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
                 const products = visibleProducts.filter((product)=>product.variant_id===Number(variant.variant_id));
                 return <article className="vc4-card" key={variant.variant_id}>
                   <button type="button" className="vc4-card-main" onClick={()=>setSelected({variant_id:Number(variant.variant_id)})}>
-                    <div className="vc4-card-art"><span>{variant.game_code==='MLBB'?'ML':variant.game_code==='FF'?'FF':variant.game_code==='ROBLOX'?'RB':'GI'}</span><small>{variant.category}</small></div>
+                    <div className="vc4-card-art" style={{backgroundImage:`url(${GAME_BACKGROUNDS[MARKET_GAME_CODE[variant.game_code]]})`}}><img src={GAME_ART[MARKET_GAME_CODE[variant.game_code]]} alt="" loading="lazy"/><small>{variant.category}</small></div>
                     <div className="vc4-card-copy"><span className="vc4-eyebrow">{variant.game}</span><h3>{variant.name}</h3><p>{products.length ? products.length + ' SKU aktif' : 'Produk disiapkan Owner'}</p></div>
                     <div className="vc4-card-foot"><strong>{products.length ? 'Lihat produk' : 'Detail varian'}</strong><span>↗</span></div>
                   </button>
@@ -309,8 +310,8 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         {!loading && visibleVariants.length===0 && <div className="vc4-empty"><h2>Varian belum ditemukan.</h2><p>Ubah pilihan game, jenis produk, atau kata pencarian.</p></div>}
         {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada SKU v4 yang diaktifkan. Owner dapat menyiapkan produk melalui panel pengelolaan berdasarkan 12 varian dan 47 pertanyaan wajib.</p>}
         <footer className="vc4-footer">
-          <p>VAULT CORE adalah penjual tunggal. Pembayaran menggunakan Telegram Stars (XTR) melalui invoice resmi Telegram.</p>
-          <p>Status pembayaran hanya ditetapkan setelah konfirmasi sistem. Data akses akun disimpan melalui vault terenkripsi.</p>
+          <p>VAULT CORE adalah penjual tunggal. Seluruh checkout dan pemantauan pesanan dilakukan melalui VAULT CORE Telegram Mini App.</p>
+          <p>Pembayaran menggunakan invoice resmi Telegram Stars (XTR). Status pembayaran hanya ditetapkan setelah konfirmasi sistem, sedangkan data akses akun disimpan melalui vault terenkripsi.</p>
         </footer>
       </main>
 
@@ -322,6 +323,9 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           {selected.product ? <>
             <h3>{selected.product.name}</h3>
             <p>{selected.product.description}</p>
+            {selected.product.customer_terms && <section className="vc4-product-terms"><h3>Ketentuan produk</h3><p>{selected.product.customer_terms}</p></section>}
+            {selected.product.fulfillment_eta && <p className="vc4-eta">Estimasi pemenuhan: {selected.product.fulfillment_eta}</p>}
+            {selected.product.group === 'Akun' && <section className="vc4-security-guide"><h3>Keamanan Akun</h3><ol><li>Periksa detail akun dan kesesuaian spesifikasi sebelum konfirmasi.</li><li>Ganti kata sandi setelah menerima akses akun.</li><li>Aktifkan verifikasi dua langkah pada akun yang mendukung.</li><li>Pastikan email dan metode pemulihan berada dalam kendali pembeli.</li></ol><p>Garansi mengikuti ketentuan yang ditetapkan pada detail produk.</p></section>}
             <div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ')}</span><strong>{String(value)}</strong></div>)}</div>
             <p className="vc4-price-large">★ {fmt(selected.product.sale_price_xtr)} XTR</p>
             <button className="vc4-primary" type="button" onClick={()=>addToCart(selected.product)}>Tambah ke keranjang</button>
