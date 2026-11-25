@@ -55,6 +55,7 @@ router.get('/variants', async (_req, res) => {
       const actual = Math.max(0, Number(sku.actual_stock) || 0);
       return {
         ...sku,
+        attributes: Object.fromEntries(Object.entries(sku.attributes ?? {}).filter(([key]) => !/(login|password|\\bpass\\b|sandi|otp|session|recovery|token|credential|email|username)/i.test(key))),
         display_stock: resolveDisplayStock({
           actualStock: actual,
           mode: sku.display_stock_mode,
