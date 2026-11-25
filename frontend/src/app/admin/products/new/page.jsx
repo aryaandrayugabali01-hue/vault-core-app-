@@ -194,7 +194,7 @@ export default function NewProductPage() {
     }
   }
 
-  if (!ready) return <main className="admin-shell"><StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="admin-logout" href="/admin">Dashboard</a>}/><div className="admin-notice">{error || 'Memverifikasi akses Owner…'}</div><StoreBottomNav active="owner"/></main>;
+  if (!ready) return <main className="admin-shell"><StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="admin-logout" href="/admin">Dashboard</a>}/><div className="admin-notice">{error || 'Memverifikasi akses Owner…'}</div></main>;
 
   return <main className="admin-shell">
     <StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="admin-logout" href="/admin">Dashboard</a>}/>
@@ -243,6 +243,5 @@ export default function NewProductPage() {
         <button className="admin-primary" disabled={busy}>{busy ? 'Menyimpan…' : savedProductId ? 'Lanjutkan penyimpanan SKU' : stock.trim() ? 'Simpan produk + stok awal' : 'Simpan produk sebagai Draf'}</button>
       </form>
     </section>
-    <StoreBottomNav active="owner"/>
   </main>;
 }
