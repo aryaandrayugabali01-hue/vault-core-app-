@@ -888,7 +888,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
 
 {selectedProduct && <div className="modal-backdrop marketplace-detail-backdrop" onClick={() => { setSelectedProduct(null); setWarrantyOpen(false); }}>
         <section className="product-detail-modal marketplace-detail-modal marketplace-detail-page" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onClick={(e) => e.stopPropagation()}>
-          <header className="marketplace-detail-header">
+          <div className="marketplace-detail-header">
             <StoreHeader searchValue={query} onSearchChange={setQuery} searchPlaceholder="Cari produk katalog…"
               rightSlot={<>
                 <button className="dashboard-icon-button" type="button" onClick={()=>telegramContext?showOrders():setNotice('Riwayat pesanan tersedia melalui Telegram Mini App.')} aria-label="Notifikasi dan pesanan"><NavigationIcon name="bell"/></button>
@@ -900,7 +900,7 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
               <div className="marketplace-detail-toolbar-title"><strong>{selectedProduct.name}</strong><small>{GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · Akun</small></div>
               <button className="marketplace-detail-tool-action" type="button" onClick={()=>{const url=window.location.href;if(typeof navigator!=='undefined'&&navigator.share){navigator.share({title:selectedProduct.name,url}).catch(()=>{});}else if(typeof navigator!=='undefined'&&navigator.clipboard){navigator.clipboard.writeText(url).then(()=>setNotice('Tautan produk disalin.')).catch(()=>setNotice('Tautan produk tidak dapat disalin.'));}}} aria-label="Bagikan produk">↗</button>
             </div>
-          </header>
+          </div>
           <div className="marketplace-detail-scroll">
             <section className="marketplace-detail-media-section" aria-label="Galeri gambar produk">
               <div className="marketplace-detail-gallery">
