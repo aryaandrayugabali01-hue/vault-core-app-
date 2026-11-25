@@ -3,7 +3,7 @@ import Script from 'next/script';
 
 export const metadata = {
   title: 'VAULT CORE | Toko Digital Gaming',
-  description: 'Katalog produk digital, voucher, lisensi, dan layanan gaming VAULT CORE.',
+  description: 'Marketplace akun game VAULT CORE: Mobile Legends, Free Fire, Roblox, dan Genshin Impact.',
   icons: {
     icon: '/assets/01-brand/favicon.svg',
     shortcut: '/assets/01-brand/favicon.png',
@@ -11,7 +11,7 @@ export const metadata = {
   },
   openGraph: {
     title: 'VAULT CORE | Toko Digital Gaming',
-    description: 'Katalog produk digital dan layanan gaming melalui Telegram Stars.',
+    description: 'Marketplace akun game melalui Telegram Stars (XTR).',
     images: [{ url: '/assets/09-social/og-cover-1200x630.jpg', width: 1200, height: 630, alt: 'VAULT CORE' }]
   }
 };
