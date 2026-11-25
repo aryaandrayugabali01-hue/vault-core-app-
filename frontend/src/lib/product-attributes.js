@@ -25,6 +25,13 @@ export function formatProductAttributesText(attributes) {
   return Object.entries(attributes).map(([key, value]) => `${key}|${value}`).join('\n');
 }
 
+export function normalizeCustomerDisplayText(value) {
+  return String(value ?? '')
+    .replace(/\\r\\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\n');
+}
+
 const HIDDEN_CUSTOMER_PRODUCT_ATTRIBUTE_KEYS = new Set([
   'xtr_price',
   'price_note',
