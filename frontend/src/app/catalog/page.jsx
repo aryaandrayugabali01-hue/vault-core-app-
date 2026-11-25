@@ -172,8 +172,13 @@ export default function HomePage() {
     );
     return CUSTOMER_FILTERS.map(({key,label,short}) => {
       const rawValues = productsForFacets.flatMap((product) => {
-        const value = String(Object.fromEntries(getCustomerVisibleProductAttributes(product.attributes))[key] ?? '').trim();
-        return key === 'linked_platforms' ? value.split(',').map((item) => item.trim()).filter(Boolean) : (value ? [value] : []);
+        const attributes = Object.fromEntries(getCustomerVisibleProductAttributes(product.attributes));
+        const value = String(attributes[key] ?? '').trim();
+        if (key === 'linked_platforms') {
+          return [...String(attributes.linked_account ?? '').split(','), ...value.split(',')]
+            .map((item) => item.trim()).filter(Boolean);
+        }
+        return value ? [value] : [];
       });
       const values = [...new Set(rawValues)].sort((a,b)=>a.localeCompare(b,'id'));
       return {key,label,short,values};
@@ -186,9 +191,11 @@ export default function HomePage() {
       && (marketplaceCategoryId === 'ALL' || String(p.marketplace_category_id || '') === marketplaceCategoryId)
       && Object.entries(attributeFilters).every(([key, value]) => {
         if (!value) return true;
-        const attributeValue = String(Object.fromEntries(getCustomerVisibleProductAttributes(p.attributes))[key] ?? '');
+        const attributes = Object.fromEntries(getCustomerVisibleProductAttributes(p.attributes));
+        const attributeValue = String(attributes[key] ?? '');
         return key === 'linked_platforms'
-          ? attributeValue.split(',').map((item) => item.trim().toLocaleLowerCase('id')).includes(value.toLocaleLowerCase('id'))
+          ? [...String(attributes.linked_account ?? '').split(','), ...attributeValue.split(',')]
+            .map((item) => item.trim().toLocaleLowerCase('id')).includes(value.toLocaleLowerCase('id'))
           : attributeValue.toLocaleLowerCase('id') === value.toLocaleLowerCase('id');
       })
       && (String(p.name || '') + ' ' + String(p.description || '') + ' ' + String(p.sku || '') + ' ' + String(p.marketplace_category_name || '')).toLowerCase().includes(query.toLowerCase())
@@ -568,7 +575,7 @@ export default function HomePage() {
             </select><span className="marketplace-select-chevron">⌄</span>
           </label>)}
           <label className="marketplace-sort-icon"><span className="sr-only">Urutkan produk</span><select aria-label="Urutkan produk" value={sortBy} onChange={(e)=>setSortBy(e.target.value)}><option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option></select><b>↕</b></label>
-          <label className="marketplace-search-icon"><span className="sr-only">Cari produk</span><input aria-label="Cari produk" value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="⌕" /><b>⌕</b></label>
+          <button className="marketplace-search-icon" type="button" aria-label="Fokus ke pencarian produk" onClick={()=>document.querySelector('.top-searchbox input')?.focus()}><b>⌕</b></button>
         </div>
         {(Object.values(attributeFilters).some(Boolean) || tier !== 'ALL' || query) && <div className="marketplace-active-filters">
           {Object.entries(attributeFilters).filter(([,value])=>value).map(([key,value])=><button type="button" key={key} onClick={()=>setAttributeFilters((current)=>({...current,[key]:''}))}>{customerAttributeLabel(key)}: {value} ×</button>)}
