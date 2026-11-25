@@ -253,3 +253,12 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - Implementation commit: `34060e754517c05fa0f68ca8f3d4784929896d81`.
 - CI run `45635391740`: **SUCCESS**. Production deployment run `45635391811`: **SUCCESS**; the existing `vault-core-web` Worker was deployed, and public root/www/API, TLS, API/database health, and storefront asset checks passed.
 - Direct Android screenshot comparison: `NOT TESTED` in this execution; deployment and public endpoint checks are verified, but a rendered device screenshot was not captured.
+
+
+## 19. Dashboard game-card artwork correction — 25 Nov 2026
+
+- Keep the four primary game cards (Mobile Legends, Free Fire, Roblox, Genshin Impact) as the approved large portrait horizontal carousel.
+- Each card uses exactly one official game artwork source from the existing `GAME_ART` mapping. Do not layer the local category illustration/logo behind or over the official image; do not show a second brand mark.
+- The official artwork fills the entire card area edge-to-edge using `object-fit: cover`. The game name, “Subkategori Akun”, and live account count sit over a dark bottom gradient for legibility.
+- Preserve the existing game ordering, category links, backend-derived account counts, card dimensions, carousel behavior, shared header/bottom navigation, and all other approved Dashboard sections.
+- Scope is limited to artwork composition and card copy overlay. Do not change catalog/product data, backend behavior, pricing, stock, routes, or transaction flow.
