@@ -788,12 +788,14 @@ test('storefront and Owner routes share the approved header and four-item bottom
   const categories = readFileSync(new URL('../frontend/src/app/admin/categories/page.jsx', import.meta.url), 'utf8');
   const newProduct = readFileSync(new URL('../frontend/src/app/admin/products/new/page.jsx', import.meta.url), 'utf8');
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   for (const page of [home, catalog, owner, categories, newProduct]) {
     assert.ok(page.includes('StoreHeader'), 'Shared header is missing from a route');
-    assert.ok(page.includes('StoreBottomNav'), 'Shared bottom navigation is missing from a route');
+    assert.doesNotMatch(page.replace('<StoreBottomNav active="catalog" embedded/>', ''), /<StoreBottomNav active=/, 'Global bottom navigation must not be duplicated per route');
   }
   for (const label of ['Beranda','Produk','Bantuan','Akun']) assert.ok(navigation.includes(label));
-  assert.match(catalog, /StoreBottomNav active=\{isPinnedCatalogRoute \? "categories" : "catalog"\}/);
+  assert.ok(layout.includes('<StoreChrome />'));
+  assert.match(navigation, /<StoreBottomNav active=\{active\}\/>/);
   assert.match(catalog, /StoreBottomNav active="catalog" embedded/);
 });
 
@@ -956,7 +958,7 @@ test('customer catalog footer follows the approved XTR, account-security, and wa
   const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   const start = page.indexOf('<section className="catalog-info-footer"');
-  const end = page.indexOf('<footer className="footer">', start);
+  const end = page.indexOf('\n      </section>', start);
   assert.ok(start >= 0 && end > start);
   const footer = page.slice(start, end);
   assert.ok(footer.includes('Telegram Stars · XTR'));
@@ -974,7 +976,8 @@ test('customer catalog footer follows the approved XTR, account-security, and wa
   assert.ok(styles.includes('.catalog-info-footer'));
   assert.ok(styles.includes('.catalog-info-details[open] summary'));
   assert.ok(styles.includes('@media(max-width:680px)'));
-  assert.ok(page.includes('footer-brand-tagline\">Lebih Yakin Bersama Vault Core'));
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  assert.ok(navigation.includes('Lebih Yakin Bersama <span>Vault Core</span>'));
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   assert.ok(layout.includes('title: \'VAULT CORE | Lebih Yakin Bersama Vault Core\''));
   assert.ok(layout.includes('Lebih Yakin Bersama Vault Core. Marketplace akun game'));
@@ -984,7 +987,7 @@ test('dashboard buyer protection uses the official Vault Core logo and tagline w
   const page = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   const start = page.indexOf('<section className="dashboard-protection"');
-  const end = page.indexOf('<StoreBottomNav active="dashboard"', start);
+  const end = page.indexOf("</section>", start);
   assert.ok(start >= 0 && end > start);
   const section = page.slice(start, end);
   assert.ok(section.includes('src="/assets/01-brand/vaultcore-horizontal.svg"'));
@@ -1022,6 +1025,7 @@ test('dashboard home spacing and typography follow the supplied size reference o
 
 test('shared footer and c.html bottom navigation are global across route layouts', () => {
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   const notFound = readFileSync(new URL('../frontend/src/app/not-found.jsx', import.meta.url), 'utf8');
   const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
@@ -1029,11 +1033,15 @@ test('shared footer and c.html bottom navigation are global across route layouts
   for (const label of ['Beranda', 'Produk', 'Bantuan', 'Akun', 'Katalog', 'Kategori', 'Cara Beli', 'Syarat & Ketentuan', 'Kebijakan Refund']) {
     assert.ok(navigation.includes(label), 'Missing navigation label: ' + label);
   }
-  assert.ok(layout.includes('<StoreFooter />'));
+  assert.ok(layout.includes('<StoreChrome />'));
   assert.match(navigation, /catalog-footer-buy-guide/);
   assert.match(navigation, /catalog-footer-support/);
-  assert.ok(notFound.includes('<StoreBottomNav active="dashboard"/>'));
+  assert.match(navigation, /usePathname/);
+  assert.match(navigation, /store-bottom-nav-shell/);
+  assert.ok(styles.includes('position:relative;inset:auto'));
+  assert.ok(!notFound.includes("StoreBottomNav"));
   assert.match(catalog, /openProfileFromFooter/);
+  assert.ok(!catalog.includes('<footer className="footer">'));
   assert.match(home, /id="terms-and-conditions"/);
   assert.match(home, /id="refund-policy"/);
 });

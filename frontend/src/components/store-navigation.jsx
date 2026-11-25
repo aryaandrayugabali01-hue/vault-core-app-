@@ -1,5 +1,7 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
+
 function NavigationIcon({ name }) {
   const common = { viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:1.8, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true };
   if (name === 'search') return <svg {...common}><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>;
@@ -43,7 +45,7 @@ export function StoreBottomNav({ active = 'dashboard', embedded = false }) {
   const items = [
     { id: 'dashboard', label: 'Beranda', icon: 'home', href: '/' },
     { id: 'catalog', label: 'Produk', icon: 'catalog', href: '/catalog' },
-    { id: 'help', label: 'Bantuan', icon: 'help', href: '/catalog/mlbb-akun#catalog-footer-support' },
+    { id: 'help', label: 'Bantuan', icon: 'help', href: '/catalog#catalog-footer-support' },
     { id: 'account', label: 'Akun', icon: 'user', href: accountView ? '/admin' : '/catalog#profile' }
   ];
   return <nav className={'dashboard-bottom-nav' + (embedded ? ' dashboard-bottom-nav-embedded' : '')} aria-label="Navigasi utama">
@@ -62,18 +64,52 @@ export function StoreFooter() {
     { label: 'Syarat & Ketentuan', href: '/#terms-and-conditions' },
     { label: 'Kebijakan Refund', href: '/#refund-policy' }
   ];
-  return <footer className="store-global-footer" aria-label="Navigasi informasi VAULT CORE">
+  return <footer className="store-global-footer" aria-label="Informasi dan navigasi VAULT CORE">
     <div className="store-global-footer-inner">
-      <div className="store-global-footer-brand">
-        <a href="/" aria-label="VAULT CORE Beranda"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/></a>
-        <span>Lebih Yakin Bersama Vault Core</span>
+      <div className="store-trust-strip" aria-label="Perlindungan pembeli">
+        <div className="store-trust-item"><span className="store-trust-icon trust-green" aria-hidden="true">⬡</span><span>Anti-Hackback</span></div>
+        <span className="store-trust-divider" aria-hidden="true"/>
+        <div className="store-trust-item"><span className="store-trust-icon trust-blue" aria-hidden="true">◎</span><span>Akun Dicek Manual</span></div>
+        <span className="store-trust-divider" aria-hidden="true"/>
+        <div className="store-trust-item"><span className="store-trust-icon trust-purple" aria-hidden="true">↻</span><span>Garansi Refund</span></div>
       </div>
-      <div className="store-global-footer-heading"><span aria-hidden="true"/><h2>NAVIGASI</h2></div>
-      <nav className="store-global-footer-links" aria-label="Navigasi informasi">
-        {links.map((item) => <a href={item.href} key={item.label}><span>{item.label}</span><NavigationIcon name="chevron"/></a>)}
-      </nav>
-      <p className="store-global-footer-note">Ketentuan produk, garansi, dan refund mengikuti informasi yang tercantum pada setiap produk.</p>
-      <small className="store-global-footer-copy">© {new Date().getFullYear()} VAULT CORE. Marketplace akun game.</small>
+      <div className="store-footer-columns">
+        <section className="store-footer-brand">
+          <a href="/" aria-label="VAULT CORE Beranda"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/></a>
+          <h2>Lebih Yakin Bersama <span>Vault Core</span></h2>
+          <p>Transaksi akun game melalui Telegram Mini App dengan pembayaran Telegram Stars.</p>
+          <div className="store-footer-badges"><span>✓ Terverifikasi</span><span>✦ Sejak 2024</span></div>
+        </section>
+        <nav className="store-footer-column" aria-label="Navigasi footer">
+          <h3><span/>Navigasi</h3>
+          <ul>{links.map(item=><li key={item.label}><a href={item.href}>{item.label}<NavigationIcon name="chevron"/></a></li>)}</ul>
+        </nav>
+        <section className="store-footer-column" aria-label="Bantuan dan pembayaran">
+          <h3><span/>Bantuan</h3>
+          <a className="store-footer-help-link" href="/catalog#catalog-footer-support">
+            <span className="store-footer-help-icon">✉</span><span><strong>Telegram</strong><small>Hubungi Admin VAULT CORE</small></span><NavigationIcon name="chevron"/>
+          </a>
+          <a className="store-footer-help-link store-footer-stars-link" href="/catalog">
+            <span className="store-footer-help-icon">★</span><span><strong>Telegram Stars</strong><small>Bayar menggunakan Stars</small></span><NavigationIcon name="chevron"/>
+          </a>
+          <h4>Pembayaran</h4>
+          <div className="store-footer-payment"><span>★</span><strong>Telegram Stars (XTR)</strong></div>
+          <p className="store-footer-payment-note">Pembayaran diproses melalui invoice resmi Telegram.</p>
+        </section>
+      </div>
+      <div className="store-global-footer-copy"><strong>Vault Core</strong><span>•</span>EST 2024<span>•</span>© {new Date().getFullYear()} - All Rights Reserved</div>
     </div>
   </footer>;
+}
+
+export function StoreChrome() {
+  const pathname = usePathname() || '/';
+  const active = pathname.startsWith('/admin') ? 'owner' : pathname.startsWith('/catalog') ? 'catalog' : 'dashboard';
+  return <>
+    <StoreFooter/>
+    <div className="store-bottom-nav-shell">
+      <StoreBottomNav active={active}/>
+      <p>Bottom navigation melayang — terpisah dari footer</p>
+    </div>
+  </>;
 }
