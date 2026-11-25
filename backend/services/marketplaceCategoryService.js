@@ -12,7 +12,7 @@ export function validateMarketplaceCategory(input = {}) {
   const rawGuide = input.purchaseGuide ?? [];
   const errors = [];
 
-  if (name.length < 2) errors.push('CATEGORY_NAME_REQUIRED');
+  if (name !== 'Akun') errors.push('CATEGORY_NAME_NOT_ALLOWED');
   if (!ALLOWED_ACCOUNT_CATEGORY_SLUGS.has(slug)) errors.push('CATEGORY_SLUG_NOT_ALLOWED');
   if (!icon) errors.push('CATEGORY_ICON_REQUIRED');
   if (!Number.isSafeInteger(sortOrder) || sortOrder < 0 || sortOrder > 10000) errors.push('CATEGORY_SORT_ORDER_INVALID');
