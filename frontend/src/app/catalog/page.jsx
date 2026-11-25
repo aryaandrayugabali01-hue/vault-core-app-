@@ -288,6 +288,8 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
   }, [initialCategorySlug, marketplaceCategories]);
 
   useEffect(() => {
+    const initialSearch = new URLSearchParams(window.location.search).get('q') || '';
+    if (initialSearch) { setQuery(initialSearch); setCatalogSearchOpen(true); }
     const tg = getTelegramWebApp();
     setTelegramContext(Boolean(getInitData()));
     tg?.ready();
