@@ -941,3 +941,15 @@ test('global legacy chrome remains available while the v4 storefront owns its Ap
   assert.ok(styles.includes('body:has(.vc4-shell) .store-global-footer'));
   assert.ok(styles.includes('body:has(.vc4-shell) .store-bottom-nav-shell'));
 });
+
+test('v4 account catalog and checkout require a live per-item encrypted vault record', () => {
+  const catalog = readFileSync(new URL('../backend/routes/catalogV4.js', import.meta.url), 'utf8');
+  const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  assert.match(catalog, /v\.kategori_produk<>'Akun' OR EXISTS/);
+  assert.match(catalog, /s\.secret_scope='PRODUCT_ACCOUNT'/);
+  assert.match(catalog, /s\.secret_status='ACTIVE'/);
+  assert.match(orders, /secureVaultOnly = !testMode/);
+  assert.match(orders, /s\.secret_scope='PRODUCT_ACCOUNT'/);
+  assert.match(orders, /s\.secret_status='ACTIVE'/);
+  assert.match(orders, /FOR UPDATE SKIP LOCKED/);
+});
