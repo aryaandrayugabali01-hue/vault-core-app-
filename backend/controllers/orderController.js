@@ -46,15 +46,18 @@ export async function createOrder(req, res, { testMode = false } = {}) {
           }))) {
         throw Object.assign(new Error('Produk tidak tersedia atau pemeriksaan internal Owner sudah kedaluwarsa.'),{status:404});
       }
+      const secureVaultOnly = !testMode && Number(product.variant_id)>0
+        && product.fulfillment_type==='GAME_ACCOUNT_TRANSFER';
       const stockParams = testMode
         ? [item.productId,item.quantity]
         : [item.productId,item.quantity,product.current_rights_review_id];
       const {rows:stockRows}=await client.query(
-        `SELECT id FROM inventory_items
-         WHERE product_id=$1 AND status='AVAILABLE'
-           AND reserved_order_id IS NULL AND reserved_until IS NULL
-           AND ${testMode ? 'TRUE' : 'rights_review_id=$3 AND source_reference IS NOT NULL'}
-         ORDER BY id LIMIT $2 FOR UPDATE SKIP LOCKED`,
+        `SELECT i.id FROM inventory_items i
+         WHERE i.product_id=$1 AND i.status='AVAILABLE'
+           AND i.reserved_order_id IS NULL AND i.reserved_until IS NULL
+           AND ${testMode ? 'TRUE' : 'i.rights_review_id=$3 AND i.source_reference IS NOT NULL'}
+           ${secureVaultOnly ? "AND EXISTS (SELECT 1 FROM vault_core_secret_payloads s WHERE s.inventory_item_id=i.id AND s.secret_scope='PRODUCT_ACCOUNT' AND s.secret_status='ACTIVE')" : ''}
+         ORDER BY i.id LIMIT $2 FOR UPDATE SKIP LOCKED`,
         stockParams
       );
       if(stockRows.length<item.quantity) {
