@@ -27,9 +27,9 @@ export function formatProductAttributesText(attributes) {
 
 export function normalizeCustomerDisplayText(value) {
   return String(value ?? '')
-    .replace(/\\r\\n/g, '\n')
-    .replace(/\\n/g, '\n')
-    .replace(/\\r/g, '\n');
+    .replace(/\\+r\\+n/g, '\n')
+    .replace(/\\+n/g, '\n')
+    .replace(/\\+r/g, '\n');
 }
 
 const HIDDEN_CUSTOMER_PRODUCT_ATTRIBUTE_KEYS = new Set([
