@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getInitData, getTelegramWebApp, openInvoice } from '../../../lib/telegram';
+import { getInitData, getTelegramWebApp, openInvoice } from '../../lib/telegram.js';
 import './page.css';
 import { GAME_ART, GAME_BACKGROUNDS } from '../../lib/marketplace.js';
 
