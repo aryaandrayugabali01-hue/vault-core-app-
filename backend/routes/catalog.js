@@ -28,7 +28,9 @@ router.get('/', async (_req, res) => {
      LEFT JOIN inventory_items i ON i.product_id=p.id
      WHERE COALESCE(p.is_test,FALSE)=FALSE
        AND p.status='ACTIVE'
-       AND p.fulfillment_type IS NOT NULL
+       AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER'
+       AND p.game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
+       AND c.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun')
        AND p.sale_price_xtr > 1
        AND rr.review_status='APPROVED'
        AND rr.owner_attested=TRUE
@@ -40,7 +42,8 @@ router.get('/', async (_req, res) => {
     const purchaseable = product.status === 'ACTIVE'
       && Number.isSafeInteger(Number(product.sale_price_xtr))
       && Number(product.sale_price_xtr) > 1
-      && product.fulfillment_type !== null
+      && product.fulfillment_type === 'GAME_ACCOUNT_TRANSFER'
+      && ['MLBB','FREE_FIRE','ROBLOX','GENSHIN'].includes(product.game_category)
       && product.rights_review_status === 'APPROVED'
       && product.rights_owner_attested === true
       && product.rights_valid_until && new Date(product.rights_valid_until) > new Date();
@@ -62,7 +65,8 @@ router.get('/', async (_req, res) => {
      LEFT JOIN products p ON p.marketplace_category_id=c.id
        AND COALESCE(p.is_test,FALSE)=FALSE
        AND p.status='ACTIVE'
-       AND p.fulfillment_type IS NOT NULL
+       AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER'
+       AND p.game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
        AND p.sale_price_xtr > 1
        AND EXISTS (
          SELECT 1 FROM product_rights_reviews cr
@@ -72,7 +76,7 @@ router.get('/', async (_req, res) => {
            AND cr.owner_attested=TRUE
            AND cr.valid_until>NOW()
        )
-     WHERE c.is_active=TRUE
+     WHERE c.is_active=TRUE AND c.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun')
      GROUP BY c.id ORDER BY c.sort_order,c.name`
   );
   res.json({ products, categories });
