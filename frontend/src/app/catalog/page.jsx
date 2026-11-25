@@ -38,7 +38,7 @@ const CUSTOMER_ATTRIBUTE_LABELS = {
   subkategori: 'Subkategori'
 };
 function customerAttributeLabel(key) {
-  return CUSTOMER_ATTRIBUTE_LABELS[key] || String(key).replaceAll('_',' ').replace(/\\b\\w/g, (letter) => letter.toUpperCase());
+  return CUSTOMER_ATTRIBUTE_LABELS[key] || String(key).replaceAll('_',' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 const FULFILLMENT_LABELS = {
   REDEEM_CODE: 'Kode redeem', VOUCHER_CODE: 'Kode voucher', LICENSE_KEY: 'Kunci lisensi',
@@ -96,7 +96,8 @@ export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [marketplaceCategories, setMarketplaceCategories] = useState([]);
   const [marketplaceCategoryId, setMarketplaceCategoryId] = useState('ALL');
-  const [attributeFilters, setAttributeFilters] = useState({});\n  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [attributeFilters, setAttributeFilters] = useState({});
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState('NAME');
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -658,7 +659,7 @@ export default function HomePage() {
             <div className={'marketplace-detail-policy' + (selectedProduct.is_preview_only ? ' marketplace-preview-notice' : '')}>
               <strong>{selectedProduct.is_preview_only ? 'Listing publik · Pembelian belum dibuka' : 'Transaksi resmi Telegram Stars'}</strong>
               <p>{selectedProduct.is_preview_only
-                ? 'Spesifikasi, gambar, dan nilai katalog 400 XTR ditampilkan secara publik. Pemesanan akun MLBB belum dibuka sampai VAULT CORE memiliki bukti otorisasi transfer tertulis dari publisher yang dapat diverifikasi.'
+                ? 'Spesifikasi, galeri, dan harga katalog 400 XTR ditampilkan agar pembeli dapat memeriksa detail akun. Pemesanan akun melalui VAULT CORE belum tersedia untuk listing ini.'
                 : 'Produk ini dapat dipesan melalui VAULT CORE Telegram Mini App. Harga dan stok diperiksa ulang oleh server sebelum invoice resmi Telegram Stars (XTR) dibuat. Pesanan diproses setelah Telegram mengonfirmasi pembayaran.'}</p>
             </div>
             {selectedProduct.is_purchaseable || selectedProduct.is_test ? <div className="detail-buy-row marketplace-quantity-row">
