@@ -14,7 +14,7 @@ import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
 import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } from '../backend/middleware/ownerSession.js';
 import { splitInventoryPayloads } from '../frontend/src/lib/inventory.js';
 import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes } from '../backend/services/productDetailsService.js';
-import { parseProductAttributesText, formatProductAttributesText, getCustomerVisibleProductAttributes } from '../frontend/src/lib/product-attributes.js';
+import { parseProductAttributesText, formatProductAttributesText, getCustomerVisibleProductAttributes, normalizeCustomerDisplayText } from '../frontend/src/lib/product-attributes.js';
 import { validateMarketplaceCategory, normalizeImageGallery } from '../backend/services/marketplaceCategoryService.js';
 import { normalizeCartItems } from '../backend/services/cartService.js';
 import { releaseExpiredPendingOrders } from '../backend/services/reservationService.js';
@@ -79,8 +79,10 @@ test('public catalog declares Telegram Mini App as the only transaction channel'
   assert.match(page, /invoice resmi Telegram Stars \(XTR\)/);
   assert.doesNotMatch(page, /Rekber|Escrow|transfer bank|direct transfer/i);
   assert.match(page, /if \(!initData\)/);
-  assert.match(page, /telegramContext && <>[\s\S]*top-cart-button/);
-  assert.match(page, /telegramContext && <nav className="bottom-nav"/);
+  assert.match(page, /NavigationIcon name="cart"/);
+  assert.match(page, /<StoreBottomNav active=/);
+  assert.match(page, /StoreHeader searchValue=\{query\}/);
+  assert.match(page, /<StoreBottomNav active=/);
   assert.match(page, /<button className="detail-secondary-button" data-visual="marketplace-detail-cart-button"/);
 });
 
@@ -776,6 +778,37 @@ test('product lifecycle removes PENDING_REVIEW and publishes approved Owner prod
   assert.ok(accountOnlyMigration.includes("WHEN 'GENSHIN' THEN 'genshin-akun'"));
 });
 
+
+
+test('storefront and Owner routes share the approved header and four-item bottom navigation', () => {
+  const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
+  const catalog = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const owner = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
+  const categories = readFileSync(new URL('../frontend/src/app/admin/categories/page.jsx', import.meta.url), 'utf8');
+  const newProduct = readFileSync(new URL('../frontend/src/app/admin/products/new/page.jsx', import.meta.url), 'utf8');
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  for (const page of [home, catalog, owner, categories, newProduct]) {
+    assert.ok(page.includes('StoreHeader'), 'Shared header is missing from a route');
+    assert.ok(page.includes('StoreBottomNav'), 'Shared bottom navigation is missing from a route');
+  }
+  for (const label of ['Dashboard','Katalog','Kategori','Owner']) assert.ok(navigation.includes(label));
+  assert.match(catalog, /StoreBottomNav active=\{isPinnedCatalogRoute \? "categories" : "catalog"\}/);
+  assert.match(catalog, /StoreBottomNav active="catalog" embedded/);
+});
+
+test('customer display text normalizes repeated escaped newline sequences', () => {
+  assert.equal(normalizeCustomerDisplayText('Baris satu\\nBaris dua'), 'Baris satu\nBaris dua');
+  assert.equal(normalizeCustomerDisplayText('A\\\\nB'), 'A\nB');
+  assert.equal(normalizeCustomerDisplayText('A\\\\r\\\\nB'), 'A\nB');
+});
+
+test('detail specification labels and values have independent wrapping columns', () => {
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  assert.match(styles, /grid-template-columns:minmax\\(132px,38%\\) minmax\\(0,1fr\\)/);
+  assert.match(styles, /grid-template-columns:18px minmax\\(0,1fr\\)/);
+  assert.match(styles, /overflow-wrap:anywhere/);
+  assert.match(styles, /dashboard-bottom-nav-embedded/);
+});
 
 test('customer detail text converts escaped newlines into readable line breaks', async () => {
   const { normalizeCustomerDisplayText } = await import('../frontend/src/lib/product-attributes.js');
