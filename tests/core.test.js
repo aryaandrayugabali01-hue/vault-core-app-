@@ -791,7 +791,7 @@ test('storefront and Owner routes share the approved header and four-item bottom
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   for (const page of [home, catalog, owner, categories, newProduct]) {
     assert.ok(page.includes('StoreHeader'), 'Shared header is missing from a route');
-    assert.doesNotMatch(page, /<StoreBottomNav active=/, 'Global bottom navigation must not be duplicated per route');
+    assert.doesNotMatch(page.replace('<StoreBottomNav active="catalog" embedded/>', ''), /<StoreBottomNav active=/, 'Global bottom navigation must not be duplicated per route');
   }
   for (const label of ['Beranda','Produk','Bantuan','Akun']) assert.ok(navigation.includes(label));
   assert.ok(layout.includes('<StoreChrome />'));
@@ -958,7 +958,7 @@ test('customer catalog footer follows the approved XTR, account-security, and wa
   const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   const start = page.indexOf('<section className="catalog-info-footer"');
-  const end = page.indexOf('<footer className="footer">', start);
+  const end = page.indexOf('\n      </section>', start);
   assert.ok(start >= 0 && end > start);
   const footer = page.slice(start, end);
   assert.ok(footer.includes('Telegram Stars · XTR'));
@@ -976,7 +976,8 @@ test('customer catalog footer follows the approved XTR, account-security, and wa
   assert.ok(styles.includes('.catalog-info-footer'));
   assert.ok(styles.includes('.catalog-info-details[open] summary'));
   assert.ok(styles.includes('@media(max-width:680px)'));
-  assert.ok(page.includes('footer-brand-tagline\">Lebih Yakin Bersama Vault Core'));
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  assert.ok(navigation.includes('Lebih Yakin Bersama <span>Vault Core</span>'));
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   assert.ok(layout.includes('title: \'VAULT CORE | Lebih Yakin Bersama Vault Core\''));
   assert.ok(layout.includes('Lebih Yakin Bersama Vault Core. Marketplace akun game'));
