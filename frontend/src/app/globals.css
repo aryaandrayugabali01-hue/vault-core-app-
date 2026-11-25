@@ -1468,3 +1468,8 @@ body{
  .shell:has(.marketplace-game-nav) .marketplace-product-card .product-price strong{font-size:15px}
  .shell:has(.marketplace-game-nav) .marketplace-product-card .buy-button{min-height:36px;font-size:9px}
 }
+
+
+@media(max-width:639px){
+ .shell:has(.marketplace-game-nav) .topbar{grid-template-columns:minmax(0,1fr) auto auto}
+}
