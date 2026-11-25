@@ -864,9 +864,11 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
 {selectedProduct && <div className="modal-backdrop marketplace-detail-backdrop" onClick={() => { setSelectedProduct(null); setWarrantyOpen(false); }}>
         <section className="product-detail-modal marketplace-detail-modal marketplace-detail-page" role="dialog" aria-modal="true" aria-labelledby="product-detail-title" onClick={(e) => e.stopPropagation()}>
           <header className="marketplace-detail-header">
-            <button className="marketplace-detail-back" type="button" onClick={() => { setSelectedProduct(null); setWarrantyOpen(false); }} aria-label="Kembali ke katalog">‹</button>
-            <div className="marketplace-detail-header-brand"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /><span>DETAIL PRODUK</span></div>
-            <span className="marketplace-detail-header-category">{GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category}</span>
+            <div className="marketplace-detail-brandbar"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE" /></div>
+            <div className="marketplace-detail-toolbar">
+              <button className="marketplace-detail-back" type="button" onClick={() => { setSelectedProduct(null); setWarrantyOpen(false); }} aria-label="Kembali ke katalog">‹</button>
+              <div className="marketplace-detail-toolbar-title"><strong>{selectedProduct.name}</strong><small>{GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · Akun</small></div>
+            </div>
           </header>
           <div className="marketplace-detail-scroll">
             <section className="marketplace-detail-media-section" aria-label="Galeri gambar produk">
@@ -888,15 +890,14 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
                 <div className="marketplace-detail-rating"><span className="marketplace-rating-mark">★</span><div><strong>Rating pelanggan</strong><small>Belum tersedia · Ulasan belum tersedia</small></div></div>
               </div>
               <div className="marketplace-detail-trust-grid">
-                <div className="marketplace-detail-trust-card"><span className="marketplace-detail-trust-icon">✓</span><div><strong>Pemeriksaan internal</strong><small>{detailReviewActive ? 'Review VAULT CORE masih aktif' : 'Status pemeriksaan belum tersedia'}</small></div></div>
-                <button type="button" className={'marketplace-detail-trust-card marketplace-detail-trust-button ' + (detailWarrantyText ? 'is-available' : 'is-unset')} onClick={()=>setWarrantyOpen(true)}>
-                  <span className="marketplace-detail-trust-icon">♢</span><div><strong>Garansi Anti-Hackback</strong><small>{detailWarrantyText ? 'Ketentuan garansi tercatat untuk produk ini' : 'Ketentuan belum tersedia untuk SKU ini'}</small></div><span className="marketplace-detail-trust-arrow">›</span>
-                </button>
-                <div className="marketplace-detail-trust-card"><span className="marketplace-detail-trust-icon">▦</span><div><strong>Spesifikasi akun</strong><small>{detailSpecs.length ? detailSpecs.length + ' atribut produk tercatat' : 'Belum tersedia'}</small></div></div>
+                <div className="marketplace-detail-trust-item"><span className="marketplace-detail-trust-icon">♢</span><strong>Keamanan Akun</strong></div>
+                <button type="button" className="marketplace-detail-trust-item marketplace-detail-trust-button" onClick={()=>setWarrantyOpen(true)} aria-label="Lihat perlindungan Anti-Hackback"><span className="marketplace-detail-trust-icon">✓</span><strong>Anti-Hackback</strong></button>
+                <div className="marketplace-detail-trust-item"><span className="marketplace-detail-trust-icon">▦</span><strong>Pilihan Lengkap</strong></div>
               </div>
               <section className="marketplace-detail-price-panel" aria-label="Harga produk">
-                <div><small>HARGA PRODUK</small><strong>{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
-                <span>Harga dalam Telegram Stars (XTR)</span>
+                <div className="marketplace-detail-price-icon">▤</div>
+                <strong>{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong>
+                <span>Harga final <span aria-hidden="true">ⓘ</span></span>
               </section>
               <section className="marketplace-detail-section marketplace-detail-guide-callout">
                 <div><strong>Cara Beli &amp; Tips</strong><small>Panduan transaksi, penyerahan informasi, dan keamanan akun</small></div>
@@ -915,11 +916,8 @@ export default function HomePage({ initialCategory = 'ALL', initialCategorySlug 
             </div>
           </div>
           <footer className="marketplace-detail-stickybar">
-            <div className="marketplace-detail-sticky-price"><small>HARGA</small><strong>{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
-            <div className="marketplace-detail-sticky-actions">
-              {telegramContext && <button className="detail-secondary-button" type="button" disabled={!selectedProduct.is_available || !selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,1)}>Keranjang</button>}
-              <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || !selectedProduct.is_purchaseable} onClick={()=>{const product=selectedProduct;setSelectedProduct(null);setWarrantyOpen(false);buy(product,1);}}>{buyingId === selectedProduct.id ? 'Menyiapkan…' : !selectedProduct.is_available ? 'Stok habis' : !selectedProduct.is_purchaseable ? 'Tidak tersedia' : telegramContext ? 'Beli sekarang' : 'Beli melalui Telegram'}</button>
-            </div>
+            {telegramContext && <button className="marketplace-detail-cart-button" type="button" aria-label="Tambahkan ke keranjang" disabled={!selectedProduct.is_available || !selectedProduct.is_purchaseable} onClick={()=>addToCart(selectedProduct,1)}>🛒</button>}
+            <button className="buy-button" type="button" disabled={!selectedProduct.is_available || buyingId === selectedProduct.id || !selectedProduct.is_purchaseable} onClick={()=>{const product=selectedProduct;setSelectedProduct(null);setWarrantyOpen(false);buy(product,1);}}>{buyingId === selectedProduct.id ? 'Menyiapkan…' : !selectedProduct.is_available ? 'Stok habis' : !selectedProduct.is_purchaseable ? 'Tidak tersedia' : 'Beli · ' + Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US') + ' XTR'}</button>
           </footer>
         </section>
       </div>}

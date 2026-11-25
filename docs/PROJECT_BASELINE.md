@@ -154,3 +154,18 @@ Rilis hanya setelah ruang lingkup terpenuhi, area LOCKED aman, test/build lulus,
 - [ ] Uji interaksi klik thumbnail, expand atribut, modal X, scroll lock, dan sticky bar pada browser nyata.
 - [ ] Evaluasi endpoint klaim garansi sebagai pekerjaan backend terpisah; jangan menampilkan alur submit klaim aktif sebelum tersedia.
 - [ ] Tambahkan model rating/ulasan hanya melalui instruksi dan desain backend yang disetujui.
+
+
+## 12. Visual correction — 25 Nov 2026
+
+The latest three-screen owner reference controls the MLBB product detail visual. Keep the current locked data and route rules in sections 3–4 unchanged.
+
+- Center the VAULT CORE brand above a compact product toolbar.
+- Use a short landscape gallery and thumbnail strip.
+- Use near-black/navy surfaces with gold price and purchase CTA.
+- Render the three trust indicators as one compact inline row.
+- Keep the stock pill and truthful rating-unavailable state.
+- Keep the compact guide callout and customer-visible product description/specifications.
+- Do not add sales/delivery statistics, minimum-purchase panels, quantity controls, store panels, or related-product panels to customer detail.
+- Keep the sticky purchase action to one account per action.
+- Keep Anti-Hackback and Cara Beli & Tips as separate blue-neon bottom sheets with yellow confirmation CTA.
