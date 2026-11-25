@@ -18,6 +18,20 @@ const TRUST_ITEMS = [
 ];
 
 const TIER_LABELS = { SILVER: 'Silver', GOLD: 'Gold', PLATINUM: 'Platinum', SERVICE: 'Layanan' };
+const CUSTOMER_FILTERS = [
+  { key: 'rank_current', label: 'Rank' },
+  { key: 'total_skins', label: 'Jumlah Skin' },
+  { key: 'total_heroes', label: 'Jumlah Hero' },
+  { key: 'win_rate', label: 'Win Rate' },
+  { key: 'emblem_status', label: 'Emblem' },
+  { key: 'main_hero', label: 'Hero Utama' },
+  { key: 'platform_support', label: 'Platform' },
+  { key: 'linked_account', label: 'Akun Tertaut' }
+];
+const CUSTOMER_ATTRIBUTE_LABELS = Object.fromEntries(CUSTOMER_FILTERS.map(({key,label}) => [key,label]));
+function customerAttributeLabel(key) {
+  return CUSTOMER_ATTRIBUTE_LABELS[key] || String(key).replaceAll('_',' ').replace(/\\b\\w/g, (letter) => letter.toUpperCase());
+}
 const FULFILLMENT_LABELS = {
   REDEEM_CODE: 'Kode redeem', VOUCHER_CODE: 'Kode voucher', LICENSE_KEY: 'Kunci lisensi',
   GIFT_CODE: 'Gift code', DIGITAL_FILE: 'File digital', SERVICE_INSTRUCTIONS: 'Instruksi layanan', GAME_ACCOUNT_TRANSFER: 'Transfer akun melalui prosedur resmi'
@@ -74,7 +88,7 @@ export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [marketplaceCategories, setMarketplaceCategories] = useState([]);
   const [marketplaceCategoryId, setMarketplaceCategoryId] = useState('ALL');
-  const [attributeFilters, setAttributeFilters] = useState({});
+  const [attributeFilters, setAttributeFilters] = useState({});\n  const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState('NAME');
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -158,18 +172,12 @@ export default function HomePage() {
       (category === 'ALL' || product.game_category === category)
       && (marketplaceCategoryId === 'ALL' || String(product.marketplace_category_id || '') === marketplaceCategoryId)
     );
-    const valuesByKey = new Map();
-    for (const product of productsForFacets) {
-      const attributes = getCustomerVisibleProductAttributes(product.attributes);
-      for (const [key, rawValue] of attributes) {
-        const value = String(rawValue ?? '').trim();
-        if (!value) continue;
-        if (!valuesByKey.has(key)) valuesByKey.set(key, new Set());
-        valuesByKey.get(key).add(value);
-      }
-    }
-    return [...valuesByKey.entries()].sort(([a],[b]) => a.localeCompare(b, 'id'))
-      .map(([key, values]) => ({ key, values:[...values].sort((a,b)=>a.localeCompare(b,'id')) }));
+    return CUSTOMER_FILTERS.map(({key,label}) => {
+      const values = [...new Set(productsForFacets.map((product) =>
+        String(Object.fromEntries(getCustomerVisibleProductAttributes(product.attributes))[key] ?? '').trim()
+      ).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));
+      return {key,label,values};
+    }).filter((facet)=>facet.values.length > 0);
   }, [sourceProducts, category, marketplaceCategoryId]);
   const filtered = useMemo(() => {
     const list = sourceProducts.filter((p) =>
@@ -540,15 +548,24 @@ export default function HomePage() {
           <div><span className="eyebrow muted">PILIHAN UNTUK ANDA</span><h2>Katalog digital <span className="active-filter-badge">{activeFilterLabel}</span></h2></div>
           <span className="section-count">{loading ? '—' : String(filtered.length).padStart(2, '0') + ' PRODUK'}</span>
         </div>
-        <div className="catalog-toolbar marketplace-toolbar">
+        <div className="marketplace-filter-bar">
+          <button className={'marketplace-filter-toggle' + (filtersOpen ? ' active' : '')} type="button" aria-expanded={filtersOpen} onClick={()=>setFiltersOpen((value)=>!value)}>
+            <AppIcon name="categories" /> <span>Filter</span>{Object.values(attributeFilters).filter(Boolean).length > 0 && <b>{Object.values(attributeFilters).filter(Boolean).length}</b>}
+          </button>
+          <label className="marketplace-sort-control"><span>Urutkan</span><select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
+            <option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option>
+          </select></label>
+          {tier !== 'ALL' && <button className="marketplace-filter-chip" type="button" onClick={()=>setTier('ALL')}>{TIER_LABELS[tier]||tier} ×</button>}
+          {Object.entries(attributeFilters).filter(([,value])=>value).map(([key,value])=><button className="marketplace-filter-chip" type="button" key={key} onClick={()=>setAttributeFilters((current)=>({...current,[key]:''}))}>{customerAttributeLabel(key)}: {value} ×</button>)}
+          {(tier !== 'ALL' || Object.values(attributeFilters).some(Boolean)) && <button className="marketplace-reset-filter" type="button" onClick={()=>{setTier('ALL');setAttributeFilters({});}}>Reset</button>}
+        </div>
+        {filtersOpen && <div className="marketplace-filter-panel">
           <label><span>Tipe produk</span><select value={tier} onChange={(e)=>setTier(e.target.value)}>
             <option value="ALL">Semua tipe</option>{availableTiers.map(([value,label])=><option key={value} value={value}>{label}</option>)}
           </select></label>
-          {attributeFacets.map((facet) => <label key={facet.key}><span>{facet.key}</span><select value={attributeFilters[facet.key] || ''} onChange={(e)=>setAttributeFilters((current)=>({...current,[facet.key]:e.target.value}))}><option value="">Semua {facet.key.toLowerCase()}</option>{facet.values.map((value)=><option value={value} key={value}>{value}</option>)}</select></label>)}
-          <label><span>Urutkan</span><select value={sortBy} onChange={(e)=>setSortBy(e.target.value)}>
-            <option value="NAME">Nama produk</option><option value="PRICE_ASC">Harga terendah</option><option value="PRICE_DESC">Harga tertinggi</option>
-          </select></label>
-        </div>
+          {attributeFacets.map((facet) => <label key={facet.key}><span>{facet.label}</span><select value={attributeFilters[facet.key] || ''} onChange={(e)=>setAttributeFilters((current)=>({...current,[facet.key]:e.target.value}))}><option value="">Semua {facet.label.toLowerCase()}</option>{facet.values.map((value)=><option value={value} key={value}>{value}</option>)}</select></label>)}
+          <button className="marketplace-filter-apply" type="button" onClick={()=>setFiltersOpen(false)}>Tampilkan {filtered.length} produk</button>
+        </div>}
         {isTestMode && <div className="test-lane-notice">
           <div><strong>RUANG UJI OWNER</strong><span>Produk contoh terpisah dari katalog pelanggan. Invoice uji bernilai 1 XTR sungguhan.</span></div>
           <button type="button" onClick={() => { setIsTestMode(false); setSelectedProduct(null); setNotice('Kembali ke katalog publik. Produk uji tidak ditampilkan kepada pelanggan.'); }}>Katalog publik</button>
@@ -564,14 +581,14 @@ export default function HomePage() {
           {filtered.map((product) => {
             const game = product.game_category || 'OTHER';
             const isDraftTest = isTestMode && product.is_test === true && product.status !== 'ACTIVE';
-            return <article className="product-card" key={product.id}>
+            return <article className="product-card marketplace-product-card" key={product.id}>
               <div className="product-card-head">
                 <div className={'product-art ' + (product.image_url ? 'product-art-photo' : 'product-art-brand') + ' art-' + game.toLowerCase()} style={{ "--game-background": `url("${GAME_BACKGROUNDS[game] || GAME_BACKGROUNDS.OTHER}")` }}>
-                  <img className={product.image_url ? "product-photo-image" : "game-category-logo"} src={product.image_url || GAME_ART[game] || GAME_ART.OTHER} alt={product.image_url ? product.name : (GAME_LABELS[game] || "Game") + " logo"} loading="lazy" />
+                  <img className={product.image_url ? "product-photo-image" : "game-category-logo"} src={product.image_url || GAME_ART[game] || GAME_ART.OTHER} onError={(event)=>{event.currentTarget.onerror=null;event.currentTarget.src=GAME_ART[game]||GAME_ART.OTHER;}} alt={product.name || (GAME_LABELS[game] || "Game")} loading="lazy" />
                 </div>
                 <div className="product-card-meta">
                   <span className={'tier-label ' + String(product.tier || '').toLowerCase()}>{product.tier === 'SERVICE' ? 'Katalog' : (TIER_LABELS[product.tier] || product.tier) + ' Tier'}</span>
-                  <span className="product-sku">{product.sku}</span>
+                  <span className="product-sku">{product.marketplace_category_name || 'Produk digital'}</span>
                   {product.is_preview_only && <span className="product-preview-badge">LIVE DI KATALOG</span>}
                 </div>
                 {product.is_test && <span className="product-test-badge">CONTOH UJI</span>}
@@ -616,7 +633,7 @@ export default function HomePage() {
           <div className="marketplace-sheet-grip" />
           <div className="modal-head marketplace-detail-head"><div><span className="eyebrow muted">DETAIL PRODUK · {GAME_LABELS[selectedProduct.game_category]||selectedProduct.game_category}</span><h2 id="product-detail-title">{selectedProduct.name}</h2></div><button className="icon-button" type="button" onClick={() => setSelectedProduct(null)} aria-label="Tutup detail produk">×</button></div>
           <div className="marketplace-detail-gallery">
-            {(Array.isArray(selectedProduct.image_gallery)&&selectedProduct.image_gallery.length?selectedProduct.image_gallery:[selectedProduct.image_url||GAME_ART[selectedProduct.game_category]||GAME_ART.OTHER]).map((src,index)=><img key={src+index} src={src} alt={selectedProduct.name+' '+(index+1)} loading={index?'lazy':'eager'} />)}
+            {(Array.isArray(selectedProduct.image_gallery)&&selectedProduct.image_gallery.length?selectedProduct.image_gallery:[selectedProduct.image_url||GAME_ART[selectedProduct.game_category]||GAME_ART.OTHER]).map((src,index)=><img key={src+index} src={src} onError={(event)=>{event.currentTarget.onerror=null;event.currentTarget.src=GAME_ART[selectedProduct.game_category]||GAME_ART.OTHER;}} alt={selectedProduct.name+' '+(index+1)} loading={index?'lazy':'eager'} />)}
           </div>
           <div className="marketplace-detail-body">
             <div className="marketplace-detail-title-row"><div><span className="detail-category">{selectedProduct.marketplace_category_name || GAME_LABELS[selectedProduct.game_category] || selectedProduct.game_category} · {TIER_LABELS[selectedProduct.tier] || selectedProduct.tier}</span><h3>{selectedProduct.name}</h3></div><strong className="marketplace-detail-price">{Number(selectedProduct.sale_price_xtr || 0).toLocaleString('en-US')} XTR</strong></div>
@@ -626,7 +643,7 @@ export default function HomePage() {
               <div><span>Pemenuhan</span><strong>{FULFILLMENT_LABELS[selectedProduct.fulfillment_type] || selectedProduct.fulfillment_type || 'Belum ditentukan'}</strong></div>
               <div><span>Estimasi</span><strong>{selectedProduct.fulfillment_eta || 'Belum ditetapkan Owner'}</strong></div>
             </div>
-            {getCustomerVisibleProductAttributes(selectedProduct.attributes).length > 0 && <section className="marketplace-detail-section"><h3>Spesifikasi Produk</h3><dl className="marketplace-attributes">{getCustomerVisibleProductAttributes(selectedProduct.attributes).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl></section>}
+            {getCustomerVisibleProductAttributes(selectedProduct.attributes).length > 0 && <section className="marketplace-detail-section"><h3>Spesifikasi Produk</h3><dl className="marketplace-attributes">{getCustomerVisibleProductAttributes(selectedProduct.attributes).map(([key, value]) => <div key={key}><dt>{customerAttributeLabel(key)}</dt><dd>{String(value)}</dd></div>)}</dl></section>}
             <section className="marketplace-detail-section"><h3>Deskripsi Produk</h3><p>{selectedProduct.description || 'Deskripsi produk belum tersedia.'}</p></section>
             <section className="marketplace-detail-section"><h3>Ketentuan Produk</h3><p>{selectedProduct.customer_terms || 'Ketentuan khusus produk belum ditetapkan oleh Owner.'}</p></section>
             <section className="marketplace-detail-section marketplace-guide-link"><button className="guide-open-button" type="button" onClick={()=>{setGuideCategory({name:selectedProduct.marketplace_category_name||'Panduan pembelian',purchase_guide:selectedProduct.purchase_guide||[]});setSelectedProduct(null);setGuideOpen(true);}}>Cara Beli &amp; Tips <span>›</span></button></section>
