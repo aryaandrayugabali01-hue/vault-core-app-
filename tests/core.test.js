@@ -719,6 +719,10 @@ test('product lifecycle removes PENDING_REVIEW and publishes approved Owner prod
   assert.match(catalogPage, /Produk ini dapat dipesan melalui VAULT CORE Telegram Mini App/);
   assert.ok(migration.includes('DROP CONSTRAINT IF EXISTS products_status_check'));
   assert.ok(migration.includes("'DRAFT','ACTIVE','PAUSED','ARCHIVED'"));
+  const accountOnlyMigration = readFileSync(new URL('../database/migrations/021_pause_legacy_active_products.sql', import.meta.url), 'utf8');
+  assert.ok(accountOnlyMigration.includes("IS DISTINCT FROM 'GAME_ACCOUNT_TRANSFER'"));
+  assert.ok(accountOnlyMigration.includes("WHEN 'MLBB' THEN 'mlbb-akun'"));
+  assert.ok(accountOnlyMigration.includes("WHEN 'GENSHIN' THEN 'genshin-akun'"));
 });
 
 test('account catalogue hides filters for all games and uses a unified dark filter sheet per selected game', () => {
