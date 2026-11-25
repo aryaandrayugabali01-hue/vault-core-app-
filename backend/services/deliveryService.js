@@ -164,8 +164,21 @@ export async function deliverPaidOrder(orderNumber) {
     }
 
     try {
-      const payload = decryptPayload(item);
-      const text = `✅ <b>Pembayaran berhasil</b>\n\nProduk: ${escapeHtml(item.product_name)}\n\n<code>${escapeHtml(payload)}</code>\n\nSimpan kode atau detail ini dengan aman. Hubungi pengelola VAULT CORE jika mengalami kendala.`;
+      const context = {
+        scope:'PRODUCT_ACCOUNT',productId:Number(item.product_id),inventoryItemId:Number(item.inventory_item_id),
+        orderId:null,orderItemId:null,customerId:null
+      };
+      const decrypted = item.vault_secret_id
+        ? decryptSecretPayload({
+            payload_ciphertext:item.secret_payload_ciphertext,payload_nonce:item.secret_payload_nonce,
+            payload_auth_tag:item.secret_payload_auth_tag,wrapped_data_key:item.wrapped_data_key,
+            key_wrap_nonce:item.key_wrap_nonce,key_wrap_auth_tag:item.key_wrap_auth_tag,
+            encryption_key_version:item.encryption_key_version
+          },context)
+        : decryptPayload(item);
+      const payload = typeof decrypted === 'string' ? decrypted
+        : Object.entries(decrypted ?? {}).map(([key,value]) => `${key}: ${String(value ?? '')}`).join('\\n');
+      const text = `✅ <b>Pembayaran berhasil</b>\\n\\nProduk: ${escapeHtml(item.product_name)}\\n\\n<code>${escapeHtml(payload)}</code>\\n\\nSimpan detail ini dengan aman. Hubungi pengelola VAULT CORE jika mengalami kendala.`;
       const result = await telegramCall('sendMessage', {
         chat_id: order.telegram_user_id,
         text,
