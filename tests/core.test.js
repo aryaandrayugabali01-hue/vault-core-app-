@@ -720,3 +720,33 @@ test('product lifecycle removes PENDING_REVIEW and publishes approved Owner prod
   assert.ok(migration.includes('DROP CONSTRAINT IF EXISTS products_status_check'));
   assert.ok(migration.includes("'DRAFT','ACTIVE','PAUSED','ARCHIVED'"));
 });
+
+test('MLBB account catalogue exposes the five Itemku-style filters and matching controls', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  for (const label of ['Winrate','Jumlah Skin','Jumlah Hero','Rank Saat Ini','Akun Terhubung Pada']) {
+    assert.ok(page.includes(label), 'Missing MLBB filter group: ' + label);
+  }
+  for (const rank of [
+    'Warrior 1','Warrior 2','Warrior 3','Elite 1','Elite 2','Elite 3',
+    'Master 1','Master 2','Master 3','Master 4',
+    'Grandmaster 1','Grandmaster 2','Grandmaster 3','Grandmaster 4','Grandmaster 5',
+    'Epic 1','Epic 2','Epic 3','Epic 4','Epic 5',
+    'Legend 1','Legend 2','Legend 3','Legend 4','Legend 5',
+    'Mythic','Mythical Honor','Mythical Glory','Mythical Immortal'
+  ]) assert.ok(page.includes("'" + rank + "'"), 'Missing MLBB rank option: ' + rank);
+  for (const provider of ['Moonton','Google','Apple','Facebook','Twitter','VK','TikTok','Telegram','WhatsApp']) {
+    assert.ok(page.includes("'" + provider + "'"), 'Missing linked account provider: ' + provider);
+  }
+  assert.match(page, /win_rate_min/);
+  assert.match(page, /total_skins_min/);
+  assert.match(page, /total_heroes_min/);
+  assert.match(page, /type="radio" name="mlbb-rank-current"/);
+  assert.match(page, /type="checkbox"/);
+  assert.match(page, /Cari/);
+  assert.match(page, /Hapus Filter/);
+  assert.match(page, /Terapkan/);
+  assert.match(page, /function matchesMlbbFilters/);
+  assert.match(styles, /\.mlbb-filter-sheet/);
+  assert.match(styles, /\.mlbb-filter-footer/);
+});
