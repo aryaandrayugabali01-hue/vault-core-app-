@@ -1739,7 +1739,7 @@ Data yang disimpan digunakan untuk memperbarui informasi produk pada katalog. Sa
 - Stok publik tetap berasal dari stok/kapasitas aktual dan dapat dijual. Mode tampilan pada Bagian 7.3 tetap berlaku; angka stok publik tidak boleh melebihi ketersediaan sebenarnya.
 - **READY** dan **INDENT** adalah status ketersediaan produk akun sesuai CR-14. Kartu INDENT wajib menyampaikan tenggat pemenuhan sebelum customer checkout.
 - Label visual **Ready** atau **Pending** adalah indikator kecil ketersediaan. Label Pending pada kartu customer hanya boleh berarti status INDENT/pemesanan dengan tenggat yang jelas, bukan SKU internal yang belum lolos review.
-- SKU berstatus DRAFT, PENDING_REVIEW, PAUSED, REJECTED, atau tidak memenuhi syarat checkout tidak boleh ditampilkan sebagai produk siap dibeli.
+- Status ketersediaan READY atau INDENT ditampilkan sesuai kondisi produk yang dimasukkan Owner.
 - Review sumber/hak dilakukan per SKU. Larangan eksplisit penerbit/platform atau tidak adanya dasar kewenangan sumber yang layak menyebabkan SKU ditahan. Attestation Owner adalah keputusan internal, bukan izin penerbit atau verifikasi independen.
 - Aturan penyerahan akun manual, larangan penyimpanan kredensial, SLA READY satu jam, tenggat INDENT, eskalasi OVERDUE, dan refund tetap mengikuti CR-14.
 
