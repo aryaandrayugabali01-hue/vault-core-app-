@@ -57,7 +57,7 @@ test('v4 public catalog uses Telegram Mini App and official Telegram Stars check
   const route = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   assert.ok(route.includes('VaultCoreV4Catalog'));
   assert.match(page, /Website dan Telegram Mini App menggunakan backend pesanan serta stok yang sama/);
-  assert.match(page, /invoice resmi Telegram Stars \(XTR\)/);
+  assert.match(page, /invoice resmi Telegram Stars/);
   assert.match(page, /Masuk Telegram/);
   assert.match(page, /\/api\/auth\/telegram\/start/);
   assert.match(page, /credentials:'include'/);
@@ -880,8 +880,9 @@ test('v4 customer catalog footer follows XTR, account-security and Telegram paym
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   assert.ok(page.includes('Telegram Mini App'));
-  assert.ok(page.includes('Telegram Stars (XTR)'));
-  assert.ok(page.includes('Status pembayaran hanya ditetapkan setelah konfirmasi sistem'));
+  assert.ok(page.includes('invoice resmi Telegram Stars'));
+  assert.ok(page.includes('Harga seluruh SKU menggunakan XTR'));
+  assert.ok(page.includes('Status pembayaran ditetapkan setelah konfirmasi sistem'));
   assert.ok(page.includes('vault terenkripsi'));
   for (const unsupportedMethod of ['BCA','Mandiri','BNI','Maybank','BRI','Indomaret','Alfamart','QRIS','ShopeePay','PayLater']) assert.equal(page.includes(unsupportedMethod),false);
   assert.ok(styles.includes('.vc4-footer'));
