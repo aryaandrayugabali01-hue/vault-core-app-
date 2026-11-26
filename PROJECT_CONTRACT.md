@@ -1456,10 +1456,10 @@ VAULT CORE tidak memerlukan dan tidak boleh menyimpan kredensial akun. Kredensia
 
 1. Customer menyelesaikan pembayaran melalui invoice Telegram Stars XTR.
 2. Backend memverifikasi `successful_payment` dan menetapkan waktu pembayaran sukses.
-3. Sistem membuat tugas `PAID_PENDING_MANUAL_DELIVERY`, menghitung tenggat satu jam, dan segera memberi notifikasi kepada Owner.
+3. Sistem membuat tugas `PAID_PENDING_MANUAL_DELIVERY`, mencatat `paid_at`, lalu menghitung tenggat sesuai tipe ketersediaan: satu jam untuk READY atau `fulfillment_due_at` yang disetujui customer untuk INDENT. Sistem segera memberi notifikasi kepada Owner.
 4. Owner memeriksa order serta identitas penerima, lalu mengirimkan kredensial secara manual melalui kanal privat.
 5. Owner mencatat penyelesaian. Sistem menyimpan status, waktu penyerahan, dan aktor Owner tanpa menyimpan isi kredensial.
-6. Jika belum selesai setelah satu jam, status berubah menjadi `OVERDUE` dan sistem segera memberi eskalasi kepada Owner.
+6. Jika tenggat yang berlaku terlewati (satu jam untuk READY atau `fulfillment_due_at` untuk INDENT), status berubah menjadi `OVERDUE` dan sistem segera memberi eskalasi kepada Owner.
 7. Owner segera menghubungi customer. Jika customer tidak menyetujui tenggat pengganti secara tertulis, Owner memproses refund penuh melalui `refundStarPayment` paling lambat 24 jam setelah status `OVERDUE`.
 8. Jika customer menyetujui satu tenggat pengganti, persetujuan dan tenggat dicatat. Perpanjangan hanya satu kali; jika tenggat pengganti terlewati, refund penuh diproses paling lambat 24 jam setelah tenggat tersebut.
 
@@ -1508,7 +1508,7 @@ Sistem memvalidasi kelengkapan catatan dan status review. Sistem tidak meminta d
 
 ## 35.3 Pemenuhan akun dan tenggat
 
-Setelah `successful_payment` XTR terverifikasi, sistem membuat tugas `PAID_PENDING_MANUAL_DELIVERY`, mencatat `paid_at` dan `fulfillment_due_at = paid_at + 1 hour`, serta segera memberi notifikasi kepada Owner. Owner menyerahkan akun secara manual melalui kanal privat dan mencatat status serta waktu penyerahan. Sistem tidak menyimpan isi kredensial.
+Setelah `successful_payment` XTR terverifikasi, sistem membuat tugas `PAID_PENDING_MANUAL_DELIVERY`, mencatat `paid_at`, serta segera memberi notifikasi kepada Owner. Untuk READY, sistem menetapkan `fulfillment_due_at = paid_at + 1 hour`. Untuk INDENT, sistem menggunakan tenggat maksimum yang telah ditampilkan dan disetujui customer sebelum checkout sebagai snapshot `fulfillment_due_at`. Owner menyerahkan akun secara manual melalui kanal privat dan mencatat status serta waktu penyerahan. Sistem tidak menyimpan isi kredensial.
 
 Jika tenggat pemenuhan yang berlaku terlewati, status menjadi `OVERDUE` dan eskalasi dikirim kepada Owner. Untuk READY, tenggatnya satu jam sejak `successful_payment`; untuk INDENT, tenggatnya `fulfillment_due_at` yang disetujui customer saat checkout. Owner segera menghubungi customer:
 
@@ -1544,9 +1544,7 @@ Import massal dilakukan melalui template workbook resmi dengan sheet terpisah un
 
 ## 35.6 Status historis dan urutan keberlakuan
 
-CR-11 tetap berada dalam dokumen untuk jejak keputusan historis, tetapi setiap izin penyimpanan/pemrosesan kredensial yang pernah tertulis di CR-11 telah dicabut oleh CR-12 dan CR-13. Ketentuan operasional yang berlaku adalah Bagian 3.3, 7.6, 9.3, 28.3, 33.3, 34, dan 35 sebagaimana diselaraskan oleh CR-13.
-
-Jika terdapat pertentangan: CR-13 berlaku untuk konsistensi katalog, import massal, hak review, dan SLA/refund; CR-12 berlaku untuk batas manual delivery dan tidak adanya penyimpanan kredensial; CR-04/CR-05 tetap menjadi dasar pemeriksaan hak eksternal dan keputusan internal Owner.
+CR-11 tetap berada dalam dokumen sebagai riwayat historis. Setiap izin penyimpanan/pemrosesan kredensial yang pernah tertulis di CR-11 telah dicabut oleh CR-12 dan CR-13. Ketentuan aktif dan urutan keberlakuan final ditetapkan pada Bagian 36 (CR-14). Jika terdapat pertentangan redaksional dengan Bagian 36, Bagian 36 yang berlaku.
 
 ---
 # 36. Addendum CR-14 — Final Harmonization dan Urutan Ketentuan Aktif
