@@ -28,9 +28,8 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 
 - The public website root redirects to `/catalog`, which renders the existing Next.js/React customer catalog. `/account` provides Telegram OIDC customer sign-in, profile, and web logout.
 - The Telegram bot continues to open the mobile-first static Mini App at `/miniapp/index.html`. Its native customer journey retains the approved 12-screen design, Telegram WebApp navigation, and native `initData` authentication.
-- Website and Mini App use the same `vault-core-api`, catalog services, and customer records in Neon `customers`. Website authentication uses a signed HttpOnly customer cookie for profile access; Mini App transactions use server-validated Telegram `initData`.
-- The public website is catalog/detail-only. Order creation, checkout, official XTR invoice payment, customer-access submission, order status, and transaction history are available only inside the existing Telegram Mini App. The `/api/orders` route rejects browser customer cookies and requires verified Telegram Mini App `initData`.
-- Mini App orders continue through `POST /api/orders` and `GET /api/orders/mine`. Invoice creation and payment confirmation remain handled by the existing Telegram Stars (XTR) Bot API and webhook. The Mini App uses `Telegram.WebApp.openInvoice`.
+- Website and Mini App use the same `vault-core-api`, catalog services, order endpoints, customer records in Neon `customers`, and inventory/transaction tables. Website authentication uses a signed HttpOnly customer cookie; Mini App authentication continues to use server-validated Telegram `initData`.
+- Both channels create orders through `POST /api/orders` and read history through `GET /api/orders/mine`. Invoice creation and payment confirmation remain handled by the existing Telegram Stars (XTR) Bot API and webhook. A browser opens the Telegram invoice link; an embedded Mini App uses `Telegram.WebApp.openInvoice`.
 - Product, price, stock, purchase eligibility, and order status are always sourced from the backend. No customer account table, payment provider, Worker, API, or database was duplicated.
 
 ## Visual asset source of truth
