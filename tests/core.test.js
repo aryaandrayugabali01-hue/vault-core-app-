@@ -149,7 +149,7 @@ test('Public website serves the backend-owned customer catalog and Telegram acco
   const catalogRoute = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   const account = readFileSync(new URL('../frontend/src/app/account/page.jsx', import.meta.url), 'utf8');
   const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
-  assert.match(home, /redirect\('\/catalog'\)/);
+  assert.match(home, /VaultCoreHomePage/);
   assert.match(catalogRoute, /VaultCoreV4Catalog/);
   assert.match(account, /api\/customer-auth\/oidc\/start/);
   assert.match(account, /function safeAccountReturnPath/);
@@ -856,9 +856,9 @@ test('Customer web navigation matches the Mini App Home, Katalog, Transaksi and 
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   assert.match(navigation, /label: 'Home'.*href: '\/'/);
-  assert.match(navigation, /label: 'Katalog'.*href: '\/catalog'/);
-  assert.match(navigation, /label: 'Transaksi'.*href: '\/catalog#transactions'/);
-  assert.match(navigation, /label: 'Profil'.*href: '\/account'/);
+  assert.match(navigation, /label: 'Store'.*href: '\/catalog'/);
+  assert.match(navigation, /label: 'My Orders'.*href: '\/catalog#transactions'/);
+  assert.match(navigation, /label: 'Profile'.*href: '\/account'/);
   assert.match(catalog, /window\.location\.hash === '#transactions'/);
   assert.match(catalog, /vault-core-web-cart/);
 });
