@@ -328,7 +328,7 @@ export default function AdminPage() {
 
     <section className="admin-panel admin-product-entry">
       <div className="admin-section-head"><div><span className="eyebrow muted">KATALOG / INPUT PRODUK</span><h2>Tambah produk baru</h2><p>Gunakan halaman khusus untuk detail produk, harga, dan stok awal.</p></div></div>
-      <div className="admin-entry-actions"><a className="admin-primary admin-product-entry-link" href="/admin/products/new">+ Input produk baru</a><a className="admin-secondary-link" href="/admin/categories">Kelola kategori &amp; panduan beli</a></div>
+      <div className="admin-entry-actions"><a className="admin-primary admin-product-entry-link" href="/admin/v4">+ Form Produk Terpadu</a><a className="admin-secondary-link" href="/admin/categories">Kelola kategori &amp; panduan beli</a></div>
     </section>
 
     {editingProductId && <section className="admin-panel" id="product-edit-panel">

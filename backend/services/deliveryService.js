@@ -69,7 +69,7 @@ export async function deliverPaidOrder(orderNumber) {
 
   const { rows: eligible } = await pool.query(
     `SELECT d.id AS delivery_id,d.inventory_item_id,p.id AS product_id,p.name AS product_name,
-            i.payload_ciphertext,i.payload_nonce,i.payload_tag,i.source_reference,
+            p.fulfillment_type,i.payload_ciphertext,i.payload_nonce,i.payload_tag,i.source_reference,
             s.id AS vault_secret_id,s.payload_ciphertext AS secret_payload_ciphertext,
             s.payload_nonce AS secret_payload_nonce,s.payload_auth_tag AS secret_payload_auth_tag,
             s.wrapped_data_key,s.key_wrap_nonce,s.key_wrap_auth_tag,s.encryption_key_version
@@ -135,7 +135,7 @@ export async function deliverPaidOrder(orderNumber) {
     );
     if (!claim.rowCount) continue;
 
-    if (isOwnerManualFulfillmentSource(item.source_reference)) {
+    if (isOwnerManualFulfillmentSource(item.source_reference) || item.fulfillment_type === 'GAME_ACCOUNT_TRANSFER') {
       try {
         await telegramCall('sendMessage', {
           chat_id: order.telegram_user_id,

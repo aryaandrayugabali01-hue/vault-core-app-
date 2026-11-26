@@ -2,10 +2,8 @@ import { Router } from 'express';
 import { pool } from '../db/pool.js';
 import { normalizeProductText, normalizeProductAttributes } from '../services/productDetailsService.js';
 import { normalizeImageGallery } from '../services/marketplaceCategoryService.js';
-import { readJokiCustomerAccess } from '../controllers/secretController.js';
 import { encryptPayload } from '../utils/encryption.js';
-import { encryptSecretPayload } from '../utils/secretVault.js';
-import { isRightsReviewUsable } from '../services/rightsReviewService.js';
+import { isRightsReviewUsable, validateRightsReviewInput } from '../services/rightsReviewService.js';
 
 const router = Router();
 const GAME_CATEGORY = Object.freeze({
@@ -39,53 +37,34 @@ async function getVariantListingFields(db, variantId) {
   const { rows } = await db.query(
     `SELECT pertanyaan_id,variant_id,urutan_pertanyaan,pertanyaan_wajib,sifat_item,field_key,input_type,
             field_options,field_placeholder,field_group,field_max_length,is_public
-     FROM vault_core_pertanyaan_wajib_only WHERE variant_id=$1 AND is_public=TRUE ORDER BY urutan_pertanyaan`,
+     FROM vault_core_pertanyaan_wajib_only WHERE variant_id=$1 AND is_public=TRUE AND pertanyaan_wajib !~* '(login|password|sandi|otp|session|recovery|backup|token|credential|email|username|cookie|retrieval|moderasi|kapasitas tenaga|harga dagangan|stok)' ORDER BY urutan_pertanyaan`,
     [variantId]
   );
   return rows;
 }
 
-router.post('/orders/:orderNumber/customer-access/:orderItemId/read', readJokiCustomerAccess);
-
-router.get('/products', async (req,res) => {
-  const { rows } = await pool.query(
-    `SELECT p.id,p.sku,p.name,p.description,p.status,p.game_category,p.tier,p.fulfillment_type,
-            p.variant_id,p.variant_subtype,p.sale_price_xtr,p.cost_price_xtr,p.low_stock_threshold,
-            p.display_stock_mode,p.display_stock_override,p.image_url,p.image_gallery,p.attributes,
-            p.customer_terms,p.fulfillment_eta,p.current_rights_review_id,p.created_at,p.updated_at,
-            v.kategori_produk AS variant_category,v.jenis_varian AS variant_name,v.nama_game AS game_name,
-            mc.slug AS legacy_category_slug,
-            rr.review_status,rr.valid_until,rr.owner_attested,
-            COUNT(DISTINCT q.pertanyaan_id)::int AS required_questions,
-            COUNT(DISTINCT q.pertanyaan_id) FILTER(WHERE r.response_status IN ('ANSWERED','OWNER_VERIFIED','SECRET_IN_VAULT'))::int AS completed_questions,
-            COUNT(DISTINCT i.id) FILTER(WHERE i.status='AVAILABLE' AND i.rights_review_id=p.current_rights_review_id)::int AS available_stock,
-            COUNT(DISTINCT s.id) FILTER(WHERE s.secret_scope='PRODUCT_ACCOUNT' AND s.secret_status='ACTIVE')::int AS vaulted_stock
-     FROM products p
-     LEFT JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
-     LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
-     LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
-     LEFT JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=p.variant_id
-     LEFT JOIN vault_core_product_question_responses r ON r.product_id=p.id AND r.question_id=q.pertanyaan_id
-     LEFT JOIN inventory_items i ON i.product_id=p.id
-     LEFT JOIN vault_core_secret_payloads s ON s.inventory_item_id=i.id AND s.secret_status='ACTIVE'
-     WHERE COALESCE(p.is_test,FALSE)=FALSE
-     GROUP BY p.id,v.variant_id,rr.id,mc.slug
-     ORDER BY p.updated_at DESC,p.id DESC
-     LIMIT 250`
-  );
-  return res.json({ products:rows.map((row) => ({
-    ...row,
-    id:Number(row.id),
-    sale_price_xtr:Number(row.sale_price_xtr),
-    cost_price_xtr:Number(row.cost_price_xtr),
-    required_questions:Number(row.required_questions),
-    completed_questions:Number(row.completed_questions),
-    available_stock:Number(row.available_stock),
-    vaulted_stock:Number(row.vaulted_stock),
-    rights_approved:row.review_status==='APPROVED' && row.owner_attested===true && new Date(row.valid_until)>new Date()
-  })) });
+router.get('/products',async(_req,res)=>{
+ const {rows}=await pool.query(
+  \`SELECT p.id,p.sku,p.name,p.description,p.status,p.game_category,p.tier,p.fulfillment_type,
+   p.variant_id,p.variant_subtype,p.sale_price_xtr,p.cost_price_xtr,p.image_url,p.image_gallery,p.attributes,
+   p.customer_terms,p.fulfillment_eta,p.availability_mode,p.indent_deadline_days,p.stock_quantity_declared,
+   p.stock_source_reference,p.customer_input_fields,p.current_rights_review_id,p.created_at,p.updated_at,
+   v.kategori_produk AS variant_category,v.jenis_varian AS variant_name,v.nama_game AS game_name,
+   rr.review_status,rr.valid_until,rr.owner_attested,rr.rights_basis,rr.publisher_platform,rr.official_terms_url,
+   rr.authorization_evidence_reference,rr.chain_of_title,rr.transfer_method,rr.region,rr.review_notes,
+   COUNT(DISTINCT q.pertanyaan_id)::int AS required_questions,
+   COUNT(DISTINCT q.pertanyaan_id) FILTER(WHERE r.response_status='ANSWERED')::int AS completed_questions,
+   COUNT(DISTINCT i.id) FILTER(WHERE i.status='AVAILABLE' AND i.rights_review_id=p.current_rights_review_id)::int AS available_stock
+   FROM products p LEFT JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
+   LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
+   LEFT JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=p.variant_id AND q.is_public=TRUE
+    AND q.pertanyaan_wajib !~* '(login|password|sandi|otp|session|recovery|backup|token|credential|email|username|cookie|retrieval|moderasi|kapasitas tenaga|harga dagangan|stok)'
+   LEFT JOIN vault_core_product_question_responses r ON r.product_id=p.id AND r.question_id=q.pertanyaan_id
+   LEFT JOIN inventory_items i ON i.product_id=p.id
+   WHERE COALESCE(p.is_test,FALSE)=FALSE GROUP BY p.id,v.variant_id,rr.id ORDER BY p.updated_at DESC LIMIT 250\`
+ );
+ return res.json({products:rows.map(r=>({...r,id:Number(r.id),sale_price_xtr:Number(r.sale_price_xtr),cost_price_xtr:Number(r.cost_price_xtr),available_stock:Number(r.available_stock),stock_quantity_declared:Number(r.stock_quantity_declared||0),customer_input_fields:Array.isArray(r.customer_input_fields)?r.customer_input_fields:[]}))});
 });
-
 router.put('/products/:productId/variant', async (req,res) => {
   const productId=Number(req.params.productId);
   const variantId=Number(req.body?.variantId);
@@ -159,69 +138,76 @@ router.put('/products/:productId/variant', async (req,res) => {
 
 router.get('/variants',async(_req,res)=>{
  const {rows}=await pool.query(
-  `SELECT v.variant_id,v.game_code,v.nama_game,v.kategori_produk,v.jenis_varian,v.status_audit,v.temuan_audit,
-    COALESCE(jsonb_agg(jsonb_build_object(
-      'question_id',q.pertanyaan_id,'order',q.urutan_pertanyaan,'question',q.pertanyaan_wajib,
-      'key',q.field_key,'input_type',q.input_type,'options',q.field_options,'placeholder',q.field_placeholder,
-      'max_length',q.field_max_length,'group',q.field_group,'required',q.sifat_item='WAJIB'
-    ) ORDER BY q.urutan_pertanyaan) FILTER(WHERE q.pertanyaan_id IS NOT NULL),'[]'::jsonb) AS questions
-   FROM vault_core_varian_wajib v
-   LEFT JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=v.variant_id AND q.is_public=TRUE
-   GROUP BY v.variant_id ORDER BY v.variant_id`
+  \`SELECT v.variant_id,v.game_code,v.nama_game,v.kategori_produk,v.jenis_varian,v.status_audit,
+   COALESCE(jsonb_agg(jsonb_build_object('question_id',q.pertanyaan_id,'order',q.urutan_pertanyaan,'question',q.pertanyaan_wajib,'key',q.field_key,'input_type',q.input_type,'options',q.field_options,'placeholder',q.field_placeholder,'max_length',q.field_max_length,'group',q.field_group,'required',q.sifat_item='WAJIB') ORDER BY q.urutan_pertanyaan) FILTER(WHERE q.pertanyaan_id IS NOT NULL),'[]'::jsonb) AS questions
+   FROM vault_core_varian_wajib v LEFT JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=v.variant_id AND q.is_public=TRUE
+   AND q.pertanyaan_wajib !~* '(login|password|sandi|otp|session|recovery|backup|token|credential|email|username|cookie|retrieval|moderasi|kapasitas tenaga|harga dagangan|stok)'
+   GROUP BY v.variant_id ORDER BY v.variant_id\`
  );
  return res.json({variants:rows,counts:{variants:rows.length,questions:rows.reduce((n,v)=>n+(Array.isArray(v.questions)?v.questions.length:0),0)}});
 });
-
 router.post('/products',async(req,res)=>{
- const variantId=Number(req.body?.variantId),sku=String(req.body?.sku??'').trim().toUpperCase();
- const name=normalizeProductText(req.body?.name,160),description=normalizeProductText(req.body?.description,4000);
- const customerTerms=normalizeProductText(req.body?.customerTerms,4000),fulfillmentEta=normalizeProductText(req.body?.fulfillmentEta,160);
- const salePriceXtr=Number(req.body?.salePriceXtr),costPriceXtr=Number(req.body?.costPriceXtr??0);
- const fulfillmentType=String(req.body?.fulfillmentType??'').trim().toUpperCase();
- const galleryInput=Array.isArray(req.body?.imageGallery)?req.body.imageGallery:(req.body?.imageUrl?[req.body.imageUrl]:[]);
- const gallery=normalizeImageGallery(galleryInput,null);
- const variantResult=await pool.query('SELECT variant_id,game_code,kategori_produk,jenis_varian FROM vault_core_varian_wajib WHERE variant_id=$1',[variantId]);
- const variant=variantResult.rows[0];
- if(!Number.isSafeInteger(variantId)||!variant)return res.status(400).json({error:'VARIANT_NOT_FOUND'});
- if(!/^[A-Z0-9][A-Z0-9._-]{2,63}$/.test(sku)||name.length<3)return res.status(400).json({error:'INVALID_PRODUCT_IDENTITY'});
- if(!Number.isSafeInteger(salePriceXtr)||salePriceXtr<2||salePriceXtr>2147483647||!Number.isSafeInteger(costPriceXtr)||costPriceXtr<0)return res.status(400).json({error:'INVALID_XTR_PRICE'});
- if(!GAME_CATEGORY[variant.game_code]||!FULFILLMENT_BY_GROUP[variant.kategori_produk]?.has(fulfillmentType))return res.status(400).json({error:'FULFILLMENT_TYPE_NOT_ALLOWED_FOR_VARIANT'});
- if(!gallery.ok||gallery.value.length<1||gallery.value.length>8)return res.status(400).json({error:gallery.error??'PRODUCT_IMAGES_REQUIRED'});
- const fields=await getVariantListingFields(pool,variantId),checked=validateListingFields(fields,req.body?.attributes??{});
- if(!checked.ok)return res.status(400).json({error:checked.error,field:checked.field??null});
- const attributes=normalizeProductAttributes(checked.value);
- if(!attributes.ok)return res.status(400).json({error:attributes.error});
- const sensitive=Object.entries(attributes.value).some(([key,value])=>
-  /(login|password|\bpass\b|sandi|otp|session|recovery|token|credential|email|username)/i.test(key)
-  ||/(?:password|kata\s*sandi|otp|session|recovery|token)\s*[:=]/i.test(String(value))
- );
- if(sensitive)return res.status(400).json({error:'CREDENTIALS_MUST_USE_ENCRYPTED_VAULT'});
+ const b=req.body||{},productId=b.productId?Number(b.productId):null,variantId=Number(b.variantId);
+ const sku=String(b.sku||'').trim().toUpperCase(),name=normalizeProductText(b.name,160),description=normalizeProductText(b.description,4000);
+ const sale=Number(b.salePriceXtr),cost=Number(b.costPriceXtr??0),qty=Number(b.stockQuantity),mode=String(b.availabilityMode||'READY').toUpperCase();
+ const indent=mode==='INDENT'?Number(b.indentDeadlineDays):null;
+ const gallery=normalizeImageGallery(Array.isArray(b.imageGallery)?b.imageGallery:(b.imageUrl?[b.imageUrl]:[]),null);
+ if(productId!==null&&(!Number.isSafeInteger(productId)||productId<1))return res.status(400).json({error:'INVALID_PRODUCT_ID'});
+ if(!Number.isSafeInteger(variantId)||!Number.isSafeInteger(sale)||sale<2||!Number.isSafeInteger(cost)||cost<0||!Number.isSafeInteger(qty)||qty<0||qty>100)return res.status(400).json({error:'INVALID_PRODUCT_NUMBERS'});
+ if(!/^[A-Z0-9][A-Z0-9._-]{2,63}$/.test(sku)||name.length<3||!gallery.ok||gallery.value.length<1)return res.status(400).json({error:'INVALID_PRODUCT_IDENTITY_OR_IMAGES'});
+ const {rows:vrows}=await pool.query('SELECT * FROM vault_core_varian_wajib WHERE variant_id=$1',[variantId]),v=vrows[0];
+ if(!v)return res.status(400).json({error:'VARIANT_NOT_FOUND'});
+ const account=v.kategori_produk==='Akun',joki=v.kategori_produk==='Jasa Joki',item=v.kategori_produk==='Item In-Game';
+ if(!account&&!joki&&!item)return res.status(400).json({error:'UNSUPPORTED_PRODUCT_CATEGORY'});
+ if((account&&!['READY','INDENT'].includes(mode))||(!account&&mode!=='READY'))return res.status(400).json({error:'INVALID_AVAILABILITY_FOR_CATEGORY'});
+ if(account&&mode==='INDENT'&&(!Number.isSafeInteger(indent)||indent<1||indent>365))return res.status(400).json({error:'INDENT_DEADLINE_REQUIRED'});
+ if(account&&mode==='READY'&&!['Instan','15 menit','30 menit','Maksimal 1 jam'].includes(b.fulfillmentEta))return res.status(400).json({error:'READY_SLA_MAX_ONE_HOUR'});
+ if(qty>0&&String(b.stockSourceReference||'').trim().length<3)return res.status(400).json({error:'STOCK_SOURCE_REFERENCE_REQUIRED'});
+ const fields=await getVariantListingFields(pool,variantId),checked=validateListingFields(fields,b.attributes||{});
+ if(!checked.ok)return res.status(400).json({error:checked.error,field:checked.field||null});
+ const attrs=normalizeProductAttributes(checked.value);if(!attrs.ok)return res.status(400).json({error:attrs.error});
+ const bad=/login|password|sandi|otp|session|recovery|backup|token|credential|email|username|cookie/i;
+ if(Object.entries(attrs.value).some(([k,x])=>bad.test(k)||bad.test(String(x))))return res.status(400).json({error:'AUTHENTICATION_DATA_PROHIBITED'});
+ const customer=Array.isArray(b.customerInputFields)?b.customerInputFields:[];
+ if(customer.length>12||customer.some(f=>!normalizeProductText(f?.label,80)||bad.test(String(f?.label||''))))return res.status(400).json({error:'INVALID_CUSTOMER_INPUT_FIELDS'});
+ if(account&&customer.length)return res.status(400).json({error:'ACCOUNT_HANDOVER_IS_MANUAL_NO_CUSTOMER_CREDENTIAL_FORM'});
+ if(joki&&!customer.length)return res.status(400).json({error:'JOKI_CUSTOMER_FIELDS_REQUIRED'});
+ const validated=validateRightsReviewInput(b.rightsReview||{});if(!validated.ok)return res.status(400).json({error:'INVALID_RIGHTS_REVIEW',details:validated.errors});
+ const rights=validated.value,usable=isRightsReviewUsable({review_status:rights.reviewStatus,valid_until:rights.validUntil,owner_attested:rights.ownerAttested});
+ const eta=account?(mode==='INDENT'?'Maksimal '+indent+' hari kalender':b.fulfillmentEta):normalizeProductText(b.fulfillmentEta,160);
+ const source='VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:'+String(b.stockSourceReference||'').trim();
  const client=await pool.connect();
  try{
-  await client.query('BEGIN');
-  const {rows}=await client.query(
-   `INSERT INTO products(sku,game_category,tier,name,description,fulfillment_type,sale_price_xtr,cost_price_xtr,status,is_test,variant_id,variant_subtype,image_url,image_gallery,attributes,customer_terms,fulfillment_eta)
-    VALUES($1,$2,'SERVICE',$3,$4,$5,$6,$7,'DRAFT',FALSE,$8,$9,$10,$11::jsonb,$12::jsonb,$13,$14)
-    RETURNING id,sku,game_category,name,fulfillment_type,sale_price_xtr,status,variant_id,created_at`,
-   [sku,GAME_CATEGORY[variant.game_code],name,description,fulfillmentType,salePriceXtr,costPriceXtr,variantId,normalizeProductText(req.body?.variantSubtype,120)||null,gallery.value[0],JSON.stringify(gallery.value),JSON.stringify(attributes.value),customerTerms,fulfillmentEta]
-  );
-  const product=rows[0];
-  for(const field of fields){
-   await client.query(`INSERT INTO vault_core_product_question_responses(product_id,question_id,response_text,proof_urls,response_status,created_by_telegram_id) VALUES($1,$2,$3,'[]'::jsonb,'ANSWERED',$4)`,
-    [product.id,field.pertanyaan_id,attributes.value[field.field_key],String(req.telegramUser.id)]);
+  await client.query('BEGIN');let p;
+  if(productId){
+   const {rows}=await client.query('SELECT id,sku,variant_id FROM products WHERE id=$1 AND COALESCE(is_test,FALSE)=FALSE FOR UPDATE',[productId]);p=rows[0];
+   if(!p){await client.query('ROLLBACK');return res.status(404).json({error:'PRODUCT_NOT_FOUND'});}
+   if(p.sku!==sku||Number(p.variant_id)!==variantId){await client.query('ROLLBACK');return res.status(409).json({error:'SKU_VARIANT_IMMUTABLE'});}
+   const {rows:reserved}=await client.query("SELECT COUNT(*)::int AS n FROM inventory_items WHERE product_id=$1 AND status='RESERVED'",[productId]);
+   if(reserved[0].n){await client.query('ROLLBACK');return res.status(409).json({error:'SKU_HAS_RESERVED_ORDERS'});}
+   await client.query(\`UPDATE products SET name=$2,description=$3,sale_price_xtr=$4,cost_price_xtr=$5,variant_subtype=$6,image_url=$7,image_gallery=$8::jsonb,attributes=$9::jsonb,customer_terms=$10,fulfillment_eta=$11,availability_mode=$12,indent_deadline_days=$13,stock_quantity_declared=$14,stock_source_reference=$15,customer_input_fields=$16::jsonb,status='PAUSED',updated_at=NOW() WHERE id=$1\`,
+    [productId,name,description,sale,cost,normalizeProductText(b.variantSubtype,120)||null,gallery.value[0],JSON.stringify(gallery.value),JSON.stringify(attrs.value),normalizeProductText(b.customerTerms,4000),eta,account?mode:'READY',indent,qty,source,JSON.stringify(customer)]);
+  }else{
+   const {rows:dups}=await client.query('SELECT id FROM products WHERE sku=$1 AND COALESCE(is_test,FALSE)=FALSE',[sku]);
+   if(dups.length){await client.query('ROLLBACK');return res.status(409).json({error:'SKU_ALREADY_EXISTS',productId:Number(dups[0].id)});}
+   const {rows}=await client.query(\`INSERT INTO products(sku,game_category,tier,name,description,fulfillment_type,sale_price_xtr,cost_price_xtr,status,is_test,variant_id,variant_subtype,image_url,image_gallery,attributes,customer_terms,fulfillment_eta,availability_mode,indent_deadline_days,stock_quantity_declared,stock_source_reference,customer_input_fields)
+    VALUES($1,$2,'SERVICE',$3,$4,$5,$6,$7,'PAUSED',FALSE,$8,$9,$10,$11::jsonb,$12::jsonb,$13,$14,$15,$16,$17,$18,$19::jsonb) RETURNING id,sku\`,
+    [sku,GAME_CATEGORY[v.game_code],name,description,account?'GAME_ACCOUNT_TRANSFER':'SERVICE_INSTRUCTIONS',sale,cost,variantId,normalizeProductText(b.variantSubtype,120)||null,gallery.value[0],JSON.stringify(gallery.value),JSON.stringify(attrs.value),normalizeProductText(b.customerTerms,4000),eta,account?mode:'READY',indent,qty,source,JSON.stringify(customer)]);
+   p=rows[0];
   }
-  await client.query(`INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata) VALUES($1,'V4_PRODUCT_DRAFT_CREATED','PRODUCT',$2,$3::jsonb)`,
-   [String(req.telegramUser.id),String(product.id),JSON.stringify({variantId,sku,imageCount:gallery.value.length,listingFields:fields.length})]);
+  for(const f of fields)await client.query(\`INSERT INTO vault_core_product_question_responses(product_id,question_id,response_text,proof_urls,response_status,created_by_telegram_id) VALUES($1,$2,$3,'[]'::jsonb,'ANSWERED',$4) ON CONFLICT(product_id,question_id) DO UPDATE SET response_text=EXCLUDED.response_text,response_status='ANSWERED',updated_at=NOW()\`,[p.id,f.pertanyaan_id,attrs.value[f.field_key]||'',String(req.telegramUser.id)]);
+  const {rows:rr}=await client.query(\`INSERT INTO product_rights_reviews(product_id,rights_basis,publisher_platform,official_terms_url,authorization_evidence_reference,chain_of_title,transfer_method,region,reviewer_telegram_user_id,valid_until,review_status,review_notes,owner_attested) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id\`,
+   [p.id,rights.rightsBasis,rights.publisherPlatform,rights.officialTermsUrl,rights.authorizationEvidenceReference,rights.chainOfTitle,rights.transferMethod,rights.region,String(req.telegramUser.id),rights.validUntil,rights.reviewStatus,rights.reviewNotes,rights.ownerAttested]);
+  await client.query('UPDATE products SET current_rights_review_id=$2 WHERE id=$1',[p.id,rr[0].id]);
+  await client.query("UPDATE inventory_items SET status='UNAVAILABLE' WHERE product_id=$1 AND status='AVAILABLE' AND reserved_order_id IS NULL",[p.id]);
+  let added=0;if(usable&&qty>0){const marker=encryptPayload('VAULTCORE_MANUAL_FULFILLMENT_SLOT_V1');for(let n=0;n<qty;n++){await client.query(\`INSERT INTO inventory_items(product_id,payload_ciphertext,payload_nonce,payload_tag,rights_review_id,source_reference) VALUES($1,$2,$3,$4,$5,$6)\`,[p.id,marker.payload_ciphertext,marker.payload_nonce,marker.payload_tag,rr[0].id,source]);added++;}}
+  const status=usable&&added>0?'ACTIVE':'PAUSED';
+  const {rows:result}=await client.query("UPDATE products SET status=$2,updated_at=NOW() WHERE id=$1 RETURNING id,sku,name,status,variant_id,availability_mode,indent_deadline_days,stock_quantity_declared",[p.id,status]);
+  await client.query(\`INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata) VALUES($1,'OWNER_PRODUCT_SINGLE_FORM_SAVED','PRODUCT',$2,$3::jsonb)\`,[String(req.telegramUser.id),String(p.id),JSON.stringify({sku,variantId,category:v.kategori_produk,status,qty,mode:account?mode:null,indentDays:indent})]);
   await client.query('COMMIT');
-  return res.status(201).json({product,publication:'DRAFT_REQUIRES_OWNER_REVIEW'});
- }catch(error){
-  try{await client.query('ROLLBACK');}catch{}
-  if(error.code==='23505')return res.status(409).json({error:'SKU_ALREADY_EXISTS'});
-  console.error('[v4-product-draft]',error.message);
-  return res.status(500).json({error:'V4_PRODUCT_CREATE_FAILED'});
- }finally{client.release();}
+  return res.status(productId?200:201).json({ok:true,product:result[0],publication:status,stockAvailable:added,message:status==='ACTIVE'?'Produk tersimpan dan tampil pada katalog.':'Produk tersimpan tetapi ditahan sampai review hak disetujui dan stok aktual tersedia.'});
+ }catch(e){try{await client.query('ROLLBACK');}catch{}if(e.code==='23505')return res.status(409).json({error:'SKU_ALREADY_EXISTS'});console.error('[owner-product-save]',e.message);return res.status(500).json({error:'OWNER_PRODUCT_SAVE_FAILED'});}finally{client.release();}
 });
-
 router.put('/products/:productId/questions',async(req,res)=>{
  const productId=Number(req.params.productId),answers=req.body?.answers;
  if(!Number.isSafeInteger(productId)||productId<=0||!Array.isArray(answers)||answers.length>24)return res.status(400).json({error:'INVALID_LISTING_FIELDS'});
@@ -265,245 +251,7 @@ router.get('/products/:productId/questions',async(req,res)=>{
  return res.json({questions:rows});
 });
 
-router.post('/products/:productId/inventory', async (req, res) => {
-  const productId = Number(req.params.productId);
-  const sourceReference = String(req.body?.sourceReference ?? '').trim();
-  if (!Number.isSafeInteger(productId) || productId <= 0 || sourceReference.length < 3 || sourceReference.length > 200) {
-    return res.status(400).json({ error:'INVALID_V4_INVENTORY_REQUEST' });
-  }
-
-  const { rows } = await pool.query(
-    `SELECT p.id,p.sku,p.status,p.is_test,p.game_category,p.fulfillment_type,p.current_rights_review_id,
-            v.variant_id,v.kategori_produk,
-            rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
-     FROM products p
-     JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
-     LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
-     WHERE p.id=$1`,
-    [productId]
-  );
-  const product = rows[0];
-  if (!product || product.is_test === true) return res.status(404).json({ error:'V4_PRODUCT_NOT_FOUND' });
-  if (!['DRAFT','ACTIVE'].includes(product.status) || !isRightsReviewUsable({
-    id:product.review_id,review_status:product.review_status,
-    valid_until:product.valid_until,owner_attested:product.owner_attested
-  })) {
-    return res.status(409).json({ error:'PRODUCT_RIGHTS_REVIEW_REQUIRED' });
-  }
-
-  const isAccount = product.kategori_produk === 'Akun' && product.fulfillment_type === 'GAME_ACCOUNT_TRANSFER';
-  const isManual = ['Jasa Joki','Item In-Game'].includes(product.kategori_produk)
-    && product.fulfillment_type === 'SERVICE_INSTRUCTIONS';
-  let payloads = [];
-  let quantity = 0;
-  if (isAccount) {
-    payloads = req.body?.payloads;
-    if (req.body?.replaceLegacyStock !== true) return res.status(409).json({ error:'LEGACY_STOCK_REPLACEMENT_ACK_REQUIRED' });
-    if (!Array.isArray(payloads) || payloads.length < 1 || payloads.length > 100
-        || !/^VAULTCORE_OWNER_ACCOUNT_STOCK_V1:[A-Za-z0-9._:/-]{1,160}$/.test(sourceReference)) {
-      return res.status(400).json({ error:'ACCOUNT_VAULT_INVENTORY_REQUIRED' });
-    }
-    for (const payload of payloads) {
-      if (!payload || typeof payload !== 'object' || Array.isArray(payload)
-          || typeof payload.login !== 'string' || payload.login.trim().length < 2 || payload.login.length > 240
-          || typeof payload.password !== 'string' || payload.password.trim().length < 6 || payload.password.length > 1200
-          || Object.keys(payload).some((key) => !['login','password','email','emailPassword','bindProvider','bindAccount','bindStatus','retrievalDetails','notes','gameId','server','region'].includes(key))
-          || Buffer.byteLength(JSON.stringify(payload),'utf8') > 10000) {
-        return res.status(400).json({ error:'INVALID_ACCOUNT_VAULT_PAYLOAD' });
-      }
-    }
-    quantity = payloads.length;
-  } else if (isManual) {
-    quantity = Number(req.body?.quantity);
-    if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 100
-        || !sourceReference.startsWith(MANUAL_SOURCE_PREFIX)
-        || req.body?.payloads !== undefined) {
-      return res.status(400).json({ error:'MANUAL_SERVICE_INVENTORY_REQUIRED' });
-    }
-  } else {
-    return res.status(400).json({ error:'V4_FULFILLMENT_NOT_SUPPORTED' });
-  }
-
-  const marker = encryptPayload('VAULT_CORE_V4_SECRET_MANAGED');
-  const client = await pool.connect();
-  const inserted = [];
-  let replacedLegacyStockCount=0;
-  try {
-    await client.query('BEGIN');
-    for (let index=0; index<quantity; index++) {
-      const { rows: stock } = await client.query(
-        `INSERT INTO inventory_items
-          (product_id,payload_ciphertext,payload_nonce,payload_tag,rights_review_id,source_reference)
-         VALUES($1,$2,$3,$4,$5,$6)
-         RETURNING id,status,created_at`,
-        [product.id,marker.payload_ciphertext,marker.payload_nonce,marker.payload_tag,
-         product.current_rights_review_id,sourceReference]
-      );
-      const inventoryItem = stock[0];
-      if (isAccount) {
-        const context = {
-          scope:'PRODUCT_ACCOUNT',productId:Number(product.id),inventoryItemId:Number(inventoryItem.id),
-          orderId:null,orderItemId:null,customerId:null
-        };
-        const encrypted = encryptSecretPayload(payloads[index],context);
-        const { rows: secretRows } = await client.query(
-          `INSERT INTO vault_core_secret_payloads
-            (secret_scope,product_id,inventory_item_id,payload_ciphertext,payload_nonce,payload_auth_tag,
-             wrapped_data_key,key_wrap_nonce,key_wrap_auth_tag,encryption_key_version,created_by_telegram_id)
-           VALUES('PRODUCT_ACCOUNT',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-           RETURNING id`,
-          [product.id,inventoryItem.id,encrypted.payload_ciphertext,encrypted.payload_nonce,
-           encrypted.payload_auth_tag,encrypted.wrapped_data_key,encrypted.key_wrap_nonce,
-           encrypted.key_wrap_auth_tag,encrypted.encryption_key_version,String(req.telegramUser.id)]
-        );
-        await client.query(
-          `INSERT INTO vault_core_secret_access_logs
-            (secret_payload_id,actor_telegram_user_id,action,reason,request_reference)
-           VALUES($1,$2,'CREATE','Owner added encrypted account inventory',$3)`,
-          [secretRows[0].id,String(req.telegramUser.id),String(product.sku)]
-        );
-      }
-      inserted.push({ id:inventoryItem.id,status:inventoryItem.status });
-    }
-
-    if (isAccount && req.body?.replaceLegacyStock===true) {
-      const { rows: retired } = await client.query(
-        `UPDATE inventory_items i
-         SET status='UNAVAILABLE',reserved_order_id=NULL,reserved_until=NULL
-         WHERE i.product_id=$1 AND i.rights_review_id=$2
-           AND i.status='AVAILABLE'
-           AND i.reserved_order_id IS NULL AND i.reserved_until IS NULL
-           AND NOT EXISTS (
-             SELECT 1 FROM vault_core_secret_payloads s
-             WHERE s.inventory_item_id=i.id AND s.secret_scope='PRODUCT_ACCOUNT'
-               AND s.secret_status='ACTIVE'
-           )
-         RETURNING i.id`,
-        [product.id,product.current_rights_review_id]
-      );
-      replacedLegacyStockCount=retired.length;
-    }
-
-    if (isAccount) {
-      const { rows: counts } = await client.query(
-        `SELECT COUNT(*) FILTER (WHERE i.status='AVAILABLE')::int AS available,
-                COUNT(*) FILTER (WHERE i.status='AVAILABLE' AND s.id IS NOT NULL)::int AS encrypted
-         FROM inventory_items i
-         LEFT JOIN vault_core_secret_payloads s
-           ON s.inventory_item_id=i.id AND s.secret_scope='PRODUCT_ACCOUNT' AND s.secret_status='ACTIVE'
-         WHERE i.product_id=$1 AND i.rights_review_id=$2`,
-        [product.id,product.current_rights_review_id]
-      );
-      if (counts[0].available > 0 && counts[0].encrypted === counts[0].available) {
-        await client.query(
-          `INSERT INTO vault_core_product_question_responses
-            (product_id,question_id,response_text,proof_urls,response_status,created_by_telegram_id)
-           SELECT $1,q.pertanyaan_id,'','[]'::jsonb,'SECRET_IN_VAULT',$2
-           FROM vault_core_pertanyaan_wajib_only q
-           WHERE q.variant_id=$3 AND q.pertanyaan_wajib ~* '(login|password|pass|sandi|otp|session|recovery|token)'
-           ON CONFLICT(product_id,question_id) DO UPDATE SET
-             response_text='',response_status='SECRET_IN_VAULT',updated_at=NOW()`,
-          [product.id,String(req.telegramUser.id),product.variant_id]
-        );
-      }
-    }
-    await client.query('COMMIT');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('[v4-inventory-add]',error.message);
-    return res.status(500).json({ error:'V4_INVENTORY_ADD_FAILED' });
-  } finally {
-    client.release();
-  }
-
-  await pool.query(
-    `INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata)
-     VALUES($1,'V4_INVENTORY_ADDED','PRODUCT',$2,$3::jsonb)`,
-    [String(req.telegramUser.id),String(product.id),JSON.stringify({ count:inserted.length,variantId:product.variant_id,encrypted:isAccount,replacedLegacyStockCount:typeof replacedLegacyStockCount==='number'?replacedLegacyStockCount:0 })]
-  );
-  return res.status(201).json({ productId:product.id,inserted:inserted.length,replacedLegacyStockCount:typeof replacedLegacyStockCount==='number'?replacedLegacyStockCount:0,items:inserted });
-});
-
-router.post('/products/:productId/publish', async (req, res) => {
-  const productId = Number(req.params.productId);
-  if (!Number.isSafeInteger(productId) || productId <= 0) return res.status(400).json({ error:'INVALID_PRODUCT_ID' });
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const { rows } = await client.query(
-      `SELECT p.id,p.status,p.is_test,p.sale_price_xtr,p.fulfillment_type,p.current_rights_review_id,
-              p.variant_id,v.kategori_produk,rr.review_status,rr.valid_until,rr.owner_attested
-       FROM products p
-       JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
-       LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
-       WHERE p.id=$1 FOR UPDATE OF p`,
-      [productId]
-    );
-    const product = rows[0];
-    if (!product || product.is_test === true) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error:'V4_PRODUCT_NOT_FOUND' });
-    }
-    if (!['DRAFT','PAUSED'].includes(product.status)
-        || !Number.isSafeInteger(Number(product.sale_price_xtr)) || Number(product.sale_price_xtr) <= 1
-        || !isRightsReviewUsable({id:product.current_rights_review_id,review_status:product.review_status,valid_until:product.valid_until,owner_attested:product.owner_attested})) {
-      await client.query('ROLLBACK');
-      return res.status(409).json({ error:'V4_PRODUCT_PUBLICATION_REQUIREMENTS_NOT_MET' });
-    }
-    const manual = ['Jasa Joki','Item In-Game'].includes(product.kategori_produk)
-      && product.fulfillment_type === 'SERVICE_INSTRUCTIONS';
-    const account = product.kategori_produk === 'Akun' && product.fulfillment_type === 'GAME_ACCOUNT_TRANSFER';
-    if (!manual && !account) {
-      await client.query('ROLLBACK');
-      return res.status(409).json({ error:'V4_FULFILLMENT_NOT_SUPPORTED' });
-    }
-    const { rows: stock } = await client.query(
-      `SELECT COUNT(*)::int AS available,
-              COUNT(*) FILTER (WHERE s.id IS NOT NULL)::int AS protected
-       FROM inventory_items i
-       LEFT JOIN vault_core_secret_payloads s
-         ON s.inventory_item_id=i.id AND s.secret_scope='PRODUCT_ACCOUNT' AND s.secret_status='ACTIVE'
-       WHERE i.product_id=$1 AND i.status='AVAILABLE'
-         AND i.rights_review_id=$2 AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
-`,
-      [product.id,product.current_rights_review_id]
-    );
-    if (stock[0].available < 1 || (account && stock[0].protected !== stock[0].available)) {
-      await client.query('ROLLBACK');
-      return res.status(409).json({ error:'V4_PRODUCT_STOCK_OR_VAULT_REQUIRED' });
-    }
-    const { rows: progress } = await client.query(
-      `SELECT COUNT(*)::int AS total,
-              COUNT(*) FILTER (WHERE r.response_status IN ('ANSWERED','OWNER_VERIFIED','SECRET_IN_VAULT'))::int AS completed
-       FROM vault_core_pertanyaan_wajib_only q
-       LEFT JOIN vault_core_product_question_responses r
-         ON r.product_id=$1 AND r.question_id=q.pertanyaan_id
-       WHERE q.variant_id=$2`,
-      [product.id,product.variant_id]
-    );
-    if (progress[0].total < 1 || progress[0].completed !== progress[0].total) {
-      await client.query('ROLLBACK');
-      return res.status(409).json({ error:'V4_REQUIRED_QUESTIONS_INCOMPLETE',progress:progress[0] });
-    }
-    const { rows: updated } = await client.query(
-      `UPDATE products SET status='ACTIVE',updated_at=NOW()
-       WHERE id=$1 AND status IN ('DRAFT','PAUSED') RETURNING id,sku,status,variant_id,sale_price_xtr`,
-      [product.id]
-    );
-    await client.query(
-      `INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata)
-       VALUES($1,'V4_PRODUCT_PUBLISHED','PRODUCT',$2,$3::jsonb)`,
-      [String(req.telegramUser.id),String(product.id),JSON.stringify({ variantId:product.variant_id,stock:stock[0].available,questions:progress[0].completed })]
-    );
-    await client.query('COMMIT');
-    return res.json({ product:updated[0], publication:'ACTIVE' });
-  } catch (error) {
-    try { await client.query('ROLLBACK'); } catch {}
-    console.error('[v4-product-publish]',error.message);
-    return res.status(500).json({ error:'V4_PRODUCT_PUBLISH_FAILED' });
-  } finally {
-    client.release();
-  }
-});
+router.post('/products/:productId/inventory',(_req,res)=>res.status(410).json({error:'USE_SINGLE_PRODUCT_FORM'}));
+router.post('/products/:productId/publish',(_req,res)=>res.status(410).json({error:'USE_SINGLE_PRODUCT_FORM'}));
 
 export default router;

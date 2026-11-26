@@ -24,6 +24,9 @@ const PUBLIC_VARIANTS_SQL = `
              'attributes',p.attributes,
              'customer_terms',p.customer_terms,
              'fulfillment_eta',p.fulfillment_eta,
+             'availability_mode',p.availability_mode,
+             'indent_deadline_days',p.indent_deadline_days,
+             'customer_input_fields',p.customer_input_fields,
              'variant_subtype',p.variant_subtype,
              'game_category',p.game_category,
              'fulfillment_type',p.fulfillment_type,
@@ -49,15 +52,7 @@ const PUBLIC_VARIANTS_SQL = `
                AND i.reserved_order_id IS NULL AND i.reserved_until IS NULL
                AND i.rights_review_id=p.current_rights_review_id
                AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
-               AND (
-                 v.kategori_produk<>'Akun'
-                 OR EXISTS (
-                   SELECT 1 FROM vault_core_secret_payloads s
-                   WHERE s.inventory_item_id=i.id
-                     AND s.secret_scope='PRODUCT_ACCOUNT'
-                     AND s.secret_status='ACTIVE'
-                 )
-               )
+
            ) stock
            WHERE p.variant_id=v.variant_id
              AND p.status='ACTIVE' AND COALESCE(p.is_test,FALSE)=FALSE
