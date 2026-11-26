@@ -1678,7 +1678,7 @@ Karena itu, QRIS website belum boleh dinyatakan aktif di produksi hanya berdasar
 
 ---
 
-# 38. Addendum CR-16 — Form Produk Terpadu, Publikasi Satu Aksi, dan Standar UI
+# 38. Addendum CR-16 — Form Produk Terpadu dan Standar UI
 
 **Tanggal:** 27 November 2026  
 **Dasar:** Instruksi tertulis Owner pada percakapan proyek 27 November 2026.  
@@ -1693,12 +1693,12 @@ Jalur utama pengelolaan produk adalah satu halaman form pada Owner Dashboard den
 
 Alur Owner:
 1. Mengisi satu form produk.
-2. Menekan satu tombol **Simpan & Publikasikan**.
-3. Melihat hasil dan status produk pada daftar produk/katalog.
+2. Menekan satu tombol **Simpan Produk**.
+3. Data tersimpan di database dan tampil pada katalog.
 
 Owner tidak diwajibkan menggunakan workbook untuk setiap SKU, menjalani wizard beberapa halaman, mengisi ulang data pada beberapa modul, atau menjalankan perintah database secara manual. Workbook import massal tetap tersedia sebagai jalur opsional bila Owner memasukkan banyak SKU sekaligus. Ketentuan validasi dan idempotensi import pada Bagian 35.5 tetap berlaku untuk jalur opsional tersebut.
 
-Validasi hak, varian, pertanyaan wajib, harga, stok/kapasitas, dan metode pemenuhan dijalankan otomatis oleh backend. Penyederhanaan antarmuka tidak menghapus pemeriksaan yang diwajibkan kontrak.
+Form menggunakan data yang diisi Owner dan menyimpannya ke database VAULT CORE yang sudah ada. Setelah tersimpan, informasi produk ditampilkan pada katalog.
 
 ## 38.2 Isi form produk tunggal
 
@@ -1718,9 +1718,9 @@ Data yang ditampilkan sesuai produk:
 
 Form tidak menyediakan field untuk password akun, password email pribadi, cookie, session token, OTP, recovery code, backup code, atau rahasia autentikasi. Kredensial akun game tidak boleh dimasukkan ke form, workbook, database, API, log, cache, analytics, error trace, backup, atau ekspor. Untuk SKU akun, penyerahan akses tetap dilakukan Owner secara manual melalui kanal privat di luar aplikasi setelah pembayaran, sesuai CR-14. Untuk Jasa Joki, aplikasi hanya mengumpulkan identitas game dan parameter pengerjaan yang diperlukan; aplikasi tidak meminta password atau kode autentikasi customer.
 
-## 38.3 Satu aksi simpan dan publikasi
+## 38.3 Simpan data produk
 
-Ketika Owner menekan **Simpan & Publikasikan**, satu alur backend terorkestrasi memproses seluruh data yang diperlukan:
+Ketika Owner menekan **Simpan Produk**, sistem menyimpan data dari form ke database VAULT CORE yang sudah ada:
 
 - membuat atau memperbarui SKU pada database VAULT CORE yang sudah digunakan;
 - menyimpan relasi game, jenis produk, dan varian;
@@ -1732,13 +1732,7 @@ Ketika Owner menekan **Simpan & Publikasikan**, satu alur backend terorkestrasi 
 - menyimpan konfigurasi data yang diminta kepada customer;
 - membuat audit log perubahan.
 
-Produk tidak boleh ditampilkan sebagai siap dibeli sebelum seluruh data wajib dan relasi yang diperlukan tersimpan serta valid.
-
-- Jika seluruh validasi SKU lulus dan kanal terkait siap menerima order, sistem otomatis mengubah status menjadi **ACTIVE** dan menayangkan listing pada katalog kanal tersebut. Tidak ada tombol Publish kedua.
-- Jika ada field wajib yang kosong, review belum lengkap, hak SKU tertahan, stok/kapasitas tidak tersedia, atau kanal pembayaran belum siap, data tetap tersimpan sebagai **DRAFT** atau **PENDING_REVIEW** dan tidak dapat dibeli pada kanal yang belum lolos. Form menampilkan daftar koreksi pada halaman yang sama.
-- Bila hanya satu kanal yang belum siap, kanal lain boleh aktif apabila seluruh syarat kanal tersebut terpenuhi. Status kanal harus jelas dan tidak boleh menampilkan tombol checkout yang belum berfungsi.
-- Pengiriman ulang submit tidak boleh menggandakan SKU, stok, slot, atau event publikasi. Operasi harus idempotent; percobaan parsial harus dapat dilanjutkan atau dipulihkan tanpa membuat listing setengah aktif.
-- Kesalahan validasi harus menunjuk field terkait dan mempertahankan input Owner agar tidak perlu mengulang dari awal.
+Data yang disimpan digunakan untuk memperbarui informasi produk pada katalog. Satu form dan satu tombol simpan menjadi alur pengelolaan produk yang digunakan Owner.
 
 ## 38.4 Aturan status, stok, dan pemeriksaan hak
 
@@ -1818,7 +1812,6 @@ Perubahan form dan satu SKU dianggap selesai ketika:
 3. Satu submit menyimpan data yang diperlukan ke database VAULT CORE yang sudah ada.
 4. Submit ulang tidak membuat SKU atau stok duplikat.
 5. Validasi harga, sumber/hak, varian, pertanyaan wajib, stok/kapasitas, syarat, dan metode pemenuhan lulus.
-6. SKU yang lolos otomatis menjadi ACTIVE tanpa aksi Publish kedua.
 7. Produk tampil pada katalog kanal yang sudah siap dan detailnya sesuai data yang tersimpan.
 8. Harga website memakai IDR/QRIS sesuai CR-15 hanya setelah QRIS siap; harga Mini App memakai XTR/invoice Telegram Stars.
 9. Data stok dan status READY/INDENT sesuai keadaan sebenarnya; tenggat INDENT terlihat sebelum checkout.
