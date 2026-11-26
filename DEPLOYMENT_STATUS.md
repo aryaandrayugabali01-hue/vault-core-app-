@@ -1,20 +1,21 @@
 # VAULT CORE — Deployment Status
 
-**Updated:** 2026-11-25 (16 commercial SKUs verified buyable, product lifecycle cleanup prepared, XTR pricing, Owner manual fulfillment)
+**Updated:** 2026-11-26 (VAULT CORE v5 mobile storefront rebuilt; CSS cleanup; XTR Mini App flow retained)
 
-## Current production snapshot — 23 November 2026
+## Current production snapshot — 26 November 2026
 
-- Latest production source: `8876ea58a945d21b82b0ef00a3cae419d2f2b216`.
-- Production deployment: [run 45199182854](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45199182854), **SUCCESS**. API/frontend Workers, secrets, Neon health, gateway upstreams, root/www/API domains, storefront artwork, Telegram webhook read-back, and TEST fixture checks passed.
-- Latest CI: [run 45199182726](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45199182726), **SUCCESS**. 41/41 backend/core tests passed; frontend production build, asset verification, and API Worker dry-run passed.
-- Neon production read-back (23 November 2026): 16 commercial products, all 16 ACTIVE; 16 current Owner-attested APPROVED CR-05 reviews; 16 available commercial manual-fulfillment slots; 0 reserved commercial slots; 4 TEST-only inventory rows; 17 active marketplace categories; 1 cancelled unpaid Owner test checkout; 0 transactions; 1 revoked delivery.
-- All 16 commercial sale prices remain saved in XTR and cost price is 0 XTR per SKU per Owner instruction. Reference conversion used to establish the price was Rp375 per XTR with whole-XTR ceiling; total reference Rp38,359,090 / 102,297 XTR. The two displayed product attribute keys for conversion reference date and IDR-per-Star rate have been deleted; technical conversion details are filtered from customer-facing specifications.
-- Each commercial inventory slot uses `VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:` and stores no customer-facing code or credentials. After verified Stars payment, the customer receives a payment acknowledgement and the order enters `REVIEW_REQUIRED` for Owner manual fulfillment. Owner delivers the actual product through the SKU's listed method and reconciles `DELIVERED`; only then does inventory become SOLD and the order FULFILLED.
-- The Owner's declaration remains recorded under `VC-OWNER-ATTESTATION-20261123-01`. Supporting source/authorization documents remain Owner-held and were not independently inspected; the database status is internal Owner attestation, not independent verification or a publisher certificate.
-- Production audit fixes: stale Owner-page effect removed; unpaid reservation expiry centralized and invoked on catalog/history/Owner dashboard/product/order/checkout access; customer-facing Store/Owner attribution and stock-count labels removed; internal pricing and XTR-conversion metadata removed from product specification output.
-- The stale unpaid Owner checkout for FF-001 (1,494 XTR) was verified at age 1,034 seconds, with no pre-checkout ID and no transaction. It was cancelled after expiry, its delivery was revoked, and its stock reservation was released. Final read-back confirms 16 AVAILABLE and 0 RESERVED commercial slots.
-- Paid customer UAT, actual Owner manual delivery UAT, refund acceptance, IDOR/admin authorization review, backup/restore, and production rate-limit verification remain outstanding.
-**The detailed sections below are retained as historical deployment evidence. Where older numbers or run IDs conflict with this snapshot, this snapshot is authoritative.**
+- Latest production source commit: `75fd4695b5d5eb57d83e2477603098d0256623e0`.
+- CI: [run 45780201632](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45780201632), **SUCCESS**. Backend/core tests, static Mini App files and JavaScript syntax, frontend build, asset verification, and API Worker dry-run passed.
+- Production deployment: [run 45780201631](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45780201631), **SUCCESS**. API/frontend Workers, database health, gateway upstreams, root/www/API domains, artwork, five Mini App static file smoke checks, Telegram webhook configuration/read-back, and Owner TEST fixture checks passed.
+- Cloudflare live versions: `vault-core-web` **v161** (100% traffic), `vault-core-api` **v841** (100%), and `vault-core-gateway` **v320** (100%).
+- Customer storefront entry point: `https://vaultcore.biz.id/miniapp/index.html`; the root route redirects to this mobile-only Mini App. The existing Telegram `/start` button opens the same URL.
+- Customer flow: Home, four game categories, 12 master variants, product detail, Telegram XTR invoice checkout, order status/history, and profile. Product, price, stock, and purchase eligibility continue to come from the existing API.
+- CSS cleanup: `globals.css` 152,465 → 66,125 bytes; `mobile-app.css` 26,903 → 6,546 bytes; `catalog/page.css` 26,196 → 23,865 bytes. Repeated declarations inside active rules were eliminated; old storefront selectors and the unused Dashboard style block were removed.
+- The API continues to use Telegram `initData` for checkout/history. Website browser view is catalog/detail only; Telegram Stars (XTR) remains the only checkout/payment path.
+- Direct Android screenshot comparison and manual interaction UAT are **NOT TESTED** in this deployment. The CI and production smoke checks confirm builds, assets, routing configuration and Worker health, not the visual rendering on a user's particular phone.
+
+**The detailed sections below are retained as historical deployment evidence. The snapshot above is authoritative for the 26 November 2026 release.**
+
 ## Connected infrastructure
 
 | Service | Resource | Verified status |
