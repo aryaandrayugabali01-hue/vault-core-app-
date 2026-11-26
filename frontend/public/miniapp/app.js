@@ -138,8 +138,10 @@ function productImage(product, cls) {
   return '<div class="' + (cls || 'product-art') + '"><img src="' + esc(url) + '" alt="' + esc(name) + '" loading="lazy"></div>';
 }
 function productCard(product) {
-  return '<button type="button" class="product-card" data-go="/product/' + encodeURIComponent(product.id) + '">' +
+  const gold = String(product.tier || '').toUpperCase() === 'GOLD';
+  return '<button type="button" class="product-card' + (gold ? ' tier-gold' : '') + '" data-go="/product/' + encodeURIComponent(product.id) + '">' +
     productImage(product,'product-art') +
+    (gold ? '<span class="tier-gold-label">GOLD · BEST VALUE</span>' : '') +
     '<div class="product-copy"><small>' + esc(gameOf(product.game_category).name) + ' · ' + esc(categoryLabel(product)) + '</small><b>' + esc(product.name) + '</b>' +
     priceMarkup(product,true) + '<small class="product-status-caption">' + esc(accountAvailability(product)) + ' · ' + esc(stockLabel(product)) + '</small></div></button>';
 }
@@ -191,7 +193,7 @@ function home() {
       '<section class="home-promo"><div><small>PROMO AKUN GAME</small><h1>Distribusi Aset Digital Game</h1><p>Akun premium dan layanan joki dari empat game pilihan.</p><button type="button" data-go="/catalog">Jelajahi Store <b>↗</b></button></div><span class="home-promo-mark">VC</span></section>' +
       '<div class="section-head"><h2>Kategori Game</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
       '<section class="games home-games">' + gameTiles + '</section>' +
-      '<div class="home-group-tabs"><button type="button" class="on" data-go="/catalog">Semua</button><button type="button" data-go="/catalog">Akun</button><button type="button" data-go="/catalog">Joki</button></div>' +
+      '<div class="home-group-tabs"><button type="button" class="on" data-store-group="ALL">Semua</button><button type="button" data-store-group="Akun">Akun</button><button type="button" data-store-group="Jasa Joki">Joki</button></div>' +
       (skeleton ? skeleton :
         '<div class="section-head"><h2>Akun Game</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
         (accounts.length ? '<div class="home-variant-list">' + accounts.map(variantCard).join('') + '</div>' : '<div class="empty">Varian akun belum dapat dimuat.</div>') +
@@ -594,6 +596,14 @@ function startCheckout(id) {
   go('/checkout/' + encodeURIComponent(id));
 }
 function handleClick(event) {
+  const storeGroup = event.target.closest('[data-store-group]');
+  if (storeGroup) {
+    state.catalogGroup = storeGroup.getAttribute('data-store-group') || 'ALL';
+    state.catalogGame = 'ALL';
+    state.search = '';
+    go('/catalog');
+    return;
+  }
   const goButton = event.target.closest('[data-go]');
   if (goButton) {
     event.preventDefault();
