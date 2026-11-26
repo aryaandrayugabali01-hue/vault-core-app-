@@ -131,6 +131,10 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     tg?.expand();
     loadCatalog();
     loadSession();
+    const loginResult = new URLSearchParams(window.location.search).get('telegram_login');
+    if (loginResult === 'success') setNotice('Login Telegram berhasil. Anda dapat melanjutkan checkout XTR.');
+    if (loginResult === 'failed') setNotice('Login Telegram gagal diverifikasi. Ulangi proses masuk.');
+    if (loginResult === 'unavailable') setNotice('Login Telegram web belum aktif. Kredensial OIDC BotFather perlu dipasang pada konfigurasi produksi.');
     const paid = () => {
       setNotice('Telegram mengonfirmasi pembayaran. Memperbarui pesanan…');
       loadOrders().catch(() => {});
