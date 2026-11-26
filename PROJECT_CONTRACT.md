@@ -5,9 +5,9 @@
 |---|---|
 | Nama proyek | VAULT CORE |
 | Jenis dokumen | Kontrak spesifikasi dan acuan pelaksanaan proyek |
-| Versi | 1.5 — Addendum CR-05 (Owner Product Authority) |
-| Tanggal dokumen | 23 November 2026 |
-| Status | Baseline v1.2, CR-03, CR-04, dan CR-05 disetujui melalui instruksi tertulis pemilik; CR-05 menetapkan Owner sebagai pemegang keputusan internal tunggal atas siklus hidup produk dan pemenuhan, 23 November 2026 |
+| Versi | 1.6 — Addendum CR-11 (Authorized Account Credentials) |
+| Tanggal dokumen | 27 November 2026 |
+| Status | Baseline v1.2, CR-03, CR-04, CR-05, CR-09, CR-10, dan CR-11 disetujui melalui instruksi tertulis pemilik; CR-11 menyelaraskan ketentuan kredensial akun dengan dukungan transfer akun bersyarat, 27 November 2026 |
 | Model usaha | Single-Vendor Store |
 | Kanal utama | Telegram Bot dan Telegram Mini App |
 | Domain rencana | `vaultcore.biz.id` (belum dikonfirmasi kepemilikannya dan konfigurasi DNS-nya) |
@@ -16,7 +16,7 @@
 >
  > **Rekaman persetujuan pemilik:** Status v1.2 CR-02 ditetapkan DISETUJUI berdasarkan instruksi tertulis pemilik proyek. Addendum CR-03 pada Bagian 27 disetujui pada 21 November 2026, CR-04 pada 22 November 2026, dan CR-05 pada 23 November 2026 melalui instruksi tertulis pemilik di percakapan proyek. Rekaman ini menetapkan keputusan operasional internal Owner, bukan sertifikasi hukum atau pengesampingan hak pihak ketiga. Nama legal dan sertifikat tanda tangan elektronik formal tidak tercantum dalam rekaman percakapan.
 >
-> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan fixture uji melalui CR-03; v1.4 menetapkan dukungan bersyarat transfer akun melalui CR-04; v1.5 melalui CR-05 menetapkan Owner sebagai otoritas internal untuk pencatatan, penilaian internal, persetujuan, rincian katalog, stok, metode pemenuhan, dan pengiriman. Kewajiban eksternal, pembayaran XTR, dan sumber stok aktual tetap berlaku.
+> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan fixture uji melalui CR-03; v1.4 menetapkan dukungan bersyarat transfer akun melalui CR-04; v1.5 melalui CR-05 menetapkan Owner sebagai otoritas internal untuk pencatatan, penilaian internal, persetujuan, rincian katalog, stok, metode pemenuhan, dan pengiriman. v1.6 melalui CR-11 menyelaraskan ketentuan kredensial pada Bagian 3.3 dan 7.6 dengan dukungan transfer akun pada CR-04; kewajiban eksternal, pembayaran XTR, dan sumber stok aktual tetap berlaku.
 
 ---
 
@@ -89,19 +89,22 @@ Sistem katalog fleksibel pada tingkat tipe data dan metode pemenuhan, tetapi set
 
 Sistem boleh menyimpan dan mengirim payload digital terenkripsi untuk tipe produk yang disetujui, misalnya kode redeem atau lisensi. Fleksibilitas format data tidak berarti seluruh jenis kredensial atau aset pihak ketiga otomatis layak dijual.
 
-## 3.3 Batas produk, kredensial akun, dan pemeriksaan SKU
+## 3.3 Dukungan akun game, kredensial, dan pemeriksaan SKU
 
-Sistem tidak menyediakan katalog, penyimpanan, pemrosesan, atau pengiriman otomatis untuk:
+VAULT CORE mendukung katalog, penyimpanan inventaris, pemrosesan, dan pemenuhan akun game pihak ketiga, termasuk kredensial akses akun seperti `Email:Password`, sepanjang Owner menyatakan dan mencatat dasar kepemilikan atau kewenangan penjualan serta metode transfer yang digunakan. Ketentuan ini menggantikan larangan menyeluruh terhadap format kredensial akun pada versi sebelumnya dan harus dibaca bersama Addendum CR-04 Bagian 28 serta CR-11.
 
-- Paket kredensial akun game `Email:Password` atau pemindahan kendali akun yang dilarang oleh penerbit/platform.
-- Password, cookie, session token, recovery code, OTP, backup code, atau data autentikasi yang dapat digunakan untuk mengambil alih akun.
-- Koin, mata uang, item, atau aset virtual yang diperoleh atau dialihkan melalui cara yang dilarang ketentuan penerbit/platform.
-- Produk yang memakai merek, gambar, logo, atau materi berhak cipta tanpa hak penggunaan yang diperlukan.
-- Layanan yang meminta pelanggan memberikan password utama atau kode autentikasi akun kepada operator.
+Ketentuan operasional:
 
-Kredensial akun tidak dapat diaktifkan hanya dengan alasan penjual menyatakan bersedia menanggung risikonya. Jika penerbit menyediakan program transfer atau distribusi resmi, SKU tetap memerlukan bukti otorisasi tertulis dan pemeriksaan khusus sebelum dapat masuk katalog. Status awal SKU baru adalah `DRAFT` atau `PENDING_REVIEW`, bukan `ACTIVE`.
+- Kredensial yang memang diperlukan untuk menyerahkan akun kepada pembeli dapat disimpan sebagai payload inventaris terenkripsi dan dikirim melalui alur delivery yang terotorisasi.
+- Data autentikasi tambahan seperti cookie, session token, OTP, recovery code, backup code, atau password email pribadi tidak otomatis termasuk dalam payload akun. Data tersebut hanya boleh diproses bila secara khusus diperlukan untuk metode transfer yang sah, berada dalam kewenangan Owner, dan memiliki kontrol keamanan serta retensi yang sesuai.
+- Sistem dilarang menggunakan kredensial untuk mengambil alih akun tanpa kewenangan, melewati autentikasi, menghindari kontrol keamanan penerbit, atau mengakses akun di luar tujuan pemenuhan yang disetujui.
+- Produk, item virtual, atau aset lain yang diperoleh melalui cara yang dilarang penerbit/platform tetap tidak dapat dijual.
+- Penggunaan merek, gambar, logo, dan materi berhak cipta tetap harus memiliki dasar penggunaan yang sesuai.
+- Customer tidak boleh diminta memberikan password utama atau kode autentikasi akun pribadinya kepada operator untuk menerima layanan.
 
-Pemeriksaan dilakukan per game dan per SKU. Ketentuan penerbit dapat berbeda dan berubah; daftar game pada kontrak ini adalah kategori katalog, bukan persetujuan otomatis untuk memperdagangkan akun atau itemnya.
+Setiap SKU akun dimulai sebagai `DRAFT` atau `PENDING_REVIEW`. Sebelum aktivasi, Owner wajib mencatat dasar kepemilikan/kewenangan sumber, ketentuan penerbit yang relevan, metode transfer, wilayah, dan hasil pemeriksaan per game/SKU sesuai CR-04 dan CR-05. Deklarasi Owner mengesahkan keputusan internal, tetapi tidak menghapus ketentuan penerbit, hukum, atau hak pihak ketiga. Jika transfer secara tegas dilarang atau sumber tidak memiliki kewenangan yang dinyatakan, SKU harus ditahan dan tidak boleh dijual.
+
+Pemeriksaan dilakukan per game dan per SKU karena ketentuan penerbit dapat berbeda dan berubah. Kategori katalog bukan persetujuan otomatis untuk setiap SKU.
 
 ## 3.4 Asuransi, garansi, dan upsell
 
@@ -335,7 +338,7 @@ Sistem wajib mencegah dua order menggunakan item stok yang sama. Pengurangan dan
 - Memiliki status `PENDING`, `PROCESSING`, `DELIVERED`, `FAILED`, atau `REVIEW_REQUIRED`.
 - Menyimpan waktu, metode, dan hasil pemenuhan.
 - Jika pengiriman gagal, order masuk antrean retry atau pemeriksaan manual tanpa membuat pemenuhan ganda.
-- Isi delivery berupa kode/lisensi yang sah, instruksi resmi, atau detail layanan. Kredensial login akun game tidak termasuk.
+- Isi delivery dapat berupa kode/lisensi, instruksi resmi, detail layanan, atau payload akun game terenkripsi yang disetujui untuk transfer berdasarkan CR-04 dan CR-11. Kredensial hanya dapat diakses oleh Owner/layanan delivery berwenang setelah pembayaran valid dan pemeriksaan order terpenuhi.
 
 ## 7.7 Modul Owner Dashboard
 
@@ -1129,7 +1132,7 @@ Untuk SKU yang lolos Bagian 28.2, sistem dapat menambahkan tipe pemenuhan GAME_A
 - Hanya dapat diakses oleh layanan delivery setelah pembayaran valid dan order memenuhi syarat.
 - Memiliki audit log untuk akses, perubahan, pembatalan, dan pengiriman.
 - Dihapus atau dinonaktifkan sesuai kebijakan retensi setelah transfer selesai, sepanjang kewajiban audit dan hukum mengizinkan.
-- Tidak mencakup email pribadi vendor, password email, cookie, session token, OTP, recovery code, atau kredensial lain yang tidak diperlukan dan tidak secara sah dapat dialihkan.
+- Tidak mencakup email pribadi vendor atau kredensial pihak lain yang tidak diperlukan untuk transfer. Cookie, session token, OTP, recovery code, dan backup code tidak boleh disertakan secara default; pengecualian memerlukan kebutuhan transfer terdokumentasi, kewenangan yang jelas, kontrol akses khusus, dan dasar yang sah.
 
 Sistem tidak boleh mengambil alih akun, melewati autentikasi, mengubah kepemilikan tanpa prosedur resmi, atau membantu menghindari mekanisme keamanan penerbit. Bila transfer resmi tidak membutuhkan pengiriman password, sistem wajib menggunakan metode transfer resmi tersebut.
 
@@ -1260,7 +1263,7 @@ CR-05 tidak mengaktifkan SKU komersial secara otomatis dan tidak mengubah harga,
 
 ---
 
-**Akhir dokumen — VAULT CORE Project Contract v1.5 (CR-05).**
+
 
 
 # 30. Addendum — Import Katalog Produk Game dari Workbook Owner
@@ -1396,3 +1399,42 @@ Panduan kategori tidak boleh memuat instruksi Rekber, transfer bank, direct tran
 - UI, panduan kategori, README, dan kontrak menyampaikan aturan yang sama.
 
 ---
+
+# 33. Addendum CR-11 — Penyelarasan Dukungan Kredensial Akun Game
+
+**Tanggal:** 27 November 2026  
+**Status:** Disetujui melalui instruksi tertulis Owner pada percakapan proyek.  
+**Mengubah:** Bagian 3.3 dan 7.6 serta ketentuan payload pada Bagian 28.3. Jika terdapat pertentangan mengenai dukungan teknis kredensial akun, CR-11 berlaku bersama CR-04 dan CR-05.
+
+## 33.1 Keputusan
+
+VAULT CORE secara eksplisit mendukung inventaris dan pemenuhan akun game pihak ketiga yang disediakan oleh Owner/vendor, termasuk penyimpanan dan pengiriman kredensial akses akun yang diperlukan untuk penyerahan akun kepada pembeli. Dengan demikian, tidak ada lagi larangan kontraktual menyeluruh yang mengecualikan kredensial akun game hanya karena formatnya berupa Email:Password.
+
+## 33.2 Kewenangan dan tanggung jawab Owner
+
+Owner bertanggung jawab memastikan sumber akun, kepemilikan atau kewenangan vendor, hak untuk menjual/menyerahkan, wilayah, metode transfer, dan informasi yang disampaikan kepada pembeli. Owner mencatat deklarasi dan referensi sumber per SKU/unit inventaris. Persetujuan internal Owner tidak menciptakan hak yang tidak dimiliki dan tidak membatalkan larangan eksplisit penerbit, hukum, atau hak pihak ketiga.
+
+## 33.3 Pengamanan kredensial
+
+- Kredensial akun yang diperlukan untuk penyerahan disimpan terenkripsi; tidak boleh muncul pada log, analytics, error trace, katalog publik, ekspor laporan umum, atau daftar inventaris biasa.
+- Akses dibatasi pada Owner/layanan delivery yang berwenang dan hanya untuk tujuan pemenuhan order yang sah.
+- Setiap akses, perubahan, dan pengiriman dicatat dalam audit log tanpa merekam nilai rahasia kredensial.
+- Password email pribadi, cookie, session token, OTP, recovery code, dan backup code tidak menjadi bagian payload secara otomatis. Pemrosesan pengecualian memerlukan alasan operasional terdokumentasi, kewenangan yang jelas, dan kontrol keamanan khusus.
+- Kredensial tidak boleh digunakan untuk takeover tanpa izin, bypass autentikasi, atau akses di luar proses transfer yang dinyatakan.
+
+## 33.4 Status implementasi
+
+CR-11 mengubah persyaratan kontrak dan menjadi dasar implementasi. Persetujuan kontrak ini tidak dengan sendirinya membuktikan bahwa seluruh API, database, Owner Console, enkripsi, delivery, dan audit log produksi telah mendukung penyimpanan/pengiriman kredensial. Kesiapan teknis harus diverifikasi dan diselesaikan sebelum kredensial akun nyata dimasukkan ke inventaris komersial.
+
+## 33.5 Kriteria penerimaan
+
+- Bagian 3.3 tidak lagi melarang seluruh format kredensial akun game.
+- Bagian 7.6 mengizinkan payload akun terenkripsi sesuai CR-04/CR-11.
+- Ketentuan 28.3 konsisten dengan pemrosesan kredensial yang diperlukan.
+- Kredensial tidak bocor ke katalog, log, analytics, error trace, atau ekspor umum.
+- Owner memiliki kontrol akses dan audit untuk akses serta delivery.
+- Pembayaran tetap Telegram Stars (`XTR`) dan delivery tetap mensyaratkan pembayaran valid.
+
+---
+
+**Akhir dokumen — VAULT CORE Project Contract v1.6 (CR-11).**
