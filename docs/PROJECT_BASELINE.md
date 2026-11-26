@@ -36,6 +36,7 @@ Checkout, invoice, dan pembayaran tetap melalui VAULT CORE Telegram Mini App. We
 | Area | Status | Aturan |
 |---|---|---|
 | Dashboard / halaman utama | LOCKED | Pertahankan desain dan perilaku yang telah disetujui. |
+| Seluruh aplikasi customer, katalog, dan Owner | LOCKED | Mobile-only; gunakan kanvas maksimum 430px. Tidak membuat layout desktop. |
 | Halaman Semua Game | LOCKED | Jangan mengubah struktur visual/navigasi yang disetujui. |
 | Kategori MLBB dan subkategori Akun | LOCKED | Pertahankan baseline visual yang disetujui. |
 | Urutan lima filter MLBB | LOCKED | Win Rate, Jumlah Skin, Jumlah Hero, Rank Saat Ini, Akun Terhubung Pada. |
