@@ -75,9 +75,9 @@ Set `TELEGRAM_WEBHOOK_URL` to the public API route, then run `npm run setup:webh
 
 Owner authorization uses `owner_accounts` in the production Neon database as its sole source of truth. Protected Owner API routes accept a validated Telegram Mini App `initData` session or a signed, HttpOnly browser session created after Telegram authentication. Owner status is checked server-side on every protected request.
 
-**Web browser login:** open `https://vaultcore.biz.id/admin` and choose **Log in with Telegram**. Telegram verifies the identity; VAULT CORE then checks the Telegram numeric ID against the Owner registry in Neon. The browser session is signed by the API and stored in a Secure, HttpOnly, SameSite cookie shared only across the VAULT CORE subdomains. No email/password login is used.
+**Web browser login:** open `https://vaultcore.biz.id/admin` and choose **Masuk dengan Telegram**. Telegram OpenID Connect verifies the identity using an authorization-code flow with PKCE; the API validates the signed ID token and checks the Telegram numeric ID against the active Owner registry in Neon. The browser session is signed by the API and stored in a Secure, HttpOnly, SameSite cookie shared only across the VAULT CORE subdomains. No email/password login is used.
 
-**One-time Telegram setup:** in `@BotFather`, run `/setdomain` and select the existing VAULT CORE bot, then register `vaultcore.biz.id`. This authorizes Telegram's Login Widget for the website domain. The bot token already used by the API is also used for server-side signature verification. If the widget is not displayed or Telegram rejects the domain, complete this BotFather step first.
+**Telegram Login setup:** in `@BotFather` → existing VAULT CORE bot → Login Widget, register Allowed Origin `https://vaultcore.biz.id` and Redirect URI `https://api.vaultcore.biz.id/api/owner-auth/oidc/callback`. Store the Client Secret in GitHub Actions as `TELEGRAM_OIDC_CLIENT_SECRET`. The public Client ID and Redirect URI are configured in `wrangler.api.jsonc`.
 
 **Mini App login:** users can continue to open VAULT CORE from the Telegram bot. The existing `initData` validation remains supported. In the Mini App, open **Profile → Buka Dashboard Owner** to enter the Owner Console at `/admin`.
 
