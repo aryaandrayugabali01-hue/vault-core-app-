@@ -821,6 +821,19 @@ test('Owner product attributes are normalized and bounded for marketplace filter
   assert.equal(normalizeProductAttributes(Object.fromEntries(Array.from({length:25},(_,i)=>['Key'+i,'Value']))).ok, false);
 });
 
+test('website and Telegram Mini App share the same mobile visual tokens', () => {
+  const web = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
+  const mini = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
+  for (const token of ['#070914','#0d1422','#f7f8fc','#a9b4c8','#ffc928','#7c3aed']) {
+    assert.ok(web.includes(token), 'Web catalog is missing shared token ' + token);
+    assert.ok(mini.includes(token), 'Mini App is missing shared token ' + token);
+  }
+  assert.ok(web.includes('width:min(100%,430px)'));
+  assert.ok(mini.includes('width:min(100%,430px)'));
+  assert.ok(web.includes('radial-gradient(ellipse at 12% 0%,rgba(88,40,180,.24)'));
+  assert.ok(mini.includes('radial-gradient(ellipse at 12% 0%,rgba(88,40,180,.24)'));
+});
+
 test('Customer web navigation keeps transactions inside Telegram Mini App', () => {
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
