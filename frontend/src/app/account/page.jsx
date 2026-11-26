@@ -6,6 +6,20 @@ import './page.css';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
+function safeAccountReturnPath(value) {
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || value.includes('\\\\')) return '';
+  try {
+    const target = new URL(value, 'https://vaultcore.biz.id');
+    const allowed = target.pathname === '/account' || target.pathname.startsWith('/account/')
+      || target.pathname === '/catalog' || target.pathname.startsWith('/catalog/');
+    return target.origin === 'https://vaultcore.biz.id' && allowed
+      ? target.pathname + target.search + target.hash
+      : '';
+  } catch {
+    return '';
+  }
+}
+
 export default function CustomerAccountPage() {
   const [customer, setCustomer] = useState(null);
   const [status, setStatus] = useState('checking');
@@ -42,7 +56,7 @@ export default function CustomerAccountPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const next = params.get('next');
-    if (next) setNextPath(next);
+    if (next) setNextPath(safeAccountReturnPath(next));
     if (params.get('login') === 'success') setMessage('Telegram berhasil diverifikasi. Akun pelanggan VAULT CORE sudah terhubung.');
     if (params.get('login_error')) setMessage('Login Telegram belum berhasil. Silakan coba kembali.');
     loadSession();
