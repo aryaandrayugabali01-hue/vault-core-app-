@@ -60,6 +60,19 @@ const stockLabel = (product) => {
   if (product.display_stock === null || product.display_stock === 'IN_STOCK') return 'Stok tersedia';
   return Number(product.display_stock) > 1 ? 'Stok tersedia' : 'Stok habis';
 };
+function accountAvailability(product) {
+  const attrs = product && product.attributes || {};
+  const entries = Object.entries(attrs);
+  const read = (keys) => {
+    const found = entries.find(([key]) => keys.includes(String(key).toLowerCase().replace(/[^a-z0-9]/g,'')));
+    return found ? String(found[1] ?? '').trim() : '';
+  };
+  const kind = read(['availabilitystatus','availabilitytype','stocktype','ketersediaan']).toUpperCase();
+  const days = Number(read(['indentdays','indentdaycount','jumlahhariindent','durasiindent']));
+  if (kind === 'INDEN' || kind === 'INDENT') return Number.isSafeInteger(days) && days > 0 ? 'Inden ' + days + ' hari' : 'Inden';
+  return product && product.is_available === true ? 'Ready' : 'Belum tersedia';
+}
+
 const categoryLabel = (product) => product && product.variant_category || 'Produk Digital';
 function normalizeCatalogVariants(variants) {
   state.variants = Array.isArray(variants) ? variants : [];
@@ -128,7 +141,7 @@ function productCard(product) {
   return '<button type="button" class="product-card" data-go="/product/' + encodeURIComponent(product.id) + '">' +
     productImage(product,'product-art') +
     '<div class="product-copy"><small>' + esc(gameOf(product.game_category).name) + ' · ' + esc(categoryLabel(product)) + '</small><b>' + esc(product.name) + '</b>' +
-    priceMarkup(product,true) + '<small>' + esc(stockLabel(product)) + '</small></div></button>';
+    priceMarkup(product,true) + '<small class="product-status-caption">' + esc(accountAvailability(product)) + ' · ' + esc(stockLabel(product)) + '</small></div></button>';
 }
 function comingSoonCard(variant) {
   const game = gameOf(variant.game_code);
@@ -315,6 +328,7 @@ function productPage(id) {
     '<h2 class="detail-title">' + esc(product.name) + '</h2>' +
     '<div class="chips"><span class="chip">' + esc(gameOf(product.game_category).short) + '</span><span class="chip">' + esc(categoryLabel(product)) + '</span></div>' +
     '<div class="detail-price">' + fmt(product.sale_price_xtr) + ' XTR</div>' +
+    '<div class="detail-availability">' + esc(accountAvailability(product)) + '</div>' +
     '<div class="box"><h3>Detail & Spesifikasi</h3>' + details.join('') + '</div>' +
     (product.variant_category === 'Akun'
       ? '<div class="box info">' + icon('info') + '<span>Periksa spesifikasi akun. Jangan pernah membagikan kata sandi, OTP, session, atau kode pemulihan di luar proses penyerahan resmi.</span></div>'

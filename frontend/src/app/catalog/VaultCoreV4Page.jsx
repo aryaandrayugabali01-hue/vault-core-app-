@@ -32,6 +32,14 @@ function getAttr(product, keys) {
   const found = entries.find(([key]) => set.has(normalize(key)));
   return found ? String(found[1] ?? '') : '';
 }
+function getProductAvailability(product) {
+  const kind = getAttr(product,['availability_status','availability_type','stock_type','ketersediaan']).toUpperCase();
+  const days = Number(getAttr(product,['indent_days','indent_day_count','jumlah_hari_indent','durasi_indent']));
+  if (kind === 'INDEN' || kind === 'INDENT') {
+    return Number.isSafeInteger(days) && days > 0 ? 'Inden ' + days + ' hari' : 'Inden';
+  }
+  return product?.is_available === true ? 'Ready' : 'Belum tersedia';
+}
 
 function getComparePrice(product) {
   const sale = Number(product?.sale_price_xtr);
@@ -441,7 +449,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
                   {products.length>0 && <div className="vc4-sku-list">{products.map((product)=><div className="vc4-sku" key={product.id}>
                     <button type="button" className="vc4-sku-info" onClick={()=>setSelected({variant_id:Number(variant.variant_id),product})}>
                       {product.image_url ? <img src={product.image_url} alt="" loading="lazy"/> : <span className="vc4-sku-thumb">◇</span>}
-                      <span><strong>{product.name}</strong><small>{product.sku} · {product.display_stock===null?'Stok tersedia':product.display_stock===1?'STOK TERAKHIR':typeof product.display_stock==='number'?fmt(product.display_stock)+' stok':product.display_stock}</small></span>
+                      <span><strong>{product.name}</strong><small>{product.sku} · {product.display_stock===null?'Stok tersedia':product.display_stock===1?'STOK TERAKHIR':typeof product.display_stock==='number'?fmt(product.display_stock)+' stok':product.display_stock} · {getProductAvailability(product)}</small></span>
                     </button>
                     <div className="vc4-sku-buy"><PriceDisplay product={product} compact/><button type="button" onClick={()=>addToCart(product)}>Tambah</button></div>
                   </div>)}</div>}
@@ -455,7 +463,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada SKU yang tersedia untuk dipesan. Varian Akun dan Joki tetap ditampilkan dari master katalog.</p>}
         <footer className="vc4-footer">
           <p>VAULT CORE adalah penjual tunggal. Website dan Telegram Mini App menggunakan akun pelanggan dan backend yang sama.</p>
-          <p>Pembayaran Mini App menggunakan invoice Telegram Stars (XTR). Pemenuhan Joki mengikuti ketentuan dan estimasi listing; data akses tidak ditampilkan pada katalog.</p>
+          <p>Telegram Mini App menggunakan invoice resmi Telegram Stars (XTR). Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram. Data akses Joki ditangani melalui vault terenkripsi dan tidak ditampilkan pada katalog.</p>
         </footer>
       </main>
 
@@ -466,6 +474,8 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           <h2>{activeVariant?.name}</h2>
           {selected.product ? <>
             <h3>{selected.product.name}</h3>
+            <div className="vc4-product-status">{getProductAvailability(selected.product)}</div>
+            {String(selected.product.tier || '').toUpperCase()==='GOLD' && <div className="vc4-detail-tier-gold">✦ GOLD · BEST VALUE</div>}
             {Array.isArray(selected.product.image_gallery)&&selected.product.image_gallery.length>0&&<div className="vc4-gallery">{selected.product.image_gallery.map((url,index)=><img key={url+index} src={url} alt={selected.product.name+' '+(index+1)} loading="lazy"/>)}</div>}
             <p>{selected.product.description}</p>
             {selected.product.customer_terms && <section className="vc4-product-terms"><h3>Ketentuan produk</h3><p>{selected.product.customer_terms}</p></section>}
