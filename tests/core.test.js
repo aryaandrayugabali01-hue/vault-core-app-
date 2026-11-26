@@ -1265,7 +1265,8 @@ test('account catalog and checkout use manual Owner handover without storing acc
   assert.match(ownerRoute, /router\.post\('\/products\/:[^']+\/inventory'.*USE_SINGLE_PRODUCT_FORM/);
   assert.match(ownerRoute, /router\.post\('\/products\/:[^']+\/publish'.*USE_SINGLE_PRODUCT_FORM/);
   assert.doesNotMatch(ownerRoute, /encryptSecretPayload|vault_core_secret_payloads|readJokiCustomerAccess/);
-});test('active stylesheets have unique selectors within each cascade context', () => {
+});
+test('active stylesheets have unique selectors within each cascade context', () => {
   const files = [
     '../frontend/src/app/globals.css',
     '../frontend/src/app/mobile-app.css',

@@ -208,49 +208,8 @@ router.post('/products',async(req,res)=>{
   return res.status(productId?200:201).json({ok:true,product:result[0],publication:status,stockAvailable:added,message:status==='ACTIVE'?'Produk tersimpan dan tampil pada katalog.':'Produk tersimpan tetapi ditahan sampai review hak disetujui dan stok aktual tersedia.'});
  }catch(e){try{await client.query('ROLLBACK');}catch{}if(e.code==='23505')return res.status(409).json({error:'SKU_ALREADY_EXISTS'});console.error('[owner-product-save]',e.message);return res.status(500).json({error:'OWNER_PRODUCT_SAVE_FAILED'});}finally{client.release();}
 });
-router.put('/products/:productId/questions',async(req,res)=>{
- const productId=Number(req.params.productId),answers=req.body?.answers;
- if(!Number.isSafeInteger(productId)||productId<=0||!Array.isArray(answers)||answers.length>24)return res.status(400).json({error:'INVALID_LISTING_FIELDS'});
- const {rows:products}=await pool.query('SELECT id,variant_id FROM products WHERE id=$1 AND COALESCE(is_test,FALSE)=FALSE',[productId]);
- const product=products[0];if(!product?.variant_id)return res.status(404).json({error:'V4_PRODUCT_NOT_FOUND'});
- const fields=await getVariantListingFields(pool,product.variant_id),answerById=new Map();
- for(const answer of answers){const id=Number(answer?.questionId);if(!Number.isSafeInteger(id)||answerById.has(id))return res.status(400).json({error:'INVALID_LISTING_FIELD_ID'});answerById.set(id,String(answer?.responseText??''));}
- if(answerById.size!==fields.length||fields.some(f=>!answerById.has(Number(f.pertanyaan_id))))return res.status(400).json({error:'ALL_LISTING_FIELDS_REQUIRED'});
- const input=Object.fromEntries(fields.map(f=>[f.field_key,answerById.get(Number(f.pertanyaan_id))]));
- const checked=validateListingFields(fields,input);if(!checked.ok)return res.status(400).json({error:checked.error,field:checked.field??null});
- const normalized=normalizeProductAttributes(checked.value);if(!normalized.ok)return res.status(400).json({error:normalized.error});
- const client=await pool.connect();
- try{
-  await client.query('BEGIN');
-  await client.query('UPDATE products SET attributes=$2::jsonb,updated_at=NOW() WHERE id=$1',[productId,JSON.stringify(normalized.value)]);
-  for(const field of fields){
-   await client.query(`INSERT INTO vault_core_product_question_responses(product_id,question_id,response_text,proof_urls,response_status,created_by_telegram_id)
-    VALUES($1,$2,$3,'[]'::jsonb,'ANSWERED',$4)
-    ON CONFLICT(product_id,question_id) DO UPDATE SET response_text=EXCLUDED.response_text,proof_urls='[]'::jsonb,response_status='ANSWERED',updated_at=NOW()`,
-    [productId,field.pertanyaan_id,normalized.value[field.field_key],String(req.telegramUser.id)]);
-  }
-  await client.query('COMMIT');
- }catch(error){try{await client.query('ROLLBACK');}catch{}console.error('[v4-listing-fields-save]',error.message);return res.status(500).json({error:'LISTING_FIELDS_SAVE_FAILED'});}
- finally{client.release();}
- return res.json({ok:true,productId,total:fields.length,completed:fields.length,attributes:normalized.value});
-});
-
-router.get('/products/:productId/questions',async(req,res)=>{
- const productId=Number(req.params.productId);
- if(!Number.isSafeInteger(productId)||productId<=0)return res.status(400).json({error:'INVALID_PRODUCT_ID'});
- const {rows}=await pool.query(
-  `SELECT q.pertanyaan_id AS question_id,q.urutan_pertanyaan AS question_order,q.pertanyaan_wajib AS question,
-    q.sifat_item AS item_type,q.field_key,q.input_type,q.field_options AS options,q.field_placeholder AS placeholder,
-    q.field_max_length AS max_length,q.field_group,q.is_public,
-    COALESCE(r.response_text,p.attributes->>q.field_key,'') AS response_text,
-    COALESCE(r.response_status,'PENDING') AS response_status
-   FROM products p JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=p.variant_id AND q.is_public=TRUE
-   LEFT JOIN vault_core_product_question_responses r ON r.product_id=p.id AND r.question_id=q.pertanyaan_id
-   WHERE p.id=$1 ORDER BY q.urutan_pertanyaan`,[productId]);
- if(!rows.length){const exists=await pool.query('SELECT 1 FROM products WHERE id=$1 AND variant_id IS NOT NULL',[productId]);if(!exists.rowCount)return res.status(404).json({error:'V4_PRODUCT_NOT_FOUND'});}
- return res.json({questions:rows});
-});
-
+router.put('/products/:productId/questions',(_req,res)=>res.status(410).json({error:'USE_SINGLE_PRODUCT_FORM'}));
+router.get('/products/:productId/questions',(_req,res)=>res.status(410).json({error:'USE_SINGLE_PRODUCT_FORM'}));
 router.post('/products/:productId/inventory',(_req,res)=>res.status(410).json({error:'USE_SINGLE_PRODUCT_FORM'}));
 router.post('/products/:productId/publish',(_req,res)=>res.status(410).json({error:'USE_SINGLE_PRODUCT_FORM'}));
 

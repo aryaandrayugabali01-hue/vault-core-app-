@@ -144,6 +144,3 @@
 @media(max-width:520px){.vco-test-item{align-items:flex-start;flex-direction:column}.vco-test-item button{width:100%}}
 
 .vco-customer-field{display:flex;gap:8px;margin:8px 0}.vco-customer-field input{flex:1;min-width:0}.vco-customer-field button,.vco-grid button{border:1px solid rgba(131,92,255,.35);border-radius:9px;background:#201b2b;color:#e0d6ff;padding:9px}
-.vco-form-actions{display:flex;gap:10px;position:sticky;bottom:8px;padding:12px;background:rgba(18,18,18,.96);border:1px solid rgba(163,230,53,.3);border-radius:14px;z-index:10}
-.vco-form-actions button{flex:1;min-height:44px;border:0;border-radius:10px;background:#a3e635;color:#101500;font-weight:900}.vco-form-actions button+button{background:#201b2b;color:#e0d6ff;border:1px solid rgba(131,92,255,.3)}
-.vco-product-list>button{display:flex;flex-direction:column;align-items:flex-start;gap:5px;width:100%;margin:6px 0;padding:12px;border:1px solid rgba(131,92,255,.2);border-radius:11px;background:#111;color:#fff;text-align:left}.vco-product-list small{color:#aaa}
