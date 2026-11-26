@@ -278,7 +278,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           </div>
         </section>
 
-        <section className="vc4-featured-hero" aria-label="Sorotan katalog" style={{'--vc4-feature-image':`url("${GAME_BACKGROUNDS[featuredProduct?.game_category] || GAME_BACKGROUNDS.MLBB}")`}}>
+        <section className="vc4-featured-hero" aria-label="Sorotan katalog" style={{'--vc4-feature-image':`url("${GAME_BACKGROUNDS[MARKET_GAME_CODE[featuredProduct?.game_code]] || GAME_BACKGROUNDS.MLBB}")`}}>
           <div className="vc4-featured-copy">
             <div className="vc4-featured-kicker"><span>VAULT CORE PICKS</span><span className="vc4-featured-live">KATALOG AKTIF</span></div>
             <h2>{featuredProduct ? featuredProduct.name : 'Temukan akun game pilihanmu.'}</h2>
@@ -290,7 +290,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             </div>
           </div>
           <div className="vc4-featured-art" aria-hidden="true">
-            <img src={GAME_ART[MARKET_GAME_CODE[featuredProduct?.game_category]] || GAME_ART.MLBB} alt="" loading="lazy"/>
+            <img src={GAME_ART[MARKET_GAME_CODE[featuredProduct?.game_code]] || GAME_ART.MLBB} alt="" loading="lazy"/>
           </div>
         </section>
 
