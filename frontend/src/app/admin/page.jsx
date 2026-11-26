@@ -86,6 +86,15 @@ export default function AdminPage() {
     setNotice('Panel pemilik berhasil terhubung.');
   }
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get('owner_login');
+    const error = params.get('owner_login_error');
+    if (result === 'success') setLoginMessage('Telegram berhasil diverifikasi. Memuat Dashboard Owner…');
+    if (error === 'owner_access_required') setLoginMessage('Identitas Telegram valid, tetapi ID ini belum memiliki hak Owner di Neon.');
+    else if (error) setLoginMessage('Login Telegram tidak berhasil. Silakan coba kembali.');
+  }, []);
+
+  useEffect(() => {
     let alive = true;
     async function initializeOwnerAccess() {
       try {
