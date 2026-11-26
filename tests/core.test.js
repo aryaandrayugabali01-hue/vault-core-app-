@@ -182,13 +182,15 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
   assert.ok(ownerV4.includes('Pembayaran 1 XTR tetap merupakan potongan Stars sungguhan'));
 });
 
-test('legacy v4 catalog behavior remains covered while /catalog routes to canonical Mini App', () => {
+test('web catalog remains backend-driven while Telegram invoice and Mini App flow stay supported', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const route = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  assert.ok(route.includes("redirect('/miniapp/index.html#/catalog')"));
-  assert.match(page, /Seluruh checkout dan pemantauan pesanan dilakukan melalui VAULT CORE Telegram Mini App/);
+  assert.ok(route.includes("from './VaultCoreV4Page'"));
+  assert.match(page, /POST/);
+  assert.match(page, /api\/customer-auth\/session/);
+  assert.match(page, /credentials:'include'/);
   assert.match(page, /invoice resmi Telegram Stars \(XTR\)/);
-  assert.match(page, /if \(!initData\)/);
+  assert.match(page, /let activeCustomer = customer/);
   assert.match(page, /openInvoice\(data\.invoiceUrl,data\.orderNumber\)/);
   assert.doesNotMatch(page, /Rekber|Escrow|transfer bank|direct transfer|QRIS|PayLater/i);
   assert.ok(page.includes("fetch(API + '/api/orders'"));
@@ -880,7 +882,7 @@ test('v4 product lifecycle requires Owner rights review, all questions, stock an
   assert.ok(accountOnlyMigration.includes("IS DISTINCT FROM 'GAME_ACCOUNT_TRANSFER'"));
 });
 
-test('v4 storefront and Owner routes retain global chrome while using the approved Apple catalog shell', () => {
+test('web storefront and Owner routes retain global chrome while Mini App keeps its separate mobile shell', () => {
   const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
   const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const owner = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
@@ -888,7 +890,7 @@ test('v4 storefront and Owner routes retain global chrome while using the approv
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   const catalogStyles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
-  assert.ok(home.includes("redirect('/miniapp/index.html')"));
+  assert.ok(home.includes("redirect('/catalog')"));
   assert.ok(owner.includes('StoreHeader'));
   assert.ok(owner.includes('/admin/v4'));
   assert.ok(ownerV4.includes('Dashboard Owner'));
@@ -1020,13 +1022,13 @@ test('v4 customer catalog footer follows XTR, account-security and Telegram paym
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   assert.ok(page.includes('Telegram Mini App'));
   assert.ok(page.includes('Telegram Stars (XTR)'));
-  assert.ok(page.includes('Status pembayaran hanya ditetapkan setelah konfirmasi sistem'));
+  assert.ok(page.includes('Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram'));
   assert.ok(page.includes('vault terenkripsi'));
   for (const unsupportedMethod of ['BCA','Mandiri','BNI','Maybank','BRI','Indomaret','Alfamart','QRIS','ShopeePay','PayLater']) assert.equal(page.includes(unsupportedMethod),false);
   assert.ok(styles.includes('.vc4-footer'));
 });
 
-test('the production homepage opens the v5 Mini App with backend-owned master variants', () => {
+test('the production website opens the React catalog while the Telegram Mini App remains available', () => {
   const page = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
   const html = readFileSync(new URL('../frontend/public/miniapp/index.html', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
@@ -1036,8 +1038,9 @@ test('the production homepage opens the v5 Mini App with backend-owned master va
   const seed = migration.match(/jsonb_array_elements\(\$\$([\s\S]*?)\$\$::jsonb\)/);
   assert.ok(seed, 'Canonical 12-variant seed must remain available');
   assert.equal(JSON.parse(seed[1]).length,12);
-  assert.ok(page.includes("redirect('/miniapp/index.html')"));
+  assert.ok(page.includes("redirect('/catalog')"));
   assert.ok(html.includes('<nav class="nav" id="nav"'));
+  assert.ok(page.includes("redirect('/catalog')"));
   assert.ok(html.includes('./app.css'));
   assert.equal(html.includes('./variants.js'),false);
   assert.ok(styles.includes('#app{position:relative;width:min(100%,430px)'));
@@ -1273,13 +1276,13 @@ test('active stylesheets have unique selectors within each cascade context', () 
 });
 
 
-test('clean /miniapp route redirects to the canonical deployed static Mini App entry', () => {
+test('clean /miniapp route and Telegram bot still open the canonical static Mini App entry', () => {
   const entry = readFileSync(new URL('../frontend/src/app/miniapp/page.jsx', import.meta.url), 'utf8');
   const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
   const webhook = readFileSync(new URL('../backend/routes/telegramWebhook.js', import.meta.url), 'utf8');
   const config = readFileSync(new URL('../wrangler.api.jsonc', import.meta.url), 'utf8');
   assert.ok(entry.includes("redirect('/miniapp/index.html')"));
-  assert.ok(home.includes("redirect('/miniapp/index.html')"));
+  assert.ok(home.includes("redirect('/catalog')"));
   assert.ok(webhook.includes("https://vaultcore.biz.id/miniapp/index.html"));
   assert.ok(config.includes('"TELEGRAM_MINI_APP_URL": "https://vaultcore.biz.id/miniapp/index.html"'));
 });
