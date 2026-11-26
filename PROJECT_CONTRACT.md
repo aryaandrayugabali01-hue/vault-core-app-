@@ -87,7 +87,7 @@ Sistem boleh menyimpan dan mengirim payload digital terenkripsi untuk tipe produ
 
 ## 3.3 Dukungan akun game, kredensial, dan pemeriksaan SKU
 
-VAULT CORE mendukung katalog, penyimpanan inventaris, pemrosesan, dan pemenuhan akun game pihak ketiga, termasuk kredensial akses akun seperti `Email:Password`, sepanjang Owner menyatakan dan mencatat dasar kepemilikan atau kewenangan penjualan serta metode transfer yang digunakan. Ketentuan ini menggantikan larangan menyeluruh terhadap format kredensial akun pada versi sebelumnya dan harus dibaca bersama Addendum CR-04 Bagian 28 serta CR-11.
+VAULT CORE mendukung katalog dan pemenuhan akun game pihak ketiga sepanjang Owner mencatat dasar sumber/kewenangan serta metode transfer. Sistem tidak menerima atau menyimpan kredensial akun; setelah pembayaran sukses, Owner menyerahkan informasi akses secara manual melalui kanal privat di luar aplikasi. Ketentuan ini harus dibaca bersama CR-04, CR-12, dan CR-13.
 
 Ketentuan operasional:
 
@@ -614,7 +614,7 @@ Proyek dinyatakan siap uji penerimaan jika semua kriteria kritis berikut lolos.
 - [ ] Mini App terbuka pada Android Telegram.
 - [ ] Data identitas Telegram diverifikasi oleh backend.
 - [ ] Kategori game tampil dan dapat dibuka.
-- [ ] Tier Silver, Gold, dan Platinum tampil sesuai konfigurasi.
+- [ ] Game, tipe produk, varian, dan status READY/INDENT tampil sesuai konfigurasi katalog.
 - [ ] Harga, deskripsi, dan stok sesuai database.
 - [ ] Customer tidak dapat mengakses harga modal atau halaman admin.
 - [ ] Order customer hanya dapat dilihat oleh customer tersebut.
@@ -1401,7 +1401,7 @@ Panduan kategori tidak boleh memuat instruksi Rekber, transfer bank, direct tran
 
 ---
 
-# 33. Addendum CR-11 — Penyelarasan Dukungan Kredensial Akun Game
+# 33. Addendum CR-11 — Riwayat Perubahan Dukungan Kredensial Akun Game (DIUBAH OLEH CR-12/CR-13)
 
 **Tanggal:** 27 November 2026  
 **Status:** Disetujui melalui instruksi tertulis Owner pada percakapan proyek.  
@@ -1409,7 +1409,7 @@ Panduan kategori tidak boleh memuat instruksi Rekber, transfer bank, direct tran
 
 ## 33.1 Keputusan
 
-VAULT CORE secara eksplisit mendukung inventaris dan pemenuhan akun game pihak ketiga yang disediakan oleh Owner/vendor, termasuk penyimpanan dan pengiriman kredensial akses akun yang diperlukan untuk penyerahan akun kepada pembeli. Dengan demikian, tidak ada lagi larangan kontraktual menyeluruh yang mengecualikan kredensial akun game hanya karena formatnya berupa Email:Password.
+[RIWAYAT HISTORIS, TIDAK BERLAKU UNTUK IMPLEMENTASI SETELAH CR-12/CR-13] Pada saat CR-11 dibuat, dukungan akun pihak ketiga dimasukkan ke ruang lingkup. Setiap kalimat pada CR-11 yang mengizinkan penyimpanan atau pemrosesan kredensial dicabut oleh CR-12 dan CR-13. Aturan yang berlaku adalah penyerahan manual Owner dan larangan pemrosesan/penyimpanan kredensial di sistem.
 
 ## 33.2 Kewenangan dan tanggung jawab Owner
 
