@@ -45,7 +45,7 @@ test('Customer OIDC return path is restricted to local account and catalog pages
   assert.equal(safeCustomerReturnPath('/catalog'), '/catalog');
   assert.equal(safeCustomerReturnPath('/catalog/mlbb-akun?sort=price#products'), '/catalog/mlbb-akun?sort=price#products');
   assert.equal(safeCustomerReturnPath('/account?next=%2Fcatalog'), '/account?next=%2Fcatalog');
-  for (const value of ['https://evil.example','//evil.example','/\\\\evil.example','/admin','/api/customer-auth/oidc/start','']) {
+  for (const value of ['https://evil.example','//evil.example','/\\evil.example','/admin','/api/customer-auth/oidc/start','']) {
     assert.equal(safeCustomerReturnPath(value), '/account', 'Rejected unsafe return path: ' + value);
   }
 });
@@ -137,6 +137,8 @@ test('Public website serves the backend-owned customer catalog and Telegram acco
   assert.match(home, /redirect\('\/catalog'\)/);
   assert.match(catalogRoute, /VaultCoreV4Catalog/);
   assert.match(account, /api\/customer-auth\/oidc\/start/);
+  assert.match(account, /function safeAccountReturnPath/);
+  assert.match(account, /setNextPath\(safeAccountReturnPath\(next\)\)/);
   assert.match(account, /nextPath \? '\?next=' \+ encodeURIComponent\(nextPath\)/);
   assert.match(account, /href=\{destination\}/);
   assert.match(catalog, /api\/customer-auth\/session/);
