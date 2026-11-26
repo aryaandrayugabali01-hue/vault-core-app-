@@ -75,7 +75,6 @@ function matchesMlbb(product, filters) {
 }
 
 export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
-  const inTelegramMiniApp = Boolean(getInitData());
   const [variants,setVariants] = useState([]);
   const [customer,setCustomer] = useState(null);
   const [game,setGame] = useState(initialCategory === 'ALL' ? 'ALL' : initialCategory);
@@ -151,12 +150,11 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     loadCatalog();
     loadCustomer().catch(() => setCustomer(null));
     const paid = () => {
-      if (!inTelegramMiniApp) return;
       setNotice('Telegram mengonfirmasi pembayaran. Memperbarui pesanan…');
       loadOrders().catch(() => {});
     };
     const refreshWhenVisible = () => {
-      if (inTelegramMiniApp && document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible') {
         loadCustomer().then((activeCustomer) => activeCustomer && loadOrders().catch(() => {})).catch(() => {});
       }
     };
@@ -168,7 +166,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       window.removeEventListener('focus',refreshWhenVisible);
       document.removeEventListener('visibilitychange',refreshWhenVisible);
     };
-  },[loadCatalog,loadOrders,loadCustomer,inTelegramMiniApp]);
+  },[loadCatalog,loadOrders,loadCustomer]);
 
   const flatProducts = useMemo(() => variants.flatMap((variant) =>
     (variant.skus || []).map((sku) => ({
@@ -184,7 +182,6 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
 
   useEffect(() => {
     if (loading) return;
-    if (!inTelegramMiniApp) { setCart([]); setCartRestored(true); return; }
     try {
       const stored = JSON.parse(sessionStorage.getItem('vault-core-web-cart') || '[]');
       const restored = Array.isArray(stored) ? stored.slice(0,10).map((entry) => {
@@ -200,16 +197,16 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       setCart([]);
     }
     setCartRestored(true);
-  },[flatProducts,loading,inTelegramMiniApp]);
+  },[flatProducts,loading]);
 
   useEffect(() => {
-    if (!inTelegramMiniApp || !cartRestored) return;
+    if (!cartRestored) return;
     if (cart.length) {
       sessionStorage.setItem('vault-core-web-cart',JSON.stringify(cart.map(({productId,quantity}) => ({productId,quantity}))));
     } else {
       sessionStorage.removeItem('vault-core-web-cart');
     }
-  },[cart,cartRestored,inTelegramMiniApp]);
+  },[cart,cartRestored]);
 
 
 
@@ -254,10 +251,6 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   };
 
   const checkout = async () => {
-    if (!inTelegramMiniApp) {
-      setNotice('Checkout tersedia melalui VAULT CORE Telegram Mini App.');
-      return;
-    }
     if (!cart.length) return;
     let activeCustomer = customer;
     if (!activeCustomer) activeCustomer = await loadCustomer().catch(() => null);
@@ -290,7 +283,6 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   };
 
   const showOrders = useCallback(async () => {
-    if (!inTelegramMiniApp) return;
     const activeCustomer = await loadCustomer().catch(() => null);
     if (!activeCustomer) {
       window.location.assign('/account?next=%2Fcatalog');
@@ -302,20 +294,19 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     try { await loadOrders(); }
     catch(e) { setOrdersError(e.message || 'Riwayat pesanan tidak dapat dimuat.'); }
     finally { setOrdersLoading(false); }
-  },[inTelegramMiniApp,loadCustomer,loadOrders]);
+  },[loadCustomer,loadOrders]);
 
   useEffect(() => {
     const openOrdersFromHash = () => {
-      if (inTelegramMiniApp && window.location.hash === '#transactions') showOrders();
+      if (window.location.hash === '#transactions') showOrders();
     };
     openOrdersFromHash();
     window.addEventListener('hashchange',openOrdersFromHash);
     return () => window.removeEventListener('hashchange',openOrdersFromHash);
-  },[inTelegramMiniApp,showOrders]);
+  },[showOrders]);
 
   const submitJokiAccess = async () => {
     const initData = getInitData();
-    if (!initData) { setAccessNotice('Pengiriman data akses hanya tersedia melalui Telegram Mini App.'); return; }
     if (!accessTarget || !accessForm.login.trim() || accessForm.password.length < 6) {
       setAccessNotice('Lengkapi login dan kata sandi dengan benar.');
       return;
@@ -354,7 +345,8 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         </nav>
         <div className="vc4-nav-actions">
           <a className="vc4-account-link" href="/account">{customer ? 'Akun' : 'Masuk'}</a>
-          {inTelegramMiniApp && <><button type="button" onClick={showOrders}>Pesanan</button><button type="button" className="vc4-cart-button" onClick={() => setCartOpen(true)}>Keranjang <span>{cart.reduce((n,item)=>n+item.quantity,0)}</span></button></>}
+          <button type="button" onClick={showOrders}>Pesanan</button>
+          <button type="button" className="vc4-cart-button" onClick={() => setCartOpen(true)}>Keranjang <span>{cart.reduce((n,item)=>n+item.quantity,0)}</span></button>
         </div>
       </header>
 
@@ -388,7 +380,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           <ol>
             <li><span>01</span><div><strong>Pilih game</strong><small>Tentukan kategori dan akun</small></div></li>
             <li><span>02</span><div><strong>Periksa detail</strong><small>Cek spesifikasi dan ketentuan</small></div></li>
-            <li><span>03</span><div><strong>Lanjutkan di Mini App</strong><small>Checkout dan invoice resmi diproses di Telegram</small></div></li>
+            <li><span>03</span><div><strong>Bayar dengan XTR</strong><small>Lanjutkan invoice di Telegram</small></div></li>
           </ol>
         </section>
 
@@ -441,7 +433,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
                       {product.image_url ? <img src={product.image_url} alt="" loading="lazy"/> : <span className="vc4-sku-thumb">◇</span>}
                       <span><strong>{product.name}</strong><small>{product.sku} · {product.display_stock===null?'Stok tersedia':product.display_stock===1?'STOK TERAKHIR':typeof product.display_stock==='number'?fmt(product.display_stock)+' stok':product.display_stock}</small></span>
                     </button>
-                    <div className="vc4-sku-buy"><PriceDisplay product={product} compact/>{inTelegramMiniApp ? <button type="button" onClick={()=>addToCart(product)}>Tambah</button> : <a className="vc4-primary" href="/miniapp">Beli di Telegram</a>}</div>
+                    <div className="vc4-sku-buy"><PriceDisplay product={product} compact/><button type="button" onClick={()=>addToCart(product)}>Tambah</button></div>
                   </div>)}</div>}
                 </article>;
               })}
@@ -453,7 +445,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada SKU v4 yang diaktifkan. Owner dapat menyiapkan produk melalui panel pengelolaan berdasarkan 12 varian dan spesifikasi produk yang sesuai jenisnya.</p>}
         <footer className="vc4-footer">
           <p>VAULT CORE adalah penjual tunggal. Website dan Telegram Mini App menggunakan akun pelanggan dan backend yang sama.</p>
-          <p>Seluruh transaksi, invoice Telegram Stars (XTR), riwayat pesanan, dan proses pemenuhan tersedia hanya melalui VAULT CORE Telegram Mini App.</p>
+          <p>Pembayaran website dibuka melalui invoice Telegram Stars (XTR). Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram, sedangkan data akses Joki disimpan melalui vault terenkripsi.</p>
         </footer>
       </main>
 
@@ -471,12 +463,12 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             {selected.product.group === 'Akun' && <section className="vc4-security-guide"><h3>Keamanan Akun</h3><ol><li>Periksa detail akun dan kesesuaian spesifikasi sebelum konfirmasi.</li><li>Ganti kata sandi setelah menerima akses akun.</li><li>Aktifkan verifikasi dua langkah pada akun yang mendukung.</li><li>Pastikan email dan metode pemulihan berada dalam kendali pembeli.</li></ol><p>Garansi mengikuti ketentuan yang ditetapkan pada detail produk.</p></section>}
             <section className="vc4-listing-specs"><h4>Spesifikasi Produk</h4><div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ').replace(/\b[a-z]/g,letter=>letter.toUpperCase())}</span><strong>{String(value)}</strong></div>)}</div></section>
             <div className="vc4-price-large"><PriceDisplay product={selected.product}/></div>
-            {inTelegramMiniApp ? <button className="vc4-primary" type="button" onClick={()=>addToCart(selected.product)}>Tambah ke keranjang</button> : <a className="vc4-primary" href="/miniapp">Lanjutkan di Telegram Mini App</a>}
+            <button className="vc4-primary" type="button" onClick={()=>addToCart(selected.product)}>Tambah ke keranjang</button>
           </> : <p>Produk pada varian ini akan tampil setelah Owner menyelesaikan SKU, harga, stok, dan verifikasi yang diwajibkan.</p>}
         </section>
       </div>}
 
-      {inTelegramMiniApp && cartOpen && <div className="vc4-overlay" onClick={()=>setCartOpen(false)}>
+      {cartOpen && <div className="vc4-overlay" onClick={()=>setCartOpen(false)}>
         <section className="vc4-dialog vc4-cart" role="dialog" aria-modal="true" aria-label="Keranjang" onClick={(e)=>e.stopPropagation()}>
           <button className="vc4-close" type="button" onClick={()=>setCartOpen(false)}>×</button>
           <span className="vc4-eyebrow">VAULT CORE</span><h2>Keranjang.</h2>
@@ -489,7 +481,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         </section>
       </div>}
 
-      {inTelegramMiniApp && ordersOpen && <div className="vc4-overlay" onClick={()=>setOrdersOpen(false)}>
+      {ordersOpen && <div className="vc4-overlay" onClick={()=>setOrdersOpen(false)}>
         <section className="vc4-dialog vc4-orders" role="dialog" aria-modal="true" aria-label="Pesanan" onClick={(e)=>e.stopPropagation()}>
           <button className="vc4-close" type="button" onClick={()=>setOrdersOpen(false)}>×</button>
           <span className="vc4-eyebrow">AKUN PEMBELI</span><h2>Pesanan.</h2>
@@ -503,7 +495,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         </section>
       </div>}
 
-      {inTelegramMiniApp && accessTarget && <div className="vc4-overlay" onClick={()=>setAccessTarget(null)}>
+      {accessTarget && <div className="vc4-overlay" onClick={()=>setAccessTarget(null)}>
         <section className="vc4-dialog" role="dialog" aria-modal="true" aria-label="Akses layanan Joki" onClick={(e)=>e.stopPropagation()}>
           <button className="vc4-close" type="button" onClick={()=>setAccessTarget(null)}>×</button>
           <span className="vc4-eyebrow">JOKI · AKSES PESANAN</span><h2>Data akses.</h2>
