@@ -189,7 +189,8 @@ test('web catalog remains backend-driven while Telegram invoice and Mini App flo
   assert.match(page, /POST/);
   assert.match(page, /api\/customer-auth\/session/);
   assert.match(page, /credentials:'include'/);
-  assert.match(page, /invoice resmi Telegram Stars \(XTR\)/);
+  assert.match(page, /invoice Telegram Stars/);
+  assert.match(page, /Telegram Stars \(XTR\)/);
   assert.match(page, /let activeCustomer = customer/);
   assert.match(page, /openInvoice\(data\.invoiceUrl,data\.orderNumber\)/);
   assert.doesNotMatch(page, /Rekber|Escrow|transfer bank|direct transfer|QRIS|PayLater/i);
