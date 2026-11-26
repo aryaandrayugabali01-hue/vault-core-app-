@@ -329,7 +329,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     finally { setAccessSaving(false); }
   };
 
-  const totalXtr = cart.reduce((sum,item) => sum + item.price * item.quantity,0);
+  const totalXtr = cart.reduce((sum,item) => sum + item.price * item.quantity,0);\n  const inTelegramMiniApp = Boolean(getInitData());
   const activeVariant = selected ? variants.find((item) => Number(item.variant_id) === selected.variant_id) : null;
   const noActiveSku = visibleProducts.length === 0;
 
@@ -433,7 +433,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
                       {product.image_url ? <img src={product.image_url} alt="" loading="lazy"/> : <span className="vc4-sku-thumb">◇</span>}
                       <span><strong>{product.name}</strong><small>{product.sku} · {product.display_stock===null?'Stok tersedia':product.display_stock===1?'STOK TERAKHIR':typeof product.display_stock==='number'?fmt(product.display_stock)+' stok':product.display_stock}</small></span>
                     </button>
-                    <div className="vc4-sku-buy"><PriceDisplay product={product} compact/><button type="button" onClick={()=>addToCart(product)}>Tambah</button></div>
+                    <div className="vc4-sku-buy"><PriceDisplay product={product} compact/>{inTelegramMiniApp ? <button type="button" onClick={()=>addToCart(product)}>Tambah</button> : <a className="vc4-primary" href="/miniapp">Beli di Telegram</a>}</div>
                   </div>)}</div>}
                 </article>;
               })}
@@ -445,7 +445,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada SKU v4 yang diaktifkan. Owner dapat menyiapkan produk melalui panel pengelolaan berdasarkan 12 varian dan spesifikasi produk yang sesuai jenisnya.</p>}
         <footer className="vc4-footer">
           <p>VAULT CORE adalah penjual tunggal. Website dan Telegram Mini App menggunakan akun pelanggan dan backend yang sama.</p>
-          <p>Pembayaran website dibuka melalui invoice Telegram Stars (XTR). Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram, sedangkan data akses Joki disimpan melalui vault terenkripsi.</p>
+          <p>Seluruh transaksi, invoice Telegram Stars (XTR), riwayat pesanan, dan proses pemenuhan tersedia hanya melalui VAULT CORE Telegram Mini App.</p>
         </footer>
       </main>
 
@@ -463,12 +463,12 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             {selected.product.group === 'Akun' && <section className="vc4-security-guide"><h3>Keamanan Akun</h3><ol><li>Periksa detail akun dan kesesuaian spesifikasi sebelum konfirmasi.</li><li>Ganti kata sandi setelah menerima akses akun.</li><li>Aktifkan verifikasi dua langkah pada akun yang mendukung.</li><li>Pastikan email dan metode pemulihan berada dalam kendali pembeli.</li></ol><p>Garansi mengikuti ketentuan yang ditetapkan pada detail produk.</p></section>}
             <section className="vc4-listing-specs"><h4>Spesifikasi Produk</h4><div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ').replace(/\b[a-z]/g,letter=>letter.toUpperCase())}</span><strong>{String(value)}</strong></div>)}</div></section>
             <div className="vc4-price-large"><PriceDisplay product={selected.product}/></div>
-            <button className="vc4-primary" type="button" onClick={()=>addToCart(selected.product)}>Tambah ke keranjang</button>
+            {inTelegramMiniApp ? <button className="vc4-primary" type="button" onClick={()=>addToCart(selected.product)}>Tambah ke keranjang</button> : <a className="vc4-primary" href="/miniapp">Lanjutkan di Telegram Mini App</a>}
           </> : <p>Produk pada varian ini akan tampil setelah Owner menyelesaikan SKU, harga, stok, dan verifikasi yang diwajibkan.</p>}
         </section>
       </div>}
 
-      {cartOpen && <div className="vc4-overlay" onClick={()=>setCartOpen(false)}>
+      {inTelegramMiniApp && cartOpen && <div className="vc4-overlay" onClick={()=>setCartOpen(false)}>
         <section className="vc4-dialog vc4-cart" role="dialog" aria-modal="true" aria-label="Keranjang" onClick={(e)=>e.stopPropagation()}>
           <button className="vc4-close" type="button" onClick={()=>setCartOpen(false)}>×</button>
           <span className="vc4-eyebrow">VAULT CORE</span><h2>Keranjang.</h2>
@@ -481,7 +481,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         </section>
       </div>}
 
-      {ordersOpen && <div className="vc4-overlay" onClick={()=>setOrdersOpen(false)}>
+      {inTelegramMiniApp && ordersOpen && <div className="vc4-overlay" onClick={()=>setOrdersOpen(false)}>
         <section className="vc4-dialog vc4-orders" role="dialog" aria-modal="true" aria-label="Pesanan" onClick={(e)=>e.stopPropagation()}>
           <button className="vc4-close" type="button" onClick={()=>setOrdersOpen(false)}>×</button>
           <span className="vc4-eyebrow">AKUN PEMBELI</span><h2>Pesanan.</h2>
@@ -495,7 +495,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         </section>
       </div>}
 
-      {accessTarget && <div className="vc4-overlay" onClick={()=>setAccessTarget(null)}>
+      {inTelegramMiniApp && accessTarget && <div className="vc4-overlay" onClick={()=>setAccessTarget(null)}>
         <section className="vc4-dialog" role="dialog" aria-modal="true" aria-label="Akses layanan Joki" onClick={(e)=>e.stopPropagation()}>
           <button className="vc4-close" type="button" onClick={()=>setAccessTarget(null)}>×</button>
           <span className="vc4-eyebrow">JOKI · AKSES PESANAN</span><h2>Data akses.</h2>
