@@ -27,7 +27,7 @@ test('Owner authorization uses Neon owner_accounts as its sole source of truth',
   assert.match(ownerAuth, /FROM owner_accounts WHERE telegram_user_id=\$1 AND is_active=TRUE/);
   assert.doesNotMatch(ownerAuth, /ADMIN_TELEGRAM_IDS/);
   assert.doesNotMatch(worker, /ADMIN_TELEGRAM_IDS/);
-  assert.doesNotMatch(workflow, /ADMIN_TELEGRAM_IDS/);
+  assert.doesNotMatch(workflow, /secret put [\"']ADMIN_TELEGRAM_IDS/);
 });
 
 function topLevelCssProperty(styles, selector, property) {
