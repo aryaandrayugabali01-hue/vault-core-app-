@@ -5,9 +5,9 @@
 |---|---|
 | Nama proyek | VAULT CORE |
 | Jenis dokumen | Kontrak spesifikasi dan acuan pelaksanaan proyek |
-| Versi | 2.0 — CR-15 Web QRIS Temporary Payment Lane |
+| Versi | 2.1 — CR-16 Unified Product Input and UI |
 | Tanggal dokumen | 27 November 2026 |
-| Status | Baseline dan CR-03 s.d. CR-15 disetujui melalui instruksi tertulis Owner; CR-15 menetapkan QRIS statis sementara untuk website, menjaga XTR di Telegram Mini App, serta menetapkan satu identitas, sumber data, dan standar visual bersama, 27 November 2026 |
+| Status | CR-03 s.d. CR-15 tetap berlaku; CR-16 menetapkan form produk terpadu satu aksi dan standar UI berdasarkan instruksi tertulis Owner, 27 November 2026 |
 | Model usaha | Single-Vendor Store |
 | Kanal utama | Website, Telegram Bot, dan Telegram Mini App |
 | Domain rencana | `vaultcore.biz.id` (belum dikonfirmasi kepemilikannya dan konfigurasi DNS-nya) |
@@ -16,7 +16,7 @@
 >
  > **Rekaman persetujuan pemilik:** Status v1.2 CR-02 ditetapkan DISETUJUI berdasarkan instruksi tertulis pemilik proyek. Addendum CR-03 pada Bagian 27 disetujui pada 21 November 2026, CR-04 pada 22 November 2026, dan CR-05 pada 23 November 2026 melalui instruksi tertulis pemilik di percakapan proyek. Rekaman ini menetapkan keputusan operasional internal Owner, bukan sertifikasi hukum atau pengesampingan hak pihak ketiga. Nama legal dan sertifikat tanda tangan elektronik formal tidak tercantum dalam rekaman percakapan.
 >
-> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan fixture uji melalui CR-03; v1.4 menetapkan dukungan bersyarat transfer akun melalui CR-04; v1.5 melalui CR-05 menetapkan Owner sebagai otoritas internal untuk pencatatan, penilaian internal, persetujuan, rincian katalog, stok, metode pemenuhan, dan pengiriman. v1.6 melalui CR-11 menyelaraskan dukungan akun dengan CR-04. v1.7 melalui CR-12 menetapkan pemenuhan akun manual maksimal 1 jam tanpa penyimpanan kredensial. v1.8 melalui CR-13 menetapkan kebijakan keterlambatan/refund, struktur varian, dan prosedur import massal. v1.9 melalui CR-14 menandai keputusan lama yang telah digantikan sebagai historis, menyelaraskan SLA READY/INDENT dan kriteria penerimaan; v2.0 melalui CR-15 menetapkan QRIS statis sementara untuk website, mempertahankan XTR di Telegram Mini App, serta mengunci satu identitas, sumber data, dan standar visual bersama.
+> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan fixture uji melalui CR-03; v1.4 menetapkan dukungan bersyarat transfer akun melalui CR-04; v1.5 melalui CR-05 menetapkan Owner sebagai otoritas internal untuk pencatatan, penilaian internal, persetujuan, rincian katalog, stok, metode pemenuhan, dan pengiriman. v1.6 melalui CR-11 menyelaraskan dukungan akun dengan CR-04. v1.7 melalui CR-12 menetapkan pemenuhan akun manual maksimal 1 jam tanpa penyimpanan kredensial. v1.8 melalui CR-13 menetapkan kebijakan keterlambatan/refund, struktur varian, dan prosedur import massal. v1.9 melalui CR-14 menandai keputusan lama yang telah digantikan sebagai historis, menyelaraskan SLA READY/INDENT dan kriteria penerimaan; v2.0 melalui CR-15 menetapkan QRIS statis sementara untuk website, mempertahankan XTR di Telegram Mini App, serta mengunci satu identitas, sumber data, dan standar visual bersama. v2.1 melalui CR-16 menetapkan form produk terpadu satu halaman, penyimpanan dan publikasi satu aksi, serta standar visual Dashboard/Katalog/Detail Produk.
 
 ---
 
@@ -1675,3 +1675,164 @@ Karena itu, QRIS website belum boleh dinyatakan aktif di produksi hanya berdasar
 ---
 
 **Akhir dokumen — VAULT CORE Project Contract v2.0 (CR-15, 27 November 2026).**
+
+---
+
+# 38. Addendum CR-16 — Form Produk Terpadu, Publikasi Satu Aksi, dan Standar UI
+
+**Tanggal:** 27 November 2026  
+**Dasar:** Instruksi tertulis Owner pada percakapan proyek 27 November 2026.  
+**Status:** Aturan kerja tambahan untuk implementasi VAULT CORE.  
+**Tujuan:** Owner cukup mengisi satu form produk yang mudah digunakan melalui Android; sistem memvalidasi, menyimpan ke database yang sudah ada, menayangkan listing, dan menyiapkan jalur order pada kanal yang memang sudah siap.
+
+**Mengubah dan melengkapi:** Bagian 4.2, 5, 7.2, 7.3, 16, 17, 23, 30, 35.5, dan 37.5 sejauh mengatur pengisian produk, import, alur aktivasi, kriteria selesai, dan visual. CR-16 tidak mengubah Single-Vendor, pemeriksaan sumber/hak SKU, keamanan data, ketentuan READY/INDENT dan penyerahan akun manual pada CR-12/CR-14, atau pemisahan kanal pembayaran CR-15.
+
+## 38.1 Alur kerja Owner yang berlaku
+
+Jalur utama pengelolaan produk adalah satu halaman form pada Owner Dashboard dengan pola input marketplace yang sederhana seperti Itemku, disesuaikan dengan identitas VAULT CORE dan nyaman dipakai pada Android.
+
+Alur Owner:
+1. Mengisi satu form produk.
+2. Menekan satu tombol **Simpan & Publikasikan**.
+3. Melihat hasil dan status produk pada daftar produk/katalog.
+
+Owner tidak diwajibkan menggunakan workbook untuk setiap SKU, menjalani wizard beberapa halaman, mengisi ulang data pada beberapa modul, atau menjalankan perintah database secara manual. Workbook import massal tetap tersedia sebagai jalur opsional bila Owner memasukkan banyak SKU sekaligus. Ketentuan validasi dan idempotensi import pada Bagian 35.5 tetap berlaku untuk jalur opsional tersebut.
+
+Validasi hak, varian, pertanyaan wajib, harga, stok/kapasitas, dan metode pemenuhan dijalankan otomatis oleh backend. Penyederhanaan antarmuka tidak menghapus pemeriksaan yang diwajibkan kontrak.
+
+## 38.2 Isi form produk tunggal
+
+Form berada pada satu halaman responsif. Bagian dapat dikelompokkan, dilipat, atau ditampilkan dinamis berdasarkan jenis produk, tetapi bukan rangkaian halaman Next/Previous atau beberapa aksi publikasi.
+
+Data yang ditampilkan sesuai produk:
+
+- **Kategori:** game (MLBB, Free Fire, Roblox, Genshin Impact), jenis produk, dan varian master dari katalog resmi.
+- **Informasi listing:** nama/judul, deskripsi, foto/media, spesifikasi yang terlihat customer, dan ketentuan pembeli.
+- **Pertanyaan wajib varian:** form mengambil pertanyaan yang relevan dari master 12 varian dan 47 pertanyaan wajib. Hanya pertanyaan untuk varian yang dipilih yang ditampilkan; pertanyaan varian lain tidak diminta.
+- **Harga per kanal:** harga jual website dalam IDR apabila checkout website telah diaktifkan sesuai CR-15; harga jual Telegram Mini App dalam XTR. Harga modal/biaya internal hanya terlihat oleh Owner.
+- **Stok dan kapasitas:** stok unit aktual untuk produk berbasis unit atau kapasitas/slot yang benar-benar dapat dipenuhi untuk layanan.
+- **Ketersediaan akun:** pilihan READY atau INDENT. READY berarti unit tersedia. INDENT wajib memiliki tenggat maksimum dalam hari kalender yang ditampilkan sebelum checkout dan disimpan sebagai snapshot order.
+- **Pemenuhan:** metode, estimasi waktu, garansi yang benar-benar disediakan, syarat klaim, dan kebijakan produk.
+- **Sumber dan review hak SKU:** game/penerbit, wilayah, sumber/rantai perolehan, dasar kewenangan Owner, ketentuan resmi yang relevan, metode transfer/pemenuhan, tanggal review, status, masa review bila digunakan, referensi bukti bila memang diwajibkan, dan attestation Owner sesuai CR-05/CR-14.
+- **Data yang diminta dari customer:** hanya field yang diperlukan produk, misalnya Player/User ID, Server, pilihan item, atau target layanan. Field harus spesifik per SKU, dengan label yang jelas.
+
+Form tidak menyediakan field untuk password akun, password email pribadi, cookie, session token, OTP, recovery code, backup code, atau rahasia autentikasi. Kredensial akun game tidak boleh dimasukkan ke form, workbook, database, API, log, cache, analytics, error trace, backup, atau ekspor. Untuk SKU akun, penyerahan akses tetap dilakukan Owner secara manual melalui kanal privat di luar aplikasi setelah pembayaran, sesuai CR-14. Untuk Jasa Joki, aplikasi hanya mengumpulkan identitas game dan parameter pengerjaan yang diperlukan; aplikasi tidak meminta password atau kode autentikasi customer.
+
+## 38.3 Satu aksi simpan dan publikasi
+
+Ketika Owner menekan **Simpan & Publikasikan**, satu alur backend terorkestrasi memproses seluruh data yang diperlukan:
+
+- membuat atau memperbarui SKU pada database VAULT CORE yang sudah digunakan;
+- menyimpan relasi game, jenis produk, dan varian;
+- menyimpan jawaban pertanyaan wajib yang relevan;
+- menyimpan media, deskripsi, spesifikasi, ketentuan, dan waktu pemenuhan;
+- menyimpan harga per kanal dan biaya/modal internal;
+- menyimpan review sumber/hak dan attestation Owner;
+- mencatat stok unit atau slot kapasitas beserta referensi sumber;
+- menyimpan konfigurasi data yang diminta kepada customer;
+- membuat audit log perubahan.
+
+Produk tidak boleh ditampilkan sebagai siap dibeli sebelum seluruh data wajib dan relasi yang diperlukan tersimpan serta valid.
+
+- Jika seluruh validasi SKU lulus dan kanal terkait siap menerima order, sistem otomatis mengubah status menjadi **ACTIVE** dan menayangkan listing pada katalog kanal tersebut. Tidak ada tombol Publish kedua.
+- Jika ada field wajib yang kosong, review belum lengkap, hak SKU tertahan, stok/kapasitas tidak tersedia, atau kanal pembayaran belum siap, data tetap tersimpan sebagai **DRAFT** atau **PENDING_REVIEW** dan tidak dapat dibeli pada kanal yang belum lolos. Form menampilkan daftar koreksi pada halaman yang sama.
+- Bila hanya satu kanal yang belum siap, kanal lain boleh aktif apabila seluruh syarat kanal tersebut terpenuhi. Status kanal harus jelas dan tidak boleh menampilkan tombol checkout yang belum berfungsi.
+- Pengiriman ulang submit tidak boleh menggandakan SKU, stok, slot, atau event publikasi. Operasi harus idempotent; percobaan parsial harus dapat dilanjutkan atau dipulihkan tanpa membuat listing setengah aktif.
+- Kesalahan validasi harus menunjuk field terkait dan mempertahankan input Owner agar tidak perlu mengulang dari awal.
+
+## 38.4 Aturan status, stok, dan pemeriksaan hak
+
+- Stok publik tetap berasal dari stok/kapasitas aktual dan dapat dijual. Mode tampilan pada Bagian 7.3 tetap berlaku; angka stok publik tidak boleh melebihi ketersediaan sebenarnya.
+- **READY** dan **INDENT** adalah status ketersediaan produk akun sesuai CR-14. Kartu INDENT wajib menyampaikan tenggat pemenuhan sebelum customer checkout.
+- Label visual **Ready** atau **Pending** adalah indikator kecil ketersediaan. Label Pending pada kartu customer hanya boleh berarti status INDENT/pemesanan dengan tenggat yang jelas, bukan SKU internal yang belum lolos review.
+- SKU berstatus DRAFT, PENDING_REVIEW, PAUSED, REJECTED, atau tidak memenuhi syarat checkout tidak boleh ditampilkan sebagai produk siap dibeli.
+- Review sumber/hak dilakukan per SKU. Larangan eksplisit penerbit/platform atau tidak adanya dasar kewenangan sumber yang layak menyebabkan SKU ditahan. Attestation Owner adalah keputusan internal, bukan izin penerbit atau verifikasi independen.
+- Aturan penyerahan akun manual, larangan penyimpanan kredensial, SLA READY satu jam, tenggat INDENT, eskalasi OVERDUE, dan refund tetap mengikuti CR-14.
+
+## 38.5 Harga, pembayaran, dan kesiapan per kanal
+
+Satu SKU, katalog, stok, customer, order, dan fulfillment tetap menggunakan backend/database VAULT CORE yang sama. Harga disimpan terpisah per kanal dan mata uangnya.
+
+- **Website:** harga dalam IDR. Checkout hanya menggunakan QRIS statis merchant VAULT CORE sesuai CR-15, setelah konfigurasi merchant, harga IDR, prosedur verifikasi settlement, refund, batas waktu, implementasi, dan UAT tersedia serta lulus.
+- **Telegram Mini App:** harga dalam XTR melalui invoice resmi Telegram Stars. Validasi pre-checkout dan webhook successful_payment tetap berlaku.
+- Tripay, transfer bank, e-wallet, PayLater, Rekber/Escrow, transfer langsung ke Owner, dan alamat wallet XTR manual yang terlihat pada gambar detail sebagai contoh lama bukan metode pembayaran VAULT CORE yang berlaku. Opsi tersebut harus diganti dengan QRIS/IDR pada website atau Telegram Stars/XTR pada Mini App.
+- Tidak ada metode pembayaran ketiga yang ditambahkan melalui form.
+- Bila QRIS website belum siap, website boleh menampilkan katalog/detail sesuai konfigurasi, tetapi tidak boleh mengaku menerima pembayaran QRIS atau menampilkan checkout yang belum berfungsi. Mini App tetap dapat menerima transaksi XTR jika jalur Mini App dan SKU terkait sudah lolos uji.
+- Website dan Mini App memakai sumber produk, gambar, spesifikasi, harga per kanal, stok, order, dan fulfillment yang sama. Perbedaan pada checkout hanya metode serta mata uang yang ditetapkan CR-15.
+
+## 38.6 Standar UI berdasarkan gambar referensi Owner
+
+Empat gambar referensi yang diberikan pada 27 November 2026 menjadi acuan visual Dashboard, Katalog, Detail Produk, dan komposisi keseluruhan. Gambar tersebut adalah referensi tampilan, bukan sumber data harga, stok, rating, diskon, hak produk, atau metode pembayaran.
+
+**A. Kerangka visual**
+- Acuan portrait 390 × 844 px, responsif untuk Android, dengan lebar konten maksimum sekitar 430 px.
+- Background utama hitam #000000; area header/input gelap #121212; kartu elevated #1E1E1E.
+- Aksen utama violet sekitar #835CFF; aksen status READY hijau lembut sekitar #A3E635; status sekunder abu-abu #9CA3AF; teks utama putih #FFFFFF.
+- Padding konten sekitar 16 px, jarak antarbagian sekitar 20 px, radius kartu sekitar 16 px, header sekitar 56 px, search sekitar 44 px, dan bottom navigation sekitar 64 px.
+- Grid katalog dua kolom dengan jarak sekitar 12 px. Ukuran kartu referensi sekitar 173 × 180 px pada layar 390 px dan harus menyesuaikan lebar perangkat.
+- Bottom navigation berisi Home, Categories, My Orders, dan Profile.
+
+**B. Dashboard**
+- Header VAULT CORE, ikon keamanan, notifikasi, dan avatar.
+- Search bar dengan placeholder “Cari akun game…”.
+- Banner promosi, empat kartu game, filter varian yang tersedia, dua kartu Best Seller, ringkasan tiga transaksi terakhir, daftar produk akun, kartu Joki 2 × 2, kartu keunggulan, dan bottom navigation.
+- Kartu kategori hanya menampilkan empat game katalog resmi. Filter varian hanya menampilkan pilihan yang memiliki produk.
+- Nama customer dan informasi transaksi pada ringkasan publik harus disamarkan.
+- Best Seller, jumlah terjual, rating, transaksi terbaru, stok, dan aktivitas live harus bersumber dari data backend aktual. Data contoh tidak boleh ditampilkan sebagai data produksi.
+- Klaim diskon, harga coret, atau “Diskon hingga 50%” hanya boleh tampil bila harga pembanding, periode, dan diskon benar-benar tercatat serta aktif di backend.
+- Klaim “Support 24/7” hanya boleh digunakan bila layanan 24 jam benar-benar tersedia. Jika belum, tampilkan jam/kanal dukungan yang sebenarnya.
+- Klaim seperti “akun aman dari hack/retrieve” tidak boleh dinyatakan sebagai jaminan mutlak.
+
+**C. Katalog**
+- Filter game MLBB, Free Fire, Roblox, dan Genshin Impact; chip varian dibuat dari produk backend yang tersedia.
+- Grid produk dua kolom, berisi gambar, nama, kategori/varian, harga sesuai kanal, dan ketersediaan.
+- Skeleton loading menggunakan placeholder kartu yang konsisten dengan grid.
+- Scroll/pagination memuat batch berikutnya tanpa menggandakan atau menghilangkan produk. Urutan hasil harus stabil dan tidak diacak saat scroll.
+- Status READY/PENDING dibuat halus: titik sekitar 6 px dan teks sekitar 10 px di sudut kanan atas kartu, tanpa badge besar atau latar mencolok. READY memakai hijau lembut dengan opasitas rendah; Pending memakai abu-abu lembut. Keterangan tenggat INDENT tetap ditampilkan secara terbaca pada detail.
+
+**D. Detail produk**
+- Header berisi tombol Back, judul VAULT CORE, Share, dan Favorite.
+- Gambar produk utama, judul, harga per kanal, kategori/varian, ringkasan, spesifikasi, deskripsi, syarat, garansi, estimasi pemenuhan, dan dua kartu produk terkait.
+- Rating dan jumlah terjual hanya ditampilkan bila datanya nyata dan tersedia; bila belum ada, elemen tersebut disembunyikan.
+- Field input customer ditampilkan dinamis sesuai kebutuhan SKU. Jangan memakai satu field “Masukkan ID” untuk semua jenis produk apabila data yang dibutuhkan berbeda.
+- Urutan customer: pilih produk → isi data produk yang diminta → checkout di kanal yang tersedia → bayar → pantau status order.
+- Tombol Keranjang dan Beli Sekarang menggunakan backend order yang sama dan harus memvalidasi identitas, harga, stok/reservasi, hak SKU, tenggat, serta metode pembayaran.
+- Ilustrasi metode pembayaran pada gambar yang tidak sesuai dengan CR-15 tidak menjadi acuan fungsional.
+
+## 38.7 Tanggung jawab dan batas pekerjaan
+
+**Owner** bertanggung jawab memasukkan data produk yang benar, harga yang disetujui, stok/kapasitas nyata, sumber produk, dasar kewenangan, media, spesifikasi, dan ketentuan layanan.
+
+**Implementor** bertanggung jawab memastikan form mudah dipakai, memetakan input ke model database yang ada, menjalankan validasi otomatis, menyimpan seluruh data, mengaktifkan dan menayangkan SKU yang lolos, serta memeriksa bahwa katalog menampilkan data yang benar dan backend menerima pembuatan order pada kanal yang siap.
+
+Pekerjaan menggunakan repository, branch, domain, API, Workers, bot, dan database VAULT CORE yang telah ada. Tidak membuat project, repository, database, Worker, bot, atau layanan baru tanpa instruksi Owner. Tidak menambah modul/fitur yang tidak diperlukan untuk form, katalog, detail produk, kesesuaian visual, dan kesiapan order.
+
+Batas pekerjaan implementor untuk SKU adalah ketika data tersimpan, listing tampil sesuai kanal yang siap, dan jalur pembuatan order lolos pemeriksaan. Pembayaran nyata tidak perlu diselesaikan sebagai tes tanpa persetujuan eksplisit Owner.
+
+## 38.8 Kriteria penerimaan
+
+Perubahan form dan satu SKU dianggap selesai ketika:
+
+1. Owner dapat mengisi satu form pada Android dalam satu halaman.
+2. Field dan pertanyaan wajib berubah sesuai game/jenis/varian yang dipilih.
+3. Satu submit menyimpan data yang diperlukan ke database VAULT CORE yang sudah ada.
+4. Submit ulang tidak membuat SKU atau stok duplikat.
+5. Validasi harga, sumber/hak, varian, pertanyaan wajib, stok/kapasitas, syarat, dan metode pemenuhan lulus.
+6. SKU yang lolos otomatis menjadi ACTIVE tanpa aksi Publish kedua.
+7. Produk tampil pada katalog kanal yang sudah siap dan detailnya sesuai data yang tersimpan.
+8. Harga website memakai IDR/QRIS sesuai CR-15 hanya setelah QRIS siap; harga Mini App memakai XTR/invoice Telegram Stars.
+9. Data stok dan status READY/INDENT sesuai keadaan sebenarnya; tenggat INDENT terlihat sebelum checkout.
+10. Tombol pembelian dapat membuat order yang valid dan mematuhi harga, identitas, stok, reservasi, dan kanal pembayaran.
+11. SKU akun tetap dipenuhi manual oleh Owner sesuai CR-14 dan tidak menyimpan kredensial pada sistem.
+12. Audit log mencatat perubahan, waktu, dan aktor tanpa mencatat rahasia.
+13. Pengujian dapat memverifikasi tampilan katalog, detail, dan pembuatan order/invoice tanpa menyelesaikan pembayaran nyata atau membebankan XTR/IDR tanpa persetujuan Owner.
+
+## 38.9 Hal yang belum diketahui dan gerbang kesiapan
+
+CR-15 masih mencatat bahwa payload QRIS merchant aktif, nama/identitas merchant, harga IDR final per SKU, akses settlement, verifikator, prosedur refund QRIS, dan batas waktu QRIS belum terkonfirmasi pada dokumentasi saat CR-15 disusun. Karena itu, persetujuan aturan form ini tidak menyatakan QRIS website sudah aktif atau siap menerima dana. QRIS website baru dianggap siap setelah konfigurasi nyata, implementasi, verifikasi settlement, refund, dan UAT lulus.
+
+Rating, angka penjualan, promo, diskon, jam dukungan, dan klaim operasional lain belum diketahui kecuali memiliki sumber backend atau bukti operasi yang dapat diverifikasi. Elemen tersebut tidak boleh diisi dengan angka contoh sebagai data produksi.
+
+---
+
+**Akhir Addendum CR-16 — VAULT CORE Project Contract v2.1 (27 November 2026).**
