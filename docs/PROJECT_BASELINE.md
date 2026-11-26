@@ -3,6 +3,14 @@
 > Dokumen pengendali. Baca sebelum mengubah kode, desain, database, konfigurasi deployment, atau transaksi.
 > Prinsip: perbaiki satu bagian, lindungi seluruh bagian lain.
 
+## Web Authentication and Unified Checkout Baseline
+- Website customer login uses Telegram OpenID Connect (Authorization Code + PKCE).
+- Telegram Mini App continues to authenticate with signed Telegram `initData`.
+- Both channels resolve to the same `customers.telegram_user_id` identity and use the same `orders`, `order_items`, inventory reservation, delivery, and Telegram Stars payment flow.
+- Product prices remain XTR-only through `products.sale_price_xtr`; do not introduce IDR pricing or a second payment gateway in this phase.
+- Website checkout opens the official Telegram Stars invoice link. Mini App checkout opens the same invoice through Telegram WebApp `openInvoice`.
+- OIDC credentials are stored as GitHub Actions secrets `TELEGRAM_OIDC_CLIENT_ID` and `TELEGRAM_OIDC_CLIENT_SECRET`; the callback is `https://api.vaultcore.biz.id/api/auth/telegram/callback`.
+
 ## 1. Aturan utama
 
 1. Pertahankan semua implementasi `LOCKED`; ubah hanya dengan instruksi eksplisit pemilik.
