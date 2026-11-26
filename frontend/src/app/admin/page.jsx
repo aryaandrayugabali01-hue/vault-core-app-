@@ -64,9 +64,8 @@ export default function AdminPage() {
   const [editForm, setEditForm] = useState({ sku:'', gameCategory:'MLBB', tier:'GOLD', marketplaceCategoryId:'', name:'', description:'', fulfillmentType:'GAME_ACCOUNT_TRANSFER', salePriceXtr:'', costPriceXtr:'0', imageUrl:'', imageGalleryText:'', attributesText:'', customerTerms:'', fulfillmentEta:'' });
   const [busy, setBusy] = useState(false);
   const [authState, setAuthState] = useState('checking');
-  const [botUsername, setBotUsername] = useState('');
+  const [oidcReady, setOidcReady] = useState(false);
   const [loginMessage, setLoginMessage] = useState('');
-  const [loginBusy, setLoginBusy] = useState(false);
   const headers = () => ({ 'content-type':'application/json', 'x-telegram-init-data':getInitData() });
 
   async function refresh() {
@@ -101,8 +100,8 @@ export default function AdminPage() {
         }
         const config = await fetch(`${API}/api/owner-auth/config`, { credentials:'include', cache:'no-store' });
         const data = await config.json();
-        if (!config.ok || !data.botUsername) throw new Error('Login Telegram belum dikonfigurasi pada bot VAULT CORE.');
-        if (alive) { setBotUsername(data.botUsername); setAuthState('login'); setNotice(''); }
+        if (!config.ok || data.loginMode !== 'oidc' || !data.clientId) throw new Error('Login Telegram OIDC belum dikonfigurasi pada bot VAULT CORE.');
+        if (alive) { setOidcReady(true); setAuthState('login'); setNotice(''); }
       } catch (error) {
         if (alive) { setAuthState('login'); setLoginMessage(error.message || 'Login Telegram belum dapat dimuat.'); }
       }
@@ -110,34 +109,6 @@ export default function AdminPage() {
     initializeOwnerAccess();
     return () => { alive = false; };
   }, []);
-
-  useEffect(() => {
-    if (authState !== 'login' || !botUsername) return;
-    const mount = document.getElementById('telegram-login-widget');
-    if (!mount) return;
-    window.onVaultTelegramAuth = async (telegramUser) => {
-      setLoginBusy(true); setLoginMessage('');
-      try {
-        const response = await fetch(`${API}/api/owner-auth/telegram`, {
-          method:'POST', headers:{ 'content-type':'application/json' }, credentials:'include',
-          body:JSON.stringify(telegramUser)
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(apiErrorMessage(data, 'Login Telegram gagal. Pastikan akun ini memiliki akses Owner.'));
-        setAuthState('authenticated'); setLoginMessage('');
-        await refresh();
-      } catch (error) { setLoginMessage(error.message || 'Login Telegram gagal.'); }
-      finally { setLoginBusy(false); }
-    };
-    const script = document.createElement('script');
-    script.async = true; script.src = 'https://telegram.org/js/telegram-widget.js?22';
-    script.setAttribute('data-telegram-login', botUsername);
-    script.setAttribute('data-size', 'large'); script.setAttribute('data-userpic', 'false');
-    script.setAttribute('data-radius', '12');
-    script.setAttribute('data-onauth', 'onVaultTelegramAuth(user)');
-    mount.replaceChildren(script);
-    return () => { mount.replaceChildren(); delete window.onVaultTelegramAuth; };
-  }, [authState, botUsername]);
 
   async function logoutOwner() {
     await fetch(`${API}/api/owner-auth/logout`, { method:'POST', credentials:'include' });
@@ -323,10 +294,9 @@ export default function AdminPage() {
       <p>Gunakan akun Telegram Owner yang sudah terdaftar. Telegram memverifikasi identitas Anda, lalu VAULT CORE memeriksa izin Owner secara otomatis.</p>
       <div className="owner-login-step"><span>1</span> Pilih akun Telegram <span>2</span> Konfirmasi login <span>3</span> Dashboard terbuka</div>
       {authState === 'checking' ? <div className="owner-login-loading">Memeriksa sesi Telegram…</div> : <>
-        <div id="telegram-login-widget" className="telegram-login-widget" />
-        {loginBusy && <div className="owner-login-loading">Memverifikasi akun Telegram…</div>}
+        {oidcReady ? <a className="telegram-login-oidc-button" href={`${API}/api/owner-auth/oidc/start`}>Masuk dengan Telegram</a> : <div className="owner-login-loading">Menyiapkan login Telegram…</div>}
         {loginMessage && <div className="owner-login-message" role="alert">{loginMessage}</div>}
-        <small>Login diverifikasi langsung oleh Telegram dan akses Owner diperiksa oleh server VAULT CORE. Login Widget Telegram harus diizinkan oleh BotFather. Jalankan /setdomain, pilih bot VAULT CORE, lalu isi domain persis: vaultcore.biz.id. Setelah tersimpan, muat ulang halaman ini.</small>
+        <small>Login menggunakan Telegram OpenID Connect. Identitas diverifikasi melalui token resmi Telegram, lalu izin Owner diperiksa langsung ke database Neon VAULT CORE.</small>
       </>}
       <a className="owner-login-back" href="/">Kembali ke katalog</a>
     </section>
