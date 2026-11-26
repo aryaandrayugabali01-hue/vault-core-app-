@@ -986,6 +986,10 @@ test('Mini App header and bottom navigation do not stack over the product detail
   assert.ok(app.includes("headerPage('Detail Produk')"));
   assert.ok(app.includes("'catalog', true"));
   assert.ok(css.includes('.nav[hidden]{display:none!important}'));
+  assert.ok(css.includes('width:min(calc(100% - 24px),430px)'));
+  assert.ok(css.includes('border-radius:26px'));
+  assert.ok(css.includes('.nav .ic{box-sizing:border-box;display:block;width:36px;height:36px'));
+  assert.ok(css.includes('linear-gradient(100deg,rgba(245,196,81,.85),rgba(139,92,246,.75)'));
   assert.equal((app.match(/function headerHome\(/g) || []).length,1);
   assert.equal((app.match(/function headerPage\(/g) || []).length,1);
   assert.ok(css.includes('.topbar{position:sticky'));
