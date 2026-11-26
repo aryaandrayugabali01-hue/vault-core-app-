@@ -99,6 +99,7 @@ jobs:
           import fs from 'node:fs';
           const sources = [
             'frontend/src/app/globals.css',
+            'frontend/src/app/mobile-app.css',
             'frontend/src/app/page.jsx',
             'frontend/src/app/catalog/page.jsx',
             'frontend/src/app/admin/page.jsx',
