@@ -913,7 +913,7 @@ test('all application routes use the approved mobile-only dashboard and catalog 
   assert.match(styles, /\.dashboard-game-grid\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\);gap:5px\}/);
   assert.match(styles, /\.vc-mobile-app \.vc4-main/);
   assert.match(styles, /\.vc-mobile-app \.vco-product-layout/);
-  assert.match(styles, /\.vc-mobile-app \.admin-form\{grid-template-columns:minmax\(0,1fr\)\}/);
+  assert.match(styles, /\.vc-mobile-app \.admin-form\{grid-template-columns:minmax\(0,1fr\);[^}]*\}/);
   assert.match(layout, /className="vc-mobile-app"/);
   assert.doesNotMatch(styles, /\.dashboard-game-grid\{grid-template-columns:minmax\(0,1fr\)/);
 });
