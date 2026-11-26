@@ -13,6 +13,7 @@ import { createDatabaseAdapter } from '../backend/db/pool.js';
 import { canReconcileDelivery, isOwnerManualFulfillmentSource } from '../backend/services/deliveryService.js';
 import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
 import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } from '../backend/middleware/ownerSession.js';
+import { createTelegramOidcTransaction, validateTelegramOidcIdToken } from '../backend/utils/telegramOidc.js';
 import { splitInventoryPayloads } from '../frontend/src/lib/inventory.js';
 import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes } from '../backend/services/productDetailsService.js';
 import { parseProductAttributesText, formatProductAttributesText, getCustomerVisibleProductAttributes, normalizeCustomerDisplayText } from '../frontend/src/lib/product-attributes.js';
@@ -28,6 +29,56 @@ test('Owner authorization uses Neon owner_accounts as its sole source of truth',
   assert.doesNotMatch(ownerAuth, /ADMIN_TELEGRAM_IDS/);
   assert.doesNotMatch(worker, /ADMIN_TELEGRAM_IDS/);
   assert.doesNotMatch(workflow, /secret put [\"']ADMIN_TELEGRAM_IDS/);
+});
+
+test('Telegram OIDC transaction creates independent state, nonce and PKCE values', () => {
+  const first = createTelegramOidcTransaction();
+  const second = createTelegramOidcTransaction();
+  assert.notEqual(first.state, second.state);
+  assert.notEqual(first.nonce, second.nonce);
+  assert.notEqual(first.verifier, second.verifier);
+  assert.equal(crypto.createHash('sha256').update(first.verifier).digest('base64url'), first.challenge);
+});
+
+test('Telegram OIDC ID token validation verifies RS256 signature, issuer, audience, expiry and nonce', async () => {
+  const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const jwk = { ...publicKey.export({ format: 'jwk' }), kid: 'vault-test-key', use: 'sig', alg: 'RS256' };
+  const now = Math.floor(Date.now() / 1000);
+  const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  const header = encode({ alg: 'RS256', typ: 'JWT', kid: 'vault-test-key' });
+  const claims = encode({
+    iss: 'https://oauth.telegram.org',
+    aud: '9167522638',
+    sub: '6888336983',
+    id: 6888336983,
+    preferred_username: 'vault_owner',
+    given_name: 'Vault Owner',
+    iat: now,
+    exp: now + 300,
+    nonce: 'expected-nonce'
+  });
+  const signingInput = header + '.' + claims;
+  const signature = crypto.sign('RSA-SHA256', Buffer.from(signingInput), privateKey).toString('base64url');
+  const token = signingInput + '.' + signature;
+  const fetchImpl = async () => ({ ok: true, json: async () => ({ keys: [jwk] }) });
+  const user = await validateTelegramOidcIdToken(token, {
+    clientId: '9167522638', nonce: 'expected-nonce', fetchImpl, now
+  });
+  assert.equal(user.id, '6888336983');
+  assert.equal(user.username, 'vault_owner');
+  await assert.rejects(
+    validateTelegramOidcIdToken(token, { clientId: '9167522638', nonce: 'wrong-nonce', fetchImpl, now }),
+    /TELEGRAM_OIDC_NONCE_INVALID/
+  );
+});
+
+test('Owner login uses Telegram OIDC and does not load the deprecated iframe widget', () => {
+  const ownerPage = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
+  const ownerRoute = readFileSync(new URL('../backend/routes/ownerAuth.js', import.meta.url), 'utf8');
+  assert.match(ownerPage, /\/api\/owner-auth\/oidc\/start/);
+  assert.doesNotMatch(ownerPage, /telegram-widget\.js/);
+  assert.match(ownerRoute, /oauth\.telegram\.org\/token/);
+  assert.match(ownerRoute, /validateTelegramOidcIdToken/);
 });
 
 function topLevelCssProperty(styles, selector, property) {
