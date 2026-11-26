@@ -820,6 +820,17 @@ test('Owner product attributes are normalized and bounded for marketplace filter
   assert.equal(normalizeProductAttributes(Object.fromEntries(Array.from({length:25},(_,i)=>['Key'+i,'Value']))).ok, false);
 });
 
+test('Customer web navigation matches the Mini App Home, Katalog, Transaksi and Profil journey', () => {
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  assert.match(navigation, /label: 'Home'.*href: '\/'/);
+  assert.match(navigation, /label: 'Katalog'.*href: '\/catalog'/);
+  assert.match(navigation, /label: 'Transaksi'.*href: '\/catalog#transactions'/);
+  assert.match(navigation, /label: 'Profil'.*href: '\/account'/);
+  assert.match(catalog, /window\.location\.hash === '#transactions'/);
+  assert.match(catalog, /vault-core-web-cart/);
+});
+
 test('customer catalog hides private price, ownership and XTR conversion metadata', () => {
   const visible = getCustomerVisibleProductAttributes({
     kode_produk:'ML-001',
