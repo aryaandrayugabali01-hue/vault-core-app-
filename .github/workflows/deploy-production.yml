@@ -34,6 +34,7 @@ jobs:
       CLOUDFLARE_ZONE_ID: "74092a358232c7bf501da8d822fabb47"
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+      TELEGRAM_OIDC_CLIENT_SECRET: ${{ secrets.TELEGRAM_OIDC_CLIENT_SECRET }}
       APP_ENCRYPTION_KEY: ${{ secrets.APP_ENCRYPTION_KEY }}
       SUPPORT_CONTACT: ${{ secrets.SUPPORT_CONTACT }}
       WEB_ORIGIN: "https://vault-core-web.premiumdigital-id.workers.dev"
@@ -183,7 +184,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for key in CLOUDFLARE_API_TOKEN TELEGRAM_BOT_TOKEN TELEGRAM_WEBHOOK_SECRET APP_ENCRYPTION_KEY; do
+          for key in CLOUDFLARE_API_TOKEN TELEGRAM_BOT_TOKEN TELEGRAM_WEBHOOK_SECRET TELEGRAM_OIDC_CLIENT_SECRET APP_ENCRYPTION_KEY; do
             if [[ -z "${!key:-}" ]]; then
               echo "::error::Required repository secret is missing: ${key}"
               exit 1
@@ -225,7 +226,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for key in TELEGRAM_BOT_TOKEN TELEGRAM_WEBHOOK_SECRET APP_ENCRYPTION_KEY; do
+          for key in TELEGRAM_BOT_TOKEN TELEGRAM_WEBHOOK_SECRET TELEGRAM_OIDC_CLIENT_SECRET APP_ENCRYPTION_KEY; do
             printf '%s' "${!key}" | npx --yes wrangler@latest secret put "$key" --config wrangler.api.jsonc
           done
           if [[ -n "${SUPPORT_CONTACT:-}" ]]; then
