@@ -39,7 +39,7 @@ Copy only the generated output into the secret. The deployment preflight ignores
 Optional:
 - `SUPPORT_CONTACT`: the support contact displayed by the payment-support bot command.
 
-The deployment workflow validates the key length and numeric Telegram IDs before deploying. The latest production run passed these checks. The deployed API adapter fix is being applied to the existing source and the workflow is configured to redeploy when that API entrypoint or the deployment workflow changes on `main`.
+The deployment workflow validates the encryption key before deploying. Owner authorization is read from the active `owner_accounts` records in Neon. The latest production run passed these checks. The deployed API adapter fix is being applied to the existing source and the workflow is configured to redeploy when that API entrypoint or the deployment workflow changes on `main`.
 
 ## Database connection model
 
