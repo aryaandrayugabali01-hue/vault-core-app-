@@ -51,7 +51,7 @@ export default function CustomerAccountPage() {
     } catch {
       setCustomer(null);
       setStatus('unavailable');
-      setMessage(error.message || 'Sesi akun belum dapat diperiksa. Periksa koneksi lalu coba kembali.');
+      setMessage('Sesi akun belum dapat diperiksa. Periksa koneksi lalu coba kembali.');
       return null;
     }
   }, []);
