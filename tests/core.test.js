@@ -44,7 +44,8 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
   const marketplace = readFileSync(new URL('../frontend/src/lib/marketplace.js', import.meta.url), 'utf8');
   const miniHtml = readFileSync(new URL('../frontend/public/miniapp/index.html', import.meta.url), 'utf8');
   const miniApp = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
-  assert.ok(catalogRoute.includes("import VaultCoreV4Catalog from './VaultCoreV4Page.jsx'"));
+  assert.ok(catalogRoute.includes("from 'next/navigation'"));
+  assert.ok(catalogRoute.includes("redirect('/miniapp/index.html#/catalog')"));
   assert.ok(catalog.includes('/assets/01-brand/vaultcore-horizontal.svg'));
   assert.ok(catalog.includes('GAME_ART[MARKET_GAME_CODE[code]]'));
   assert.ok(catalog.includes('GAME_ART[MARKET_GAME_CODE[variant.game_code]]'));
@@ -64,10 +65,10 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
   assert.ok(miniApp.includes('/assets/01-brand/vaultcore-horizontal.svg'));
 });
 
-test('v4 public catalog uses Telegram Mini App and official Telegram Stars checkout', () => {
+test('legacy v4 catalog behavior remains covered while /catalog routes to canonical Mini App', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const route = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
-  assert.ok(route.includes('VaultCoreV4Catalog'));
+  assert.ok(route.includes("redirect('/miniapp/index.html#/catalog')"));
   assert.match(page, /Seluruh checkout dan pemantauan pesanan dilakukan melalui VAULT CORE Telegram Mini App/);
   assert.match(page, /invoice resmi Telegram Stars \(XTR\)/);
   assert.match(page, /if \(!initData\)/);
