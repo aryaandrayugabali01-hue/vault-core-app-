@@ -7,7 +7,7 @@ import './page.css';
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 function safeAccountReturnPath(value) {
-  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || value.includes('\\\\')) return '';
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return '';
   try {
     const target = new URL(value, 'https://vaultcore.biz.id');
     const allowed = target.pathname === '/account' || target.pathname.startsWith('/account/')
