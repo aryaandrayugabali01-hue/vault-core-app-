@@ -35,6 +35,7 @@ jobs:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
       TELEGRAM_OIDC_CLIENT_SECRET: ${{ secrets.TELEGRAM_OIDC_CLIENT_SECRET }}
+      OWNER_TEST_TELEGRAM_ID: ${{ secrets.ADMIN_TELEGRAM_IDS }}
       APP_ENCRYPTION_KEY: ${{ secrets.APP_ENCRYPTION_KEY }}
       SUPPORT_CONTACT: ${{ secrets.SUPPORT_CONTACT }}
       WEB_ORIGIN: "https://vault-core-web.premiumdigital-id.workers.dev"
@@ -385,9 +386,7 @@ jobs:
 
           const apiOrigin = process.env.API_ORIGIN;
           const botToken = process.env.TELEGRAM_BOT_TOKEN;
-          const configuredIds = String(process.env.ADMIN_TELEGRAM_IDS || '')
-            .split(',').map((value) => value.trim()).filter((value) => /^[0-9]+$/.test(value));
-          const ownerId = configuredIds[0];
+          const ownerId = String(process.env.OWNER_TEST_TELEGRAM_ID || '').split(',').map((value) => value.trim()).find((value) => /^[0-9]+$/.test(value));
           if (!apiOrigin || !botToken || !ownerId) {
             throw new Error('Owner fixture bootstrap configuration is missing.');
           }
