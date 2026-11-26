@@ -13,10 +13,10 @@ let renderId = 0;
 let pollTimer = null;
 
 const GAMES = {
-  MLBB: { name:'Mobile Legends Bang Bang', short:'MLBB', art:'/assets/03-categories/category-mlbb.png' },
-  FF: { name:'Free Fire', short:'Free Fire', art:'/assets/03-categories/category-free-fire.png' },
-  ROBLOX: { name:'Roblox', short:'Roblox', art:'/assets/03-categories/category-roblox.png' },
-  GI: { name:'Genshin Impact', short:'Genshin', art:'/assets/03-categories/category-genshin.png' }
+  MLBB: { name:'Mobile Legends Bang Bang', short:'MLBB', art:'/game-icons/mlbb.webp' },
+  FF: { name:'Free Fire', short:'Free Fire', art:'/game-icons/free-fire.webp' },
+  ROBLOX: { name:'Roblox', short:'Roblox', art:'/game-icons/roblox.webp' },
+  GI: { name:'Genshin Impact', short:'Genshin', art:'/game-icons/genshin-impact.webp' }
 };
 const GAME_CODES = Object.keys(GAMES);
 const ICONS = {

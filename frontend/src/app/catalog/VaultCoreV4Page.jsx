@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getInitData, getTelegramWebApp, openInvoice } from '../../lib/telegram.js';
 import './page.css';
-import { GAME_ART, GAME_BACKGROUNDS } from '../../lib/marketplace.js';
+import { GAME_ART } from '../../lib/marketplace.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const GROUPS = ['Akun','Jasa Joki','Item In-Game'];
@@ -278,7 +278,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           </div>
         </section>
 
-        <section className="vc4-featured-hero" aria-label="Sorotan katalog" style={{'--vc4-feature-image':`url("${GAME_BACKGROUNDS[MARKET_GAME_CODE[featuredProduct?.game_code]] || GAME_BACKGROUNDS.MLBB}")`}}>
+        <section className="vc4-featured-hero" aria-label="Sorotan katalog">
           <div className="vc4-featured-copy">
             <div className="vc4-featured-kicker"><span>VAULT CORE PICKS</span><span className="vc4-featured-live">KATALOG AKTIF</span></div>
             <h2>{featuredProduct ? featuredProduct.name : 'Temukan akun game pilihanmu.'}</h2>
@@ -308,7 +308,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             <span className="vc4-game-tile vc4-all-games">VC</span><span>Semua</span>
           </button>
           {Object.entries(GAME_NAMES).map(([code,label]) => <button type="button" key={code} className={game===code?'selected':''} onClick={() => setGame(code)}>
-            <span className="vc4-game-tile" style={{backgroundImage:`url(${GAME_BACKGROUNDS[MARKET_GAME_CODE[code]]})`}}><img src={GAME_ART[MARKET_GAME_CODE[code]]} alt="" loading="lazy"/></span><span>{label}</span>
+            <span className="vc4-game-tile"><img src={GAME_ART[MARKET_GAME_CODE[code]]} alt="" loading="lazy"/></span><span>{label}</span>
           </button>)}
         </section>
 
@@ -343,7 +343,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
                 const products = visibleProducts.filter((product)=>product.variant_id===Number(variant.variant_id));
                 return <article className="vc4-card" key={variant.variant_id}>
                   <button type="button" className="vc4-card-main" onClick={()=>setSelected({variant_id:Number(variant.variant_id)})}>
-                    <div className="vc4-card-art" style={{backgroundImage:`url(${GAME_BACKGROUNDS[MARKET_GAME_CODE[variant.game_code]]})`}}><img src={GAME_ART[MARKET_GAME_CODE[variant.game_code]]} alt="" loading="lazy"/><small>{variant.category}</small></div>
+                    <div className="vc4-card-art"><img src={GAME_ART[MARKET_GAME_CODE[variant.game_code]]} alt="" loading="lazy"/><small>{variant.category}</small></div>
                     <div className="vc4-card-copy"><span className="vc4-eyebrow">{variant.game}</span><h3>{variant.name}</h3><p>{products.length ? products.length + ' SKU aktif' : 'Produk disiapkan Owner'}</p></div>
                     <div className="vc4-card-foot"><strong>{products.length ? 'Lihat produk' : 'Detail varian'}</strong><span>↗</span></div>
                   </button>

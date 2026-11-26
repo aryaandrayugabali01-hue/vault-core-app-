@@ -347,3 +347,12 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - Production run [45780201631](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45780201631): **SUCCESS**. API/frontend Worker, database health, gateway/domain, five Mini App static files, artwork, Telegram webhook read-back, dan fixture Owner berhasil diperiksa.
 - Cloudflare production: `vault-core-web` v161, `vault-core-api` v841, `vault-core-gateway` v320; masing-masing melayani 100% traffic. Source commit: `75fd4695b5d5eb57d83e2477603098d0256623e0`.
 - Screenshot Android aktual dan uji interaksi manual perangkat masih **BELUM DILAKUKAN**. Smoke test aset/Worker bukan pengganti perbandingan visual langsung pada perangkat.
+
+
+## 20. First-party game icon assets — 26 Nov 2026
+
+- Four game icons supplied in `icongame.html` are now the canonical visual assets for Mobile Legends (MLBB), Free Fire, Roblox, and Genshin Impact.
+- Optimized local WebP files live in `frontend/public/game-icons/`: `mlbb.webp`, `free-fire.webp`, `roblox.webp`, and `genshin-impact.webp`.
+- The storefront mapping `GAME_ART`, the public catalog game tiles and variant artwork, and the Telegram Mini App use these same four local assets. The Mini App service-worker shell cache was bumped to v6 and includes all four files.
+- Remote Itemku artwork URLs and the old category-background images are no longer used as the four primary game marks. Product-specific SKU images remain driven by their existing product records.
+- This visual asset update does not change catalog records, backend APIs, inventory, pricing, orders, fulfillment, Telegram authentication, or XTR checkout behavior.

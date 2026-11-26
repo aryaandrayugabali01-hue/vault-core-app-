@@ -1,5 +1,5 @@
 // Shell-only cache. API requests and dynamic product data always use the network.
-const CACHE_NAME = 'vault-core-miniapp-v5';
+const CACHE_NAME = 'vault-core-miniapp-v6';
 const SHELL = [
   '/miniapp/index.html',
   '/miniapp/app.css',
@@ -9,10 +9,10 @@ const SHELL = [
   '/assets/01-brand/vaultcore-mark.svg',
   '/assets/01-brand/vaultcore-horizontal.svg',
   '/assets/02-hero/hero-vaultcore-loop.webp',
-  '/assets/03-categories/category-mlbb.png',
-  '/assets/03-categories/category-free-fire.png',
-  '/assets/03-categories/category-roblox.png',
-  '/assets/03-categories/category-genshin.png'
+  '/game-icons/mlbb.webp',
+  '/game-icons/free-fire.webp',
+  '/game-icons/roblox.webp',
+  '/game-icons/genshin-impact.webp'
 ];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));

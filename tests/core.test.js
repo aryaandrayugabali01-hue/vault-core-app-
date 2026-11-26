@@ -46,19 +46,20 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
   const miniApp = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   assert.ok(catalogRoute.includes("import VaultCoreV4Catalog from './VaultCoreV4Page.jsx'"));
   assert.ok(catalog.includes('/assets/01-brand/vaultcore-horizontal.svg'));
-  assert.ok(catalog.includes('GAME_BACKGROUNDS[MARKET_GAME_CODE[code]]'));
   assert.ok(catalog.includes('GAME_ART[MARKET_GAME_CODE[code]]'));
-  assert.ok(catalog.includes('GAME_BACKGROUNDS[MARKET_GAME_CODE[variant.game_code]]'));
+  assert.ok(catalog.includes('GAME_ART[MARKET_GAME_CODE[variant.game_code]]'));
   assert.ok(owner.includes("from '../../lib/marketplace.js'"));
   assert.ok(ownerV4.includes('OWNER V4'));
-  assert.ok(marketplace.includes('export const GAME_BACKGROUNDS'));
   assert.ok(marketplace.includes('export const GAME_ART'));
-  for (const asset of [
-    'https://d1x91p7vw3vuq8.cloudfront.net/game/2024109/rcks2r0xntbibkh7gf72p.png',
-    'https://d1x91p7vw3vuq8.cloudfront.net/game/2025124/vhyvvmjoekra0kyu3a2af4.svg',
-    'https://d1x91p7vw3vuq8.cloudfront.net/game/2024711/93cu2pbsceeiior5v9yc2q.png',
-    'https://d1x91p7vw3vuq8.cloudfront.net/game/2025118/z9t30wkd81lxiwmaio40v.webp'
-  ]) assert.ok(marketplace.includes(asset));
+  const gameIcons = ['/game-icons/mlbb.webp','/game-icons/free-fire.webp','/game-icons/roblox.webp','/game-icons/genshin-impact.webp'];
+  for (const asset of gameIcons) {
+    assert.ok(marketplace.includes(asset));
+    assert.ok(miniApp.includes(asset));
+    const bytes = readFileSync(new URL('../frontend/public' + asset, import.meta.url));
+    assert.equal(bytes.toString('ascii',0,4),'RIFF',asset + ' RIFF header');
+    assert.equal(bytes.toString('ascii',8,12),'WEBP',asset + ' WebP signature');
+  }
+  assert.doesNotMatch(marketplace,/cloudfront\\.net\\/game/);
   assert.ok(miniHtml.includes('/assets/01-brand/vaultcore-mark.svg'));
   assert.ok(miniApp.includes('/assets/01-brand/vaultcore-horizontal.svg'));
 });
@@ -1034,7 +1035,8 @@ test('mobile app assets are included in the static frontend and service worker n
   assert.ok(config.includes("apiBase: ''"));
   assert.ok(manifest.includes('"scope":"/miniapp/"'));
   assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
-  assert.ok(sw.includes('/assets/03-categories/category-mlbb.png'));
+  for (const asset of ['/game-icons/mlbb.webp','/game-icons/free-fire.webp','/game-icons/roblox.webp','/game-icons/genshin-impact.webp']) assert.ok(sw.includes(asset));
+  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v6'"));
 });
 
 test('active CSS rules do not contain repeated declarations that can reintroduce same-rule conflicts', () => {

@@ -97,25 +97,22 @@ jobs:
           console.log('All storefront asset references resolve to the extracted library.');
           NODE
 
-      - name: Verify Itemku game logo assets referenced by uploaded ZIPs
+      - name: Verify the four supplied first-party game icon assets
         shell: bash
         run: |
           set -euo pipefail
-          urls=(
-            "https://d1x91p7vw3vuq8.cloudfront.net/game/2024109/rcks2r0xntbibkh7gf72p.png"
-            "https://d1x91p7vw3vuq8.cloudfront.net/game/2025124/vhyvvmjoekra0kyu3a2af4.svg"
-            "https://d1x91p7vw3vuq8.cloudfront.net/game/2024711/93cu2pbsceeiior5v9yc2q.png"
-            "https://d1x91p7vw3vuq8.cloudfront.net/game/2025118/z9t30wkd81lxiwmaio40v.webp"
-          )
-          for url in "${urls[@]}"; do
-            code="$(curl --location --silent --show-error --output /dev/null --write-out '%{http_code}' "$url")"
-            if [[ "$code" != "200" ]]; then
-              echo "::error::Itemku game logo returned HTTP $code: $url"
-              exit 1
-            fi
-          done
-          echo "All four supplied Itemku game logo image references returned HTTP 200."
-
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const assets = ['mlbb.webp','free-fire.webp','roblox.webp','genshin-impact.webp'];
+          for (const asset of assets) {
+            const path = 'frontend/public/game-icons/' + asset;
+            const bytes = fs.readFileSync(path);
+            if (bytes.toString('ascii',0,4) !== 'RIFF' || bytes.toString('ascii',8,12) !== 'WEBP') {
+              throw new Error('Invalid WebP game icon: ' + path);
+            }
+            console.log(path + ' (' + bytes.length + ' bytes) OK');
+          }
+          NODE
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
