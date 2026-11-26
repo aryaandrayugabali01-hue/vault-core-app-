@@ -5,7 +5,7 @@ const C = window.VAULT_CONFIG || {};
 const tg = window.Telegram && window.Telegram.WebApp;
 const inTelegram = Boolean(tg && tg.initData);
 const $ = (selector) => document.querySelector(selector);
-const $ = (selector) => Array.from(document.querySelectorAll(selector));
+const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 const money = new Intl.NumberFormat('id-ID');
 const state = { variants: [], products: [], loaded: false, loadError: '', orderFilter: 'all', orderRows: [], accessTarget: null, catalogGroup:'ALL', catalogGame:'ALL', search:'' };
 let checkout = null;
