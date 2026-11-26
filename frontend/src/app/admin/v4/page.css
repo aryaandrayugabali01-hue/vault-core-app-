@@ -10,7 +10,7 @@
   --vco-surface-raised:#172338;
 }
 .vco-shell{
-  min-height:100vh;padding:0 0 112px;
+  min-height:100vh;padding:0 0 28px;
   background:radial-gradient(ellipse at 16% 0%,rgba(106,48,210,.18),transparent 38%),linear-gradient(180deg,#090d19 0%,#070914 72%,#060812 100%);
   color:var(--vco-ink);font-family:"Plus Jakarta Sans",Inter,system-ui,-apple-system,sans-serif;
 }

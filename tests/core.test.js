@@ -1134,3 +1134,14 @@ test('Owner shared header has responsive styling and does not render customer fo
   assert.ok(styles.includes('@media(max-width:380px){'));
   assert.ok(navigation.includes("{!isOwnerPage && <StoreFooter/>}"));
 });
+
+test('mobile shell reserves fixed navigation space once instead of stacking oversized page padding', () => {
+  const mobile = readFileSync(new URL('../frontend/src/app/mobile-app.css', import.meta.url), 'utf8');
+  const owner = readFileSync(new URL('../frontend/src/app/admin/v4/page.css', import.meta.url), 'utf8');
+  const global = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  assert.ok(mobile.includes('padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))'));
+  assert.ok(mobile.includes('.vc4-main{padding:35px 16px 28px}'));
+  assert.equal(mobile.includes('.vc-mobile-app .vco-shell{padding-bottom:'), false);
+  assert.ok(owner.includes('min-height:100vh;padding:0 0 28px;'));
+  assert.ok(global.includes('padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))'));
+});

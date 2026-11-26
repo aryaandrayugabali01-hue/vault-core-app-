@@ -818,7 +818,7 @@ position:relative;font-weight:800;line-height:1.5;font-size:9px;letter-spacing:1
 padding-bottom:calc(112px + env(safe-area-inset-bottom,0px));}
 
 .owner-login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 0%,rgba(75,112,255,.16),transparent 42%),var(--bg,#090b12);color:var(--text,#f5f7ff);
-padding-bottom:calc(112px + env(safe-area-inset-bottom,0px));}
+padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));}
 
 
 /* Customer catalog information footer: scoped to the catalogue route. */
