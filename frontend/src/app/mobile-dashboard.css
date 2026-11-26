@@ -1,0 +1,105 @@
+/* Approved VAULT CORE smartphone dashboard. Keep the customer storefront in a phone-width canvas on every viewport. */
+.dashboard-shell{
+  width:min(100%,430px);
+  max-width:430px;
+  margin-inline:auto;
+  padding:0 12px 28px;
+  overflow-x:clip;
+}
+.dashboard-topbar{
+  width:100%;
+  gap:7px;
+  min-height:60px;
+  padding:7px 0;
+}
+.dashboard-brand img{width:116px;max-width:29vw}
+.dashboard-search{height:35px;min-width:0;padding-inline:9px}
+.dashboard-search input{font-size:9px}
+.dashboard-header-actions{gap:5px}
+.dashboard-icon-button{width:32px;height:32px;border-radius:10px}
+.dashboard-icon-button svg{width:16px;height:16px}
+.dashboard-hero{
+  min-height:194px;
+  margin:10px 0 16px;
+  padding:18px 15px;
+  border-radius:17px;
+  background-position:60% center;
+}
+.dashboard-hero-copy{max-width:100%}
+.dashboard-eyebrow{font-size:7px}
+.dashboard-hero h1{max-width:310px;margin:8px 0 7px;font-size:clamp(24px,7vw,32px);line-height:1.06}
+.dashboard-hero p{max-width:300px;font-size:9px;line-height:1.5}
+.dashboard-hero-actions{gap:8px;margin-top:11px}
+.dashboard-primary-cta{padding:9px 13px;font-size:9px}
+.dashboard-payment-note{font-size:7px}
+.dashboard-hero-trust{gap:8px 10px;margin-top:10px;font-size:7px}
+.dashboard-overview{gap:8px;margin-bottom:16px}
+.dashboard-overview-title h2,.dashboard-section-heading h2{font-size:16px}
+.dashboard-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.dashboard-stat-grid>div{gap:3px;padding:9px 7px;border-radius:11px}
+.dashboard-stat-grid span{font-size:7px}
+.dashboard-stat-grid strong{font-size:17px}
+.dashboard-stat-grid small{font-size:6px}
+.dashboard-games,.dashboard-featured,.dashboard-collection,.dashboard-guides,.dashboard-transactions,.dashboard-protection{margin:19px 0}
+.dashboard-section-heading{align-items:end;gap:8px;margin-bottom:8px}
+.dashboard-section-heading h2{font-size:15px}
+.dashboard-section-heading>a{font-size:8px}
+.dashboard-section-subtitle{font-size:7px}
+.dashboard-game-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.dashboard-game-card{border-radius:12px}
+.dashboard-game-art{height:62px}
+.dashboard-game-art img{padding:7px}
+.dashboard-game-copy{gap:3px;padding:6px}
+.dashboard-game-copy strong{font-size:7.5px;line-height:1.25}
+.dashboard-game-copy small{min-height:17px;font-size:6px}
+.dashboard-game-copy>span{font-size:6px}
+.dashboard-featured-grid,.dashboard-product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.dashboard-product-card{border-radius:13px}
+.dashboard-product-media{height:78px}
+.dashboard-product-body{gap:4px;padding:7px}
+.dashboard-product-category{font-size:6px}
+.dashboard-product-body h3{min-height:27px;font-size:8px;line-height:1.35}
+.dashboard-product-price{padding-top:5px}
+.dashboard-product-price small{font-size:6px}
+.dashboard-product-price strong{font-size:13px}
+.dashboard-product-badges{right:5px;bottom:5px;left:5px;gap:3px}
+.dashboard-product-badges span{min-height:16px;padding:3px 5px;font-size:6px}
+.dashboard-product-cta{min-height:27px;font-size:7px}
+.dashboard-guides-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.dashboard-guide-art{height:70px}
+.dashboard-guide-body{gap:4px;padding:7px}
+.dashboard-guide-body h3{font-size:8px}
+.dashboard-guide-body p{font-size:7px}
+.dashboard-guide-body summary{font-size:7px}
+.dashboard-transaction-filter{min-height:29px;font-size:8px}
+.dashboard-order-card{grid-template-columns:32px minmax(0,1fr) auto;gap:7px;padding:8px}
+.dashboard-order-icon{width:31px;height:31px;font-size:15px}
+.dashboard-order-copy strong{font-size:8px}
+.dashboard-order-copy small{font-size:6px}
+.dashboard-order-side strong{font-size:9px}
+.dashboard-order-status{font-size:6px}
+.dashboard-protection-heading h2{font-size:14px}
+.dashboard-protection-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.dashboard-protection-card{grid-template-columns:1fr;gap:4px;padding:7px}
+.dashboard-protection-card>span{font-size:17px}
+.dashboard-protection-card strong{font-size:6.5px}
+.dashboard-protection-card p{font-size:5.5px}
+.store-bottom-nav-shell{max-width:430px;margin-inline:auto;padding:10px 12px calc(18px + env(safe-area-inset-bottom,0px))}
+.dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded){width:100%;max-width:430px;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding:7px;border-radius:20px}
+.dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded) a{min-height:58px;padding:6px 2px;border-radius:14px}
+.dashboard-bottom-nav-icon{width:31px;height:31px;flex-basis:31px}
+.dashboard-bottom-nav-icon svg{width:17px;height:17px}
+.dashboard-bottom-nav-label{font-size:9px}
+@media(max-width:380px){
+  .dashboard-shell{padding-inline:10px}
+  .dashboard-brand img{width:104px}
+  .dashboard-icon-button{width:29px;height:29px}
+  .dashboard-search{height:33px}
+  .dashboard-search input{font-size:8px}
+  .dashboard-game-grid{gap:4px}
+  .dashboard-game-copy strong{font-size:7px}
+  .dashboard-product-grid,.dashboard-featured-grid{gap:6px}
+  .dashboard-product-media{height:68px}
+  .dashboard-product-body h3{font-size:7px}
+  .dashboard-product-price strong{font-size:12px}
+}
