@@ -4,6 +4,22 @@ const ISSUER = 'https://oauth.telegram.org';
 const JWKS_URL = 'https://oauth.telegram.org/.well-known/jwks.json';
 let jwksCache = { expiresAt: 0, keys: [] };
 
+export function safeCustomerReturnPath(value) {
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) {
+    return '/account';
+  }
+  try {
+    const parsed = new URL(value, 'https://vaultcore.biz.id');
+    if (parsed.origin !== 'https://vaultcore.biz.id') return '/account';
+    const allowed = parsed.pathname === '/account' || parsed.pathname.startsWith('/account/')
+      || parsed.pathname === '/catalog' || parsed.pathname.startsWith('/catalog/');
+    if (!allowed) return '/account';
+    return parsed.pathname + parsed.search + parsed.hash;
+  } catch {
+    return '/account';
+  }
+}
+
 export function createTelegramOidcTransaction() {
   const state = randomBytes(32).toString('base64url');
   const nonce = randomBytes(32).toString('base64url');
