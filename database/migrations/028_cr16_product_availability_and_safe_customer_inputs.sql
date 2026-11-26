@@ -23,3 +23,8 @@ COMMENT ON COLUMN products.availability_mode IS 'READY/INDENT for game account; 
 COMMENT ON COLUMN products.indent_deadline_days IS 'Calendar-day INDENT deadline shown before checkout.';
 COMMENT ON COLUMN products.customer_input_fields IS 'Safe buyer game identity and service parameters; no authentication secrets.';
 COMMENT ON COLUMN order_items.fulfillment_deadline_at IS 'Deadline snapshot at order creation.';
+
+-- Preserve the exact account availability and fulfillment deadline agreed at checkout.
+UPDATE order_items
+ SET availability_mode_snapshot='READY'
+ WHERE availability_mode_snapshot IS NULL;

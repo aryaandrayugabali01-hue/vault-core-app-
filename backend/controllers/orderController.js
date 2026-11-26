@@ -80,10 +80,20 @@ export async function createOrder(req, res, { testMode = false } = {}) {
 
     for(const line of reservedLines) {
       const {item,product,stockRows}=line;
+      const accountAvailability = product.variant_category === 'Akun'
+        ? (product.availability_mode === 'INDENT' ? 'INDENT' : 'READY')
+        : 'READY';
+      const indentDays = accountAvailability === 'INDENT' ? Number(product.indent_deadline_days) : null;
       await client.query(
-        `INSERT INTO order_items (order_id,product_id,quantity,unit_sale_xtr,unit_cost_xtr,product_name_snapshot)
-         VALUES ($1,$2,$3,$4,$5,$6)`,
-        [order.id,product.id,item.quantity,product.sale_price_xtr,product.cost_price_xtr,product.name]
+        `INSERT INTO order_items
+          (order_id,product_id,quantity,unit_sale_xtr,unit_cost_xtr,product_name_snapshot,
+           availability_mode_snapshot,indent_deadline_days_snapshot,fulfillment_deadline_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,
+           CASE WHEN $9='INDENT' THEN NOW()+($8::int * INTERVAL '1 day')
+                WHEN $9='READY' AND $10=TRUE THEN NOW()+INTERVAL '1 hour'
+                ELSE NULL END)`,
+        [order.id,product.id,item.quantity,product.sale_price_xtr,product.cost_price_xtr,product.name,
+         accountAvailability,indentDays,accountAvailability,product.variant_category === 'Akun']
       );
       for(const stock of stockRows) {
         const reservation=await client.query(
