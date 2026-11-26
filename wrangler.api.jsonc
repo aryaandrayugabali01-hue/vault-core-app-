@@ -33,6 +33,8 @@
     "NODE_ENV": "production",
     "FRONTEND_ORIGIN": "https://vaultcore.biz.id,https://www.vaultcore.biz.id",
     "TELEGRAM_MINI_APP_URL": "https://vaultcore.biz.id/miniapp/index.html",
+    "TELEGRAM_OIDC_CLIENT_ID": "9167522638",
+    "TELEGRAM_OIDC_REDIRECT_URI": "https://api.vaultcore.biz.id/api/owner-auth/oidc/callback",
     "DATABASE_CONNECTION_MODE": "request"
   }
 }
