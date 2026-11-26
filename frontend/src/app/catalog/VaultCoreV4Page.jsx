@@ -86,6 +86,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   const [filters,setFilters] = useState({winMin:'',winMax:'',skinMin:'',skinMax:'',heroMin:'',heroMax:'',rank:'',providers:[]});
   const [selected,setSelected] = useState(null);
   const [cart,setCart] = useState([]);
+  const [cartRestored,setCartRestored] = useState(false);
   const [cartOpen,setCartOpen] = useState(false);
   const [buying,setBuying] = useState(false);
   const [notice,setNotice] = useState('');
@@ -178,6 +179,36 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       group:variant.category
     }))
   ),[variants]);
+
+  useEffect(() => {
+    if (loading) return;
+    try {
+      const stored = JSON.parse(sessionStorage.getItem('vault-core-web-cart') || '[]');
+      const restored = Array.isArray(stored) ? stored.slice(0,10).map((entry) => {
+        const product = flatProducts.find((item) => item.id === Number(entry.productId) && item.is_available && Number(item.sale_price_xtr) > 0);
+        return product ? {
+          productId:product.id, sku:product.sku, name:product.name,
+          price:Number(product.sale_price_xtr),
+          quantity:Math.max(1,Math.min(5,Number(entry.quantity) || 1))
+        } : null;
+      }).filter(Boolean) : [];
+      setCart(restored);
+    } catch {
+      setCart([]);
+    }
+    setCartRestored(true);
+  },[flatProducts,loading]);
+
+  useEffect(() => {
+    if (!cartRestored) return;
+    if (cart.length) {
+      sessionStorage.setItem('vault-core-web-cart',JSON.stringify(cart.map(({productId,quantity}) => ({productId,quantity}))));
+    } else {
+      sessionStorage.removeItem('vault-core-web-cart');
+    }
+  },[cart,cartRestored]);
+
+
 
   const featuredProduct = useMemo(() =>
     flatProducts.find((product) => product.is_available === true && Number(product.sale_price_xtr) > 1)
