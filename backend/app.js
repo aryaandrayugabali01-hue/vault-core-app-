@@ -11,7 +11,7 @@ import telegramWebhookRoutes from './routes/telegramWebhook.js';
 import ownerAuthRoutes from './routes/ownerAuth.js';
 import customerAuthRoutes from './routes/customerAuth.js';
 import { requireOwnerSession } from './middleware/ownerSession.js';
-import { requireTelegramUser } from './middleware/telegramAuth.js';
+import { requireTelegramUser, requireTelegramMiniAppUser } from './middleware/telegramAuth.js';
 import { isOwnerTelegramUser, requireOwner } from './middleware/adminAuth.js';
 import { apiRateLimit, checkoutRateLimit, ownerRateLimit } from './middleware/rateLimit.js';
 
@@ -45,7 +45,7 @@ app.use('/api/customer-auth', apiRateLimit, customerAuthRoutes);
 app.get('/api/owner-auth/session', apiRateLimit, requireOwnerSession, requireOwner, (req, res) => res.json({ authenticated: true, user: { id: String(req.telegramUser.id), username: req.telegramUser.username ?? null, first_name: req.telegramUser.first_name ?? '' } }));
 app.use('/api/catalog', apiRateLimit, catalogRoutes);
 app.use('/api/catalog/v4', apiRateLimit, catalogV4Routes);
-app.use('/api/orders', apiRateLimit, checkoutRateLimit, requireTelegramUser, ordersRoutes);
+app.use('/api/orders', apiRateLimit, checkoutRateLimit, requireTelegramMiniAppUser, ordersRoutes);
 app.use('/api/admin', apiRateLimit, ownerRateLimit, requireOwnerSession, requireOwner, adminRoutes);
 app.use('/api/admin/v4', apiRateLimit, ownerRateLimit, requireOwnerSession, requireOwner, ownerV4Routes);
 app.use('/api/telegram/webhook', telegramWebhookRoutes);
