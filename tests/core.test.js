@@ -113,8 +113,10 @@ test('Customer web OIDC and Mini App authentication resolve into the same custom
   assert.match(sessionMiddleware, /vault_customer_session/);
   assert.match(telegramMiddleware, /readCustomerSession/);
   assert.match(telegramMiddleware, /validateTelegramInitData/);
+  assert.match(telegramMiddleware, /export async function requireTelegramMiniAppUser/);
+  assert.match(telegramMiddleware, /if \(!initData\)/);
   assert.match(app, /app\.use\('\/api\/customer-auth', apiRateLimit, customerAuthRoutes\)/);
-  assert.match(app, /app\.use\('\/api\/orders', apiRateLimit, checkoutRateLimit, requireTelegramUser, ordersRoutes\)/);
+  assert.match(app, /app\.use\('\/api\/orders', apiRateLimit, checkoutRateLimit, requireTelegramMiniAppUser, ordersRoutes\)/);
 });
 
 test('Public website serves the backend-owned customer catalog and Telegram account page', () => {
@@ -182,19 +184,18 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
   assert.ok(ownerV4.includes('Pembayaran 1 XTR tetap merupakan potongan Stars sungguhan'));
 });
 
-test('web catalog remains backend-driven while Telegram invoice and Mini App flow stay supported', () => {
+test('web catalog is backend-driven and directs browser checkout into Telegram Mini App', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const route = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   assert.ok(route.includes("from './VaultCoreV4Page'"));
-  assert.match(page, /POST/);
   assert.match(page, /api\/customer-auth\/session/);
   assert.match(page, /credentials:'include'/);
-  assert.match(page, /invoice Telegram Stars/);
-  assert.match(page, /Telegram Stars \(XTR\)/);
-  assert.match(page, /let activeCustomer = customer/);
+  assert.match(page, /Beli di Telegram/);
+  assert.match(page, /Lanjutkan di Telegram Mini App/);
+  assert.match(page, /if \(!inTelegramMiniApp\)/);
+  assert.match(page, /inTelegramMiniApp && cartOpen/);
   assert.match(page, /openInvoice\(data\.invoiceUrl,data\.orderNumber\)/);
   assert.doesNotMatch(page, /Rekber|Escrow|transfer bank|direct transfer|QRIS|PayLater/i);
-  assert.ok(page.includes("fetch(API + '/api/orders'"));
 });
 
 test('expired pending orders are atomically cancelled, unreserved, and hidden from stock counts', async () => {
@@ -820,15 +821,16 @@ test('Owner product attributes are normalized and bounded for marketplace filter
   assert.equal(normalizeProductAttributes(Object.fromEntries(Array.from({length:25},(_,i)=>['Key'+i,'Value']))).ok, false);
 });
 
-test('Customer web navigation matches the Mini App Home, Katalog, Transaksi and Profil journey', () => {
+test('Customer web navigation keeps transactions inside Telegram Mini App', () => {
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   assert.match(navigation, /label: 'Home'.*href: '\/'/);
   assert.match(navigation, /label: 'Katalog'.*href: '\/catalog'/);
-  assert.match(navigation, /label: 'Transaksi'.*href: '\/catalog#transactions'/);
+  assert.match(navigation, /label: 'Mini App'.*href: '\/miniapp'/);
   assert.match(navigation, /label: 'Profil'.*href: '\/account'/);
-  assert.match(catalog, /window\.location\.hash === '#transactions'/);
-  assert.match(catalog, /vault-core-web-cart/);
+  assert.doesNotMatch(navigation, /label: 'Transaksi'/);
+  assert.match(catalog, /const inTelegramMiniApp = Boolean\(getInitData\(\)\)/);
+  assert.match(catalog, /if \(inTelegramMiniApp && window\.location\.hash === '#transactions'\)/);
 });
 
 test('customer catalog hides private price, ownership and XTR conversion metadata', () => {
@@ -1022,8 +1024,9 @@ test('Apple v4 mobile product detail preserves SKU price, attributes, terms and 
   assert.ok(page.includes('vc4-details'));
   assert.ok(page.includes('vc4-product-terms'));
   assert.ok(page.includes('vc4-security-guide'));
-  assert.ok(page.includes('Tambah ke keranjang'));
-  assert.ok(page.includes('Bayar dengan Telegram Stars'));
+  assert.ok(page.includes('Beli di Telegram'));
+  assert.ok(page.includes('Lanjutkan di Telegram Mini App'));
+  assert.ok(page.includes('inTelegramMiniApp && cartOpen'));
   assert.ok(styles.includes('@media(max-width:760px)'));
   assert.ok(styles.includes('grid-template-columns:1fr'));
   assert.ok(styles.includes('.vc4-dialog{padding:28px 20px}'));
@@ -1034,7 +1037,7 @@ test('v4 customer catalog footer follows XTR, account-security and Telegram paym
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   assert.ok(page.includes('Telegram Mini App'));
   assert.ok(page.includes('Telegram Stars (XTR)'));
-  assert.ok(page.includes('Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram'));
+  assert.ok(page.includes('Seluruh transaksi, invoice Telegram Stars (XTR), riwayat pesanan, dan proses pemenuhan tersedia hanya melalui VAULT CORE Telegram Mini App.'));
   assert.ok(page.includes('vault terenkripsi'));
   for (const unsupportedMethod of ['BCA','Mandiri','BNI','Maybank','BRI','Indomaret','Alfamart','QRIS','ShopeePay','PayLater']) assert.equal(page.includes(unsupportedMethod),false);
   assert.ok(styles.includes('.vc4-footer'));
@@ -1074,8 +1077,13 @@ test('Mini App and React catalog use the same catalog, order, and XTR payment AP
   assert.ok(mini.includes("api('/api/catalog/v4/variants')"));
   assert.ok(react.includes("'/api/catalog/v4/variants'"));
   assert.ok(mini.includes("api('/api/orders'"));
-  assert.ok(react.includes("fetch(API + '/api/orders'"));
+  assert.ok(mini.includes("api('/api/orders'"));
   assert.ok(mini.includes("api('/api/orders/mine')"));
+  assert.ok(react.includes('inTelegramMiniApp'));
+  assert.ok(react.includes('Beli di Telegram'));
+  assert.ok(react.includes('Lanjutkan di Telegram Mini App'));
+  assert.ok(react.includes('if (!inTelegramMiniApp)'));
+  assert.ok(api.includes('requireTelegramMiniAppUser'));
   assert.ok(react.includes("'/api/orders/mine'"));
   assert.ok(mini.includes("const body = {items:[{productId:Number(product.id),quantity:1}]}"));
   assert.ok(react.includes("items:cart.map(({productId,quantity}) => ({productId,quantity}))"));
