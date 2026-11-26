@@ -10,7 +10,8 @@ import adminRoutes from './routes/admin.js';
 import telegramWebhookRoutes from './routes/telegramWebhook.js';
 import ownerAuthRoutes from './routes/ownerAuth.js';
 import { requireOwnerSession } from './middleware/ownerSession.js';
-import { requireTelegramUser } from './middleware/telegramAuth.js';
+import { requireCustomerUser } from './middleware/customerAuth.js';
+import telegramOidcRoutes from './routes/telegramOidc.js';
 import { isOwnerTelegramUser, requireOwner } from './middleware/adminAuth.js';
 import { apiRateLimit, checkoutRateLimit, ownerRateLimit } from './middleware/rateLimit.js';
 
@@ -29,21 +30,22 @@ app.get('/health', async (_req, res) => {
     res.status(503).json({ status: 'degraded', service: 'vault-core-api', database: 'unavailable' });
   }
 });
-app.get('/api/session', apiRateLimit, requireTelegramUser, async (req, res) => {
+app.get('/api/session', apiRateLimit, requireCustomerUser, async (req, res) => {
   try {
     const userId = String(req.telegramUser.id);
     const isOwner = await isOwnerTelegramUser(userId);
-    return res.json({ userId, username: req.telegramUser.username ?? null, isOwner });
+    return res.json({ userId, username: req.telegramUser.username ?? null, first_name: req.telegramUser.first_name ?? '', authMethod: req.authMethod, isOwner });
   } catch (error) {
     console.error('[session-check]', error.message);
     return res.status(503).json({ error: 'SESSION_CHECK_UNAVAILABLE' });
   }
 });
+app.use('/api/auth/telegram', apiRateLimit, telegramOidcRoutes);
 app.use('/api/owner-auth', apiRateLimit, ownerAuthRoutes);
 app.get('/api/owner-auth/session', apiRateLimit, requireOwnerSession, requireOwner, (req, res) => res.json({ authenticated: true, user: { id: String(req.telegramUser.id), username: req.telegramUser.username ?? null, first_name: req.telegramUser.first_name ?? '' } }));
 app.use('/api/catalog', apiRateLimit, catalogRoutes);
 app.use('/api/catalog/v4', apiRateLimit, catalogV4Routes);
-app.use('/api/orders', apiRateLimit, checkoutRateLimit, requireTelegramUser, ordersRoutes);
+app.use('/api/orders', apiRateLimit, checkoutRateLimit, requireCustomerUser, ordersRoutes);
 app.use('/api/admin', apiRateLimit, ownerRateLimit, requireOwnerSession, requireOwner, adminRoutes);
 app.use('/api/admin/v4', apiRateLimit, ownerRateLimit, requireOwnerSession, requireOwner, ownerV4Routes);
 app.use('/api/telegram/webhook', telegramWebhookRoutes);

@@ -12,6 +12,7 @@ import { createDatabaseAdapter } from '../backend/db/pool.js';
 import { canReconcileDelivery, isOwnerManualFulfillmentSource } from '../backend/services/deliveryService.js';
 import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
 import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } from '../backend/middleware/ownerSession.js';
+import { createCustomerSession, readCustomerSession } from '../backend/middleware/customerAuth.js';
 import { splitInventoryPayloads } from '../frontend/src/lib/inventory.js';
 import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes } from '../backend/services/productDetailsService.js';
 import { parseProductAttributesText, formatProductAttributesText, getCustomerVisibleProductAttributes, normalizeCustomerDisplayText } from '../frontend/src/lib/product-attributes.js';
@@ -55,9 +56,12 @@ test('v4 public catalog uses Telegram Mini App and official Telegram Stars check
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const route = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   assert.ok(route.includes('VaultCoreV4Catalog'));
-  assert.match(page, /Seluruh checkout dan pemantauan pesanan dilakukan melalui VAULT CORE Telegram Mini App/);
-  assert.match(page, /invoice resmi Telegram Stars \(XTR\)/);
-  assert.match(page, /if \(!initData\)/);
+  assert.match(page, /Website dan Telegram Mini App menggunakan backend pesanan serta stok yang sama/);
+  assert.match(page, /invoice resmi Telegram Stars/);
+  assert.match(page, /Masuk Telegram/);
+  assert.match(page, /\/api\/auth\/telegram\/start/);
+  assert.match(page, /credentials:'include'/);
+  assert.match(page, /window\.location\.assign\(data\.invoiceUrl\)/);
   assert.match(page, /openInvoice\(data\.invoiceUrl,data\.orderNumber\)/);
   assert.doesNotMatch(page, /Rekber|Escrow|transfer bank|direct transfer|QRIS|PayLater/i);
   assert.ok(page.includes("fetch(API + '/api/orders'"));
@@ -876,8 +880,9 @@ test('v4 customer catalog footer follows XTR, account-security and Telegram paym
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   assert.ok(page.includes('Telegram Mini App'));
-  assert.ok(page.includes('Telegram Stars (XTR)'));
-  assert.ok(page.includes('Status pembayaran hanya ditetapkan setelah konfirmasi sistem'));
+  assert.ok(page.includes('invoice resmi Telegram Stars'));
+  assert.ok(page.includes('Harga seluruh SKU menggunakan XTR'));
+  assert.ok(page.includes('Status pembayaran ditetapkan setelah konfirmasi sistem'));
   assert.ok(page.includes('vault terenkripsi'));
   for (const unsupportedMethod of ['BCA','Mandiri','BNI','Maybank','BRI','Indomaret','Alfamart','QRIS','ShopeePay','PayLater']) assert.equal(page.includes(unsupportedMethod),false);
   assert.ok(styles.includes('.vc4-footer'));
@@ -979,4 +984,55 @@ test('legacy unvaulted account stock is retired only after explicit Owner confir
   assert.match(ownerPage, /replaceLegacyStock/);
   assert.match(ownerPage, /unit stok lama yang tidak memiliki record vault v4 aktif akan dinonaktifkan/);
   assert.match(ownerPage, /data\.replacedLegacyStockCount/);
+});
+
+
+test('Telegram OIDC customer sessions are signed, time-limited, and share the Telegram customer identity', () => {
+  const priorToken = process.env.TELEGRAM_BOT_TOKEN;
+  process.env.TELEGRAM_BOT_TOKEN = 'test-telegram-bot-token';
+  try {
+    const session = createCustomerSession({
+      id: '123456789',
+      username: 'vault_customer',
+      first_name: 'Vault Customer'
+    });
+    const cookie = 'vault_customer_session=' + session;
+    assert.deepEqual(readCustomerSession(cookie), {
+      id: '123456789',
+      username: 'vault_customer',
+      first_name: 'Vault Customer'
+    });
+    const [payload, signature] = session.split('.');
+    assert.equal(readCustomerSession('vault_customer_session=' + payload + '.' + signature.slice(0, -1) + 'x'), null);
+    assert.equal(readCustomerSession('vault_customer_session=invalid'), null);
+  } finally {
+    if (priorToken === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = priorToken;
+  }
+});
+
+test('Telegram OIDC uses authorization code PKCE and validates signed ID tokens before customer sync', () => {
+  const route = readFileSync(new URL('../backend/routes/telegramOidc.js', import.meta.url), 'utf8');
+  const auth = readFileSync(new URL('../backend/middleware/customerAuth.js', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../backend/app.js', import.meta.url), 'utf8');
+  assert.match(route, /code_challenge_method: 'S256'/);
+  assert.match(route, /code_verifier: flow\.verifier/);
+  assert.match(route, /\.well-known\/jwks\.json/);
+  assert.match(route, /claims\.iss !== ISSUER/);
+  assert.match(route, /claims\.nonce !== expectedNonce/);
+  assert.match(route, /syncTelegramCustomer\(user\)/);
+  assert.match(auth, /ON CONFLICT \(telegram_user_id\)/);
+  assert.match(app, /app\.use\('\/api\/auth\/telegram', apiRateLimit, telegramOidcRoutes\)/);
+  assert.match(app, /app\.use\('\/api\/orders', apiRateLimit, checkoutRateLimit, requireCustomerUser, ordersRoutes\)/);
+});
+
+test('web and Mini App checkout retain one XTR-only order and Stars payment path', () => {
+  const order = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  const payment = readFileSync(new URL('../backend/controllers/paymentController.js', import.meta.url), 'utf8');
+  const schema = readFileSync(new URL('../database/migrations/001_initial_schema.sql', import.meta.url), 'utf8');
+  assert.match(order, /INSERT INTO orders \(order_number,customer_id,total_xtr,total_cost_xtr\)/);
+  assert.match(order, /sendStarsInvoice\(/);
+  assert.match(payment, /query\.currency === 'XTR'/);
+  assert.match(schema, /total_xtr INTEGER NOT NULL/);
+  assert.doesNotMatch(schema, /payment_provider.*MIDTRANS/i);
 });

@@ -247,3 +247,7 @@ body:has(.vc4-shell){background:var(--vc4-page);color:var(--vc4-ink);font-family
 /* Keep shared global footer and bottom navigation present on the v4 catalogue route. */
 body:has(.vc4-shell) .store-global-footer{display:block}
 body:has(.vc4-shell) .store-bottom-nav-shell{display:block}
+
+
+/* Telegram OIDC account controls in the dark storefront header. */
+.vc4-account-label{font-size:11px;color:var(--vc4-muted);white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis}
