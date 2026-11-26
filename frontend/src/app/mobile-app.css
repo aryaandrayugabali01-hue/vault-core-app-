@@ -1,6 +1,6 @@
 /* VAULT CORE mobile-only app shell: a consistent smartphone canvas on every route. */
 
-.vc-mobile-app{width:min(100%,430px);max-width:430px;min-height:100dvh;margin:0 auto;position:relative;overflow-x:clip}
+.vc-mobile-app{width:min(100%,430px);max-width:430px;min-height:100dvh;margin:0 auto;position:relative;overflow-x:clip;padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
 
 .vc-mobile-app>*{min-width:0}
 
@@ -12,7 +12,7 @@
 .vc-mobile-app .vc4-nav-actions{margin-left:auto;gap:12px}
 .vc-mobile-app .vc4-nav-links button{font-size:11px}
 .vc-mobile-app .vc4-nav-actions button{font-size:11px}
-.vc-mobile-app .vc4-main{padding:35px 16px 70px}
+.vc-mobile-app .vc4-main{padding:35px 16px calc(112px + env(safe-area-inset-bottom,0px))}
 .vc-mobile-app .vc4-page-head{grid-template-columns:1fr;gap:10px;margin-bottom:27px}
 .vc-mobile-app .vc4-page-head h1{font-size:58px}
 .vc-mobile-app .vc4-page-head h2{font-size:19px}
@@ -33,16 +33,16 @@
 .vc-mobile-app .vc4-dialog{padding:28px 20px}
 
 .vc-mobile-app .vc4-grid{grid-template-columns:1fr;
-margin-right:-16px;padding-right:16px;;}
+margin-right:-16px;padding-right:16px;}
 .vc-mobile-app .vc4-card{flex-basis:min(84vw,350px);min-width:min(84vw,300px)}
 .vc-mobile-app .vc4-card-main{grid-template-columns:95px 1fr;gap:14px;align-items:center;
-display:block;padding:14px;;}
+display:block;padding:14px;}
 .vc-mobile-app .vc4-card-art{margin:0;grid-row:span 2;border-radius:15px;
-height:150px;margin-bottom:14px;;}
+height:150px;margin-bottom:14px;}
 .vc-mobile-app .vc4-card-foot{grid-column:1/-1;
-margin-top:12px;;}
+margin-top:12px;}
 .vc-mobile-app .vc4-nav{height:auto;min-height:56px;padding:10px 15px;flex-wrap:wrap;gap:9px;
-background:rgba(9,13,20,.95);;}
+background:rgba(9,13,20,.95);}
 
 .vc-mobile-app .vc4-featured-hero{grid-template-columns:minmax(0,1fr) 82px;gap:8px;min-height:0;margin:13px 0 18px;padding:21px 17px;border-radius:20px}
 .vc-mobile-app .vc4-featured-kicker{margin-bottom:11px;font-size:9px}
@@ -67,14 +67,12 @@ background:rgba(9,13,20,.95);;}
 .vc-mobile-app .vc4-card{flex-basis:88vw;min-width:88vw}
 .vc-mobile-app .vc4-sku{align-items:flex-start}
 .vc-mobile-app .vc4-sku-buy strong{font-size:9px}
-}
-
-@media(max-width:380px){
 .vc-mobile-app .vc4-featured-hero{grid-template-columns:minmax(0,1fr) 58px}
 .vc-mobile-app .vc4-featured-art img{width:72px}
 .vc-mobile-app .vc4-featured-actions a{display:none}
 .vc-mobile-app .vc4-purchase-journey ol{grid-template-columns:1fr;gap:9px}
 .vc-mobile-app .vc4-purchase-journey li small{font-size:9px}
+.vc-mobile-app .admin-stats{grid-template-columns:minmax(0,1fr)}
 }
 
 
@@ -92,6 +90,7 @@ background:rgba(9,13,20,.95);;}
 .vc-mobile-app .vco-question{grid-template-columns:55px minmax(0,1fr)}
 .vc-mobile-app .vco-publish{align-items:flex-start;flex-direction:column}
 .vc-mobile-app .vco-publish>button{width:100%}
+.vc-mobile-app .vco-shell{padding-bottom:calc(112px + env(safe-area-inset-bottom,0px))}
 
 
 /* Classic Owner routes: small-screen form, stats and table behavior. */
@@ -126,7 +125,7 @@ background:rgba(9,13,20,.95);;}
 
 .vc-mobile-app .store-trust-divider{display:none}
 
-.vc-mobile-app .store-bottom-nav-shell{width:100%;max-width:430px;margin-inline:auto;padding:10px 12px calc(18px + env(safe-area-inset-bottom,0px))}
+.vc-mobile-app .store-bottom-nav-shell{position:fixed;z-index:80;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,430px);max-width:430px;margin:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid rgba(160,139,255,.19);background:rgba(7,10,20,.96);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 
 .vc-mobile-app .dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded){width:100%;max-width:430px;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding:7px;border-radius:20px}
 
@@ -137,5 +136,3 @@ background:rgba(9,13,20,.95);;}
 .vc-mobile-app .dashboard-bottom-nav-icon svg{width:17px;height:17px}
 
 .vc-mobile-app .dashboard-bottom-nav-label{font-size:9px}
-
-@media(max-width:380px){.vc-mobile-app .admin-stats{grid-template-columns:minmax(0,1fr)}}

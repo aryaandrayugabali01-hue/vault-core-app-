@@ -176,7 +176,7 @@ export default function OwnerV4Page(){
  if(!authenticated)return <main className="vco-shell"><section className="vco-card"><h1>Panel Owner v4</h1><p>{error||'Akses Owner wajib melalui sesi Telegram.'}</p><a href="/admin">Buka Dashboard Owner untuk login</a></section></main>;
 
  return <main className="vco-shell">
-  <header className="vco-header"><a href="/admin">← Dashboard Owner</a><span>VAULT CORE / OWNER V4</span><button type="button" onClick={()=>refresh().catch(e=>setError(e.message))}>Muat ulang</button></header>
+  <header className="vco-header"><a href="/admin">← Dashboard Owner</a><div className="vco-header-brand"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/><span>OWNER V4</span></div><button type="button" onClick={()=>refresh().catch(e=>setError(e.message))}>Muat ulang</button></header>
   <section className="vco-hero"><div><span>MASTER KATALOG · 12 VARIAN · 47 PERTANYAAN</span><h1>Persiapan Produk.</h1><p>Kelola SKU, hak penjualan, checklist, stok, dan publikasi dari satu alur Owner.</p></div><div className="vco-stats"><b>{variants.length}<small>Varian</small></b><b>{products.length}<small>SKU tersimpan</small></b></div></section>
   {error&&<div className="vco-alert error" role="alert">{error}</div>}
   {notice&&<div className="vco-alert" role="status">{notice}</div>}
