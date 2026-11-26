@@ -13,7 +13,8 @@ function NavigationIcon({ name }) {
   if (name === 'catalog') return <svg {...common}><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg>;
   if (name === 'category') return <svg {...common}><path d="m12 2.8 9.2 9.2-9.2 9.2L2.8 12z"/><circle cx="12" cy="12" r="2"/></svg>;
   if (name === 'help') return <svg {...common}><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l1.8-2.4A7.5 7.5 0 1 1 20 11.5Z"/><path d="M9 10a3 3 0 0 1 6 0c0 1.5-3 2-3 4M12 16.8h.01"/></svg>;
-  if (name === 'receipt') return <svg {...common}><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></svg>;\n  if (name === 'telegram') return <svg {...common}><path d="m21 4-18 7 5 2 2 6 3-4 5 4zM8 13l9-6"/></svg>;
+  if (name === 'receipt') return <svg {...common}><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></svg>;
+  if (name === 'telegram') return <svg {...common}><path d="m21 4-18 7 5 2 2 6 3-4 5 4zM8 13l9-6"/></svg>;
   if (name === 'chevron') return <svg {...common}><path d="m9 18 6-6-6-6"/></svg>;
   return <svg {...common}><path d="M5 3.5h14v17H5zM8 8h8M8 12h8M8 16h5"/></svg>;
 }
@@ -146,7 +147,9 @@ export function StoreChrome() {
     ? 'owner'
     : pathname.startsWith('/account')
       ? 'account'
-      : pathname.startsWith('/miniapp')\n      ? 'miniapp'\n      : activeOverride || (pathname.startsWith('/catalog') ? 'catalog' : 'dashboard');
+      : pathname.startsWith('/miniapp')
+      ? 'miniapp'
+      : activeOverride || (pathname.startsWith('/catalog') ? 'catalog' : 'dashboard');
 
   const isOwnerPage = pathname.startsWith('/admin');
 
