@@ -112,12 +112,12 @@ router.get('/oidc/callback', ownerRateLimit, async (req, res) => {
       }));
       return finishWithError(res, new Error('TELEGRAM_OIDC_TOKEN_RESPONSE_INVALID'));
     }
-    if (!tokenResponse.ok || typeof tokenData.id_token !== 'string') {
+    if (!tokenResponse.ok || !tokenData || typeof tokenData !== 'object' || typeof tokenData.id_token !== 'string') {
       console.error('[owner-oidc-token-exchange]', JSON.stringify({
         status: tokenResponse.status,
         error: typeof tokenData.error === 'string' ? tokenData.error.slice(0, 80) : 'id_token_missing',
         errorDescription: typeof tokenData.error_description === 'string' ? tokenData.error_description.slice(0, 160) : '',
-        responseFields: Object.keys(tokenData).filter((key) => !/token|secret|code/i.test(key))
+        responseFields: Object.keys(tokenData ?? {}).filter((key) => !/token|secret|code/i.test(key))
       }));
       return finishWithError(res, new Error('TELEGRAM_OIDC_TOKEN_EXCHANGE_FAILED'));
     }
