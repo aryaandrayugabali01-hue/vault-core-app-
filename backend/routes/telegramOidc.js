@@ -67,7 +67,7 @@ function frontendOrigin() {
 
 function safeReturnPath(value) {
   const path = typeof value === 'string' ? value : '/catalog';
-  if (!path.startsWith('/') || path.startsWith('//') || /[\\r\\n]/.test(path)) return '/catalog';
+  if (!path.startsWith('/') || path.startsWith('//') || /[\r\n]/.test(path)) return '/catalog';
   return path;
 }
 
@@ -117,7 +117,7 @@ async function validateIdToken(idToken, clientId, expectedNonce) {
   }
 
   const id = String(claims.id ?? '');
-  if (!/^\\d+$/.test(id) || !Number.isSafeInteger(Number(id)) || Number(id) <= 0) {
+  if (!/^\d+$/.test(id) || !Number.isSafeInteger(Number(id)) || Number(id) <= 0) {
     throw new Error('OIDC_TELEGRAM_USER_ID_MISSING');
   }
   return {
