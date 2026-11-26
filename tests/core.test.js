@@ -1117,7 +1117,8 @@ test('Mini App and React catalog use the same catalog, order, and XTR payment AP
   assert.ok(react.includes("items:cart.map(({productId,quantity}) => ({productId,quantity}))"));
   assert.ok(mini.includes('tg.openInvoice'));
   assert.ok(react.includes('openInvoice(data.invoiceUrl,data.orderNumber)'));
-  assert.ok(mini.includes("api('/api/orders/' + encodeURIComponent(target.orderNumber) + '/customer-access'"));
+  assert.doesNotMatch(mini,/customer-access/);
+  assert.doesNotMatch(react,/customer-access/);
   assert.ok(api.includes('requireTelegramUser'));
   assert.ok(orders.includes('normalizeCartItems'));
   assert.ok(config.includes("apiBase: ''"));
@@ -1357,14 +1358,19 @@ test('mobile shell reserves fixed navigation space once instead of stacking over
   assert.ok(global.includes('padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))'));
 });
 
-test('Mini App Joki customer access is submitted only through the authenticated encrypted API route', () => {
+test('Joki customer UI no longer requests or submits authentication credentials', () => {
   const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const web = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const controller = readFileSync(new URL('../backend/controllers/secretController.js', import.meta.url), 'utf8');
+  const routes = readFileSync(new URL('../backend/routes/orders.js', import.meta.url), 'utf8');
   assert.ok(mini.includes("item.category === 'Jasa Joki'"));
-  assert.ok(mini.includes("'/customer-access'"));
-  assert.ok(mini.includes("data-action=\"submit-joki-access\""));
-  assert.ok(controller.includes("scope:'JOKI_CUSTOMER_ACCESS'"));
-  assert.ok(controller.includes('encryptSecretPayload({ login, password }, context)'));
+  assert.ok(mini.includes('Form data Joki tanpa kredensial belum tersedia.'));
+  assert.doesNotMatch(mini,/joki-login|joki-password|submit-joki-access|customer-access/);
+  assert.ok(web.includes('Form data Joki tanpa kredensial belum tersedia.'));
+  assert.doesNotMatch(web,/accessForm\\.password|type="password".*Kata sandi|customer-access/);
+  assert.ok(controller.includes('JOKI_CUSTOMER_INPUT_NOT_AVAILABLE'));
+  assert.doesNotMatch(controller,/encryptSecretPayload/);
+  assert.ok(routes.includes("router.post('/:orderNumber/customer-access', submitJokiCustomerAccess)"));
 });
 
 
