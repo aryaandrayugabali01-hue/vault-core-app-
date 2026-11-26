@@ -5,31 +5,31 @@
 |---|---|
 | Nama proyek | VAULT CORE |
 | Jenis dokumen | Kontrak spesifikasi dan acuan pelaksanaan proyek |
-| Versi | 1.9 — Final Contract Harmonization (CR-14) |
+| Versi | 2.0 — CR-15 Web QRIS Temporary Payment Lane |
 | Tanggal dokumen | 27 November 2026 |
-| Status | Baseline dan CR-03 s.d. CR-14 disetujui melalui instruksi tertulis Owner; CR-14 menuntaskan harmonisasi pasal historis, SLA READY/INDENT, pemeriksaan SKU, dan kriteria penerimaan, 27 November 2026 |
+| Status | Baseline dan CR-03 s.d. CR-15 disetujui melalui instruksi tertulis Owner; CR-15 menetapkan QRIS statis sementara untuk website, menjaga XTR di Telegram Mini App, serta menetapkan satu identitas, sumber data, dan standar visual bersama, 27 November 2026 |
 | Model usaha | Single-Vendor Store |
-| Kanal utama | Telegram Bot dan Telegram Mini App |
+| Kanal utama | Website, Telegram Bot, dan Telegram Mini App |
 | Domain rencana | `vaultcore.biz.id` (belum dikonfirmasi kepemilikannya dan konfigurasi DNS-nya) |
 
 > **Kedudukan dokumen.** Dokumen ini menjadi acuan ruang lingkup, arsitektur, perilaku sistem, dan kriteria penerimaan VAULT CORE. Dokumen ini bukan pendapat hukum atau pengganti kontrak jasa profesional yang ditandatangani para pihak. Perubahan terhadap ruang lingkup atau perilaku yang telah disetujui harus dicatat sebagai revisi dokumen atau change request.
 >
  > **Rekaman persetujuan pemilik:** Status v1.2 CR-02 ditetapkan DISETUJUI berdasarkan instruksi tertulis pemilik proyek. Addendum CR-03 pada Bagian 27 disetujui pada 21 November 2026, CR-04 pada 22 November 2026, dan CR-05 pada 23 November 2026 melalui instruksi tertulis pemilik di percakapan proyek. Rekaman ini menetapkan keputusan operasional internal Owner, bukan sertifikasi hukum atau pengesampingan hak pihak ketiga. Nama legal dan sertifikat tanda tangan elektronik formal tidak tercantum dalam rekaman percakapan.
 >
-> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan fixture uji melalui CR-03; v1.4 menetapkan dukungan bersyarat transfer akun melalui CR-04; v1.5 melalui CR-05 menetapkan Owner sebagai otoritas internal untuk pencatatan, penilaian internal, persetujuan, rincian katalog, stok, metode pemenuhan, dan pengiriman. v1.6 melalui CR-11 menyelaraskan dukungan akun dengan CR-04. v1.7 melalui CR-12 menetapkan pemenuhan akun manual maksimal 1 jam tanpa penyimpanan kredensial. v1.8 melalui CR-13 menetapkan kebijakan keterlambatan/refund, struktur varian, dan prosedur import massal. v1.9 melalui CR-14 menandai keputusan lama yang telah digantikan sebagai historis, menyelaraskan SLA READY/INDENT dan kriteria penerimaan; ketentuan eksternal penerbit tetap berlaku.
+> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan fixture uji melalui CR-03; v1.4 menetapkan dukungan bersyarat transfer akun melalui CR-04; v1.5 melalui CR-05 menetapkan Owner sebagai otoritas internal untuk pencatatan, penilaian internal, persetujuan, rincian katalog, stok, metode pemenuhan, dan pengiriman. v1.6 melalui CR-11 menyelaraskan dukungan akun dengan CR-04. v1.7 melalui CR-12 menetapkan pemenuhan akun manual maksimal 1 jam tanpa penyimpanan kredensial. v1.8 melalui CR-13 menetapkan kebijakan keterlambatan/refund, struktur varian, dan prosedur import massal. v1.9 melalui CR-14 menandai keputusan lama yang telah digantikan sebagai historis, menyelaraskan SLA READY/INDENT dan kriteria penerimaan; v2.0 melalui CR-15 menetapkan QRIS statis sementara untuk website, mempertahankan XTR di Telegram Mini App, serta mengunci satu identitas, sumber data, dan standar visual bersama.
 
 ---
 
 # 1. Tujuan Proyek
 
-VAULT CORE adalah toko digital **Single-Vendor** yang diakses melalui Telegram Bot dan Telegram Mini App. Seluruh katalog, persediaan, harga jual, harga modal, pemrosesan pesanan, pembayaran, pemenuhan pesanan, layanan pelanggan, dan laporan usaha dikelola oleh satu pemilik toko.
+VAULT CORE adalah toko digital **Single-Vendor** yang diakses melalui website, Telegram Bot, dan Telegram Mini App. Seluruh katalog, persediaan, harga jual, harga modal, pemrosesan pesanan, pembayaran, pemenuhan pesanan, layanan pelanggan, dan laporan usaha dikelola oleh satu pemilik toko.
 
 Tujuan pengembangan:
 
 1. Menyediakan katalog digital yang mudah digunakan melalui Telegram.
 2. Memisahkan kategori game dan tingkatan produk agar katalog tidak menjadi satu daftar panjang.
 3. Mengelola stok secara terpusat dan mencegah penjualan melebihi stok tersedia.
-4. Memproses pembayaran produk digital menggunakan Telegram Stars (XTR) sesuai ketentuan Telegram.
+4. Memproses pembayaran website melalui QRIS statis IDR untuk sementara, dan pembayaran di Telegram Mini App melalui Telegram Stars (XTR) sesuai ketentuan Telegram.
 5. Memenuhi pesanan setelah pembayaran terverifikasi, dengan pencatatan transaksi yang dapat diaudit.
 6. Menyediakan dashboard pemilik untuk mengelola produk, persediaan, pesanan, modal, harga jual, margin, keuntungan, refund, dan laporan.
 7. Menargetkan pengalaman penggunaan yang cepat, responsif, aman, dan nyaman di perangkat Android.
@@ -40,19 +40,20 @@ Tujuan pengembangan:
 |---|---|
 | Model toko | Single-Vendor; tidak ada pendaftaran penjual lain |
 | Pemilik stok | Pemilik VAULT CORE |
-| Kanal penjualan | Telegram Bot dan Telegram Mini App |
+| Kanal penjualan | Website, Telegram Bot, dan Telegram Mini App |
 | Frontend | Next.js / React |
 | Backend | Node.js + Express |
 | Bot | Telegraf / Telegram Bot API |
 | Database | PostgreSQL |
-| Pembayaran produk digital | Telegram Stars, mata uang `XTR` |
+| Pembayaran website | QRIS statis merchant, mata uang `IDR`, sementara dan tunduk pada CR-15 |
+| Pembayaran Telegram Mini App | Telegram Stars, mata uang `XTR` |
 | Hak akses | Customer dan Owner/Admin |
 | Pengelolaan katalog | Owner/Admin |
 | Pengelolaan modal | Owner/Admin; nilai historis transaksi tidak berubah ketika modal produk diperbarui |
 | Pengiriman | Produk non-akun mengikuti metode delivery SKU; akun game diserahkan manual oleh Owner maksimal 1 jam setelah pembayaran sukses tanpa penyimpanan kredensial di sistem |
 | Tampilan stok | Jumlah publik harus bersumber dari stok tersedia aktual; mode tampilan dapat menyembunyikan angka rinci tanpa memalsukan jumlah |
-| Pembayaran | Telegram Stars melalui invoice Bot API untuk produk digital di dalam Telegram; tidak ada alamat wallet XTR manual |
-| Laporan | Penjualan, biaya/modal, margin, profit, refund, dan rekonsiliasi Stars |
+| Pembayaran | Website: QRIS statis IDR sementara; Telegram Mini App: invoice Telegram Stars XTR. Tidak ada alamat wallet XTR manual |
+| Laporan | Penjualan, biaya/modal, margin, profit, refund, dan rekonsiliasi dipisahkan berdasarkan mata uang IDR atau XTR |
 | Antarmuka | Premium dark gaming, mobile-first |
 | Metode rilis | Tahap pengembangan, pengujian, staging, lalu produksi setelah persetujuan |
 
@@ -1060,6 +1061,8 @@ Fitur yang tidak disetujui dalam bentuk yang diminta tidak akan dibangun. Setiap
 
 ## 27.1 Satu satuan nilai uang
 
+**Status saat ini:** Pernyataan XTR-only pada bagian ini telah diubah oleh CR-15 untuk transaksi website. Ketentuan XTR tetap berlaku untuk Telegram Mini App; pembukuan website menggunakan IDR secara terpisah.
+
 VAULT CORE menggunakan **XTR saja** pada seluruh aplikasi dan pencatatan internal. Harga jual, modal, biaya operasional, total order, snapshot item, refund, laporan, margin, dan laba dicatat serta ditampilkan dalam XTR. Tidak ada kolom harga, modal, biaya, konversi, atau tampilan nominal mata uang lain dalam model aplikasi aktif.
 
 Rumus:
@@ -1357,6 +1360,8 @@ Uji checkout tetap memakai empat fixture internal `TEST ONLY`, terpisah dari 16 
 
 # 32. Addendum CR-10 — Kanal Transaksi Tunggal Telegram Mini App
 
+**Status saat ini:** Bagian ini menjadi rekaman historis sejauh membatasi website hanya sebagai katalog atau melarang QRIS website. Ketentuan tersebut telah diubah oleh CR-15 pada Bagian 37. Persyaratan XTR untuk Telegram Mini App tetap berlaku.
+
 **Tanggal:** 23 November 2026  
 **Keputusan Owner:** Seluruh transaksi VAULT CORE wajib dilakukan melalui VAULT CORE Telegram Mini App dengan pembayaran Telegram Stars (`XTR`). Website publik hanya berfungsi sebagai katalog dan halaman detail penawaran.
 
@@ -1591,4 +1596,82 @@ Bagian 25.1 dan 26.1 serta checklist Bagian 24 dan 16 harus dibaca sebagai catat
 
 ---
 
-**Akhir dokumen — VAULT CORE Project Contract v1.9 (CR-14).**
+
+
+# 37. Addendum CR-15 — QRIS Statis Sementara untuk Website dan Pemisahan Kanal Pembayaran
+
+**Tanggal:** 27 November 2026  
+**Status:** Disetujui melalui instruksi tertulis Owner pada percakapan proyek.  
+**Berlaku:** Mengubah ketentuan CR-10 pada Bagian 32 serta ketentuan pembayaran/akuntansi sebelumnya sejauh bertentangan dengan addendum ini. CR-10 tetap berlaku untuk Telegram Mini App pada hal-hal yang tidak diubah CR-15.
+
+## 37.1 Keputusan kanal pembayaran
+
+1. **Website (browser di luar Telegram Mini App):** VAULT CORE boleh memproses pesanan dengan QRIS statis merchant dalam mata uang Rupiah (IDR) sebagai metode sementara.
+2. **Telegram Mini App:** tetap menggunakan invoice resmi Telegram Stars dengan mata uang `XTR`. Tidak ada QRIS pada Mini App dan tidak ada perubahan pada Bot API invoice, pre-checkout, webhook `successful_payment`, maupun refund Stars.
+3. Kedua kanal tetap menggunakan satu katalog, sumber harga dan stok backend, identitas pelanggan, sistem order, inventaris, pemenuhan, serta riwayat transaksi VAULT CORE.
+4. QRIS statis hanya berlaku pada checkout website sampai Owner menyetujui pengganti melalui change request berikutnya. Metode pembayaran lain tidak otomatis diizinkan.
+
+## 37.2 Alur QRIS statis website
+
+1. Customer masuk ke website melalui autentikasi Telegram OIDC yang tervalidasi dan terhubung ke record pelanggan yang sama di tabel `customers`.
+2. Website meminta backend membuat order berdasarkan produk, harga IDR yang disetujui Owner, stok aktual, dan kelayakan SKU. Nominal serta mata uang IDR disimpan sebagai snapshot transaksi agar perubahan harga setelahnya tidak mengubah order yang sudah dibuat.
+3. Website menampilkan QRIS merchant VAULT CORE yang sah, nama merchant, nomor order, nominal IDR yang harus dibayar, dan batas waktu pembayaran yang dikonfigurasi.
+4. Customer dapat mengirim bukti pembayaran sebagai informasi pendukung apabila fitur tersebut diimplementasikan. Bukti gambar, callback browser, atau klaim customer tidak pernah menjadi bukti final pembayaran.
+5. Order QRIS hanya berubah menjadi `PAID` setelah Owner/Admin yang berwenang memverifikasi transaksi pada mutasi/portal settlement merchant QRIS yang sebenarnya, lalu mencatat nominal diterima, referensi transaksi eksternal, waktu verifikasi, dan aktor verifikator di backend.
+6. Pemenuhan baru dimulai setelah verifikasi server-side tersebut berhasil dan status order berubah secara atomik menjadi `PAID`. Order kedaluwarsa atau reservasi stok yang telah dilepas wajib diperiksa ulang; pembayaran terlambat tidak boleh menghidupkan kembali order atau stok secara otomatis.
+7. Refund QRIS diproses melalui mekanisme merchant/acquirer yang berlaku dan dicatat dengan referensi refund. Mekanisme `refundStarPayment` tetap khusus untuk pembayaran XTR.
+
+## 37.3 Aturan Telegram Mini App yang tidak berubah
+
+- Mini App membuat order melalui identitas Telegram `initData` yang diverifikasi server.
+- Backend membuat invoice resmi Telegram Stars dengan currency `XTR`.
+- `pre_checkout_query` divalidasi terhadap customer, order, payload, jumlah, mata uang, masa berlaku, dan reservasi stok.
+- Hanya webhook `successful_payment` yang tervalidasi dan diproses secara idempoten yang dapat menetapkan pembayaran XTR menjadi `PAID`.
+- Mini App tetap menampilkan harga, invoice, status, riwayat, dan refund dalam XTR. Tidak ada nominal IDR atau QRIS pada jalur ini.
+- Perubahan CR-15 tidak mengubah tampilan maupun interaksi pembayaran Mini App yang telah disetujui.
+
+## 37.4 Satu identitas dan sumber data bersama
+
+- Website dan Mini App harus memakai backend API, database Neon `vault_core`, tabel pelanggan `customers`, katalog, inventaris, reservasi, order, dan pemenuhan yang sama. Dilarang membuat database pelanggan, order, katalog, atau stok kedua.
+- Identitas web berasal dari sesi Telegram OIDC bertanda tangan/HttpOnly yang divalidasi backend; identitas Mini App berasal dari Telegram `initData` yang divalidasi backend. Keduanya dipetakan ke `customers.telegram_user_id` yang sama.
+- Seluruh validasi produk, hak SKU, harga, jumlah, stok, reservasi, serta snapshot order dilakukan server-side. Browser tidak boleh menetapkan nominal final atau status pembayaran sendiri.
+- Nilai transaksi dipisahkan berdasarkan mata uang: order web menyimpan nilai IDR dan referensi QRIS; order Mini App menyimpan nilai XTR dan ID Telegram. Laporan tidak boleh menjumlahkan IDR dan XTR sebagai satu mata uang. Konversi hanya boleh dilakukan bila Owner menyetujui sumber kurs, waktu kurs, dan metode pembukuannya melalui keputusan terpisah.
+
+## 37.5 Standar visual Website dan Mini App
+
+- Website dan Telegram Mini App mempertahankan satu sistem visual VAULT CORE: kanvas mobile maksimum 430px, warna navy gelap, aksen violet/gold, tipografi, radius, kartu produk, hierarki informasi, ikon, artwork, dan pola navigasi yang sama.
+- Urutan pengalaman customer dibuat konsisten: katalog → detail produk → keranjang/ringkasan → pembayaran → status order → riwayat → profil.
+- Posisi, ukuran, dan gaya komponen checkout harus sama. Satu-satunya perbedaan fungsional di tahap pembayaran adalah metode dan satuan: QRIS/IDR pada website, Telegram Stars/XTR pada Mini App.
+- Data produk, deskripsi, gambar, stok, dan ketentuan harus tetap berasal dari sumber backend yang sama. Tidak boleh ada daftar produk atau harga hard-coded khusus salah satu kanal.
+
+## 37.6 Batas metode pembayaran
+
+QRIS yang diakui hanya QRIS merchant resmi VAULT CORE untuk checkout website. Pembayaran ke rekening pribadi, transfer langsung ke Owner/penjual, e-wallet, PayLater, Rekber/Escrow pihak ketiga, alamat wallet XTR manual, dan metode lain di luar dua jalur yang ditetapkan CR-15 tidak diterima sebagai pembayaran VAULT CORE.
+
+Tangkapan layar atau bukti unggahan hanya bahan bantu pemeriksaan. Status `PAID` selalu ditetapkan oleh backend berdasarkan sinyal pembayaran yang sah: webhook `successful_payment` untuk XTR atau verifikasi settlement merchant oleh Owner/Admin berwenang untuk QRIS statis.
+
+## 37.7 Syarat kesiapan implementasi QRIS website
+
+Keputusan kebijakan QRIS statis telah disetujui, tetapi detail berikut **BELUM TERSEDIA / BELUM DIKETAHUI dari dokumentasi repository saat CR-15 dicatat**:
+
+- File/payload QRIS merchant aktif, nama merchant yang harus tampil, dan identitas merchant/acquirer.
+- Harga jual IDR yang disetujui Owner untuk setiap SKU serta aturan pembulatan/nominal checkout.
+- Akses dan prosedur pencocokan transaksi dengan mutasi atau portal settlement merchant.
+- Penanggung jawab verifikasi, otorisasi Owner/Admin, dan prosedur refund QRIS.
+- Batas waktu QRIS serta aturan kedaluwarsa order dan pelepasan/pemeriksaan ulang reservasi stok.
+
+Karena itu, QRIS website belum boleh dinyatakan aktif di produksi hanya berdasarkan perubahan dokumen ini. Implementasi membutuhkan konfigurasi merchant dan harga IDR yang nyata, perubahan backend/database/API dan UI website, kontrol verifikasi Owner, pengujian keamanan/idempotensi/kedaluwarsa/refund, serta UAT transaksi website. Sampai implementasi tersebut lulus, jalur produksi yang tersedia tetap mengikuti kode yang sedang terpasang.
+
+## 37.8 Kriteria penerimaan
+
+- Website dapat membuat order IDR dari harga backend, menampilkan QRIS merchant resmi, dan mempertahankan order sebagai menunggu pembayaran sampai settlement diverifikasi Owner/Admin.
+- Screenshot atau callback klien tidak dapat mengubah order QRIS menjadi `PAID`.
+- Verifikasi QRIS mencatat nominal diterima, referensi eksternal, waktu, dan aktor verifikator; pemenuhan berjalan satu kali setelah status PAID.
+- Telegram Mini App tetap menggunakan XTR invoice dan webhook `successful_payment`, tanpa QRIS.
+- Website dan Mini App memakai identitas pelanggan, katalog, stok, order, dan data fulfillment yang sama.
+- Komponen visual serta alur non-pembayaran konsisten; hanya metode dan mata uang pembayaran yang berbeda.
+- Tidak ada Worker, API, bot, atau database pelanggan baru yang dibuat untuk perubahan ini.
+
+---
+
+**Akhir dokumen — VAULT CORE Project Contract v2.0 (CR-15, 27 November 2026).**
