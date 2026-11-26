@@ -59,7 +59,7 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
     assert.equal(bytes.toString('ascii',0,4),'RIFF',asset + ' RIFF header');
     assert.equal(bytes.toString('ascii',8,12),'WEBP',asset + ' WebP signature');
   }
-  assert.doesNotMatch(marketplace,/cloudfront\\.net\\/game/);
+  assert.equal(marketplace.includes('cloudfront.net/game'),false);
   assert.ok(miniHtml.includes('/assets/01-brand/vaultcore-mark.svg'));
   assert.ok(miniApp.includes('/assets/01-brand/vaultcore-horizontal.svg'));
 });
