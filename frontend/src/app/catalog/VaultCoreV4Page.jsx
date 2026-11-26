@@ -251,9 +251,8 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     }
   };
 
-  const showOrders = async () => {
-    let activeCustomer = customer;
-    if (!activeCustomer) activeCustomer = await loadCustomer().catch(() => null);
+  const showOrders = useCallback(async () => {
+    const activeCustomer = await loadCustomer().catch(() => null);
     if (!activeCustomer) {
       window.location.assign('/account?next=%2Fcatalog');
       return;
@@ -264,7 +263,16 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     try { await loadOrders(); }
     catch(e) { setOrdersError(e.message || 'Riwayat pesanan tidak dapat dimuat.'); }
     finally { setOrdersLoading(false); }
-  };
+  },[loadCustomer,loadOrders]);
+
+  useEffect(() => {
+    const openOrdersFromHash = () => {
+      if (window.location.hash === '#transactions') showOrders();
+    };
+    openOrdersFromHash();
+    window.addEventListener('hashchange',openOrdersFromHash);
+    return () => window.removeEventListener('hashchange',openOrdersFromHash);
+  },[showOrders]);
 
   const submitJokiAccess = async () => {
     const initData = getInitData();
