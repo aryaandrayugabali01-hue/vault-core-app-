@@ -243,3 +243,7 @@ body:has(.vc4-shell){background:var(--vc4-page);color:var(--vc4-ink);font-family
   .vc4-sku{align-items:flex-start}
   .vc4-sku-buy strong{font-size:9px}
 }
+
+/* Keep shared global footer and bottom navigation present on the v4 catalogue route. */
+body:has(.vc4-shell) .store-global-footer{display:block}
+body:has(.vc4-shell) .store-bottom-nav-shell{display:block}
