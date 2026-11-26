@@ -38,7 +38,12 @@ function safeEqual(left, right) {
 function finishWithError(res, error, returnPath = '/account') {
   console.error('[customer-oidc]', error?.message ?? 'CUSTOMER_LOGIN_FAILED');
   res.setHeader('Set-Cookie', clearOidcCookies());
-  const target = new URL(safeCustomerReturnPath(returnPath), FRONTEND_ACCOUNT_URL);
+  const safePath = safeCustomerReturnPath(returnPath);
+  const isAccountPath = safePath === '/account' || safePath.startsWith('/account/') || safePath.startsWith('/account?');
+  const target = isAccountPath
+    ? new URL(safePath, FRONTEND_ACCOUNT_URL)
+    : new URL(FRONTEND_ACCOUNT_URL);
+  if (!isAccountPath) target.searchParams.set('next', safePath);
   target.searchParams.set('login_error', 'telegram_login_failed');
   return res.redirect(302, target.toString());
 }
