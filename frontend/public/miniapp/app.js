@@ -5,6 +5,7 @@ const C = window.VAULT_CONFIG || {};
 const tg = window.Telegram && window.Telegram.WebApp;
 const inTelegram = Boolean(tg && tg.initData);
 const $ = (selector) => document.querySelector(selector);
+const $ = (selector) => Array.from(document.querySelectorAll(selector));
 const money = new Intl.NumberFormat('id-ID');
 const state = { variants: [], products: [], loaded: false, loadError: '', orderFilter: 'all', orderRows: [], accessTarget: null, catalogGroup:'ALL', catalogGame:'ALL', search:'' };
 let checkout = null;
@@ -194,27 +195,56 @@ function home() {
     'home', false
   );
 }
+function catalogVariantCard(variant) {
+  const products = productsOf(variant);
+  const ready = products.filter(isBuyable).length;
+  const joki = variant.category === 'Jasa Joki';
+  const eta = products.find((product) => product.fulfillment_eta)?.fulfillment_eta;
+  const art = gameOf(variant.game_code).art;
+  return '<button class="store-variant-card" type="button" data-go="/variant/' + variant.variant_id + '">' +
+    '<span class="store-variant-art"><img src="' + esc(art) + '" alt="" loading="lazy"><small>' + (joki?'JOKI':'AKUN') + '</small></span>' +
+    '<span class="store-variant-copy"><small>' + esc(gameOf(variant.game_code).short) + ' · ' + esc(variant.category) + '</small><b>' + esc(variant.name) + '</b>' +
+    '<span class="store-variant-status ' + (ready?'ready':'') + '">' + (ready?'Ready · '+ready+' tersedia':joki?'Layanan belum tersedia':'Belum tersedia') + '</span>' +
+    (eta ? '<small>Estimasi: ' + esc(eta) + '</small>' : '') + '</span><span class="store-variant-arrow">↗</span></button>';
+}
+function paintCatalogVariants() {
+  const target = $('#catalog-variants');
+  if (!target) return;
+  const group = state.catalogGroup || 'ALL';
+  const game = state.catalogGame || 'ALL';
+  const query = String(state.search || '').trim().toLowerCase();
+  const visible = state.variants.filter((variant) =>
+    ['Akun','Jasa Joki'].includes(variant.category) &&
+    (group==='ALL' || variant.category===group) &&
+    (game==='ALL' || variant.game_code===game) &&
+    (!query || [variant.name,variant.game,variant.category].join(' ').toLowerCase().includes(query))
+  );
+  target.innerHTML = visible.length
+    ? visible.map(catalogVariantCard).join('')
+    : '<div class="empty">Varian tidak ditemukan pada pilihan ini.</div>';
+}
 function catalog() {
-  const query = state.search || '';
-  const filtered = GAME_CODES.filter((code) => gameOf(code).name.toLowerCase().includes(query.toLowerCase()) ||
-    gameOf(code).short.toLowerCase().includes(query.toLowerCase()));
+  const gameTabs = [['ALL','Semua'],['MLBB','MLBB'],['FF','Free Fire'],['ROBLOX','Roblox'],['GI','Genshin']];
+  const groupTabs = [['ALL','Semua'],['Akun','Akun'],['Jasa Joki','Joki']];
   setPage(
-    headerPage('Katalog Game') +
-    '<main><label class="search">' + icon('search') + '<input id="catalog-search" type="search" placeholder="Cari produk, akun, atau game..." value="' + esc(query) + '" autocomplete="off"></label>' +
-    '<div id="catalog-games">' + filtered.map((code) => {
-      const variants = state.variants.filter((variant) => variant.game_code === code);
-      return '<button class="list-card" type="button" data-go="/game/' + code + '">' +
-        productImage({game_category:code},'list-art') +
-        '<span class="list-copy"><b>' + esc(gameOf(code).name) + '</b><small>Game marketplace</small><span class="badge">' + variants.length + ' Varian</span></span><span class="chevron">›</span></button>';
-    }).join('') + '</div>' +
-    '<div class="sub">Pilih game untuk melihat varian Akun, Joki, Item, dan layanan terkait. Ketersediaan pembelian mengikuti katalog resmi.</div></main>',
+    headerPage('Store') +
+    '<main class="store-v3">' +
+      '<label class="search store-search">' + icon('search') + '<input id="catalog-search" type="search" placeholder="Cari akun game atau layanan joki..." value="' + esc(state.search || '') + '" autocomplete="off"></label>' +
+      '<div class="store-game-tabs">' + gameTabs.map(([code,label]) => '<button type="button" data-filter-game="' + code + '" class="' + ((state.catalogGame||'ALL')===code?'on':'') + '">' + label + '</button>').join('') + '</div>' +
+      '<div class="store-group-tabs">' + groupTabs.map(([code,label]) => '<button type="button" data-filter-group="' + code + '" class="' + ((state.catalogGroup||'ALL')===code?'on':'') + '">' + label + '</button>').join('') + '</div>' +
+      '<div class="store-tier-hint"><span>VARIAN KATALOG</span><small>Akun dan Jasa Joki · Empat game</small></div>' +
+      '<div id="catalog-variants" class="store-variant-grid">' + (!state.loaded ? '<i class="vc-skeleton"></i><i class="vc-skeleton"></i><i class="vc-skeleton"></i><i class="vc-skeleton"></i>' : '') + '</div>' +
+      (state.loadError ? '<div class="empty">' + esc(state.loadError) + '</div>' : '') +
+      '<div class="store-source-note">Detail produk, harga, stok, dan estimasi mengikuti data katalog VAULT CORE.</div>' +
+    '</main>',
     'catalog', false
   );
+  if (state.loaded) paintCatalogVariants();
 }
 function gamePage(code) {
   const game = GAMES[code];
   if (!game) return go('/catalog');
-  const variants = state.variants.filter((variant) => variant.game_code === code);
+  const variants = state.variants.filter((variant) => variant.game_code === code && ['Akun','Jasa Joki'].includes(variant.category));
   const activeCount = state.products.filter((product) => product.game_category === code && isBuyable(product)).length;
   setPage(
     headerPage(game.name) +
@@ -293,7 +323,7 @@ function productPage(id) {
         : '<div class="box info">' + icon('info') + '<span>Metode pengiriman item mengikuti petunjuk dan ketentuan pada detail produk.</span></div>') +
     '<div class="dock"><button class="cta" type="button" data-action="buy" data-id="' + esc(product.id) + '" ' + (isBuyable(product) ? '' : 'disabled') + '>' + (isBuyable(product) ? 'Beli Sekarang →' : 'Stok tidak tersedia') + '</button></div>' +
     '</main>',
-    'catalog', true
+    'catalog', false
   );
 }
 function beginCheckout(id) {
@@ -515,7 +545,7 @@ function render() {
   if (name !== 'checkout') checkout = null;
   switch (name || 'home') {
     case 'home': home(); break;
-    case 'catalog': state.search=''; state.catalogGroup='ALL'; state.catalogGame='ALL'; catalog(); break;
+    case 'catalog': catalog(); break;
     case 'game': gamePage(arg); break;
     case 'variant': variantPage(arg); break;
     case 'product': productPage(arg); break;
@@ -562,6 +592,20 @@ function handleClick(event) {
     renderOrders();
     return;
   }
+  const groupFilter = event.target.closest('[data-filter-group]');
+  if (groupFilter) {
+    state.catalogGroup = groupFilter.getAttribute('data-filter-group');
+    $('.store-group-tabs button').forEach((button) => button.classList.toggle('on',button === groupFilter));
+    paintCatalogVariants();
+    return;
+  }
+  const gameFilter = event.target.closest('[data-filter-game]');
+  if (gameFilter) {
+    state.catalogGame = gameFilter.getAttribute('data-filter-game');
+    $('.store-game-tabs button').forEach((button) => button.classList.toggle('on',button === gameFilter));
+    paintCatalogVariants();
+    return;
+  }
   const button = event.target.closest('[data-action]');
   if (!button) return;
   const action = button.getAttribute('data-action');
@@ -597,16 +641,16 @@ function handleClick(event) {
 }
 function handleInput(event) {
   if (event.target && event.target.id === 'catalog-search') {
-    const query = event.target.value.toLowerCase().trim();
-    const list = $('#catalog-games');
-    if (!list) return;
-    const matches = GAME_CODES.filter((code) => gameOf(code).name.toLowerCase().includes(query) || gameOf(code).short.toLowerCase().includes(query));
-    list.innerHTML = matches.map((code) => {
-      const count = state.variants.filter((variant) => variant.game_code === code).length;
-      return '<button class="list-card" type="button" data-go="/game/' + code + '">' +
-        productImage({game_category:code},'list-art') +
-        '<span class="list-copy"><b>' + esc(gameOf(code).name) + '</b><small>Game marketplace</small><span class="badge">' + count + ' Varian</span></span><span class="chevron">›</span></button>';
-    }).join('') || '<div class="empty">Game tidak ditemukan.</div>';
+    state.search = event.target.value || '';
+    paintCatalogVariants();
+    return;
+  }
+  if (event.target && event.target.id === 'home-search') {
+    state.search = event.target.value || '';
+    state.catalogGroup = 'ALL';
+    state.catalogGame = 'ALL';
+    go('/catalog');
+    return;
   }
 }
 function init() {

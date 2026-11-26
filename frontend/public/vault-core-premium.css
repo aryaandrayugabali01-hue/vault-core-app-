@@ -165,3 +165,67 @@
   .vc-skeleton{animation:none}
   .vc4-card,.vc4-card-main,.vc4-sku-info,.vc-home-variant-card,.vc-home-product-card,.vc-home-game,.vc4-primary{transition:none}
 }
+
+/* Mini App Home + Store surfaces in the shared premium system. */
+.home-v3{display:grid;gap:14px}
+.home-search{margin:0 0 2px!important;min-height:44px;border-radius:13px!important;background:#1a1920!important;border-color:rgba(255,255,255,.07)!important}
+.home-promo{position:relative;isolation:isolate;display:flex;align-items:center;min-height:162px;padding:17px;overflow:hidden;border:1px solid rgba(145,76,255,.72);border-radius:18px;background:linear-gradient(105deg,rgba(9,7,18,.97),rgba(31,12,49,.72)),url('/assets/02-hero/hero-vaultcore-loop.webp') center/cover;box-shadow:0 0 24px rgba(139,60,246,.16)}
+.home-promo:after{content:"";position:absolute;z-index:-1;right:-28px;bottom:-56px;width:176px;height:176px;border-radius:50%;border:1px solid rgba(163,245,43,.55);box-shadow:0 0 28px rgba(163,245,43,.15)}
+.home-promo>div{max-width:76%;display:grid;gap:6px}
+.home-promo>div>small{color:#a8f33d;font-size:10px;font-weight:950;letter-spacing:.1em}
+.home-promo h1{margin:0;font-size:22px;line-height:1.15}
+.home-promo p{margin:0;color:#c7c1d1;font-size:10px}
+.home-promo button{width:max-content;margin-top:5px;padding:8px 11px;border:1px solid rgba(163,245,43,.6);border-radius:10px;background:linear-gradient(180deg,#c1ff57,#8fdf1b);color:#151b08;font-size:10px;font-weight:950}
+.home-promo-mark{position:absolute;right:23px;top:56px;color:rgba(192,255,84,.85);font-size:47px;font-weight:950;text-shadow:0 0 18px rgba(163,245,43,.3)}
+.home-games{margin:2px 0!important}
+.home-group-tabs,.store-group-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:4px;border:1px solid var(--line-soft);border-radius:24px;background:#17151f}
+.home-group-tabs button,.store-group-tabs button{min-height:34px;border-radius:20px;background:transparent;color:#b3adbf;font-size:10px;font-weight:850}
+.home-group-tabs button.on,.store-group-tabs button.on{background:linear-gradient(180deg,#c0ff56,#8fdf1e);color:#14190b;box-shadow:0 0 14px rgba(163,245,43,.13)}
+.home-variant-list{display:grid;gap:8px}
+.home-variant{width:100%;display:grid;grid-template-columns:64px minmax(0,1fr) 15px;align-items:center;gap:9px;padding:9px;border:1px solid rgba(143,127,171,.22);border-radius:14px;background:linear-gradient(110deg,#1b1823,#111016);text-align:left}
+.home-variant-art{position:relative;width:64px;height:64px;overflow:hidden;border-radius:11px;background:#171420}
+.home-variant-art img{width:100%;height:100%;object-fit:cover}
+.home-variant-art small{position:absolute;left:3px;bottom:3px;padding:2px 4px;border-radius:4px;background:rgba(8,7,13,.82);color:#cdb4ff;font-size:6px;font-weight:900}
+.home-variant-copy{display:grid;gap:3px;min-width:0}
+.home-variant-copy>small{font-size:8px;color:#a79bbd}
+.home-variant-copy>b{font-size:10px;line-height:1.25;color:#f4f1f8}
+.home-variant-status{color:#a9a3b1;font-size:8px}
+.home-variant-status.ready{color:rgba(195,255,132,.72)}
+.home-variant-eta{color:#aaa1b4;font-size:8px}
+.home-variant-arrow{color:#a5f43c;font-size:17px}
+.home-activity{display:grid;grid-template-columns:28px 1fr 16px;align-items:center;gap:8px;padding:11px;border:1px solid rgba(143,127,171,.22);border-radius:13px;background:#17151d}
+.home-activity>span:first-child{color:#b993ff}
+.home-activity>div{display:grid;gap:3px}
+.home-activity b{font-size:10px}
+.home-activity small{color:#a8a2b0;font-size:8px}
+.home-activity-arrow{color:#a5f43c}
+.home-benefits{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.home-benefits>div{display:grid;grid-template-columns:25px 1fr;column-gap:7px;row-gap:3px;padding:10px;border:1px solid rgba(143,127,171,.2);border-radius:13px;background:linear-gradient(145deg,#1d1927,#111016)}
+.home-benefits .ic{grid-row:span 2;color:#bd99ff}
+.home-benefits b{font-size:9px}
+.home-benefits small{color:#9e98a9;font-size:7px;line-height:1.35}
+.home-skeleton-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.home-skeleton-grid .vc-skeleton{height:152px}
+.store-v3{display:grid;gap:12px}
+.store-search{margin-bottom:0!important;border-radius:13px!important}
+.store-game-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.store-game-tabs::-webkit-scrollbar{display:none}
+.store-game-tabs button{flex:1 0 auto;min-width:56px;padding:8px 10px;border:1px solid rgba(135,122,158,.24);border-radius:20px;background:#17151e;color:#c8c2d1;font-size:9px;font-weight:850}
+.store-game-tabs button.on{border-color:#9b5cf5;color:#fff;background:linear-gradient(135deg,#6e27cd,#a34cf4);box-shadow:0 0 16px rgba(139,60,246,.18)}
+.store-tier-hint{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:2px}
+.store-tier-hint span{color:#bd9aec;font-size:9px;font-weight:900;letter-spacing:.1em}
+.store-tier-hint small{color:#9791a1;font-size:8px}
+.store-variant-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.store-variant-card{display:grid;grid-template-rows:96px auto;min-width:0;overflow:hidden;border:1px solid rgba(145,127,172,.23);border-radius:15px;background:linear-gradient(145deg,#211a2d,#121117);text-align:left;box-shadow:0 8px 20px rgba(0,0,0,.24)}
+.store-variant-art{position:relative;overflow:hidden;background:#171320}
+.store-variant-art img{width:100%;height:100%;object-fit:cover}
+.store-variant-art small{position:absolute;left:7px;bottom:6px;padding:3px 5px;border-radius:5px;background:rgba(8,7,13,.82);color:#c6adfa;font-size:7px;font-weight:950}
+.store-variant-copy{display:grid;gap:5px;padding:9px;min-width:0}
+.store-variant-copy>small:first-child{color:#a79bbd;font-size:8px}
+.store-variant-copy>b{font-size:10px;line-height:1.3}
+.store-variant-copy>small:last-child{color:#aaa3b2;font-size:8px}
+.store-variant-status{font-size:8px;color:#a49eac}
+.store-variant-status.ready{color:rgba(195,255,132,.72)}
+.store-variant-arrow{display:none}
+.store-source-note{padding:10px;border:1px solid rgba(139,60,246,.18);border-radius:11px;color:#aaa2b4;background:#17141d;font-size:8px}
+@media(max-width:360px){.home-promo h1{font-size:19px}.store-variant-card{grid-template-rows:82px auto}.home-variant{grid-template-columns:56px 1fr 12px}.home-variant-art{width:56px;height:56px}}

@@ -6,7 +6,7 @@ import './page.css';
 import { GAME_ART } from '../../lib/marketplace.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-const GROUPS = ['Akun','Jasa Joki','Item In-Game'];
+const GROUPS = ['Akun','Jasa Joki'];
 const GAME_NAMES = { MLBB:'Mobile Legends', FF:'Free Fire', ROBLOX:'Roblox', GI:'Genshin Impact' };
 const MARKET_GAME_CODE = { MLBB:'MLBB', FF:'FREE_FIRE', ROBLOX:'ROBLOX', GI:'GENSHIN' };
 const STATUS = {
@@ -141,6 +141,16 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     if (!response.ok) throw new Error(data.message || 'Masuk dengan Telegram untuk melihat riwayat transaksi.');
     setOrders(data.orders || []);
     return data.orders || [];
+  },[]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const queryGame = params.get('game');
+    const queryGroup = params.get('group');
+    const query = params.get('q');
+    if (queryGame && ['MLBB','FF','ROBLOX','GI'].includes(queryGame)) setGame(queryGame);
+    if (queryGroup && ['Akun','Jasa Joki'].includes(queryGroup)) setGroup(queryGroup);
+    if (query) setSearch(query);
   },[]);
 
   useEffect(() => {
@@ -354,8 +364,8 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         <section className="vc4-page-head">
           <h1>Katalog<span>.</span></h1>
           <div>
-            <h2>Akun, jasa joki, dan item game dalam satu tempat.</h2>
-            <p>Pilih kategori dan varian. Harga dan stok ditampilkan setelah produk disetujui Owner.</p>
+            <h2>Akun game premium dan layanan joki pilihan.</h2>
+            <p>Pilih game, Akun atau Joki. Harga, ketersediaan, dan estimasi mengikuti listing backend.</p>
           </div>
         </section>
 
@@ -418,7 +428,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           const list = visibleVariants.filter((variant)=>variant.category===category);
           if (!list.length) return null;
           return <section className="vc4-shelf" key={category}>
-            <div className="vc4-shelf-head"><div><span>VAULT CORE · {category.toUpperCase()}</span><h2>{category}.</h2></div><p>{category==='Akun'?'Akun dengan detail dan status hak yang ditinjau.':category==='Jasa Joki'?'Pengerjaan layanan oleh tenaga operasional internal.':'Item in-game dengan metode fulfillment yang ditetapkan Owner.'}</p></div>
+            <div className="vc4-shelf-head"><div><span>VAULT CORE · {category.toUpperCase()}</span><h2>{category}.</h2></div><p>{category==='Akun'?'Akun game dengan spesifikasi dan status ketersediaan pada listing.':'Layanan joki dengan jenis pekerjaan dan estimasi sesuai listing.'}</p></div>
             <div className="vc4-grid">
               {list.map((variant) => {
                 const products = visibleProducts.filter((product)=>product.variant_id===Number(variant.variant_id));
@@ -442,10 +452,10 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         })}
 
         {!loading && visibleVariants.length===0 && <div className="vc4-empty"><h2>Varian belum ditemukan.</h2><p>Ubah pilihan game, jenis produk, atau kata pencarian.</p></div>}
-        {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada SKU v4 yang diaktifkan. Owner dapat menyiapkan produk melalui panel pengelolaan berdasarkan 12 varian dan spesifikasi produk yang sesuai jenisnya.</p>}
+        {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada SKU yang tersedia untuk dipesan. Varian Akun dan Joki tetap ditampilkan dari master katalog.</p>}
         <footer className="vc4-footer">
           <p>VAULT CORE adalah penjual tunggal. Website dan Telegram Mini App menggunakan akun pelanggan dan backend yang sama.</p>
-          <p>Pembayaran website dibuka melalui invoice Telegram Stars (XTR). Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram, sedangkan data akses Joki disimpan melalui vault terenkripsi.</p>
+          <p>Pembayaran Mini App menggunakan invoice Telegram Stars (XTR). Pemenuhan Joki mengikuti ketentuan dan estimasi listing; data akses tidak ditampilkan pada katalog.</p>
         </footer>
       </main>
 
