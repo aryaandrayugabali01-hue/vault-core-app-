@@ -1151,7 +1151,7 @@ test('active stylesheets have unique selectors within each cascade context', () 
     assert.deepEqual(duplicates, [], file + ' still contains repeated selectors in one cascade context');
   }
   const miniAppStyles = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
-  assert.ok(miniAppStyles.includes('.nav button.on{color:var(--gold)'));
+  assert.ok(miniAppStyles.includes('.nav button.on{background:rgba(255,201,40,.14);color:var(--gold)'));
   assert.ok(miniAppStyles.includes('.filters button.on{border-color:rgba(255,201,40,.65)'));
 });
 
