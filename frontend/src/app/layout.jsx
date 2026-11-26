@@ -1,6 +1,5 @@
 import './globals.css';
 import './mobile-app.css';
-import './mobile-dashboard.css';
 import Script from 'next/script';
 import { StoreChrome } from '../components/store-navigation.jsx';
 
