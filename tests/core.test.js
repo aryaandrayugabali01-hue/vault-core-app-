@@ -915,6 +915,7 @@ test('the production homepage opens the supplied VAULT CORE v5 mobile Mini App',
 test('v5 catalog, detail, checkout, XTR invoice and order history use the existing backend contract', () => {
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  const api = readFileSync(new URL('../backend/app.js', import.meta.url), 'utf8');
   const catalog = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
   assert.ok(app.includes("api('/api/catalog')"));
   assert.ok(app.includes("api('/api/orders'"));
@@ -922,7 +923,8 @@ test('v5 catalog, detail, checkout, XTR invoice and order history use the existi
   assert.ok(app.includes("paymentMethod:'XTR'"));
   assert.ok(app.includes('tg.openInvoice'));
   assert.ok(app.includes('if (!inTelegram)'));
-  assert.ok(orders.includes('requireTelegramUser'));
+  assert.ok(api.includes('requireTelegramUser'));
+  assert.ok(orders.includes('normalizeCartItems'));
   assert.ok(catalog.includes('GAME_ACCOUNT_TRANSFER'));
   assert.equal(app.includes('/api/web-auth'),false);
   assert.equal(app.includes('vc_web_session'),false);
@@ -933,6 +935,8 @@ test('all 12 master variants remain visible while non-account variants stay unav
   const variants = readFileSync(new URL('../frontend/public/miniapp/variants.js', import.meta.url), 'utf8');
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   assert.equal(variants.split('{id:').length - 1,12);
+  assert.ok(app.includes('Untuk checkout ini tidak diperlukan data tambahan'));
+  assert.equal(app.includes('buyer-input'),false);
   for (const game of ['MLBB','FREE_FIRE','ROBLOX','GENSHIN']) assert.ok(variants.includes("game:'" + game + "'"));
   assert.ok(app.includes('Varian belum tersedia'));
   assert.ok(app.includes('const productsOf ='));
