@@ -2,11 +2,7 @@ import { pool } from '../db/pool.js';
 
 export async function isOwnerTelegramUser(userId) {
   const id = String(userId ?? '');
-  if (!id) return false;
-  const configured = new Set(
-    String(process.env.ADMIN_TELEGRAM_IDS ?? '').split(',').map((v) => v.trim()).filter(Boolean)
-  );
-  if (configured.has(id)) return true;
+  if (!/^\d+$/.test(id)) return false;
   const { rows } = await pool.query(
     'SELECT 1 FROM owner_accounts WHERE telegram_user_id=$1 AND is_active=TRUE LIMIT 1',
     [id]
