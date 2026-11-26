@@ -77,7 +77,6 @@ function matchesMlbb(product, filters) {
 export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   const [variants,setVariants] = useState([]);
   const [customer,setCustomer] = useState(null);
-  const [customerChecked,setCustomerChecked] = useState(false);
   const [game,setGame] = useState(initialCategory === 'ALL' ? 'ALL' : initialCategory);
   const [group,setGroup] = useState('ALL');
   const [search,setSearch] = useState('');
@@ -129,8 +128,6 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       }
       setCustomer(data.user || null);
       return data.user || null;
-    } finally {
-      setCustomerChecked(true);
     }
   },[]);
 
@@ -152,13 +149,15 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     tg?.ready();
     tg?.expand();
     loadCatalog();
-    loadCustomer().catch(() => { setCustomer(null); setCustomerChecked(true); });
+    loadCustomer().catch(() => setCustomer(null));
     const paid = () => {
       setNotice('Telegram mengonfirmasi pembayaran. Memperbarui pesanan…');
       loadOrders().catch(() => {});
     };
     const refreshWhenVisible = () => {
-      if (document.visibilityState === 'visible' && customer) loadOrders().catch(() => {});
+      if (document.visibilityState === 'visible') {
+        loadCustomer().then((activeCustomer) => activeCustomer && loadOrders().catch(() => {})).catch(() => {});
+      }
     };
     window.addEventListener('vault:payment-paid',paid);
     window.addEventListener('focus',refreshWhenVisible);
