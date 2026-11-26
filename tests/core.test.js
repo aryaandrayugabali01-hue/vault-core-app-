@@ -822,7 +822,7 @@ test('Apple v4 product detail follows the approved light catalog layout', () => 
   assert.match(styles, /--vc4-card:#fff/);
   assert.match(styles, /--vc4-blue:#0071e3/);
   assert.match(styles, /vc4-overlay/);
-  assert.match(styles, /vc4-grid/);
+  assert.ok(styles.includes('grid-template-columns:1fr'));
 });
 
 test('MLBB account detail uses the public v4 DTO, last-stock label, and four-step security guide', () => {
@@ -999,9 +999,9 @@ test('active stylesheets have unique selectors within each cascade context', () 
   const normalizeContext = (name, params) => {
     const value = String(params || '').trim();
     if (['media','supports','container','document'].includes(name)) {
-      return '@' + name + ' ' + value.replace(/\\s+/g, ' ').replace(/\\s*([():,])\\s*/g, '$1').toLowerCase();
+      return '@' + name + ' ' + value.replace(/\s+/g, ' ').replace(/\s*([():,])\s*/g, '$1').toLowerCase();
     }
-    return '@' + name + ' ' + value.replace(/\\s+/g, ' ');
+    return '@' + name + ' ' + value.replace(/\s+/g, ' ');
   };
   for (const file of files) {
     const css = readFileSync(new URL(file, import.meta.url), 'utf8');
