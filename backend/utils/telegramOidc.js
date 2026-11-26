@@ -24,7 +24,7 @@ async function getSigningKey(kid, fetchImpl) {
     if (!Array.isArray(data.keys)) throw new Error('TELEGRAM_OIDC_KEYS_INVALID');
     jwksCache = { keys: data.keys, expiresAt: Date.now() + 60 * 60 * 1000 };
   }
-  const jwk = jwksCache.keys.find((key) => key.kid === kid && key.kty === 'RSA' && key.use === 'sig');
+  const jwk = jwksCache.keys.find((key) => key.kid === kid && key.kty === 'RSA' && (key.alg === undefined || key.alg === 'RS256') && (key.use === undefined || key.use === 'sig'));
   if (!jwk) {
     jwksCache.expiresAt = 0;
     throw new Error('TELEGRAM_OIDC_SIGNING_KEY_NOT_FOUND');
