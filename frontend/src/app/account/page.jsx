@@ -11,6 +11,7 @@ export default function CustomerAccountPage() {
   const [status, setStatus] = useState('checking');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [nextPath, setNextPath] = useState('');
 
   const loadSession = useCallback(async () => {
     setStatus('checking');
@@ -40,6 +41,8 @@ export default function CustomerAccountPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const next = params.get('next');
+    if (next) setNextPath(next);
     if (params.get('login') === 'success') setMessage('Telegram berhasil diverifikasi. Akun pelanggan VAULT CORE sudah terhubung.');
     if (params.get('login_error')) setMessage('Login Telegram belum berhasil. Silakan coba kembali.');
     loadSession();
@@ -65,7 +68,8 @@ export default function CustomerAccountPage() {
   };
 
   const name = customer?.first_name || customer?.username || 'Pelanggan Telegram';
-  const loginUrl = API + '/api/customer-auth/oidc/start';
+  const destination = nextPath || '/catalog';
+  const loginUrl = API + '/api/customer-auth/oidc/start' + (nextPath ? '?next=' + encodeURIComponent(nextPath) : '');
 
   return (
     <main className="customer-account-page">
@@ -90,7 +94,7 @@ export default function CustomerAccountPage() {
           </div>
           <div className="customer-account-status is-success">Akun Telegram terverifikasi</div>
           {customer.isOwner && <a className="customer-account-secondary" href="/admin">Buka Dashboard Owner</a>}
-          <a className="customer-account-primary" href="/catalog">Lanjut ke katalog</a>
+          <a className="customer-account-primary" href={destination}>Lanjutkan</a>
           <button className="customer-account-logout" type="button" onClick={logout} disabled={busy}>{busy ? 'Memproses…' : 'Keluar dari akun web'}</button>
         </>}
 
