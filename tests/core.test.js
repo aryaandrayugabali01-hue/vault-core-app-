@@ -20,6 +20,16 @@ import { validateMarketplaceCategory, normalizeImageGallery } from '../backend/s
 import { normalizeCartItems } from '../backend/services/cartService.js';
 import { releaseExpiredPendingOrders } from '../backend/services/reservationService.js';
 
+test('Owner authorization uses Neon owner_accounts as its sole source of truth', () => {
+  const ownerAuth = readFileSync(new URL('../backend/middleware/adminAuth.js', import.meta.url), 'utf8');
+  const worker = readFileSync(new URL('../cloudflare/vault-core-api.js', import.meta.url), 'utf8');
+  const workflow = readFileSync(new URL('../.github/workflows/deploy-production.yml', import.meta.url), 'utf8');
+  assert.match(ownerAuth, /FROM owner_accounts WHERE telegram_user_id=\$1 AND is_active=TRUE/);
+  assert.doesNotMatch(ownerAuth, /ADMIN_TELEGRAM_IDS/);
+  assert.doesNotMatch(worker, /ADMIN_TELEGRAM_IDS/);
+  assert.doesNotMatch(workflow, /ADMIN_TELEGRAM_IDS/);
+});
+
 function topLevelCssProperty(styles, selector, property) {
   const root = postcss.parse(styles);
   const rule = root.nodes.find((node) => node.type === 'rule' && node.selector === selector);
