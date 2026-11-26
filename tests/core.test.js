@@ -124,6 +124,13 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
   assert.equal(marketplace.includes('cloudfront.net/game'),false);
   assert.ok(miniHtml.includes('/assets/01-brand/vaultcore-mark.svg'));
   assert.ok(miniApp.includes('/assets/01-brand/vaultcore-horizontal.svg'));
+  assert.ok(miniApp.includes('function comingSoonCard(variant)'));
+  assert.ok(miniApp.includes('Akan Tersedia'));
+  const miniCss = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
+  assert.ok(miniCss.includes('.product-card-soon'));
+  assert.ok(ownerV4.includes('/api/admin/test-fixtures'));
+  assert.ok(ownerV4.includes('/api/orders/test'));
+  assert.ok(ownerV4.includes('Pembayaran 1 XTR tetap merupakan potongan Stars sungguhan'));
 });
 
 test('legacy v4 catalog behavior remains covered while /catalog routes to canonical Mini App', () => {
@@ -1032,7 +1039,7 @@ test('all 12 master variants and every published SKU are loaded from the canonic
   assert.ok(app.includes('state.variants = Array.isArray(variants) ? variants : []'));
   assert.ok(app.includes('state.variants.flatMap'));
   assert.ok(app.includes('function productsOf('));
-  assert.ok(app.includes('Varian belum tersedia'));
+  assert.ok(app.includes('Akan Tersedia'));
   assert.equal(app.includes('window.VAULT_VARIANTS'),false);
   assert.equal(app.includes('buyer-input'),false);
 });

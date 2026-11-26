@@ -128,6 +128,14 @@ function productCard(product) {
     '<div class="product-copy"><small>' + esc(gameOf(product.game_category).name) + ' · ' + esc(categoryLabel(product)) + '</small><b>' + esc(product.name) + '</b>' +
     priceMarkup(product,true) + '<small>' + esc(stockLabel(product)) + '</small></div></button>';
 }
+function comingSoonCard(variant) {
+  const game = gameOf(variant.game_code);
+  return '<article class="product-card product-card-soon" aria-label="' + esc(variant.name) + ' akan tersedia">' +
+    '<div class="product-art"><img src="' + esc(game.art) + '" alt="" loading="lazy"></div>' +
+    '<div class="product-copy"><small>' + esc(game.short) + ' · ' + esc(variant.category) + '</small>' +
+    '<b>' + esc(variant.name) + '</b><span class="soon-state">Akan Tersedia</span>' +
+    '<small>Informasi produk dan harga muncul setelah stok siap.</small></div></article>';
+}
 function productRow(product) {
   return '<button type="button" class="list-card" data-go="/product/' + encodeURIComponent(product.id) + '">' +
     productImage(product,'list-art') +
@@ -143,6 +151,7 @@ function home() {
     Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)) ||
     Number(b.display_stock || 0) - Number(a.display_stock || 0)
   ).slice(0,8);
+  const comingSoon = state.variants.filter((variant) => productsOf(variant).filter(isBuyable).length === 0).slice(0,8);
   const promo = available.find((product) => comparePrice(product));
   const banner = promo
     ? '<button class="promo" type="button" data-go="/product/' + encodeURIComponent(promo.id) + '"><span class="promo-copy"><b>Promo Spesial</b><em>' + esc(promo.name) + '</em><p>Harga promo terverifikasi · ' + discountPercent(promo) + '%</p></span><span class="promo-mark">%' + '</span></button>'
@@ -160,6 +169,7 @@ function home() {
       '<div class="section-head"><h2>Rekomendasi Hari Ini</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
       (recommended.length ? '<div class="products-strip">' + recommended.map(productCard).join('') + '</div>' :
         '<div class="empty">' + (state.loadError ? esc(state.loadError) : state.loaded ? 'Belum ada produk yang siap dijual. Silakan cek kembali nanti.' : 'Memuat katalog…') + '</div>') +
+      (comingSoon.length ? '<div class="section-head"><h2>Akan Tersedia</h2><button type="button" data-go="/catalog">Lihat Katalog ›</button></div><div class="products-strip">' + comingSoon.map(comingSoonCard).join('') + '</div>' : '') +
       '<div class="section-head"><h2>4 Game · 12 Varian</h2><button type="button" data-go="/catalog">Buka Katalog ›</button></div>' +
       '<div class="box info">' + icon('shield') + '<span>Periksa deskripsi, spesifikasi, stok, dan ketentuan sebelum melanjutkan pembelian. Pembayaran hanya melalui Telegram Stars (XTR).</span></div>' +
     '</main>',
@@ -212,8 +222,7 @@ function variantPage(id) {
     headerPage(variant.name) +
     '<main>' +
     '<p class="sub">' + esc(gameOf(variant.game_code).name) + ' · ' + esc(variant.category) + '</p>' +
-    (products.length ? products.map(productRow).join('') :
-      '<div class="empty"><b>Varian belum tersedia</b><br>Produk aktif untuk varian ini belum diterbitkan. Tidak ada stok atau harga yang ditampilkan sebelum tersedia dari backend.</div>') +
+    (products.length ? products.map(productRow).join('') : comingSoonCard(variant)) +
     '</main>',
     'catalog', false
   );

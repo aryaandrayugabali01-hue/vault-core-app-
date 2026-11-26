@@ -41,6 +41,8 @@ export default function OwnerV4Page(){
  const [showSecretPassword,setShowSecretPassword]=useState(false);
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
+ const [testFixtures,setTestFixtures]=useState([]);
+ const [testBusy,setTestBusy]=useState(false);
 
  const selected=useMemo(()=>products.find(p=>String(p.id)===String(selectedId))||null,[products,selectedId]);
  const selectedVariant=useMemo(()=>variants.find(v=>Number(v.variant_id)===Number(selected?.variant_id)),[variants,selected]);
@@ -48,12 +50,14 @@ export default function OwnerV4Page(){
  const isAccount=selectedVariant?.kategori_produk==='Akun';
 
  const refresh=useCallback(async()=>{
-   const [variantData,productData]=await Promise.all([
+   const [variantData,productData,fixtureData]=await Promise.all([
      api('/api/admin/v4/variants'),
-     api('/api/admin/v4/products')
+     api('/api/admin/v4/products'),
+     api('/api/admin/test-fixtures')
    ]);
    setVariants(variantData.variants||[]);
    setProducts(productData.products||[]);
+   setTestFixtures(fixtureData.products||[]);
    setSelectedId((current)=>current||String(productData.products?.[0]?.id||''));
  },[]);
 
@@ -170,6 +174,30 @@ export default function OwnerV4Page(){
    await refresh();setNotice('SKU '+data.product.sku+' berhasil diterbitkan ke katalog v4.');
   }catch(e){setError(e.message);}finally{setBusy(false);}
  }
+ async function activateTestFixture(id){
+  setTestBusy(true);setError('');setNotice('');
+  try{
+   const data=await api('/api/admin/test-fixtures/'+Number(id)+'/activate',{method:'POST',body:JSON.stringify({})});
+   await refresh();
+   setNotice((data.product?.sku||'Produk uji')+' diaktifkan. Produk ini hanya untuk uji Owner dan tidak masuk katalog publik.');
+  }catch(e){setError(e.message);}finally{setTestBusy(false);}
+ }
+ async function createTestPayment(id){
+  setTestBusy(true);setError('');setNotice('');
+  try{
+   const data=await api('/api/orders/test',{method:'POST',body:JSON.stringify({items:[{productId:Number(id),quantity:1}]})});
+   setNotice('Invoice uji '+data.orderNumber+' dibuat. Pembayaran sebesar 1 XTR akan memotong Stars sungguhan.');
+   const webApp=window.Telegram?.WebApp;
+   if(webApp?.openInvoice){
+    webApp.openInvoice(data.invoiceUrl,(status)=>{
+     if(status==='paid')setNotice('Telegram mengonfirmasi pembayaran uji. Periksa Transaksi untuk status pemenuhan.');
+     else if(status==='cancelled')setNotice('Invoice uji ditutup sebelum pembayaran.');
+    });
+   }else{
+    window.open(data.invoiceUrl,'_blank','noopener,noreferrer');
+   }
+  }catch(e){setError(e.message);}finally{setTestBusy(false);}
+ }
 
  if(checking)return <main className="vco-shell"><p>Memeriksa sesi Owner…</p></main>;
  if(!authenticated)return <main className="vco-shell"><section className="vco-card"><h1>Panel Owner v4</h1><p>{error||'Akses Owner wajib melalui sesi Telegram.'}</p><a href="/admin">Buka Dashboard Owner untuk login</a></section></main>;
@@ -178,6 +206,18 @@ export default function OwnerV4Page(){
   <header className="vco-header"><a href="/admin">← Dashboard Owner</a><div className="vco-header-brand"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/><span>OWNER V4</span></div><button type="button" onClick={()=>refresh().catch(e=>setError(e.message))}>Muat ulang</button></header>
   <section className="vco-hero"><div><span>MASTER KATALOG · 12 VARIAN · FIELD LISTING PEMBELI</span><h1>Persiapan Produk.</h1><p>Isi foto, identitas, harga, spesifikasi yang tampil ke pembeli, pemeriksaan hak, dan stok aktual.</p></div><div className="vco-stats"><b>{variants.length}<small>Varian</small></b><b>{products.length}<small>SKU tersimpan</small></b></div></section>
   {error&&<div className="vco-alert error" role="alert">{error}</div>}
+  <section className="vco-card vco-test-payment">
+   <div className="vco-section-head"><div><span>TRANSAKSI UJI · OWNER ONLY</span><h2>Uji Pembayaran Telegram Stars</h2></div><small>1 XTR · TEST ONLY</small></div>
+   <p>Gunakan satu produk dummy untuk menguji invoice, pre-checkout, konfirmasi pembayaran, dan pemenuhan. Pembayaran 1 XTR tetap merupakan potongan Stars sungguhan. Produk uji tidak ditampilkan kepada pelanggan umum.</p>
+   <div className="vco-test-list">{testFixtures.map(item=><div className="vco-test-item" key={item.id}>
+    <div><strong>{item.name}</strong><small>{item.sku} · {item.status} · {item.sellable_stock} stok dummy</small></div>
+    {item.status==='ACTIVE'&&item.sellable_stock>0
+      ?<button type="button" disabled={testBusy} onClick={()=>createTestPayment(item.id)}>{testBusy?'Memproses…':'Buat Invoice Uji · 1 XTR'}</button>
+      :<button type="button" disabled={testBusy||item.status!=='DRAFT'||item.sellable_stock<1} onClick={()=>activateTestFixture(item.id)}>{testBusy?'Memproses…':'Aktifkan Produk Uji'}</button>}
+   </div>)}</div>
+   <small className="vco-test-note">Hanya satu fixture dapat aktif. Gunakan akun Owner di Telegram Mini App untuk menjalankan uji pembayaran.</small>
+  </section>
+
   {notice&&<div className="vco-alert" role="status">{notice}</div>}
   <section className="vco-card">
    <div className="vco-section-head"><div><span>STEP 01</span><h2>Buat SKU baru</h2></div><small>Produk baru dimulai sebagai DRAFT</small></div>
