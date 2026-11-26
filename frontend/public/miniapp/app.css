@@ -4,6 +4,9 @@
   --line:rgba(160,139,255,.25);--line-soft:rgba(255,255,255,.09);
   --text:#f7f8fc;--muted:#a9b4c8;--gold:#ffc928;--gold-2:#f2a900;
   --violet:#7c3aed;--cyan:#8ce7ff;--green:#34d399;--red:#fb7185;
+  --vc4-page:var(--bg);--vc4-card:var(--surface);--vc4-ink:var(--text);--vc4-muted:var(--muted);
+  --vc4-line:var(--line);--vc4-soft:var(--line-soft);--vc4-blue:var(--violet);--vc4-green:var(--green);
+  --vc4-gold:var(--gold);--vc4-gold-hover:var(--gold-2);
   --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
