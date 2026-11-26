@@ -6,7 +6,7 @@ Single-vendor Telegram Mini App store for transferable digital products, voucher
 
 ## Source of truth
 
-Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current baseline: **Project Contract v2.0 (CR-15)**. Section 37 controls the temporary website QRIS static-payment lane, preserves Telegram Mini App XTR checkout, and requires shared customer identity, catalog/order/inventory data, and visual standards. Sections 28–36 remain applicable except where CR-15 explicitly amends them.
+Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current baseline: **Project Contract v2.1 (CR-16)**. Section 38 defines the single mobile-first Owner product form and one-submit save/publish flow. Section 37 continues to control temporary website QRIS (IDR), Telegram Mini App XTR, and shared customer/catalog/order/inventory data. Sections 28–37 remain applicable except where CR-16 explicitly amends them.
 
 ## Project documents
 
