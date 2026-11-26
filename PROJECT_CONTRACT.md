@@ -1107,7 +1107,7 @@ File unggahan kredensial_sku_produk.csv berisi 24 entri berupa paket Email:Passw
 
 ## 28.1 Keputusan ruang lingkup
 
-VAULT CORE dapat mendukung katalog dan pemenuhan produk berupa akun game hanya apabila transfer atau penjualan akun tersebut secara tegas diperbolehkan oleh penerbit/platform yang bersangkutan, dan pemilik toko dapat membuktikan hak untuk menjual serta memindahkan akun itu kepada pembeli.
+VAULT CORE dapat mendukung katalog dan pemenuhan akun game pihak ketiga berdasarkan penilaian internal Owner atas sumber, rantai perolehan, kewenangan penjualan/penyerahan, ketentuan penerbit/platform, wilayah, dan metode transfer. Ketentuan ini tidak mensyaratkan surat izin penerbit secara universal. Apabila ketentuan resmi secara eksplisit melarang penjualan atau transfer, SKU tersebut tidak boleh diaktifkan. Apabila ketentuan tidak jelas atau tidak secara khusus membahas penjualan akun, Owner wajib mencatat ketentuan yang ditemukan, dasar kewenangan sumber, dan risiko sebelum menetapkan keputusan internal. Keputusan internal Owner tidak mengubah atau mengesampingkan ketentuan eksternal maupun hukum.
 
 Dengan ketentuan tersebut, format kredensial akun tidak menjadi objek penyimpanan sistem. Kelayakan SKU ditentukan oleh dasar sumber, kewenangan Owner, dan ketentuan penerbit/platform. Pernyataan vendor seperti “Internal Vendor Verified” saja tidak membuktikan izin penerbit atau hak transfer.
 
