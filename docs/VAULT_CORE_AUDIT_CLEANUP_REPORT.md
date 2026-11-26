@@ -300,3 +300,42 @@ Tidak ada data produk lama yang dipetakan secara otomatis dan tidak ada transaks
 - Storefront dan panel Owner v4: **LIVE**.
 - Kesiapan menjalankan transaksi uji end-to-end: **MENUNGGU SKU v4 yang dipetakan, divault, dan dipublikasikan Owner**.
 - Kesiapan transaksi komersial penuh: **BELUM DIVERIFIKASI**, karena belum ada UAT browser, pembayaran XTR riil, dan fulfillment riil.
+
+
+---
+
+# 15. Cleanup implementasi lama dan penguncian mobile-only — 26 November 2026
+
+## Temuan terverifikasi
+
+- Dashboard memiliki beberapa sumber CSS yang saling menimpa: blok dasar dashboard di `globals.css`, aturan lama yang menumpuk empat game secara vertikal, override ukuran dari referensi sebelumnya, serta file tambahan `mobile-dashboard.css`.
+- Aturan vertikal dan sizing tersebut bertentangan dengan komposisi yang disetujui: empat kartu game dalam satu baris, kartu produk dua kolom, dan tema gelap neon.
+- Arsip root `vault-core-app-v1.3-github-ready.zip` tidak dipakai workflow produksi maupun runtime. Arsip hanya disebut sebagai arsip historis di dokumentasi.
+- File `frontend/src/app/catalog/ML.zip` dan `frontend/VAULT_CORE_ASSET_LIBRARY_v1.0.zip` tetap dipakai untuk gambar produk dan aset produksi.
+
+## Pembersihan yang diterapkan
+
+1. CSS dashboard dikonsolidasikan ke satu stylesheet `frontend/src/app/mobile-app.css`. Aturan list vertikal dan sizing lama yang bertentangan dihapus dari `globals.css`.
+2. File `mobile-dashboard.css` yang hanya berisi lapisan override dihapus setelah isinya digabungkan dan dirapikan.
+3. Root layout membungkus seluruh route customer, katalog, dan Owner ke kanvas smartphone dengan lebar maksimum 430px, termasuk ketika halaman dibuka di browser desktop.
+4. Aturan mobile katalog dan Owner v4 diterapkan berdasarkan kanvas aplikasi, bukan hanya lebar jendela browser.
+5. Layout footer desktop dihapus dari storefront mobile-only.
+6. Arsip ZIP v1.3 di root dihapus karena tidak menjadi input runtime maupun deployment. Riwayat Git tetap menyimpan versi sebelumnya.
+7. Validasi aset CI diperluas untuk memeriksa URL aset yang dirujuk oleh `mobile-app.css`.
+
+## File dan jalur aktif yang dipertahankan
+
+- `frontend/src/app/catalog/VaultCoreV4Page.jsx`, `catalog/page.css`, `catalog/page.jsx`, dan route `/catalog/mlbb-akun` tetap aktif.
+- `frontend/src/app/admin/page.jsx`, `admin/categories/page.jsx`, dan `admin/products/new/page.jsx` tetap dipakai melalui navigasi Owner yang masih merujuk ke sana.
+- `frontend/src/app/admin/v4/page.jsx` dan stylesheet-nya tetap aktif untuk alur Owner v4.
+- Backend `catalog.js`, `catalogV4.js`, `admin.js`, `ownerV4.js`, order, invoice, webhook, serta seluruh migration database dipertahankan karena masih dirujuk runtime atau tercatat pada deployment.
+- Dua arsip aset yang dipakai workflow produksi tetap dipertahankan.
+- Migration 017–019 yang belum ditemukan di repository tidak direkonstruksi atau dihapus dari registry database.
+
+## Batas audit
+
+Pembersihan massal seluruh deklarasi CSS berulang tidak dilakukan hanya berdasarkan jumlah selector. Rule global lain masih dipakai lintas halaman dan memerlukan penelusuran cascade per komponen sebelum dapat dinyatakan usang. Tidak ada penghapusan backend, route aktif, skema, migrasi, produk, stok, harga, credential, Worker, domain, bot, atau database.
+
+## Verifikasi
+
+Status setelah perubahan akan dicatat berdasarkan hasil CI, build, tes inti, dan verifikasi deployment produksi. Browser UAT visual pada perangkat Android tetap perlu pemeriksaan langsung di halaman live.

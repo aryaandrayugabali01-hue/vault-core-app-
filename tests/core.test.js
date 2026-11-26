@@ -885,7 +885,7 @@ test('v4 customer catalog footer follows XTR, account-security and Telegram paym
 
 test('dashboard buyer protection uses the official Vault Core logo and tagline while preserving three trust cards', () => {
   const page = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/src/app/mobile-app.css', import.meta.url), 'utf8');
   const start = page.indexOf('<section className="dashboard-protection"');
   const end = page.indexOf("</section>", start);
   assert.ok(start >= 0 && end > start);
@@ -905,23 +905,18 @@ test('dashboard buyer protection uses the official Vault Core logo and tagline w
   assert.ok(styles.includes('.dashboard-protection-logo'));
 });
 
-test('dashboard home spacing and typography follow the supplied size reference only', () => {
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  const start = styles.indexOf('/* Dashboard home sizing alignment based on supplied UniPin mobile references.');
-  assert.ok(start >= 0);
-  const sizing = styles.slice(start);
-  for (const rule of [
-    '.dashboard-shell{padding-right:clamp(16px,3.2vw,22px);padding-left:clamp(16px,3.2vw,22px)}',
-    '.dashboard-games,.dashboard-featured,.dashboard-collection,.dashboard-guides,.dashboard-transactions,.dashboard-protection{margin:24px 0}',
-    '.dashboard-featured-grid,.dashboard-product-grid,.dashboard-guides-grid{gap:16px}',
-    '.dashboard-protection-grid{gap:14px}',
-    '.dashboard-guide-body h3{font-size:10px;line-height:1.45}',
-    '.dashboard-protection-card p{font-size:8px;line-height:1.5}',
-    '@media(max-width:390px)'
-  ]) assert.ok(sizing.includes(rule), 'Missing size reference rule: ' + rule);
-  assert.equal(/(?:^|[;{])\\s*(?:background|background-color|color|border-color)\\s*:/.test(sizing), false);
+test('all application routes use the approved mobile-only dashboard and catalog composition', () => {
+  const styles = readFileSync(new URL('../frontend/src/app/mobile-app.css', import.meta.url), 'utf8');
+  const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
+  assert.match(styles, /\.vc-mobile-app\{width:min\(100%,430px\);max-width:430px/);
+  assert.match(styles, /\.dashboard-shell\{[\s\S]*?width:min\(100%,430px\)/);
+  assert.match(styles, /\.dashboard-game-grid\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\);gap:5px\}/);
+  assert.match(styles, /\.vc-mobile-app \.vc4-main/);
+  assert.match(styles, /\.vc-mobile-app \.vco-product-layout/);
+  assert.match(styles, /\.vc-mobile-app \.admin-form\{grid-template-columns:minmax\(0,1fr\);[^}]*\}/);
+  assert.match(layout, /className="vc-mobile-app"/);
+  assert.doesNotMatch(styles, /\.dashboard-game-grid\{grid-template-columns:minmax\(0,1fr\)/);
 });
-
 
 test('global legacy chrome remains available while the v4 storefront owns its Apple header', () => {
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');

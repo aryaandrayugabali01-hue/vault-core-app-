@@ -1,5 +1,5 @@
 import './globals.css';
-import './mobile-dashboard.css';
+import './mobile-app.css';
 import Script from 'next/script';
 import { StoreChrome } from '../components/store-navigation.jsx';
 
@@ -28,8 +28,10 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
-        {children}
-        <StoreChrome />
+        <div className="vc-mobile-app">
+          {children}
+          <StoreChrome />
+        </div>
       </body>
     </html>
   );
