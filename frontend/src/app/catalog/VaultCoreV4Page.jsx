@@ -76,6 +76,8 @@ function matchesMlbb(product, filters) {
 
 export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   const [variants,setVariants] = useState([]);
+  const [customer,setCustomer] = useState(null);
+  const [customerChecked,setCustomerChecked] = useState(false);
   const [game,setGame] = useState(initialCategory === 'ALL' ? 'ALL' : initialCategory);
   const [group,setGroup] = useState('ALL');
   const [search,setSearch] = useState('');
@@ -112,14 +114,35 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     }
   },[]);
 
+  const loadCustomer = useCallback(async () => {
+    try {
+      const initData = getInitData();
+      const response = await fetch(API + '/api/customer-auth/session',{
+        headers: initData ? { 'x-telegram-init-data':initData } : {},
+        credentials:'include',
+        cache:'no-store'
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setCustomer(null);
+        return null;
+      }
+      setCustomer(data.user || null);
+      return data.user || null;
+    } finally {
+      setCustomerChecked(true);
+    }
+  },[]);
+
   const loadOrders = useCallback(async () => {
     const initData = getInitData();
-    if (!initData) throw new Error('Buka VAULT CORE melalui Telegram untuk melihat pesanan.');
     const response = await fetch(API + '/api/orders/mine',{
-      headers:{'x-telegram-init-data':initData},cache:'no-store'
+      headers: initData ? {'x-telegram-init-data':initData} : {},
+      credentials:'include',
+      cache:'no-store'
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.message || 'Riwayat pesanan tidak dapat dimuat.');
+    if (!response.ok) throw new Error(data.message || 'Masuk dengan Telegram untuk melihat riwayat transaksi.');
     setOrders(data.orders || []);
     return data.orders || [];
   },[]);
@@ -129,13 +152,14 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     tg?.ready();
     tg?.expand();
     loadCatalog();
+    loadCustomer().catch(() => { setCustomer(null); setCustomerChecked(true); });
     const paid = () => {
       setNotice('Telegram mengonfirmasi pembayaran. Memperbarui pesanan…');
       loadOrders().catch(() => {});
     };
     window.addEventListener('vault:payment-paid',paid);
     return () => window.removeEventListener('vault:payment-paid',paid);
-  },[loadCatalog,loadOrders]);
+  },[loadCatalog,loadOrders,loadCustomer]);
 
   const flatProducts = useMemo(() => variants.flatMap((variant) =>
     (variant.skus || []).map((sku) => ({
@@ -190,18 +214,22 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   };
 
   const checkout = async () => {
-    const initData = getInitData();
-    if (!initData) {
-      setNotice('Checkout hanya tersedia di VAULT CORE Telegram Mini App.');
+    if (!cart.length) return;
+    let activeCustomer = customer;
+    if (!activeCustomer) activeCustomer = await loadCustomer().catch(() => null);
+    if (!activeCustomer) {
+      setNotice('Masuk dengan Telegram terlebih dahulu untuk menyimpan pesanan atas nama Anda.');
+      window.location.assign('/account?next=%2Fcatalog');
       return;
     }
-    if (!cart.length) return;
     setBuying(true);
     setNotice('Menyiapkan invoice Telegram Stars…');
     try {
+      const initData = getInitData();
       const response = await fetch(API + '/api/orders',{
         method:'POST',
-        headers:{'content-type':'application/json','x-telegram-init-data':initData},
+        headers:{'content-type':'application/json',...(initData ? {'x-telegram-init-data':initData} : {})},
+        credentials:'include',
         body:JSON.stringify({items:cart.map(({productId,quantity}) => ({productId,quantity}))})
       });
       const data = await response.json();
@@ -218,6 +246,12 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   };
 
   const showOrders = async () => {
+    let activeCustomer = customer;
+    if (!activeCustomer) activeCustomer = await loadCustomer().catch(() => null);
+    if (!activeCustomer) {
+      window.location.assign('/account?next=%2Fcatalog');
+      return;
+    }
     setOrdersOpen(true);
     setOrdersLoading(true);
     setOrdersError('');
@@ -228,7 +262,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
 
   const submitJokiAccess = async () => {
     const initData = getInitData();
-    if (!initData || !accessTarget || !accessForm.login.trim() || accessForm.password.length < 6) {
+    if (!accessTarget || !accessForm.login.trim() || accessForm.password.length < 6) {
       setAccessNotice('Lengkapi login dan kata sandi dengan benar.');
       return;
     }
@@ -237,7 +271,8 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     try {
       const response = await fetch(API + '/api/orders/' + encodeURIComponent(accessTarget.orderNumber) + '/customer-access',{
         method:'POST',
-        headers:{'content-type':'application/json','x-telegram-init-data':initData},
+        headers:{'content-type':'application/json',...(initData ? {'x-telegram-init-data':initData} : {})},
+        credentials:'include',
         body:JSON.stringify({orderItemId:accessTarget.orderItemId,login:accessForm.login,password:accessForm.password})
       });
       const data = await response.json();
@@ -264,6 +299,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           {Object.entries(GAME_NAMES).map(([code,label]) => <button type="button" key={code} className={game===code?'active':''} onClick={() => setGame(code)}>{label}</button>)}
         </nav>
         <div className="vc4-nav-actions">
+          <a className="vc4-account-link" href="/account">{customer ? 'Akun' : 'Masuk'}</a>
           <button type="button" onClick={showOrders}>Pesanan</button>
           <button type="button" className="vc4-cart-button" onClick={() => setCartOpen(true)}>Keranjang <span>{cart.reduce((n,item)=>n+item.quantity,0)}</span></button>
         </div>
@@ -363,8 +399,8 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         {!loading && visibleVariants.length===0 && <div className="vc4-empty"><h2>Varian belum ditemukan.</h2><p>Ubah pilihan game, jenis produk, atau kata pencarian.</p></div>}
         {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada SKU v4 yang diaktifkan. Owner dapat menyiapkan produk melalui panel pengelolaan berdasarkan 12 varian dan spesifikasi produk yang sesuai jenisnya.</p>}
         <footer className="vc4-footer">
-          <p>VAULT CORE adalah penjual tunggal. Seluruh checkout dan pemantauan pesanan dilakukan melalui VAULT CORE Telegram Mini App.</p>
-          <p>Pembayaran menggunakan invoice resmi Telegram Stars (XTR). Status pembayaran hanya ditetapkan setelah konfirmasi sistem, sedangkan data akses akun disimpan melalui vault terenkripsi.</p>
+          <p>VAULT CORE adalah penjual tunggal. Website dan Telegram Mini App menggunakan akun pelanggan dan backend yang sama.</p>
+          <p>Pembayaran website dibuka melalui invoice Telegram Stars (XTR). Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram, sedangkan data akses Joki disimpan melalui vault terenkripsi.</p>
         </footer>
       </main>
 
