@@ -45,7 +45,7 @@ async function getVariantListingFields(db, variantId) {
 
 router.get('/products',async(_req,res)=>{
  const {rows}=await pool.query(
-  \`SELECT p.id,p.sku,p.name,p.description,p.status,p.game_category,p.tier,p.fulfillment_type,
+  `SELECT p.id,p.sku,p.name,p.description,p.status,p.game_category,p.tier,p.fulfillment_type,
    p.variant_id,p.variant_subtype,p.sale_price_xtr,p.cost_price_xtr,p.image_url,p.image_gallery,p.attributes,
    p.customer_terms,p.fulfillment_eta,p.availability_mode,p.indent_deadline_days,p.stock_quantity_declared,
    p.stock_source_reference,p.customer_input_fields,p.current_rights_review_id,p.created_at,p.updated_at,
@@ -61,7 +61,7 @@ router.get('/products',async(_req,res)=>{
     AND q.pertanyaan_wajib !~* '(login|password|sandi|otp|session|recovery|backup|token|credential|email|username|cookie|retrieval|moderasi|kapasitas tenaga|harga dagangan|stok)'
    LEFT JOIN vault_core_product_question_responses r ON r.product_id=p.id AND r.question_id=q.pertanyaan_id
    LEFT JOIN inventory_items i ON i.product_id=p.id
-   WHERE COALESCE(p.is_test,FALSE)=FALSE GROUP BY p.id,v.variant_id,rr.id ORDER BY p.updated_at DESC LIMIT 250\`
+   WHERE COALESCE(p.is_test,FALSE)=FALSE GROUP BY p.id,v.variant_id,rr.id ORDER BY p.updated_at DESC LIMIT 250`
  );
  return res.json({products:rows.map(r=>({...r,id:Number(r.id),sale_price_xtr:Number(r.sale_price_xtr),cost_price_xtr:Number(r.cost_price_xtr),available_stock:Number(r.available_stock),stock_quantity_declared:Number(r.stock_quantity_declared||0),customer_input_fields:Array.isArray(r.customer_input_fields)?r.customer_input_fields:[]}))});
 });
@@ -138,11 +138,11 @@ router.put('/products/:productId/variant', async (req,res) => {
 
 router.get('/variants',async(_req,res)=>{
  const {rows}=await pool.query(
-  \`SELECT v.variant_id,v.game_code,v.nama_game,v.kategori_produk,v.jenis_varian,v.status_audit,
+  `SELECT v.variant_id,v.game_code,v.nama_game,v.kategori_produk,v.jenis_varian,v.status_audit,
    COALESCE(jsonb_agg(jsonb_build_object('question_id',q.pertanyaan_id,'order',q.urutan_pertanyaan,'question',q.pertanyaan_wajib,'key',q.field_key,'input_type',q.input_type,'options',q.field_options,'placeholder',q.field_placeholder,'max_length',q.field_max_length,'group',q.field_group,'required',q.sifat_item='WAJIB') ORDER BY q.urutan_pertanyaan) FILTER(WHERE q.pertanyaan_id IS NOT NULL),'[]'::jsonb) AS questions
    FROM vault_core_varian_wajib v LEFT JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=v.variant_id AND q.is_public=TRUE
    AND q.pertanyaan_wajib !~* '(login|password|sandi|otp|session|recovery|backup|token|credential|email|username|cookie|retrieval|moderasi|kapasitas tenaga|harga dagangan|stok)'
-   GROUP BY v.variant_id ORDER BY v.variant_id\`
+   GROUP BY v.variant_id ORDER BY v.variant_id`
  );
  return res.json({variants:rows,counts:{variants:rows.length,questions:rows.reduce((n,v)=>n+(Array.isArray(v.questions)?v.questions.length:0),0)}});
 });
@@ -185,25 +185,25 @@ router.post('/products',async(req,res)=>{
    if(p.sku!==sku||Number(p.variant_id)!==variantId){await client.query('ROLLBACK');return res.status(409).json({error:'SKU_VARIANT_IMMUTABLE'});}
    const {rows:reserved}=await client.query("SELECT COUNT(*)::int AS n FROM inventory_items WHERE product_id=$1 AND status='RESERVED'",[productId]);
    if(reserved[0].n){await client.query('ROLLBACK');return res.status(409).json({error:'SKU_HAS_RESERVED_ORDERS'});}
-   await client.query(\`UPDATE products SET name=$2,description=$3,sale_price_xtr=$4,cost_price_xtr=$5,variant_subtype=$6,image_url=$7,image_gallery=$8::jsonb,attributes=$9::jsonb,customer_terms=$10,fulfillment_eta=$11,availability_mode=$12,indent_deadline_days=$13,stock_quantity_declared=$14,stock_source_reference=$15,customer_input_fields=$16::jsonb,status='PAUSED',updated_at=NOW() WHERE id=$1\`,
+   await client.query(`UPDATE products SET name=$2,description=$3,sale_price_xtr=$4,cost_price_xtr=$5,variant_subtype=$6,image_url=$7,image_gallery=$8::jsonb,attributes=$9::jsonb,customer_terms=$10,fulfillment_eta=$11,availability_mode=$12,indent_deadline_days=$13,stock_quantity_declared=$14,stock_source_reference=$15,customer_input_fields=$16::jsonb,status='PAUSED',updated_at=NOW() WHERE id=$1`,
     [productId,name,description,sale,cost,normalizeProductText(b.variantSubtype,120)||null,gallery.value[0],JSON.stringify(gallery.value),JSON.stringify(attrs.value),normalizeProductText(b.customerTerms,4000),eta,account?mode:'READY',indent,qty,source,JSON.stringify(customer)]);
   }else{
    const {rows:dups}=await client.query('SELECT id FROM products WHERE sku=$1 AND COALESCE(is_test,FALSE)=FALSE',[sku]);
    if(dups.length){await client.query('ROLLBACK');return res.status(409).json({error:'SKU_ALREADY_EXISTS',productId:Number(dups[0].id)});}
-   const {rows}=await client.query(\`INSERT INTO products(sku,game_category,tier,name,description,fulfillment_type,sale_price_xtr,cost_price_xtr,status,is_test,variant_id,variant_subtype,image_url,image_gallery,attributes,customer_terms,fulfillment_eta,availability_mode,indent_deadline_days,stock_quantity_declared,stock_source_reference,customer_input_fields)
-    VALUES($1,$2,'SERVICE',$3,$4,$5,$6,$7,'PAUSED',FALSE,$8,$9,$10,$11::jsonb,$12::jsonb,$13,$14,$15,$16,$17,$18,$19::jsonb) RETURNING id,sku\`,
+   const {rows}=await client.query(`INSERT INTO products(sku,game_category,tier,name,description,fulfillment_type,sale_price_xtr,cost_price_xtr,status,is_test,variant_id,variant_subtype,image_url,image_gallery,attributes,customer_terms,fulfillment_eta,availability_mode,indent_deadline_days,stock_quantity_declared,stock_source_reference,customer_input_fields)
+    VALUES($1,$2,'SERVICE',$3,$4,$5,$6,$7,'PAUSED',FALSE,$8,$9,$10,$11::jsonb,$12::jsonb,$13,$14,$15,$16,$17,$18,$19::jsonb) RETURNING id,sku`,
     [sku,GAME_CATEGORY[v.game_code],name,description,account?'GAME_ACCOUNT_TRANSFER':'SERVICE_INSTRUCTIONS',sale,cost,variantId,normalizeProductText(b.variantSubtype,120)||null,gallery.value[0],JSON.stringify(gallery.value),JSON.stringify(attrs.value),normalizeProductText(b.customerTerms,4000),eta,account?mode:'READY',indent,qty,source,JSON.stringify(customer)]);
    p=rows[0];
   }
-  for(const f of fields)await client.query(\`INSERT INTO vault_core_product_question_responses(product_id,question_id,response_text,proof_urls,response_status,created_by_telegram_id) VALUES($1,$2,$3,'[]'::jsonb,'ANSWERED',$4) ON CONFLICT(product_id,question_id) DO UPDATE SET response_text=EXCLUDED.response_text,response_status='ANSWERED',updated_at=NOW()\`,[p.id,f.pertanyaan_id,attrs.value[f.field_key]||'',String(req.telegramUser.id)]);
-  const {rows:rr}=await client.query(\`INSERT INTO product_rights_reviews(product_id,rights_basis,publisher_platform,official_terms_url,authorization_evidence_reference,chain_of_title,transfer_method,region,reviewer_telegram_user_id,valid_until,review_status,review_notes,owner_attested) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id\`,
+  for(const f of fields)await client.query(`INSERT INTO vault_core_product_question_responses(product_id,question_id,response_text,proof_urls,response_status,created_by_telegram_id) VALUES($1,$2,$3,'[]'::jsonb,'ANSWERED',$4) ON CONFLICT(product_id,question_id) DO UPDATE SET response_text=EXCLUDED.response_text,response_status='ANSWERED',updated_at=NOW()`,[p.id,f.pertanyaan_id,attrs.value[f.field_key]||'',String(req.telegramUser.id)]);
+  const {rows:rr}=await client.query(`INSERT INTO product_rights_reviews(product_id,rights_basis,publisher_platform,official_terms_url,authorization_evidence_reference,chain_of_title,transfer_method,region,reviewer_telegram_user_id,valid_until,review_status,review_notes,owner_attested) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
    [p.id,rights.rightsBasis,rights.publisherPlatform,rights.officialTermsUrl,rights.authorizationEvidenceReference,rights.chainOfTitle,rights.transferMethod,rights.region,String(req.telegramUser.id),rights.validUntil,rights.reviewStatus,rights.reviewNotes,rights.ownerAttested]);
   await client.query('UPDATE products SET current_rights_review_id=$2 WHERE id=$1',[p.id,rr[0].id]);
   await client.query("UPDATE inventory_items SET status='UNAVAILABLE' WHERE product_id=$1 AND status='AVAILABLE' AND reserved_order_id IS NULL",[p.id]);
-  let added=0;if(usable&&qty>0){const marker=encryptPayload('VAULTCORE_MANUAL_FULFILLMENT_SLOT_V1');for(let n=0;n<qty;n++){await client.query(\`INSERT INTO inventory_items(product_id,payload_ciphertext,payload_nonce,payload_tag,rights_review_id,source_reference) VALUES($1,$2,$3,$4,$5,$6)\`,[p.id,marker.payload_ciphertext,marker.payload_nonce,marker.payload_tag,rr[0].id,source]);added++;}}
+  let added=0;if(usable&&qty>0){const marker=encryptPayload('VAULTCORE_MANUAL_FULFILLMENT_SLOT_V1');for(let n=0;n<qty;n++){await client.query(`INSERT INTO inventory_items(product_id,payload_ciphertext,payload_nonce,payload_tag,rights_review_id,source_reference) VALUES($1,$2,$3,$4,$5,$6)`,[p.id,marker.payload_ciphertext,marker.payload_nonce,marker.payload_tag,rr[0].id,source]);added++;}}
   const status=usable&&added>0?'ACTIVE':'PAUSED';
   const {rows:result}=await client.query("UPDATE products SET status=$2,updated_at=NOW() WHERE id=$1 RETURNING id,sku,name,status,variant_id,availability_mode,indent_deadline_days,stock_quantity_declared",[p.id,status]);
-  await client.query(\`INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata) VALUES($1,'OWNER_PRODUCT_SINGLE_FORM_SAVED','PRODUCT',$2,$3::jsonb)\`,[String(req.telegramUser.id),String(p.id),JSON.stringify({sku,variantId,category:v.kategori_produk,status,qty,mode:account?mode:null,indentDays:indent})]);
+  await client.query(`INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata) VALUES($1,'OWNER_PRODUCT_SINGLE_FORM_SAVED','PRODUCT',$2,$3::jsonb)`,[String(req.telegramUser.id),String(p.id),JSON.stringify({sku,variantId,category:v.kategori_produk,status,qty,mode:account?mode:null,indentDays:indent})]);
   await client.query('COMMIT');
   return res.status(productId?200:201).json({ok:true,product:result[0],publication:status,stockAvailable:added,message:status==='ACTIVE'?'Produk tersimpan dan tampil pada katalog.':'Produk tersimpan tetapi ditahan sampai review hak disetujui dan stok aktual tersedia.'});
  }catch(e){try{await client.query('ROLLBACK');}catch{}if(e.code==='23505')return res.status(409).json({error:'SKU_ALREADY_EXISTS'});console.error('[owner-product-save]',e.message);return res.status(500).json({error:'OWNER_PRODUCT_SAVE_FAILED'});}finally{client.release();}
