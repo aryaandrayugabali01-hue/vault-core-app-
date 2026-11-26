@@ -206,15 +206,34 @@ function safeAttributes(source) {
     !/^(variant_id)$/i.test(key)
   );
 }
+function renderDetailCopy(value) {
+  const normalized = String(value ?? '')
+    .replace(/\\r\\n|\\n|\\r/g, '\n')
+    .replace(/\r\n?/g, '\n')
+    .replace(/\n(?=(?:INFORMASI PENAWARAN|GARANSI ANTI HACKBACK VAULT CORE))/g, '\n\n')
+    .replace(/((?:INFORMASI PENAWARAN|GARANSI ANTI HACKBACK VAULT CORE))\n/g, '$1\n\n')
+    .trim();
+  if (!normalized) return '';
+  return normalized.split(/\n{2,}/).map((block) => {
+    const lines = block.split('\n').map((line) => line.trim()).filter(Boolean);
+    if (!lines.length) return '';
+    const heading = /^(INFORMASI PENAWARAN|GARANSI ANTI HACKBACK VAULT CORE)$/i.test(lines[0]);
+    if (heading) {
+      return '<section class="detail-copy"><h4>' + esc(lines[0]) + '</h4><p>' +
+        lines.slice(1).map(esc).join('<br>') + '</p></section>';
+    }
+    return '<section class="detail-copy"><p>' + lines.map(esc).join('<br>') + '</p></section>';
+  }).join('');
+}
+
 function productPage(id) {
   const product = state.products.find((item) => String(item.id) === String(id));
   if (!product) return go('/catalog');
   const attrs = safeAttributes(product.attributes);
   const details = [];
-  if (product.description) details.push('<p>' + esc(product.description) + '</p>');
-  if (attrs.length) details.push('<ul>' + attrs.map(([key,value]) => '<li><b>' + esc(key.replace(/[_-]/g,' ')) + ':</b> ' + esc(value) + '</li>').join('') + '</ul>');
-  if (product.customer_terms) details.push('<p>' + esc(product.customer_terms) + '</p>');
-  details.push('<ul><li>Pembayaran Telegram Stars (XTR)</li><li>Penyerahan mengikuti instruksi dan ketentuan produk.</li></ul>');
+  if (product.description) details.push(renderDetailCopy(product.description));
+  if (attrs.length) details.push('<ul class="detail-copy">' + attrs.map(([key,value]) => '<li><b>' + esc(key.replace(/[_-]/g,' ')) + ':</b> ' + esc(value) + '</li>').join('') + '</ul>');
+  if (product.customer_terms) details.push(renderDetailCopy(product.customer_terms));
   setPage(
     headerPage('Detail Produk') +
     '<main>' + productImage(product,'detail-art') +
