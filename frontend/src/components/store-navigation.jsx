@@ -119,9 +119,7 @@ export function StoreChrome() {
   useEffect(() => {
     const syncHash = () => {
       const hash = window.location.hash;
-      if (hash === '#transactions') {
-        setActiveOverride('transactions');
-      } else if (hash === '#catalog-footer-support' || hash === '#catalog-footer-buy-guide' || hash === '#catalog-footer-warranty') {
+      if (hash === '#catalog-footer-support' || hash === '#catalog-footer-buy-guide' || hash === '#catalog-footer-warranty') {
         setActiveOverride('help');
       } else if (hash === '#categories') {
         setActiveOverride('catalog');
