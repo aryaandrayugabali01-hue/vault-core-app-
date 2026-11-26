@@ -24,13 +24,13 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 - Payments: official Telegram Stars invoice (`XTR`) for digital goods/services inside Telegram
 - Digital inventory: AES-256-GCM encrypted payloads
 
-## Current customer storefront — VAULT CORE v5
+## Customer storefront — website and Telegram Mini App
 
-- The production root opens the mobile-only customer storefront at `/miniapp/index.html` in a centered canvas with a maximum width of 430px.
-- Its customer flow follows the supplied 12-screen mobile mockup: Splash, Home, 4-game catalog, 12 master variants, product detail, XTR checkout, payment/order status, history, and profile.
-- The Mini App uses the existing `/api/catalog`, `/api/orders`, and `/api/orders/mine` backend endpoints. Product, price, stock and purchase eligibility are never fabricated in the frontend.
-- Order creation, invoice payment, status and transaction history require a Telegram Mini App session (`initData`). Official Telegram Stars (XTR) remains the only payment method.
-- The existing `vault-core-web`, `vault-core-api`, and `vault-core-gateway` Workers and custom domains are retained. No new Worker, database, or hosting project was added.
+- The public website root redirects to `/catalog`, which renders the existing Next.js/React customer catalog. `/account` provides Telegram OIDC customer sign-in, profile, and web logout.
+- The Telegram bot continues to open the mobile-first static Mini App at `/miniapp/index.html`. Its native customer journey retains the approved 12-screen design, Telegram WebApp navigation, and native `initData` authentication.
+- Website and Mini App use the same `vault-core-api`, catalog services, order endpoints, customer records in Neon `customers`, and inventory/transaction tables. Website authentication uses a signed HttpOnly customer cookie; Mini App authentication continues to use server-validated Telegram `initData`.
+- Both channels create orders through `POST /api/orders` and read history through `GET /api/orders/mine`. Invoice creation and payment confirmation remain handled by the existing Telegram Stars (XTR) Bot API and webhook. A browser opens the Telegram invoice link; an embedded Mini App uses `Telegram.WebApp.openInvoice`.
+- Product, price, stock, purchase eligibility, and order status are always sourced from the backend. No customer account table, payment provider, Worker, API, or database was duplicated.
 
 ## Visual asset source of truth
 
@@ -75,11 +75,17 @@ Set `TELEGRAM_WEBHOOK_URL` to the public API route, then run `npm run setup:webh
 
 Owner authorization uses `owner_accounts` in the production Neon database as its sole source of truth. Protected Owner API routes accept a validated Telegram Mini App `initData` session or a signed, HttpOnly browser session created after Telegram authentication. Owner status is checked server-side on every protected request.
 
-**Web browser login:** open `https://vaultcore.biz.id/admin` and choose **Masuk dengan Telegram**. Telegram OpenID Connect verifies the identity using an authorization-code flow with PKCE; the API validates the signed ID token and checks the Telegram numeric ID against the active Owner registry in Neon. The browser session is signed by the API and stored in a Secure, HttpOnly, SameSite cookie shared only across the VAULT CORE subdomains. No email/password login is used.
+**Owner web login:** open `https://vaultcore.biz.id/admin` and choose **Masuk dengan Telegram**. Telegram OIDC verifies identity; the API checks the Telegram ID against active `owner_accounts` in Neon. The Owner cookie and customer cookie are separate and signed for their own purpose.
 
-**Telegram Login setup:** in `@BotFather` → existing VAULT CORE bot → Login Widget, register Allowed Origin `https://vaultcore.biz.id` and Redirect URI `https://api.vaultcore.biz.id/api/owner-auth/oidc/callback`. Store the Client Secret in GitHub Actions as `TELEGRAM_OIDC_CLIENT_SECRET`. The public Client ID and Redirect URI are configured in `wrangler.api.jsonc`.
+**Customer web login:** open `https://vaultcore.biz.id/account` and choose **Masuk dengan Telegram**. Customer OIDC uses the same Telegram bot Client ID/Secret, a separate callback, and a separate signed HttpOnly cookie. The verified Telegram ID is upserted into the existing `customers` table. Customer cookies authorize only customer routes; they never grant Owner access.
 
-**Mini App login:** users can continue to open VAULT CORE from the Telegram bot. The existing `initData` validation remains supported. In the Mini App, open **Profile → Buka Dashboard Owner** to enter the Owner Console at `/admin`.
+**Telegram Login setup:** in `@BotFather` → existing VAULT CORE bot → Login Widget, register Allowed Origin `https://vaultcore.biz.id` and both Redirect URIs:
+- Owner: `https://api.vaultcore.biz.id/api/owner-auth/oidc/callback`
+- Customer: `https://api.vaultcore.biz.id/api/customer-auth/oidc/callback`
+
+Store the Client Secret in GitHub Actions as `TELEGRAM_OIDC_CLIENT_SECRET`. The public Client ID and both Redirect URIs are configured in `wrangler.api.jsonc`.
+
+**Mini App login:** users continue to open VAULT CORE from the Telegram bot. Customer requests use Telegram `initData`; the same customer ID is resolved in Neon `customers`. Owner entry remains a separate permission check against `owner_accounts`.
 
 
 ## Operational rules
