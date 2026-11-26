@@ -1,7 +1,10 @@
-import { redirect } from 'next/navigation';
+import VaultCoreV4Catalog from './VaultCoreV4Page';
 
-// /catalog is a public alias for the canonical customer catalog.
-// Keep one customer experience across direct links and in-app navigation.
+export const metadata = {
+  title: 'Katalog VAULT CORE | Akun, Joki & Item Game',
+  description: 'Jelajahi katalog VAULT CORE. Produk, harga, stok, dan ketersediaan mengikuti data backend.'
+};
+
 export default function CatalogPage() {
-  redirect('/miniapp/index.html#/catalog');
+  return <VaultCoreV4Catalog />;
 }
