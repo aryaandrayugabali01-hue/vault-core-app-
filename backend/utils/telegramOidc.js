@@ -58,11 +58,13 @@ export async function validateTelegramOidcIdToken(idToken, { clientId, nonce, fe
   if (!Number.isSafeInteger(claims.exp) || claims.exp <= now) throw new Error('TELEGRAM_OIDC_TOKEN_EXPIRED');
   if (!Number.isSafeInteger(claims.iat) || claims.iat > now + 60 || now - claims.iat > 3600) throw new Error('TELEGRAM_OIDC_TOKEN_EXPIRED');
   if (claims.nonce !== nonce) throw new Error('TELEGRAM_OIDC_NONCE_INVALID');
-  const id = String(claims.id ?? '');
+  const id = String(claims.id ?? claims.sub ?? '');
   if (!/^\d+$/.test(id)) throw new Error('TELEGRAM_OIDC_USER_INVALID');
   return {
     id,
     username: typeof claims.preferred_username === 'string' ? claims.preferred_username : undefined,
-    first_name: typeof claims.given_name === 'string' ? claims.given_name : (typeof claims.name === 'string' ? claims.name : '')
+    first_name: typeof claims.given_name === 'string' ? claims.given_name : (typeof claims.name === 'string' ? claims.name : ''),
+    last_name: typeof claims.family_name === 'string' ? claims.family_name : '',
+    photo_url: typeof claims.picture === 'string' ? claims.picture : undefined
   };
 }
