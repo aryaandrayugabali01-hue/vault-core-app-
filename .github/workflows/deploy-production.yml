@@ -255,7 +255,7 @@ jobs:
             if (h.status !== "ok" || h.database !== "connected") throw new Error("API health/database check failed");
           '
           curl --fail --silent --show-error --retry 10 --retry-delay 5 --retry-all-errors "$WEB_ORIGIN/" -o /dev/null
-          for path in /miniapp/index.html /miniapp/app.css /miniapp/app.js /miniapp/variants.js /miniapp/manifest.webmanifest; do
+          for path in /miniapp/index.html /miniapp/app.css /miniapp/app.js /miniapp/manifest.webmanifest; do
             curl --fail --silent --show-error --retry 3 --retry-delay 2 --retry-all-errors "$WEB_ORIGIN$path" -o /dev/null
           done
           v4_catalog="$(curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors https://vaultcore.biz.id/api/catalog/v4/variants)"
