@@ -220,7 +220,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       setCart([]);
       setCartOpen(false);
       setNotice('Invoice ' + data.orderNumber + ' siap dibuka. Total ' + fmt(data.totalXtr) + ' XTR.');
-      if (getTelegramWebApp()) openInvoice(data.invoiceUrl,data.orderNumber);
+      if (initData) openInvoice(data.invoiceUrl,data.orderNumber);
       else window.location.assign(data.invoiceUrl);
     } catch(e) {
       setNotice(e.message || 'Checkout gagal dibuat.');
@@ -277,7 +277,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           {Object.entries(GAME_NAMES).map(([code,label]) => <button type="button" key={code} className={game===code?'active':''} onClick={() => setGame(code)}>{label}</button>)}
         </nav>
         <div className="vc4-nav-actions">
-          {!getTelegramWebApp() && (authState.authenticated
+          {!getInitData() && (authState.authenticated
             ? <><span className="vc4-account-label">{authState.user?.first_name || 'Akun Telegram'}</span><button type="button" onClick={logout}>Keluar</button></>
             : <button type="button" onClick={startTelegramLogin}>Masuk Telegram</button>)}
           <button type="button" onClick={showOrders}>Pesanan</button>
