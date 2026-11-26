@@ -55,7 +55,7 @@ export function readCustomerSession(cookieHeader = '') {
     const received = Buffer.from(signature, 'base64url');
     if (received.length !== expected.length || !crypto.timingSafeEqual(received, expected)) return null;
     const user = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
-    if (!/^\\d+$/.test(String(user.id ?? '')) || !Number.isSafeInteger(Number(user.id))
+    if (!/^\d+$/.test(String(user.id ?? '')) || !Number.isSafeInteger(Number(user.id))
         || Number(user.id) <= 0 || !Number.isFinite(user.exp)
         || user.exp <= Math.floor(Date.now() / 1000)) return null;
     return {
