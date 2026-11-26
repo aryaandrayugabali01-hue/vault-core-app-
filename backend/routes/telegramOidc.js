@@ -75,10 +75,6 @@ function addResultFlag(path, flag) {
   return path + (path.includes('?') ? '&' : '?') + 'telegram_login=' + flag;
 }
 
-function base64url(value) {
-  return Buffer.from(value).toString('base64url');
-}
-
 function decodeJwtPart(value) {
   return JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
 }
@@ -158,7 +154,7 @@ router.get('/start', (req, res) => {
     return res.redirect(302, authorization.toString());
   } catch (error) {
     if (error.message !== 'TELEGRAM_OIDC_NOT_CONFIGURED') console.error('[telegram-oidc-start]', error.message);
-    return res.redirect(302, addResultFlag('/catalog', 'unavailable'));
+    return res.redirect(302, frontendOrigin() + addResultFlag('/catalog', 'unavailable'));
   }
 });
 
