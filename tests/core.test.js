@@ -42,7 +42,7 @@ test('Telegram OIDC transaction creates independent state, nonce and PKCE values
 
 test('Telegram OIDC ID token validation verifies RS256 signature, issuer, audience, expiry and nonce', async () => {
   const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
-  const jwk = { ...publicKey.export({ format: 'jwk' }), kid: 'vault-test-key', use: 'sig', alg: 'RS256' };
+  const jwk = { ...publicKey.export({ format: 'jwk' }), kid: 'vault-test-key', alg: 'RS256' };
   const now = Math.floor(Date.now() / 1000);
   const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
   const header = encode({ alg: 'RS256', typ: 'JWT', kid: 'vault-test-key' });
