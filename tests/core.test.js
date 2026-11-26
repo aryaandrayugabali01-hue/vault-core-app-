@@ -154,6 +154,8 @@ test('Public website serves the backend-owned customer catalog and Telegram acco
   assert.match(account, /api\/customer-auth\/oidc\/start/);
   assert.match(account, /function safeAccountReturnPath/);
   assert.match(account, /setNextPath\(safeAccountReturnPath\(next\)\)/);
+  assert.match(account, /response\.status === 401/);
+  assert.match(account, /throw new Error\(data\.message/);
   assert.match(account, /nextPath \? '\?next=' \+ encodeURIComponent\(nextPath\)/);
   assert.match(account, /href=\{destination\}/);
   assert.match(catalog, /api\/customer-auth\/session/);
