@@ -337,6 +337,10 @@ jobs:
           assets=(
             "/assets/01-brand/vaultcore-horizontal.svg"
             "/assets/02-hero/hero-vaultcore-loop.webp"
+            "/game-icons/mlbb.webp"
+            "/game-icons/free-fire.webp"
+            "/game-icons/roblox.webp"
+            "/game-icons/genshin-impact.webp"
             "/assets/03-categories/category-mlbb.png"
             "/assets/03-categories/category-roblox.png"
             "/assets/03-categories/category-free-fire.png"
