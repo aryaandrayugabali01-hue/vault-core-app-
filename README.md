@@ -24,6 +24,14 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 - Payments: official Telegram Stars invoice (`XTR`) for digital goods/services inside Telegram
 - Digital inventory: AES-256-GCM encrypted payloads
 
+## Current customer storefront — VAULT CORE v5
+
+- The production root opens the mobile-only customer storefront at `/miniapp/index.html` in a centered canvas with a maximum width of 430px.
+- Its customer flow follows the supplied 12-screen mobile mockup: Splash, Home, 4-game catalog, 12 master variants, product detail, XTR checkout, payment/order status, history, and profile.
+- The Mini App uses the existing `/api/catalog`, `/api/orders`, and `/api/orders/mine` backend endpoints. Product, price, stock and purchase eligibility are never fabricated in the frontend.
+- Order creation, invoice payment, status and transaction history require a Telegram Mini App session (`initData`). Official Telegram Stars (XTR) remains the only payment method.
+- The existing `vault-core-web`, `vault-core-api`, and `vault-core-gateway` Workers and custom domains are retained. No new Worker, database, or hosting project was added.
+
 ## Visual asset source of truth
 
 - The authoritative visual asset package is `frontend/VAULT_CORE_ASSET_LIBRARY_v1.0.zip`; CI and production build extract it into `frontend/public/assets/`.
