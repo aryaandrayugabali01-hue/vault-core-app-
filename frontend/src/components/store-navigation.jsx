@@ -13,6 +13,7 @@ function NavigationIcon({ name }) {
   if (name === 'catalog') return <svg {...common}><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg>;
   if (name === 'category') return <svg {...common}><path d="m12 2.8 9.2 9.2-9.2 9.2L2.8 12z"/><circle cx="12" cy="12" r="2"/></svg>;
   if (name === 'help') return <svg {...common}><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l1.8-2.4A7.5 7.5 0 1 1 20 11.5Z"/><path d="M9 10a3 3 0 0 1 6 0c0 1.5-3 2-3 4M12 16.8h.01"/></svg>;
+  if (name === 'receipt') return <svg {...common}><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></svg>;
   if (name === 'chevron') return <svg {...common}><path d="m9 18 6-6-6-6"/></svg>;
   return <svg {...common}><path d="M5 3.5h14v17H5zM8 8h8M8 12h8M8 16h5"/></svg>;
 }
@@ -40,15 +41,23 @@ export function StoreBottomNav({ active = 'dashboard', embedded = false }) {
   const selected = {
     dashboard: active === 'dashboard',
     catalog: active === 'catalog' || active === 'categories',
+    transactions: active === 'transactions',
     help: active === 'help',
     account: accountView || active === 'account'
   };
-  const items = [
+  const ownerItems = [
     { id: 'dashboard', label: 'Beranda', icon: 'home', href: '/' },
     { id: 'catalog', label: 'Produk', icon: 'catalog', href: '/catalog' },
     { id: 'help', label: 'Bantuan', icon: 'help', href: '/catalog#catalog-footer-support' },
-    { id: 'account', label: 'Akun', icon: 'user', href: accountView ? '/admin' : '/catalog#profile' }
+    { id: 'account', label: 'Akun', icon: 'user', href: '/admin' }
   ];
+  const customerItems = [
+    { id: 'dashboard', label: 'Home', icon: 'home', href: '/' },
+    { id: 'catalog', label: 'Katalog', icon: 'catalog', href: '/catalog' },
+    { id: 'transactions', label: 'Transaksi', icon: 'receipt', href: '/catalog#transactions' },
+    { id: 'account', label: 'Profil', icon: 'user', href: '/account' }
+  ];
+  const items = accountView ? ownerItems : customerItems;
   return <nav className={'dashboard-bottom-nav' + (embedded ? ' dashboard-bottom-nav-embedded' : '')} aria-label="Navigasi utama">
     {items.map((item) => <a key={item.id} className={selected[item.id] ? 'active' : ''} href={item.href} aria-current={selected[item.id] ? 'page' : undefined}>
       <span className="dashboard-bottom-nav-icon"><span className="dashboard-bottom-nav-icon-inner"><NavigationIcon name={item.icon}/></span></span>
@@ -56,7 +65,6 @@ export function StoreBottomNav({ active = 'dashboard', embedded = false }) {
     </a>)}
   </nav>;
 }
-
 export function StoreFooter() {
   const links = [
     { label: 'Katalog', href: '/catalog' },
@@ -110,7 +118,9 @@ export function StoreChrome() {
   useEffect(() => {
     const syncHash = () => {
       const hash = window.location.hash;
-      if (hash === '#catalog-footer-support' || hash === '#catalog-footer-buy-guide' || hash === '#catalog-footer-warranty') {
+      if (hash === '#transactions') {
+        setActiveOverride('transactions');
+      } else if (hash === '#catalog-footer-support' || hash === '#catalog-footer-buy-guide' || hash === '#catalog-footer-warranty') {
         setActiveOverride('help');
       } else if (hash === '#categories') {
         setActiveOverride('catalog');
@@ -120,7 +130,7 @@ export function StoreChrome() {
     };
     const syncNavigationState = (event) => {
       const next = event.detail;
-      if (next === 'account' || next === 'catalog' || next === 'help') setActiveOverride(next);
+      if (next === 'account' || next === 'catalog' || next === 'help' || next === 'transactions') setActiveOverride(next);
     };
 
     syncHash();
