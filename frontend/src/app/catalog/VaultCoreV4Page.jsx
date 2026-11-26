@@ -361,7 +361,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         })}
 
         {!loading && visibleVariants.length===0 && <div className="vc4-empty"><h2>Varian belum ditemukan.</h2><p>Ubah pilihan game, jenis produk, atau kata pencarian.</p></div>}
-        {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada SKU v4 yang diaktifkan. Owner dapat menyiapkan produk melalui panel pengelolaan berdasarkan 12 varian dan 47 pertanyaan wajib.</p>}
+        {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada SKU v4 yang diaktifkan. Owner dapat menyiapkan produk melalui panel pengelolaan berdasarkan 12 varian dan spesifikasi produk yang sesuai jenisnya.</p>}
         <footer className="vc4-footer">
           <p>VAULT CORE adalah penjual tunggal. Seluruh checkout dan pemantauan pesanan dilakukan melalui VAULT CORE Telegram Mini App.</p>
           <p>Pembayaran menggunakan invoice resmi Telegram Stars (XTR). Status pembayaran hanya ditetapkan setelah konfirmasi sistem, sedangkan data akses akun disimpan melalui vault terenkripsi.</p>
@@ -380,7 +380,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             {selected.product.customer_terms && <section className="vc4-product-terms"><h3>Ketentuan produk</h3><p>{selected.product.customer_terms}</p></section>}
             {selected.product.fulfillment_eta && <p className="vc4-eta">Estimasi pemenuhan: {selected.product.fulfillment_eta}</p>}
             {selected.product.group === 'Akun' && <section className="vc4-security-guide"><h3>Keamanan Akun</h3><ol><li>Periksa detail akun dan kesesuaian spesifikasi sebelum konfirmasi.</li><li>Ganti kata sandi setelah menerima akses akun.</li><li>Aktifkan verifikasi dua langkah pada akun yang mendukung.</li><li>Pastikan email dan metode pemulihan berada dalam kendali pembeli.</li></ol><p>Garansi mengikuti ketentuan yang ditetapkan pada detail produk.</p></section>}
-            <div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ')}</span><strong>{String(value)}</strong></div>)}</div>
+            <section className="vc4-listing-specs"><h4>Spesifikasi Produk</h4><div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ').replace(/\b[a-z]/g,letter=>letter.toUpperCase())}</span><strong>{String(value)}</strong></div>)}</div></section>
             <div className="vc4-price-large"><PriceDisplay product={selected.product}/></div>
             <button className="vc4-primary" type="button" onClick={()=>addToCart(selected.product)}>Tambah ke keranjang</button>
           </> : <p>Produk pada varian ini akan tampil setelah Owner menyelesaikan SKU, harga, stok, dan verifikasi yang diwajibkan.</p>}

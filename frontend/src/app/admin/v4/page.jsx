@@ -9,9 +9,9 @@ const GAME_CATEGORY={MLBB:'MLBB',FF:'FREE_FIRE',ROBLOX:'ROBLOX',GI:'GENSHIN'};
 const FULFILLMENT={'Akun':'GAME_ACCOUNT_TRANSFER','Jasa Joki':'SERVICE_INSTRUCTIONS','Item In-Game':'SERVICE_INSTRUCTIONS'};
 const STATUS={DRAFT:'Draf',ACTIVE:'Aktif',PAUSED:'Dijeda',ARCHIVED:'Arsip'};
 const LEGACY_VARIANT_BY_SLUG={'mlbb-akun':1,'free-fire-akun':4,'roblox-akun':8,'genshin-akun':10,'roblox-blox-fruits':6,'roblox-adopt-me':7,'roblox-murder-mystery-2':7};
-const initialDraft={variantId:'',sku:'',name:'',description:'',variantSubtype:'',salePriceXtr:'',costPriceXtr:'0',customerTerms:'',fulfillmentEta:'',imageUrl:'',attributes:'{}'};
+const initialDraft={variantId:'',sku:'',name:'',description:'',variantSubtype:'',salePriceXtr:'',costPriceXtr:'0',customerTerms:'',fulfillmentEta:'',imageGalleryText:'',attributes:{}};
 const initialReview={rightsBasis:'',publisherPlatform:'INTERNAL_OWNER',officialTermsUrl:'',authorizationEvidenceReference:'',chainOfTitle:'',transferMethod:'',region:'Global',validUntil:'',reviewStatus:'PENDING',reviewNotes:'',ownerAttested:false};
-const blankAnswer=(question)=>({questionId:Number(question.question_id),responseText:'',proofUrls:[],confirmPostPaymentVault:false});
+const blankAnswer=(question)=>({questionId:Number(question.question_id),responseText:''});
 
 function authHeaders(json=true){
   return {...(json?{'content-type':'application/json'}:{}),'x-telegram-init-data':getInitData()};
@@ -44,8 +44,8 @@ export default function OwnerV4Page(){
 
  const selected=useMemo(()=>products.find(p=>String(p.id)===String(selectedId))||null,[products,selectedId]);
  const selectedVariant=useMemo(()=>variants.find(v=>Number(v.variant_id)===Number(selected?.variant_id)),[variants,selected]);
+ const draftVariant=useMemo(()=>variants.find(v=>Number(v.variant_id)===Number(draft.variantId)),[variants,draft.variantId]);
  const isAccount=selectedVariant?.kategori_produk==='Akun';
- const sensitiveQuestion=(question)=>/(login|password|pass|sandi|otp|session|recovery|token)/i.test(question.question||'');
 
  const refresh=useCallback(async()=>{
    const [variantData,productData]=await Promise.all([
@@ -99,19 +99,18 @@ export default function OwnerV4Page(){
  async function createDraft(event){
   event.preventDefault();setBusy(true);setNotice('');setError('');
   try{
-   const variant=variants.find(v=>Number(v.variant_id)===Number(draft.variantId));
+   const variant=draftVariant;
    if(!variant)throw new Error('Pilih salah satu dari 12 varian resmi.');
-   let attributes={};
-   try{attributes=JSON.parse(draft.attributes||'{}');}catch{throw new Error('Atribut produk harus berupa JSON object yang valid.');}
-   if(!attributes||Array.isArray(attributes)||typeof attributes!=='object')throw new Error('Atribut produk harus berupa objek.');
+   const imageGallery=draft.imageGalleryText.split(/\r?\n/).map(value=>value.trim()).filter(Boolean);
+   if(imageGallery.length<1||imageGallery.length>8)throw new Error('Isi 1 sampai 8 URL gambar produk, satu URL per baris.');
    const data=await api('/api/admin/v4/products',{method:'POST',body:JSON.stringify({
     variantId:Number(variant.variant_id),sku:draft.sku,name:draft.name,description:draft.description,
     variantSubtype:draft.variantSubtype,salePriceXtr:Number(draft.salePriceXtr),costPriceXtr:Number(draft.costPriceXtr),
-    customerTerms:draft.customerTerms,fulfillmentEta:draft.fulfillmentEta,imageUrl:draft.imageUrl||null,
-    imageGallery:[],attributes,fulfillmentType:FULFILLMENT[variant.kategori_produk]
+    customerTerms:draft.customerTerms,fulfillmentEta:draft.fulfillmentEta,imageUrl:imageGallery[0],
+    imageGallery,attributes:draft.attributes,fulfillmentType:FULFILLMENT[variant.kategori_produk]
    })});
    setDraft(initialDraft);await refresh();setSelectedId(String(data.product.id));
-   setNotice('SKU '+data.product.sku+' dibuat sebagai DRAFT. Lengkapi pemeriksaan hak, pertanyaan wajib, dan stok.');
+   setNotice('SKU '+data.product.sku+' dibuat sebagai DRAFT. Spesifikasi produk tersimpan; lanjutkan pemeriksaan hak dan stok aktual.');
   }catch(e){setError(e.message);}finally{setBusy(false);}
  }
 
@@ -127,10 +126,10 @@ export default function OwnerV4Page(){
  async function saveAnswers(event){
   event.preventDefault();if(!selected)return;setBusy(true);setError('');setNotice('');
   try{
-   const payload=questions.map(q=>answers[q.question_id]||blankAnswer(q));
+   const payload=questions.map(q=>({questionId:Number(q.question_id),responseText:answers[q.question_id]?.responseText||''}));
    const data=await api('/api/admin/v4/products/'+selected.id+'/questions',{method:'PUT',body:JSON.stringify({answers:payload})});
    await Promise.all([refresh(),loadQuestions()]);
-   setNotice('Checklist tersimpan: '+data.completed+'/'+data.total+' pertanyaan siap.');
+   setNotice('Spesifikasi tersimpan: '+data.completed+'/'+data.total+' field wajib.');
   }catch(e){setError(e.message);}finally{setBusy(false);}
  }
 
@@ -177,31 +176,41 @@ export default function OwnerV4Page(){
 
  return <main className="vco-shell">
   <header className="vco-header"><a href="/admin">← Dashboard Owner</a><div className="vco-header-brand"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/><span>OWNER V4</span></div><button type="button" onClick={()=>refresh().catch(e=>setError(e.message))}>Muat ulang</button></header>
-  <section className="vco-hero"><div><span>MASTER KATALOG · 12 VARIAN · 47 PERTANYAAN</span><h1>Persiapan Produk.</h1><p>Kelola SKU, hak penjualan, checklist, stok, dan publikasi dari satu alur Owner.</p></div><div className="vco-stats"><b>{variants.length}<small>Varian</small></b><b>{products.length}<small>SKU tersimpan</small></b></div></section>
+  <section className="vco-hero"><div><span>MASTER KATALOG · 12 VARIAN · FIELD LISTING PEMBELI</span><h1>Persiapan Produk.</h1><p>Isi foto, identitas, harga, spesifikasi yang tampil ke pembeli, pemeriksaan hak, dan stok aktual.</p></div><div className="vco-stats"><b>{variants.length}<small>Varian</small></b><b>{products.length}<small>SKU tersimpan</small></b></div></section>
   {error&&<div className="vco-alert error" role="alert">{error}</div>}
   {notice&&<div className="vco-alert" role="status">{notice}</div>}
   <section className="vco-card">
    <div className="vco-section-head"><div><span>STEP 01</span><h2>Buat SKU baru</h2></div><small>Produk baru dimulai sebagai DRAFT</small></div>
    <form onSubmit={createDraft} className="vco-grid">
-    <label className="wide">Master varian<select required value={draft.variantId} onChange={e=>setDraft({...draft,variantId:e.target.value})}><option value="">Pilih 12 varian resmi</option>{variants.map(v=><option key={v.variant_id} value={v.variant_id}>{v.variant_id}. {v.nama_game} · {v.kategori_produk} · {v.jenis_varian}</option>)}</select></label>
-    <label>SKU<input required value={draft.sku} onChange={e=>setDraft({...draft,sku:e.target.value.toUpperCase()})} placeholder="ML-JOKI-001"/></label>
-    <label>Nama produk<input required value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label>
-    <label>Harga jual (XTR)<input required type="number" min="2" step="1" value={draft.salePriceXtr} onChange={e=>setDraft({...draft,salePriceXtr:e.target.value})}/></label>
-    <label>Harga modal internal (XTR)<input type="number" min="0" step="1" value={draft.costPriceXtr} onChange={e=>setDraft({...draft,costPriceXtr:e.target.value})}/></label>
-    <label>Subtipe varian<input value={draft.variantSubtype} onChange={e=>setDraft({...draft,variantSubtype:e.target.value})} placeholder="Rincian spesifik SKU"/></label>
-    <label>Estimasi fulfillment<input value={draft.fulfillmentEta} onChange={e=>setDraft({...draft,fulfillmentEta:e.target.value})}/></label>
-    <label className="wide">Deskripsi<textarea rows="3" value={draft.description} onChange={e=>setDraft({...draft,description:e.target.value})}/></label>
-    <label className="wide">Ketentuan produk<textarea rows="3" value={draft.customerTerms} onChange={e=>setDraft({...draft,customerTerms:e.target.value})}/></label>
-    <label className="wide">URL gambar HTTPS atau /assets/<input value={draft.imageUrl} onChange={e=>setDraft({...draft,imageUrl:e.target.value})}/></label>
-    <label className="wide">Atribut publik (JSON, tanpa kredensial)<textarea rows="4" value={draft.attributes} onChange={e=>setDraft({...draft,attributes:e.target.value})}/></label>
-    <div className="wide vco-form-actions"><button disabled={busy}>{busy?'Menyimpan…':'Simpan DRAFT SKU'}</button></div>
+    <label className="wide">Master varian<select required value={draft.variantId} onChange={e=>{
+      const variant=variants.find(item=>Number(item.variant_id)===Number(e.target.value));
+      const attributes=Object.fromEntries((variant?.questions||[]).map(field=>[field.key,'']));
+      setDraft({...draft,variantId:e.target.value,attributes});
+    }}><option value="">Pilih game dan jenis produk</option>{variants.map(v=><option key={v.variant_id} value={v.variant_id}>{v.variant_id}. {v.nama_game} · {v.kategori_produk} · {v.jenis_varian}</option>)}</select></label>
+    <label>SKU internal<input required value={draft.sku} onChange={e=>setDraft({...draft,sku:e.target.value.toUpperCase()})} placeholder="ML-AKUN-001"/></label>
+    <label>Nama Produk<input required maxLength="160" value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})} placeholder="Akun MLBB Mythic 120 Skin"/></label>
+    <label>Harga Jual (XTR)<input required type="number" min="2" step="1" value={draft.salePriceXtr} onChange={e=>setDraft({...draft,salePriceXtr:e.target.value})}/></label>
+    <label>Harga Modal Internal (XTR)<input type="number" min="0" step="1" value={draft.costPriceXtr} onChange={e=>setDraft({...draft,costPriceXtr:e.target.value})}/></label>
+    <label>Subtipe Varian<input value={draft.variantSubtype} onChange={e=>setDraft({...draft,variantSubtype:e.target.value})} placeholder="Mis. Mythic / Sultan"/></label>
+    <label>Estimasi Pemenuhan<input value={draft.fulfillmentEta} onChange={e=>setDraft({...draft,fulfillmentEta:e.target.value})} placeholder="Mis. Instan / 1–2 jam"/></label>
+    <label className="wide">Galeri Foto Produk · 1–8 URL<textarea required rows="4" value={draft.imageGalleryText} onChange={e=>setDraft({...draft,imageGalleryText:e.target.value})} placeholder={"https://gambar-utama.jpg\nhttps://gambar-detail-1.jpg\nhttps://gambar-detail-2.jpg"}/><small>Satu URL HTTPS atau path /assets/ per baris. Upload file langsung belum tersedia pada penyimpanan produksi saat ini.</small></label>
+    <label className="wide">Deskripsi Utama Produk<textarea rows="3" maxLength="4000" value={draft.description} onChange={e=>setDraft({...draft,description:e.target.value})} placeholder="Jelaskan isi produk secara ringkas dan jelas."/></label>
+    {draftVariant&&<div className="wide vco-listing-fields"><div><strong>Deskripsi Produk</strong><small>Field wajib ini tampil di detail penjualan untuk pembeli.</small></div>
+     {(draftVariant.questions||[]).map(field=><label key={field.question_id}>{field.question}
+      {field.input_type==='select'?<select required value={draft.attributes[field.key]||''} onChange={e=>setDraft({...draft,attributes:{...draft.attributes,[field.key]:e.target.value}})}><option value="">{field.placeholder||'Pilih jawaban'}</option>{(field.options||[]).map(option=><option key={option} value={option}>{option}</option>)}</select>
+      :field.input_type==='textarea'?<textarea required rows="3" maxLength={field.max_length||500} value={draft.attributes[field.key]||''} onChange={e=>setDraft({...draft,attributes:{...draft.attributes,[field.key]:e.target.value}})} placeholder={field.placeholder}/>
+      :<input required type={field.input_type==='number'?'number':'text'} min={field.input_type==='number'?0:undefined} step={field.input_type==='number'?1:undefined} maxLength={field.input_type==='number'?undefined:(field.max_length||160)} value={draft.attributes[field.key]||''} onChange={e=>setDraft({...draft,attributes:{...draft.attributes,[field.key]:e.target.value}})} placeholder={field.placeholder}/>}
+     </label>)}
+    </div>}
+    <label className="wide">Ketentuan Produk untuk Pembeli<textarea rows="3" maxLength="4000" value={draft.customerTerms} onChange={e=>setDraft({...draft,customerTerms:e.target.value})} placeholder="Ketentuan garansi dan pemenuhan produk."/></label>
+    <div className="wide vco-form-actions"><button disabled={busy||!draftVariant}>{busy?'Menyimpan…':'Simpan DRAFT Produk'}</button><small>Stok diisi melalui langkah inventory setelah pemeriksaan hak.</small></div>
    </form>
   </section>
 
   <section className="vco-card">
    <div className="vco-section-head"><div><span>STEP 02</span><h2>Produk dan kesiapan</h2></div><small>Harga, status dan stok berada di bawah Owner</small></div>
    <div className="vco-product-layout">
-    <div className="vco-product-list">{products.map(p=><button type="button" key={p.id} className={String(p.id)===selectedId?'active':''} onClick={()=>setSelectedId(String(p.id))}><strong>{p.sku}</strong><span>{p.name}</span><small>{p.variant_name||'Belum dipetakan'} · {STATUS[p.status]||p.status}</small><small>{p.completed_questions}/{p.required_questions} pertanyaan · {p.available_stock} stok</small></button>)}</div>
+    <div className="vco-product-list">{products.map(p=><button type="button" key={p.id} className={String(p.id)===selectedId?'active':''} onClick={()=>setSelectedId(String(p.id))}><strong>{p.sku}</strong><span>{p.name}</span><small>{p.variant_name||'Belum dipetakan'} · {STATUS[p.status]||p.status}</small><small>{p.completed_questions}/{p.required_questions} spesifikasi · {p.available_stock} stok</small></button>)}</div>
     {selected?<div className="vco-selected">
       <div className="vco-selected-head"><div><span>SKU {selected.sku}</span><h3>{selected.name}</h3><p>{selected.game_name} · {selected.variant_category} · {selected.variant_name}</p></div><b className={selected.status==='ACTIVE'?'good':''}>{STATUS[selected.status]||selected.status}</b></div>
       {!selected.variant_id&&<form className="vco-map-legacy" onSubmit={mapLegacyProduct}>
@@ -236,36 +245,33 @@ export default function OwnerV4Page(){
    </section>
 
    <section className="vco-card">
-    <div className="vco-section-head"><div><span>STEP 04</span><h2>47 pertanyaan wajib</h2></div><small>{questions.length} pertanyaan sesuai varian SKU</small></div>
+    <div className="vco-section-head"><div><span>STEP 04</span><h2>Spesifikasi Produk</h2></div><small>{questions.length} field publik untuk detail penjualan</small></div>
     <form onSubmit={saveAnswers} className="vco-questions">
      {questions.map(q=>{
       const value=answers[q.question_id]||blankAnswer(q);
-      const sensitive=sensitiveQuestion(q);
       return <div className="vco-question" key={q.question_id}>
        <span>{q.question_order}. WAJIB</span><strong>{q.question}</strong>
-       {sensitive?<div className="vco-secret-note">
-        <p>Field sensitif tidak disimpan di checklist. {selectedVariant?.kategori_produk==='Jasa Joki'?'Pelanggan mengirim data akses setelah pembayaran dan menyimpannya di vault terenkripsi.':'Masukkan kredensial per unit melalui form stok terenkripsi.'}</p>
-        {selectedVariant?.kategori_produk==='Jasa Joki'&&<label className="vco-check"><input type="checkbox" checked={value.confirmPostPaymentVault} onChange={e=>setAnswers({...answers,[q.question_id]:{...value,confirmPostPaymentVault:e.target.checked}})}/> Konfirmasi bahwa data akses pelanggan akan diserahkan setelah pembayaran melalui vault.</label>}
-        {selectedVariant?.kategori_produk==='Akun'&&<small>Status otomatis menjadi SECRET_IN_VAULT setelah unit stok terenkripsi lengkap.</small>}
-       </div>:<label><textarea rows="2" value={value.responseText} onChange={e=>setAnswers({...answers,[q.question_id]:{...value,responseText:e.target.value}})} placeholder="Jawaban wajib Owner"/><input value={(value.proofUrls||[]).join('\n')} onChange={e=>setAnswers({...answers,[q.question_id]:{...value,proofUrls:e.target.value.split('\n').map(s=>s.trim()).filter(Boolean)}})} placeholder="URL bukti HTTPS / satu URL per baris"/></label>}
+       <label>{q.input_type==='select'?<select required value={value.responseText} onChange={e=>setAnswers({...answers,[q.question_id]:{...value,responseText:e.target.value}})}><option value="">{q.placeholder||'Pilih jawaban'}</option>{(q.options||[]).map(option=><option key={option} value={option}>{option}</option>)}</select>
+       :q.input_type==='textarea'?<textarea required rows="3" maxLength={q.max_length||500} value={value.responseText} onChange={e=>setAnswers({...answers,[q.question_id]:{...value,responseText:e.target.value}})} placeholder={q.placeholder}/>
+       :<input required type={q.input_type==='number'?'number':'text'} min={q.input_type==='number'?0:undefined} step={q.input_type==='number'?1:undefined} maxLength={q.input_type==='number'?undefined:(q.max_length||160)} value={value.responseText} onChange={e=>setAnswers({...answers,[q.question_id]:{...value,responseText:e.target.value}})} placeholder={q.placeholder}/>}</label>
       </div>;
      })}
-     <button disabled={busy||questions.length===0}>{busy?'Menyimpan…':'Simpan semua jawaban wajib'}</button>
+     <button disabled={busy||questions.length===0}>{busy?'Menyimpan…':'Simpan spesifikasi produk'}</button>
     </form>
    </section>
 
    <section className="vco-card">
-    <div className="vco-section-head"><div><span>STEP 05</span><h2>Tambah stok dan data fulfillment</h2></div><small>{isAccount?'Data akses akun dienkripsi per record':'Slot fulfillment manual tanpa kredensial pelanggan'}</small></div>
+    <div className="vco-section-head"><div><span>STEP 05</span><h2>Stok Aktual Produk</h2></div><small>{isAccount?'Data akses akun dienkripsi per record':'Slot fulfillment manual tanpa kredensial pelanggan'}</small></div>
     <form className="vco-grid" onSubmit={addInventory}>
      <label className="wide">Referensi sumber stok<input required value={inventory.sourceReference} onChange={e=>setInventory({...inventory,sourceReference:e.target.value})} placeholder={isAccount?'VAULTCORE_OWNER_ACCOUNT_STOCK_V1:INTERNAL-OWNER':'VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:OWNER-OPS'}/></label>
      {isAccount&&<label className="wide vco-check"><input type="checkbox" checked={!!inventory.replaceLegacyStock} onChange={e=>setInventory({...inventory,replaceLegacyStock:e.target.checked})}/> Saya mengonfirmasi unit stok lama yang tidak memiliki record vault v4 aktif akan dinonaktifkan setelah kredensial pengganti berhasil dienkripsi.</label>}
-     {isAccount?<label className="wide">JSON array kredensial akun (disimpan terenkripsi)<textarea rows="7" value={inventory.payloads} onChange={e=>setInventory({...inventory,payloads:e.target.value})}/><small>Contoh: [{'{'}"login":"...","password":"..."{'}'}]. Kredensial tidak masuk checklist atau atribut produk.</small></label>:<label>Jumlah slot manual<input type="number" min="1" max="100" value={inventory.quantity} onChange={e=>setInventory({...inventory,quantity:e.target.value})}/></label>}
+     {isAccount?<label className="wide">Unit stok akun (setiap unit dienkripsi)<textarea rows="7" value={inventory.payloads} onChange={e=>setInventory({...inventory,payloads:e.target.value})}/><small>Contoh: [{'{'}"login":"...","password":"..."{'}'}]. Kredensial tidak masuk checklist atau atribut produk.</small></label>:<label>Jumlah Stok (unit)<input type="number" min="1" max="100" value={inventory.quantity} onChange={e=>setInventory({...inventory,quantity:e.target.value})}/></label>}
      <div className="wide vco-form-actions"><button disabled={busy||!selected.rights_approved}>{busy?'Menyimpan…':'Tambahkan stok'}</button><small>Hak harus APPROVED dan masih berlaku sebelum stok dapat ditambahkan.</small></div>
     </form>
    </section>
 
    <section className="vco-card vco-publish">
-    <div><span>STEP 06</span><h2>Terbitkan ke katalog</h2><p>Publikasi hanya berhasil jika hak aktif, harga XTR, stok, dan semua pertanyaan wajib sudah terpenuhi.</p></div>
+    <div><span>STEP 06</span><h2>Terbitkan ke katalog</h2><p>Publikasi hanya berhasil jika hak aktif, harga XTR, stok aktual dan seluruh spesifikasi wajib sudah lengkap.</p></div>
     <button type="button" disabled={busy||selected.status==='ACTIVE'} onClick={publish}>{busy?'Memproses…':'Terbitkan SKU'}</button>
    </section>
   </>}

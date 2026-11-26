@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
-import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes } from '../services/productDetailsService.js';
+import { normalizeProductText, normalizeProductAttributes } from '../services/productDetailsService.js';
 import { normalizeImageGallery } from '../services/marketplaceCategoryService.js';
 import { readJokiCustomerAccess } from '../controllers/secretController.js';
 import { encryptPayload } from '../utils/encryption.js';
@@ -19,7 +19,31 @@ const FULFILLMENT_BY_GROUP = Object.freeze({
   'Jasa Joki': new Set(['SERVICE_INSTRUCTIONS']),
   'Item In-Game': new Set(['SERVICE_INSTRUCTIONS'])
 });
-const SENSITIVE_QUESTION = /(login|password|\bpass\b|kata\s*sandi|otp|session|recovery|token)/i;
+
+function validateListingFields(fields, source) {
+  if (!Array.isArray(fields) || fields.length < 1) return { ok:false, error:'VARIANT_LISTING_FIELDS_NOT_CONFIGURED' };
+  const allowed = new Set(fields.map((field) => field.field_key));
+  for (const key of Object.keys(source || {})) if (!allowed.has(key)) return { ok:false, error:'UNKNOWN_LISTING_FIELD' };
+  const value = {};
+  for (const field of fields) {
+    const text = String(source?.[field.field_key] ?? '').trim();
+    if (field.sifat_item === 'WAJIB' && !text) return { ok:false, error:'REQUIRED_LISTING_FIELD_MISSING', field:field.field_key };
+    if (text.length > Number(field.field_max_length || 160)) return { ok:false, error:'LISTING_FIELD_TOO_LONG', field:field.field_key };
+    if (field.input_type === 'number' && text && !/^\d{1,16}$/.test(text)) return { ok:false, error:'LISTING_FIELD_MUST_BE_NON_NEGATIVE_NUMBER', field:field.field_key };
+    if (field.input_type === 'select' && text && (!Array.isArray(field.field_options) || !field.field_options.includes(text))) return { ok:false, error:'LISTING_FIELD_OPTION_INVALID', field:field.field_key };
+    value[field.field_key] = text;
+  }
+  return { ok:true, value };
+}
+async function getVariantListingFields(db, variantId) {
+  const { rows } = await db.query(
+    `SELECT pertanyaan_id,variant_id,urutan_pertanyaan,pertanyaan_wajib,sifat_item,field_key,input_type,
+            field_options,field_placeholder,field_group,field_max_length,is_public
+     FROM vault_core_pertanyaan_wajib_only WHERE variant_id=$1 AND is_public=TRUE ORDER BY urutan_pertanyaan`,
+    [variantId]
+  );
+  return rows;
+}
 
 router.post('/orders/:orderNumber/customer-access/:orderItemId/read', readJokiCustomerAccess);
 
@@ -133,196 +157,113 @@ router.put('/products/:productId/variant', async (req,res) => {
   }finally{client.release();}
 });
 
-router.get('/variants', async (_req, res) => {
-  const { rows } = await pool.query(
-    `SELECT v.variant_id,v.game_code,v.nama_game,v.kategori_produk,v.jenis_varian,
-            v.status_audit,v.temuan_audit,
-            COALESCE(jsonb_agg(jsonb_build_object(
-              'question_id',q.pertanyaan_id,
-              'order',q.urutan_pertanyaan,
-              'question',q.pertanyaan_wajib,
-              'required',TRUE
-            ) ORDER BY q.urutan_pertanyaan) FILTER (WHERE q.pertanyaan_id IS NOT NULL),'[]'::jsonb) AS questions
-     FROM vault_core_varian_wajib v
-     LEFT JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=v.variant_id
-     GROUP BY v.variant_id
-     ORDER BY v.variant_id`
-  );
-  return res.json({ variants: rows, counts: {
-    variants: rows.length,
-    questions: rows.reduce((n, v) => n + (Array.isArray(v.questions) ? v.questions.length : 0), 0)
-  } });
+router.get('/variants',async(_req,res)=>{
+ const {rows}=await pool.query(
+  `SELECT v.variant_id,v.game_code,v.nama_game,v.kategori_produk,v.jenis_varian,v.status_audit,v.temuan_audit,
+    COALESCE(jsonb_agg(jsonb_build_object(
+      'question_id',q.pertanyaan_id,'order',q.urutan_pertanyaan,'question',q.pertanyaan_wajib,
+      'key',q.field_key,'input_type',q.input_type,'options',q.field_options,'placeholder',q.field_placeholder,
+      'max_length',q.field_max_length,'group',q.field_group,'required',q.sifat_item='WAJIB'
+    ) ORDER BY q.urutan_pertanyaan) FILTER(WHERE q.pertanyaan_id IS NOT NULL),'[]'::jsonb) AS questions
+   FROM vault_core_varian_wajib v
+   LEFT JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=v.variant_id AND q.is_public=TRUE
+   GROUP BY v.variant_id ORDER BY v.variant_id`
+ );
+ return res.json({variants:rows,counts:{variants:rows.length,questions:rows.reduce((n,v)=>n+(Array.isArray(v.questions)?v.questions.length:0),0)}});
 });
 
-router.post('/products', async (req, res) => {
-  const variantId = Number(req.body?.variantId);
-  const sku = String(req.body?.sku ?? '').trim().toUpperCase();
-  const name = normalizeProductText(req.body?.name, 160);
-  const description = normalizeProductText(req.body?.description, 4000);
-  const customerTerms = normalizeProductText(req.body?.customerTerms, 4000);
-  const fulfillmentEta = normalizeProductText(req.body?.fulfillmentEta, 160);
-  const salePriceXtr = Number(req.body?.salePriceXtr);
-  const costPriceXtr = Number(req.body?.costPriceXtr ?? 0);
-  const fulfillmentType = String(req.body?.fulfillmentType ?? '').trim().toUpperCase();
-  const imageUrl = req.body?.imageUrl == null ? null : String(req.body.imageUrl).trim();
-  const imageGallery = normalizeImageGallery(req.body?.imageGallery ?? [], imageUrl);
-  const attributes = normalizeProductAttributes(req.body?.attributes ?? {});
-  const variantResult = await pool.query(
-    'SELECT variant_id,game_code,kategori_produk,jenis_varian FROM vault_core_varian_wajib WHERE variant_id=$1',
-    [variantId]
+router.post('/products',async(req,res)=>{
+ const variantId=Number(req.body?.variantId),sku=String(req.body?.sku??'').trim().toUpperCase();
+ const name=normalizeProductText(req.body?.name,160),description=normalizeProductText(req.body?.description,4000);
+ const customerTerms=normalizeProductText(req.body?.customerTerms,4000),fulfillmentEta=normalizeProductText(req.body?.fulfillmentEta,160);
+ const salePriceXtr=Number(req.body?.salePriceXtr),costPriceXtr=Number(req.body?.costPriceXtr??0);
+ const fulfillmentType=String(req.body?.fulfillmentType??'').trim().toUpperCase();
+ const galleryInput=Array.isArray(req.body?.imageGallery)?req.body.imageGallery:(req.body?.imageUrl?[req.body.imageUrl]:[]);
+ const gallery=normalizeImageGallery(galleryInput,null);
+ const variantResult=await pool.query('SELECT variant_id,game_code,kategori_produk,jenis_varian FROM vault_core_varian_wajib WHERE variant_id=$1',[variantId]);
+ const variant=variantResult.rows[0];
+ if(!Number.isSafeInteger(variantId)||!variant)return res.status(400).json({error:'VARIANT_NOT_FOUND'});
+ if(!/^[A-Z0-9][A-Z0-9._-]{2,63}$/.test(sku)||name.length<3)return res.status(400).json({error:'INVALID_PRODUCT_IDENTITY'});
+ if(!Number.isSafeInteger(salePriceXtr)||salePriceXtr<2||salePriceXtr>2147483647||!Number.isSafeInteger(costPriceXtr)||costPriceXtr<0)return res.status(400).json({error:'INVALID_XTR_PRICE'});
+ if(!GAME_CATEGORY[variant.game_code]||!FULFILLMENT_BY_GROUP[variant.kategori_produk]?.has(fulfillmentType))return res.status(400).json({error:'FULFILLMENT_TYPE_NOT_ALLOWED_FOR_VARIANT'});
+ if(!gallery.ok||gallery.value.length<1||gallery.value.length>8)return res.status(400).json({error:gallery.error??'PRODUCT_IMAGES_REQUIRED'});
+ const fields=await getVariantListingFields(pool,variantId),checked=validateListingFields(fields,req.body?.attributes??{});
+ if(!checked.ok)return res.status(400).json({error:checked.error,field:checked.field??null});
+ const attributes=normalizeProductAttributes(checked.value);
+ if(!attributes.ok)return res.status(400).json({error:attributes.error});
+ const sensitive=Object.entries(attributes.value).some(([key,value])=>
+  /(login|password|\bpass\b|sandi|otp|session|recovery|token|credential|email|username)/i.test(key)
+  ||/(?:password|kata\s*sandi|otp|session|recovery|token)\s*[:=]/i.test(String(value))
+ );
+ if(sensitive)return res.status(400).json({error:'CREDENTIALS_MUST_USE_ENCRYPTED_VAULT'});
+ const client=await pool.connect();
+ try{
+  await client.query('BEGIN');
+  const {rows}=await client.query(
+   `INSERT INTO products(sku,game_category,tier,name,description,fulfillment_type,sale_price_xtr,cost_price_xtr,status,is_test,variant_id,variant_subtype,image_url,image_gallery,attributes,customer_terms,fulfillment_eta)
+    VALUES($1,$2,'SERVICE',$3,$4,$5,$6,$7,'DRAFT',FALSE,$8,$9,$10,$11::jsonb,$12::jsonb,$13,$14)
+    RETURNING id,sku,game_category,name,fulfillment_type,sale_price_xtr,status,variant_id,created_at`,
+   [sku,GAME_CATEGORY[variant.game_code],name,description,fulfillmentType,salePriceXtr,costPriceXtr,variantId,normalizeProductText(req.body?.variantSubtype,120)||null,gallery.value[0],JSON.stringify(gallery.value),JSON.stringify(attributes.value),customerTerms,fulfillmentEta]
   );
-  const variant = variantResult.rows[0];
-
-  if (!Number.isSafeInteger(variantId) || !variant) {
-    return res.status(400).json({ error: 'VARIANT_NOT_FOUND' });
+  const product=rows[0];
+  for(const field of fields){
+   await client.query(`INSERT INTO vault_core_product_question_responses(product_id,question_id,response_text,proof_urls,response_status,created_by_telegram_id) VALUES($1,$2,$3,'[]'::jsonb,'ANSWERED',$4)`,
+    [product.id,field.pertanyaan_id,attributes.value[field.field_key],String(req.telegramUser.id)]);
   }
-  if (!/^[A-Z0-9][A-Z0-9._-]{2,63}$/.test(sku) || name.length < 3) {
-    return res.status(400).json({ error: 'INVALID_PRODUCT_IDENTITY' });
-  }
-  if (!Number.isSafeInteger(salePriceXtr) || salePriceXtr < 2 || salePriceXtr > 2147483647
-      || !Number.isSafeInteger(costPriceXtr) || costPriceXtr < 0) {
-    return res.status(400).json({ error: 'INVALID_XTR_PRICE' });
-  }
-  if (!GAME_CATEGORY[variant.game_code]
-      || !FULFILLMENT_BY_GROUP[variant.kategori_produk]?.has(fulfillmentType)) {
-    return res.status(400).json({ error: 'FULFILLMENT_TYPE_NOT_ALLOWED_FOR_VARIANT' });
-  }
-  if (imageUrl && !isSafeProductImageUrl(imageUrl)) {
-    return res.status(400).json({ error: 'INVALID_PRODUCT_IMAGE_URL' });
-  }
-  const sensitiveAttribute = attributes.ok && Object.entries(attributes.value).some(([key, value]) =>
-    /(login|password|\bpass\b|sandi|otp|session|recovery|token|credential|email|username)/i.test(key)
-    || /(?:password|kata\s*sandi|otp|session|recovery|token)\s*[:=]/i.test(String(value))
-  );
-  if (sensitiveAttribute) return res.status(400).json({ error: 'CREDENTIALS_MUST_USE_ENCRYPTED_VAULT' });
-  if (!imageGallery.ok || !attributes.ok) {
-    return res.status(400).json({ error: imageGallery.error ?? attributes.error ?? 'INVALID_PRODUCT_DETAILS' });
-  }
-
-  try {
-    const { rows } = await pool.query(
-      `INSERT INTO products
-        (sku,game_category,tier,name,description,fulfillment_type,sale_price_xtr,cost_price_xtr,
-         status,is_test,variant_id,variant_subtype,image_url,image_gallery,attributes,
-         customer_terms,fulfillment_eta)
-       VALUES ($1,$2,'SERVICE',$3,$4,$5,$6,$7,'DRAFT',FALSE,$8,$9,$10,$11::jsonb,$12::jsonb,$13,$14)
-       RETURNING id,sku,game_category,name,fulfillment_type,sale_price_xtr,status,variant_id,created_at`,
-      [
-        sku,GAME_CATEGORY[variant.game_code],name,description,fulfillmentType,salePriceXtr,costPriceXtr,
-        variantId,normalizeProductText(req.body?.variantSubtype,120) || null,imageUrl,
-        JSON.stringify(imageGallery.value),JSON.stringify(attributes.value),customerTerms,fulfillmentEta
-      ]
-    );
-    const product = rows[0];
-    await pool.query(
-      `INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata)
-       VALUES($1,'V4_PRODUCT_DRAFT_CREATED','PRODUCT',$2,$3::jsonb)`,
-      [String(req.telegramUser.id),String(product.id),JSON.stringify({ variantId,sku })]
-    );
-    return res.status(201).json({ product, publication: 'DRAFT_REQUIRES_OWNER_REVIEW' });
-  } catch (error) {
-    if (error.code === '23505') return res.status(409).json({ error: 'SKU_ALREADY_EXISTS' });
-    console.error('[v4-product-draft]', error.message);
-    return res.status(500).json({ error: 'V4_PRODUCT_CREATE_FAILED' });
-  }
+  await client.query(`INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata) VALUES($1,'V4_PRODUCT_DRAFT_CREATED','PRODUCT',$2,$3::jsonb)`,
+   [String(req.telegramUser.id),String(product.id),JSON.stringify({variantId,sku,imageCount:gallery.value.length,listingFields:fields.length})]);
+  await client.query('COMMIT');
+  return res.status(201).json({product,publication:'DRAFT_REQUIRES_OWNER_REVIEW'});
+ }catch(error){
+  try{await client.query('ROLLBACK');}catch{}
+  if(error.code==='23505')return res.status(409).json({error:'SKU_ALREADY_EXISTS'});
+  console.error('[v4-product-draft]',error.message);
+  return res.status(500).json({error:'V4_PRODUCT_CREATE_FAILED'});
+ }finally{client.release();}
 });
 
-router.put('/products/:productId/questions', async (req, res) => {
-  const productId = Number(req.params.productId);
-  const answers = req.body?.answers;
-  if (!Number.isSafeInteger(productId) || productId <= 0 || !Array.isArray(answers) || answers.length > 47) {
-    return res.status(400).json({ error: 'INVALID_QUESTION_RESPONSES' });
+router.put('/products/:productId/questions',async(req,res)=>{
+ const productId=Number(req.params.productId),answers=req.body?.answers;
+ if(!Number.isSafeInteger(productId)||productId<=0||!Array.isArray(answers)||answers.length>24)return res.status(400).json({error:'INVALID_LISTING_FIELDS'});
+ const {rows:products}=await pool.query('SELECT id,variant_id FROM products WHERE id=$1 AND COALESCE(is_test,FALSE)=FALSE',[productId]);
+ const product=products[0];if(!product?.variant_id)return res.status(404).json({error:'V4_PRODUCT_NOT_FOUND'});
+ const fields=await getVariantListingFields(pool,product.variant_id),answerById=new Map();
+ for(const answer of answers){const id=Number(answer?.questionId);if(!Number.isSafeInteger(id)||answerById.has(id))return res.status(400).json({error:'INVALID_LISTING_FIELD_ID'});answerById.set(id,String(answer?.responseText??''));}
+ if(answerById.size!==fields.length||fields.some(f=>!answerById.has(Number(f.pertanyaan_id))))return res.status(400).json({error:'ALL_LISTING_FIELDS_REQUIRED'});
+ const input=Object.fromEntries(fields.map(f=>[f.field_key,answerById.get(Number(f.pertanyaan_id))]));
+ const checked=validateListingFields(fields,input);if(!checked.ok)return res.status(400).json({error:checked.error,field:checked.field??null});
+ const normalized=normalizeProductAttributes(checked.value);if(!normalized.ok)return res.status(400).json({error:normalized.error});
+ const client=await pool.connect();
+ try{
+  await client.query('BEGIN');
+  await client.query('UPDATE products SET attributes=$2::jsonb,updated_at=NOW() WHERE id=$1',[productId,JSON.stringify(normalized.value)]);
+  for(const field of fields){
+   await client.query(`INSERT INTO vault_core_product_question_responses(product_id,question_id,response_text,proof_urls,response_status,created_by_telegram_id)
+    VALUES($1,$2,$3,'[]'::jsonb,'ANSWERED',$4)
+    ON CONFLICT(product_id,question_id) DO UPDATE SET response_text=EXCLUDED.response_text,proof_urls='[]'::jsonb,response_status='ANSWERED',updated_at=NOW()`,
+    [productId,field.pertanyaan_id,normalized.value[field.field_key],String(req.telegramUser.id)]);
   }
-  const { rows: products } = await pool.query(
-    'SELECT p.id,p.variant_id,v.kategori_produk AS variant_group FROM products p JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id WHERE p.id=$1 AND COALESCE(p.is_test,FALSE)=FALSE',
-    [productId]
-  );
-  const product = products[0];
-  if (!product || !product.variant_id) return res.status(404).json({ error: 'V4_PRODUCT_NOT_FOUND' });
-  const { rows: questions } = await pool.query(
-    `SELECT pertanyaan_id,pertanyaan_wajib
-     FROM vault_core_pertanyaan_wajib_only WHERE variant_id=$1`,
-    [product.variant_id]
-  );
-  const questionById = new Map(questions.map((q) => [Number(q.pertanyaan_id), q]));
-  const actor = String(req.telegramUser.id);
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    for (const answer of answers) {
-      const questionId = Number(answer?.questionId);
-      const question = questionById.get(questionId);
-      if (!question) throw Object.assign(new Error('QUESTION_NOT_IN_PRODUCT_VARIANT'),{status:400});
-      const responseText = normalizeProductText(answer?.responseText, 4000);
-      const proofUrls = answer?.proofUrls ?? [];
-      if (!Array.isArray(proofUrls) || proofUrls.length > 8
-          || proofUrls.some((url) => {
-            const value = String(url ?? '').trim();
-            if (!value || value.length > 2048) return true;
-            try { return new URL(value).protocol !== 'https:'; } catch { return !/^\/assets\/[A-Za-z0-9_./-]+$/.test(value); }
-          })) {
-        throw Object.assign(new Error('INVALID_QUESTION_PROOF_URLS'),{status:400});
-      }
-      const sensitive = SENSITIVE_QUESTION.test(question.pertanyaan_wajib);
-      if (sensitive && responseText) {
-        throw Object.assign(new Error('SECRET_MUST_BE_SUBMITTED_TO_ENCRYPTED_VAULT'),{status:400});
-      }
-      const jokiAccessWorkflowConfirmed = productVariantGroup(product.variant_group, question.pertanyaan_wajib)
-        && answer?.confirmPostPaymentVault === true;
-      const responseStatus = sensitive
-        ? (jokiAccessWorkflowConfirmed ? 'OWNER_VERIFIED' : 'PENDING')
-        : (responseText || proofUrls.length ? 'ANSWERED' : 'PENDING');
-      await client.query(
-        `INSERT INTO vault_core_product_question_responses
-          (product_id,question_id,response_text,proof_urls,response_status,created_by_telegram_id)
-         VALUES($1,$2,$3,$4::jsonb,$5,$6)
-         ON CONFLICT(product_id,question_id) DO UPDATE SET
-          response_text=EXCLUDED.response_text,proof_urls=EXCLUDED.proof_urls,
-          response_status=EXCLUDED.response_status,updated_at=NOW()`,
-        [productId,questionId,sensitive ? '' : responseText,JSON.stringify(proofUrls),responseStatus,actor]
-      );
-    }
-    await client.query('COMMIT');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    return res.status(error.status ?? 500).json({ error: error.status ? error.message : 'QUESTION_RESPONSE_SAVE_FAILED' });
-  } finally {
-    client.release();
-  }
-  const { rows: progress } = await pool.query(
-    `SELECT COUNT(*)::int AS total,
-       COUNT(*) FILTER (WHERE r.response_status IN ('ANSWERED','OWNER_VERIFIED','SECRET_IN_VAULT'))::int AS completed
-     FROM vault_core_pertanyaan_wajib_only q
-     LEFT JOIN vault_core_product_question_responses r ON r.question_id=q.pertanyaan_id AND r.product_id=$1
-     WHERE q.variant_id=$2`,
-    [productId,product.variant_id]
-  );
-  return res.json({ ok: true, productId, ...progress[0], publication: 'DRAFT_REQUIRES_OWNER_REVIEW' });
+  await client.query('COMMIT');
+ }catch(error){try{await client.query('ROLLBACK');}catch{}console.error('[v4-listing-fields-save]',error.message);return res.status(500).json({error:'LISTING_FIELDS_SAVE_FAILED'});}
+ finally{client.release();}
+ return res.json({ok:true,productId,total:fields.length,completed:fields.length,attributes:normalized.value});
 });
 
-router.get('/products/:productId/questions', async (req, res) => {
-  const productId = Number(req.params.productId);
-  if (!Number.isSafeInteger(productId) || productId <= 0) return res.status(400).json({ error:'INVALID_PRODUCT_ID' });
-  const { rows } = await pool.query(
-    `SELECT q.pertanyaan_id AS question_id,q.urutan_pertanyaan AS question_order,
-            q.pertanyaan_wajib AS question,q.sifat_item AS item_type,
-            COALESCE(r.response_text,'') AS response_text,
-            COALESCE(r.proof_urls,'[]'::jsonb) AS proof_urls,
-            COALESCE(r.response_status,'PENDING') AS response_status
-     FROM products p
-     JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=p.variant_id
-     LEFT JOIN vault_core_product_question_responses r
-       ON r.product_id=p.id AND r.question_id=q.pertanyaan_id
-     WHERE p.id=$1 ORDER BY q.urutan_pertanyaan`,
-    [productId]
-  );
-  if (!rows.length) {
-    const exists = await pool.query('SELECT 1 FROM products WHERE id=$1 AND variant_id IS NOT NULL',[productId]);
-    if (!exists.rowCount) return res.status(404).json({ error:'V4_PRODUCT_NOT_FOUND' });
-  }
-  return res.json({ questions: rows });
+router.get('/products/:productId/questions',async(req,res)=>{
+ const productId=Number(req.params.productId);
+ if(!Number.isSafeInteger(productId)||productId<=0)return res.status(400).json({error:'INVALID_PRODUCT_ID'});
+ const {rows}=await pool.query(
+  `SELECT q.pertanyaan_id AS question_id,q.urutan_pertanyaan AS question_order,q.pertanyaan_wajib AS question,
+    q.sifat_item AS item_type,q.field_key,q.input_type,q.field_options AS options,q.field_placeholder AS placeholder,
+    q.field_max_length AS max_length,q.field_group,q.is_public,
+    COALESCE(r.response_text,p.attributes->>q.field_key,'') AS response_text,
+    COALESCE(r.response_status,'PENDING') AS response_status
+   FROM products p JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=p.variant_id AND q.is_public=TRUE
+   LEFT JOIN vault_core_product_question_responses r ON r.product_id=p.id AND r.question_id=q.pertanyaan_id
+   WHERE p.id=$1 ORDER BY q.urutan_pertanyaan`,[productId]);
+ if(!rows.length){const exists=await pool.query('SELECT 1 FROM products WHERE id=$1 AND variant_id IS NOT NULL',[productId]);if(!exists.rowCount)return res.status(404).json({error:'V4_PRODUCT_NOT_FOUND'});}
+ return res.json({questions:rows});
 });
-
 
 router.post('/products/:productId/inventory', async (req, res) => {
   const productId = Number(req.params.productId);

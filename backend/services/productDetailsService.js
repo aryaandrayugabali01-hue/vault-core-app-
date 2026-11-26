@@ -38,7 +38,7 @@ export function normalizeProductAttributes(value = {}) {
     const key = String(rawKey).trim().replace(/\s+/g, ' ');
     const text = String(rawValue).trim();
     const folded = key.toLocaleLowerCase('en');
-    if (key.length < 2 || key.length > 40 || text.length < 1 || text.length > 160
+    if (key.length < 2 || key.length > 40 || text.length < 1 || text.length > 500
         || /[\u0000-\u001f\u007f]/.test(key + text)
         || ['__proto__','prototype','constructor'].includes(folded) || seen.has(folded)) {
       return { ok:false, error:'INVALID_PRODUCT_ATTRIBUTES' };
@@ -48,6 +48,6 @@ export function normalizeProductAttributes(value = {}) {
   }
   normalized.sort(([a],[b]) => a.localeCompare(b, 'en'));
   const result = Object.fromEntries(normalized);
-  if (new TextEncoder().encode(JSON.stringify(result)).length > 4096) return { ok:false, error:'INVALID_PRODUCT_ATTRIBUTES' };
+  if (new TextEncoder().encode(JSON.stringify(result)).length > 8192) return { ok:false, error:'INVALID_PRODUCT_ATTRIBUTES' };
   return { ok:true, value:result };
 }

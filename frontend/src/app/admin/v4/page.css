@@ -120,3 +120,13 @@
   .vco-question{grid-template-columns:minmax(0,1fr)}
   .vco-question>label,.vco-secret-note{grid-column:1}
 }
+.vco-listing-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;padding:15px;border:1px solid rgba(255,201,40,.2);border-radius:14px;background:rgba(8,15,29,.55)}
+.vco-listing-fields>div{grid-column:1/-1;display:grid;gap:5px}
+.vco-listing-fields>div strong{color:#f7f8fc;font-size:13px}
+.vco-listing-fields>div small{color:var(--vco-muted);font-size:10px;line-height:1.5}
+.vco-listing-fields label{display:flex;flex-direction:column;gap:7px;min-width:0;color:#dbe3f0;font-size:11px;font-weight:700}
+.vco-listing-fields input,.vco-listing-fields select,.vco-listing-fields textarea,.vco-question select{box-sizing:border-box;width:100%;min-width:0;padding:11px 12px;border:1px solid rgba(160,139,255,.25);border-radius:11px;background:#080f1d;color:#f5f7fc;font:12px "Plus Jakarta Sans",Inter,Arial,sans-serif}
+.vco-listing-fields input:focus,.vco-listing-fields select:focus,.vco-listing-fields textarea:focus,.vco-question select:focus{border-color:#ffc928;outline:2px solid rgba(255,201,40,.12);outline-offset:1px}
+.vco-listing-fields input::placeholder,.vco-listing-fields textarea::placeholder,.vco-question input::placeholder,.vco-question textarea::placeholder{color:#75839a}
+.vco-question select{margin-top:2px}
+@media(max-width:760px){.vco-listing-fields{grid-template-columns:minmax(0,1fr);gap:11px}.vco-listing-fields>div{grid-column:1}}

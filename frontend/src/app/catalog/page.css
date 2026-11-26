@@ -435,3 +435,6 @@ border-color:rgba(190,204,224,.25);background:rgba(15,23,36,.78);color:#e8edf5;}
   .vc4-purchase-journey ol{grid-template-columns:1fr;gap:9px}
   .vc4-purchase-journey li small{font-size:9px}
 }
+
+.vc4-listing-specs{margin:18px 0 0}
+.vc4-listing-specs h4{margin:0 0 10px;color:#f4d36f;font-size:12px;font-weight:850;letter-spacing:.04em}

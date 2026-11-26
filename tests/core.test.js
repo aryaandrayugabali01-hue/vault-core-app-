@@ -752,7 +752,7 @@ test('v4 product lifecycle requires Owner rights review, all questions, stock an
   assert.match(ownerRoute, /vault_core_secret_payloads/);
   assert.match(ownerRoute, /V4_PRODUCT_PUBLICATION_REQUIREMENTS_NOT_MET/);
   assert.match(ownerPage, /Simpan pemeriksaan hak/);
-  assert.match(ownerPage, /Simpan semua jawaban wajib/);
+  assert.match(ownerPage, /Simpan spesifikasi produk/);
   assert.match(ownerPage, /Tambahkan stok/);
   assert.match(ownerPage, /Terbitkan SKU/);
   assert.ok(migration.includes('DROP CONSTRAINT IF EXISTS products_status_check'));
@@ -871,8 +871,13 @@ test('v4 account catalogue shows MLBB filters only for MLBB accounts', () => {
   assert.match(styles, /vc4-check/);
   const ownerV4 = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
   const ownerRoutes = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
-  assert.match(ownerV4, /Pilih 12 varian resmi/);
-  assert.match(ownerV4, /Simpan semua jawaban wajib/);
+  assert.match(ownerV4, /Pilih game dan jenis produk/);
+  assert.match(ownerV4, /Galeri Foto Produk/);
+  assert.match(ownerV4, /Deskripsi Produk/);
+  assert.match(ownerV4, /Simpan spesifikasi produk/);
+  assert.match(ownerRoutes, /field_key/);
+  assert.match(ownerRoutes, /validateListingFields/);
+  assert.match(ownerRoutes, /imageGallery/);
   assert.match(ownerRoutes, /vault_core_pertanyaan_wajib_only/);
 });
 
