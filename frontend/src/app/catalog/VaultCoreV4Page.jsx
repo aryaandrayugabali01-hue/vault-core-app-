@@ -102,10 +102,6 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   const [orders,setOrders] = useState([]);
   const [ordersLoading,setOrdersLoading] = useState(false);
   const [ordersError,setOrdersError] = useState('');
-  const [accessTarget,setAccessTarget] = useState(null);
-  const [accessForm,setAccessForm] = useState({login:'',password:''});
-  const [accessSaving,setAccessSaving] = useState(false);
-  const [accessNotice,setAccessNotice] = useState('');
 
   const loadCatalog = useCallback(async () => {
     setLoading(true);
@@ -338,30 +334,6 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     return () => window.removeEventListener('hashchange',openOrdersFromHash);
   },[showOrders]);
 
-  const submitJokiAccess = async () => {
-    const initData = getInitData();
-    if (!accessTarget || !accessForm.login.trim() || accessForm.password.length < 6) {
-      setAccessNotice('Lengkapi login dan kata sandi dengan benar.');
-      return;
-    }
-    setAccessSaving(true);
-    setAccessNotice('');
-    try {
-      const response = await fetch(API + '/api/orders/' + encodeURIComponent(accessTarget.orderNumber) + '/customer-access',{
-        method:'POST',
-        headers:{'content-type':'application/json',...(initData ? {'x-telegram-init-data':initData} : {})},
-        credentials:'include',
-        body:JSON.stringify({orderItemId:accessTarget.orderItemId,login:accessForm.login,password:accessForm.password})
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || data.error || 'Data akses tidak dapat disimpan.');
-      setAccessForm({login:'',password:''});
-      setAccessNotice('Akses tersimpan dengan enkripsi. Owner akan memproses layanan.');
-      setNotice('Data akses pesanan ' + accessTarget.orderNumber + ' tersimpan aman.');
-    } catch(e) { setAccessNotice(e.message || 'Data akses tidak dapat disimpan.'); }
-    finally { setAccessSaving(false); }
-  };
-
   const totalXtr = cart.reduce((sum,item) => sum + item.price * item.quantity,0);
   const activeVariant = selected ? variants.find((item) => Number(item.variant_id) === selected.variant_id) : null;
   const noActiveSku = visibleProducts.length === 0;
@@ -523,24 +495,13 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           {ordersLoading ? <p>Memuat pesanan…</p> : ordersError ? <p className="vc4-error-text">{ordersError}</p> : orders.length===0 ? <p>Belum ada pesanan.</p> : orders.map((order)=><article className="vc4-order" key={order.order_number}>
             <header><strong>{order.order_number}</strong><span>{STATUS[order.status]||order.status}</span></header>
             {(order.items||[]).map((item)=><div className="vc4-order-item" key={item.orderItemId||item.name}><span>{item.name} × {item.quantity}</span>
-              {item.category==='Jasa Joki' && ['PAID','FULFILLING'].includes(order.status) && <button type="button" onClick={()=>{setAccessTarget({orderNumber:order.order_number,orderItemId:item.orderItemId});setAccessNotice('');}}>Kirim akses untuk Joki</button>}
+{item.category==='Jasa Joki' && <small className="vc4-joki-input-note">Form data Joki tanpa kredensial belum tersedia. Jangan kirim password, OTP, atau kode autentikasi.</small>}
             </div>)}
             <footer>★ {fmt(order.total_xtr)} XTR · {new Date(order.created_at).toLocaleString('id-ID')}</footer>
           </article>)}
         </section>
       </div>}
 
-      {accessTarget && <div className="vc4-overlay" onClick={()=>setAccessTarget(null)}>
-        <section className="vc4-dialog" role="dialog" aria-modal="true" aria-label="Akses layanan Joki" onClick={(e)=>e.stopPropagation()}>
-          <button className="vc4-close" type="button" onClick={()=>setAccessTarget(null)}>×</button>
-          <span className="vc4-eyebrow">JOKI · AKSES PESANAN</span><h2>Data akses.</h2>
-          <p>Data login dikirim langsung ke VAULT CORE dan disimpan terenkripsi untuk pesanan ini.</p>
-          <label>Username / Email<input value={accessForm.login} onChange={(e)=>setAccessForm({...accessForm,login:e.target.value})} autoComplete="off"/></label>
-          <label>Kata sandi<input type="password" value={accessForm.password} onChange={(e)=>setAccessForm({...accessForm,password:e.target.value})} autoComplete="new-password"/></label>
-          {accessNotice && <p className="vc4-access-notice">{accessNotice}</p>}
-          <button className="vc4-primary" type="button" disabled={accessSaving} onClick={submitJokiAccess}>{accessSaving?'Menyimpan terenkripsi…':'Kirim akses aman'}</button>
-        </section>
-      </div>}
     </div>
   );
 }

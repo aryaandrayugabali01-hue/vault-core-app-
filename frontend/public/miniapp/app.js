@@ -7,7 +7,7 @@ const inTelegram = Boolean(tg && tg.initData);
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 const money = new Intl.NumberFormat('id-ID');
-const state = { variants: [], products: [], loaded: false, loadError: '', orderFilter: 'all', orderRows: [], accessTarget: null, catalogGroup:'ALL', catalogGame:'ALL', search:'' };
+const state = { variants: [], products: [], loaded: false, loadError: '', orderFilter: 'all', orderRows: [], catalogGroup:'ALL', catalogGame:'ALL', search:'' };
 let checkout = null;
 let lastInvoice = null;
 let renderId = 0;
@@ -492,40 +492,13 @@ function paintOrderRows() {
     const items = Array.isArray(row.items) ? row.items : [];
     const itemNames = items.map((item) => item.name).filter(Boolean).join(', ');
     const date = row.created_at ? new Date(row.created_at).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-    const jokiItems = ['PAID','FULFILLING'].includes(row.status)
-      ? items.filter((item) => item.category === 'Jasa Joki' && item.orderItemId)
-      : [];
-    const jokiActions = jokiItems.map((item) =>
-      '<button class="cta alt" type="button" data-action="joki-access" data-order="' + esc(row.order_number) + '" data-item="' + esc(item.orderItemId) + '">Kirim akses aman untuk ' + esc(item.name) + '</button>'
-    ).join('');
-    const form = state.accessTarget && state.accessTarget.orderNumber === row.order_number
-      ? '<div class="box"><b>Data akses Joki</b><p>Data dikirim langsung ke backend dan disimpan dalam vault terenkripsi.</p><label class="label" for="joki-login">Username / Email</label><input class="input" id="joki-login" type="text" autocomplete="off" maxlength="240"><label class="label" for="joki-password">Kata sandi</label><input class="input" id="joki-password" type="password" autocomplete="new-password" maxlength="1200"><button class="cta" type="button" data-action="submit-joki-access">Simpan akses terenkripsi</button><button class="cta alt" type="button" data-action="cancel-joki-access">Batalkan</button></div>'
+    const jokiNotice = items.some((item) => item.category === 'Jasa Joki')
+      ? '<div class="box info">Form data Joki tanpa kredensial belum tersedia. Jangan kirim password, OTP, atau kode autentikasi.</div>'
       : '';
-    return '<div class="order-row"><span class="list-art"><img src="/assets/01-brand/vaultcore-mark.svg" alt=""></span><span class="tx"><small>' + esc(row.order_number) + ' · ' + esc(date) + '</small><b>' + esc(itemNames || 'Pesanan VAULT CORE') + '</b><small>★ ' + fmt(row.total_xtr) + ' XTR</small></span><span class="status ' + statusClass(row.status) + '">' + esc(STATUS[row.status] || row.status) + '</span></div>' + jokiActions + form;
+    return '<div class="order-row"><span class="list-art"><img src="/assets/01-brand/vaultcore-mark.svg" alt=""></span><span class="tx"><small>' + esc(row.order_number) + ' · ' + esc(date) + '</small><b>' + esc(itemNames || 'Pesanan VAULT CORE') + '</b><small>★ ' + fmt(row.total_xtr) + ' XTR</small></span><span class="status ' + statusClass(row.status) + '">' + esc(STATUS[row.status] || row.status) + '</span></div>' + jokiNotice;
   }).join('');
 }
 
-async function submitJokiAccess() {
-  const target = state.accessTarget;
-  const login = $('#joki-login')?.value || '';
-  const password = $('#joki-password')?.value || '';
-  if (!target || login.trim().length < 2 || password.trim().length < 6) return toast('Lengkapi username/email dan kata sandi sesuai ketentuan.');
-  const button = $('[data-action="submit-joki-access"]');
-  if (button) { button.disabled = true; button.textContent = 'Menyimpan terenkripsi…'; }
-  try {
-    await api('/api/orders/' + encodeURIComponent(target.orderNumber) + '/customer-access',{
-      method:'POST',
-      body:{orderItemId:target.orderItemId,login,password}
-    });
-    state.accessTarget = null;
-    toast('Data akses Joki tersimpan dalam vault terenkripsi.');
-    state.orderRows = await fetchOrders();
-    paintOrderRows();
-  } catch (error) {
-    toast(error.message || 'Data akses tidak dapat disimpan.');
-    if (button) { button.disabled = false; button.textContent = 'Simpan akses terenkripsi'; }
-  }
-}
 function renderProfile() {
   const user = inTelegram && tg.initDataUnsafe ? tg.initDataUnsafe.user || null : null;
   const name = user ? [user.first_name,user.last_name].filter(Boolean).join(' ') || user.username || 'Pengguna Telegram' : 'Mode Web';
@@ -642,13 +615,6 @@ function handleClick(event) {
   }
   if (action === 'pay') { createOrder(); return; }
   if (action === 'invoice') { openInvoice(); return; }
-  if (action === 'joki-access') {
-    state.accessTarget = {orderNumber:button.getAttribute('data-order'),orderItemId:Number(button.getAttribute('data-item'))};
-    paintOrderRows();
-    return;
-  }
-  if (action === 'cancel-joki-access') { state.accessTarget=null; paintOrderRows(); return; }
-  if (action === 'submit-joki-access') { submitJokiAccess(); return; }
   if (action === 'copy') {
     const value = button.getAttribute('data-copy') || '';
     if (navigator.clipboard && value) navigator.clipboard.writeText(value).then(() => toast('Order ID disalin')).catch(() => toast(value));

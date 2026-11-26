@@ -16,6 +16,7 @@ import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } f
 import { createCustomerSession, readCustomerSession, customerCookieHeader } from '../backend/middleware/customerSession.js';
 import { createTelegramOidcTransaction, validateTelegramOidcIdToken, safeCustomerReturnPath } from '../backend/utils/telegramOidc.js';
 import { splitInventoryPayloads } from '../frontend/src/lib/inventory.js';
+import { submitJokiCustomerAccess } from '../backend/controllers/secretController.js';
 import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes } from '../backend/services/productDetailsService.js';
 import { parseProductAttributesText, formatProductAttributesText, getCustomerVisibleProductAttributes, normalizeCustomerDisplayText } from '../frontend/src/lib/product-attributes.js';
 import { validateMarketplaceCategory, normalizeImageGallery } from '../backend/services/marketplaceCategoryService.js';
@@ -1376,4 +1377,24 @@ test('Home product cards preserve the selected SKU and display its actual listin
   assert.match(home, /getHomeProductAvailability\(product\)/);
   assert.match(catalog, /params\.get\('product'\)/);
   assert.match(catalog, /setSelected\(\{variant_id:Number\(product\.variant_id\),product\}\)/);
+});
+
+
+test('Joki customer input rejects credential collection until CR-16 safe fields are implemented', async () => {
+  let statusCode = 0;
+  let body = null;
+  const response = {
+    status(code) { statusCode = code; return this; },
+    json(value) { body = value; return this; }
+  };
+  await submitJokiCustomerAccess({body:{login:'example',password:'not-a-real-password'}},response);
+  assert.equal(statusCode,410);
+  assert.equal(body?.error,'JOKI_CUSTOMER_INPUT_NOT_AVAILABLE');
+
+  const web = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(web, /accessForm\.password|type="password".*Kata sandi|customer-access/);
+  assert.doesNotMatch(mini, /joki-password|joki-login|submit-joki-access|customer-access/);
+  assert.match(web, /Form data Joki tanpa kredensial belum tersedia/);
+  assert.match(mini, /Form data Joki tanpa kredensial belum tersedia/);
 });
