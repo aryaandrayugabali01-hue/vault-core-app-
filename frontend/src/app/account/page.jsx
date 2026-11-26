@@ -48,10 +48,10 @@ export default function CustomerAccountPage() {
       setCustomer(data.user || null);
       setStatus('signed-in');
       return data.user || null;
-    } catch {
+    } catch (error) {
       setCustomer(null);
       setStatus('unavailable');
-      setMessage('Sesi akun belum dapat diperiksa. Periksa koneksi lalu coba kembali.');
+      setMessage(error.message || 'Sesi akun belum dapat diperiksa. Periksa koneksi lalu coba kembali.');
       return null;
     }
   }, []);
