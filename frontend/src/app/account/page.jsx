@@ -38,9 +38,12 @@ export default function CustomerAccountPage() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setCustomer(null);
-        setStatus('signed-out');
-        return null;
+        if (response.status === 401) {
+          setCustomer(null);
+          setStatus('signed-out');
+          return null;
+        }
+        throw new Error(data.message || 'Sesi akun belum dapat diperiksa. Coba kembali.');
       }
       setCustomer(data.user || null);
       setStatus('signed-in');
@@ -48,7 +51,7 @@ export default function CustomerAccountPage() {
     } catch {
       setCustomer(null);
       setStatus('unavailable');
-      setMessage('Sesi akun belum dapat diperiksa. Periksa koneksi lalu coba kembali.');
+      setMessage(error.message || 'Sesi akun belum dapat diperiksa. Periksa koneksi lalu coba kembali.');
       return null;
     }
   }, []);
