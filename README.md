@@ -61,7 +61,7 @@ The production database has migrations 001–016 registered. Migration 011 (CR-0
 1. Install Node.js 20 or later and PostgreSQL-compatible access.
 2. Copy `.env.example` to `.env` and set `DATABASE_URL` from the Neon console.
 3. Generate an encryption key: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
-4. Set `APP_ENCRYPTION_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, and `ADMIN_TELEGRAM_IDS`.
+4. Set `APP_ENCRYPTION_KEY`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_WEBHOOK_SECRET`.
 5. Run `npm install` from the repository root.
 6. Run `npm run migrate` to register/apply the versioned SQL migrations.
 7. Run `npm run dev:backend` and `npm run dev:frontend` in separate terminals.
@@ -73,9 +73,9 @@ Set `TELEGRAM_WEBHOOK_URL` to the public API route, then run `npm run setup:webh
 
 ## Owner access
 
-Owner authorization accepts either the existing `ADMIN_TELEGRAM_IDS` server-side allowlist or an active record in `owner_accounts`. Protected Owner API routes accept a validated Telegram Mini App `initData` session or a signed, HttpOnly browser session created after Telegram Login Widget verification. Owner status is checked server-side on every protected request.
+Owner authorization uses `owner_accounts` in the production Neon database as its sole source of truth. Protected Owner API routes accept a validated Telegram Mini App `initData` session or a signed, HttpOnly browser session created after Telegram authentication. Owner status is checked server-side on every protected request.
 
-**Web browser login:** open `https://vaultcore.biz.id/admin` and choose **Log in with Telegram**. Telegram verifies the identity; VAULT CORE then checks the Telegram numeric ID against the Owner allowlist. The browser session is signed by the API and stored in a Secure, HttpOnly, SameSite cookie shared only across the VAULT CORE subdomains. No email/password login is used.
+**Web browser login:** open `https://vaultcore.biz.id/admin` and choose **Log in with Telegram**. Telegram verifies the identity; VAULT CORE then checks the Telegram numeric ID against the Owner registry in Neon. The browser session is signed by the API and stored in a Secure, HttpOnly, SameSite cookie shared only across the VAULT CORE subdomains. No email/password login is used.
 
 **One-time Telegram setup:** in `@BotFather`, run `/setdomain` and select the existing VAULT CORE bot, then register `vaultcore.biz.id`. This authorizes Telegram's Login Widget for the website domain. The bot token already used by the API is also used for server-side signature verification. If the widget is not displayed or Telegram rejects the domain, complete this BotFather step first.
 
