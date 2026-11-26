@@ -49,7 +49,7 @@ function PriceDisplay({ product, compact = false }) {
   return (
     <span className={`vc4-price-stack${compact ? ' is-compact' : ''}`}>
       {compare && <span className="vc4-price-before"><del>{fmt(compare)} XTR</del><b>-{discount}%</b></span>}
-      <strong>{fmt(sale)} <small>XTR</small></strong>
+      <strong>{fmt(product.sale_price_xtr)} XTR</strong>
     </span>
   );
 }
