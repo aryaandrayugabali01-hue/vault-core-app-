@@ -78,7 +78,7 @@ export function StoreFooter() {
         <section className="store-footer-brand">
           <a href="/" aria-label="VAULT CORE Beranda"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/></a>
           <h2>Lebih Yakin Bersama <span>Vault Core</span></h2>
-          <p>Transaksi akun game melalui Telegram Mini App dengan pembayaran Telegram Stars.</p>
+          <p>Jelajahi katalog melalui website atau Telegram Mini App. Pembayaran digital menggunakan Telegram Stars.</p>
           <div className="store-footer-badges"><span>✓ Terverifikasi</span><span>✦ Sejak 2024</span></div>
         </section>
         <nav className="store-footer-column" aria-label="Navigasi footer">
@@ -134,7 +134,9 @@ export function StoreChrome() {
 
   const active = pathname.startsWith('/admin')
     ? 'owner'
-    : activeOverride || (pathname.startsWith('/catalog') ? 'catalog' : 'dashboard');
+    : pathname.startsWith('/account')
+      ? 'account'
+      : activeOverride || (pathname.startsWith('/catalog') ? 'catalog' : 'dashboard');
 
   const isOwnerPage = pathname.startsWith('/admin');
 
