@@ -157,8 +157,17 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       setNotice('Telegram mengonfirmasi pembayaran. Memperbarui pesanan…');
       loadOrders().catch(() => {});
     };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible' && customer) loadOrders().catch(() => {});
+    };
     window.addEventListener('vault:payment-paid',paid);
-    return () => window.removeEventListener('vault:payment-paid',paid);
+    window.addEventListener('focus',refreshWhenVisible);
+    document.addEventListener('visibilitychange',refreshWhenVisible);
+    return () => {
+      window.removeEventListener('vault:payment-paid',paid);
+      window.removeEventListener('focus',refreshWhenVisible);
+      document.removeEventListener('visibilitychange',refreshWhenVisible);
+    };
   },[loadCatalog,loadOrders,loadCustomer]);
 
   const flatProducts = useMemo(() => variants.flatMap((variant) =>
