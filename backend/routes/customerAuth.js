@@ -4,12 +4,12 @@ import { pool } from '../db/pool.js';
 import { requireTelegramUser } from '../middleware/telegramAuth.js';
 import { createCustomerSession, customerCookieHeader } from '../middleware/customerSession.js';
 import { ownerRateLimit } from '../middleware/rateLimit.js';
-import { createTelegramOidcTransaction, validateTelegramOidcIdToken } from '../utils/telegramOidc.js';
+import { createTelegramOidcTransaction, validateTelegramOidcIdToken, safeCustomerReturnPath } from '../utils/telegramOidc.js';
 
 const router = Router();
 const REDIRECT_URI = process.env.TELEGRAM_CUSTOMER_OIDC_REDIRECT_URI || 'https://api.vaultcore.biz.id/api/customer-auth/oidc/callback';
 const FRONTEND_ACCOUNT_URL = 'https://vaultcore.biz.id/account';
-const OIDC_COOKIE_NAMES = ['vault_customer_oidc_state', 'vault_customer_oidc_nonce', 'vault_customer_oidc_verifier'];
+const OIDC_COOKIE_NAMES = ['vault_customer_oidc_state', 'vault_customer_oidc_nonce', 'vault_customer_oidc_verifier', 'vault_customer_oidc_return'];
 
 function parseCookies(header = '') {
   return Object.fromEntries(String(header).split(';').map((part) => {
@@ -84,6 +84,7 @@ router.get('/oidc/start', ownerRateLimit, (_req, res) => {
   const clientSecret = process.env.TELEGRAM_OIDC_CLIENT_SECRET;
   if (!clientId || !clientSecret) return res.status(503).json({ error: 'TELEGRAM_OIDC_UNAVAILABLE' });
   const transaction = createTelegramOidcTransaction();
+  const returnPath = safeCustomerReturnPath(typeof _req.query.next === 'string' ? _req.query.next : '');
   const authorization = new URL('https://oauth.telegram.org/auth');
   authorization.searchParams.set('client_id', clientId);
   authorization.searchParams.set('redirect_uri', REDIRECT_URI);
@@ -96,7 +97,8 @@ router.get('/oidc/start', ownerRateLimit, (_req, res) => {
   res.setHeader('Set-Cookie', [
     oidcCookie(OIDC_COOKIE_NAMES[0], transaction.state),
     oidcCookie(OIDC_COOKIE_NAMES[1], transaction.nonce),
-    oidcCookie(OIDC_COOKIE_NAMES[2], transaction.verifier)
+    oidcCookie(OIDC_COOKIE_NAMES[2], transaction.verifier),
+    oidcCookie(OIDC_COOKIE_NAMES[3], returnPath)
   ]);
   return res.redirect(302, authorization.toString());
 });
@@ -108,6 +110,7 @@ router.get('/oidc/callback', ownerRateLimit, async (req, res) => {
     const cookieState = decodeURIComponent(cookies.vault_customer_oidc_state ?? '');
     const nonce = decodeURIComponent(cookies.vault_customer_oidc_nonce ?? '');
     const verifier = decodeURIComponent(cookies.vault_customer_oidc_verifier ?? '');
+    const returnPath = safeCustomerReturnPath(decodeURIComponent(cookies.vault_customer_oidc_return ?? ''));
     if (!queryState || !cookieState || !safeEqual(queryState, cookieState) || !nonce || !verifier) {
       return finishWithError(res, new Error('TELEGRAM_OIDC_STATE_INVALID'));
     }
@@ -158,7 +161,9 @@ router.get('/oidc/callback', ownerRateLimit, async (req, res) => {
     await syncCustomer(user);
     const session = createCustomerSession(user);
     res.setHeader('Set-Cookie', [customerCookieHeader(session), ...clearOidcCookies()]);
-    return res.redirect(302, FRONTEND_ACCOUNT_URL + '?login=success');
+    const target = new URL(returnPath, FRONTEND_ACCOUNT_URL);
+    if (target.pathname === '/account') target.searchParams.set('login', 'success');
+    return res.redirect(302, target.toString());
   } catch (error) {
     return finishWithError(res, error);
   }
