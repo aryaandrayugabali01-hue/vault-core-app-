@@ -61,16 +61,11 @@ const stockLabel = (product) => {
   return Number(product.display_stock) > 1 ? 'Stok tersedia' : 'Stok habis';
 };
 function accountAvailability(product) {
-  const attrs = product && product.attributes || {};
-  const entries = Object.entries(attrs);
-  const read = (keys) => {
-    const found = entries.find(([key]) => keys.includes(String(key).toLowerCase().replace(/[^a-z0-9]/g,'')));
-    return found ? String(found[1] ?? '').trim() : '';
-  };
-  const kind = read(['availabilitystatus','availabilitytype','stocktype','ketersediaan']).toUpperCase();
-  const days = Number(read(['indentdays','indentdaycount','jumlahhariindent','durasiindent']));
-  if (kind === 'INDEN' || kind === 'INDENT') return Number.isSafeInteger(days) && days > 0 ? 'Inden ' + days + ' hari' : 'Inden';
-  return product && product.is_available === true ? 'Ready' : 'Belum tersedia';
+  const mode = String(product && product.availability_mode || '').toUpperCase();
+  const days = Number(product && product.indent_deadline_days);
+  if (mode === 'INDENT') return Number.isSafeInteger(days) && days > 0 ? 'INDENT · Maksimal ' + days + ' hari kalender' : 'INDENT';
+  if (mode === 'READY') return product && product.is_available === true ? 'READY · Serah terima maksimal 1 jam' : 'READY · Stok habis';
+  return product && product.is_available === true ? 'Tersedia' : 'Belum tersedia';
 }
 
 const categoryLabel = (product) => product && product.variant_category || 'Produk Digital';
@@ -324,6 +319,7 @@ function productPage(id) {
   if (product.description) details.push(renderDetailCopy(product.description));
   if (attrs.length) details.push('<ul class="detail-copy">' + attrs.map(([key,value]) => '<li><b>' + esc(key.replace(/[_-]/g,' ')) + ':</b> ' + esc(value) + '</li>').join('') + '</ul>');
   if (product.customer_terms) details.push(renderDetailCopy(product.customer_terms));
+  if (product.availability_mode === 'INDENT' && Number(product.indent_deadline_days)>0) details.push('<p class="detail-copy">Tenggat INDENT: maksimal ' + esc(product.indent_deadline_days) + ' hari kalender setelah pembayaran.</p>');
   setPage(
     headerPage('Detail Produk') +
     '<main>' + productImage(product,'detail-art') +

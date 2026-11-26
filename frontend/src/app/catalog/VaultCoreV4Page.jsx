@@ -33,12 +33,13 @@ function getAttr(product, keys) {
   return found ? String(found[1] ?? '') : '';
 }
 function getProductAvailability(product) {
-  const kind = getAttr(product,['availability_status','availability_type','stock_type','ketersediaan']).toUpperCase();
-  const days = Number(getAttr(product,['indent_days','indent_day_count','jumlah_hari_indent','durasi_indent']));
-  if (kind === 'INDEN' || kind === 'INDENT') {
-    return Number.isSafeInteger(days) && days > 0 ? 'Inden ' + days + ' hari' : 'Inden';
+  const mode = String(product?.availability_mode || '').toUpperCase();
+  const days = Number(product?.indent_deadline_days);
+  if (mode === 'INDENT') {
+    return Number.isSafeInteger(days) && days > 0 ? 'INDENT · Maksimal ' + days + ' hari kalender' : 'INDENT';
   }
-  return product?.is_available === true ? 'Ready' : 'Belum tersedia';
+  if (mode === 'READY') return product?.is_available === true ? 'READY · Serah terima maksimal 1 jam' : 'READY · Stok habis';
+  return product?.is_available === true ? 'Tersedia' : 'Belum tersedia';
 }
 
 function getComparePrice(product) {
@@ -466,7 +467,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             {Array.isArray(selected.product.image_gallery)&&selected.product.image_gallery.length>0&&<div className="vc4-gallery">{selected.product.image_gallery.map((url,index)=><img key={url+index} src={url} alt={selected.product.name+' '+(index+1)} loading="lazy"/>)}</div>}
             <p>{selected.product.description}</p>
             {selected.product.customer_terms && <section className="vc4-product-terms"><h3>Ketentuan produk</h3><p>{selected.product.customer_terms}</p></section>}
-            {selected.product.fulfillment_eta && <p className="vc4-eta">Estimasi pemenuhan: {selected.product.fulfillment_eta}</p>}
+            {selected.product.availability_mode === 'INDENT' && <p className="vc4-eta">Tenggat INDENT: maksimal {selected.product.indent_deadline_days} hari kalender setelah pembayaran.</p>}{selected.product.fulfillment_eta && <p className="vc4-eta">Estimasi pemenuhan: {selected.product.fulfillment_eta}</p>}
             {selected.product.group === 'Akun' && <section className="vc4-security-guide"><h3>Keamanan Akun</h3><ol><li>Periksa detail akun dan kesesuaian spesifikasi sebelum konfirmasi.</li><li>Ganti kata sandi setelah menerima akses akun.</li><li>Aktifkan verifikasi dua langkah pada akun yang mendukung.</li><li>Pastikan email dan metode pemulihan berada dalam kendali pembeli.</li></ol><p>Garansi mengikuti ketentuan yang ditetapkan pada detail produk.</p></section>}
             <section className="vc4-listing-specs"><h4>Spesifikasi Produk</h4><div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ').replace(/\b[a-z]/g,letter=>letter.toUpperCase())}</span><strong>{String(value)}</strong></div>)}</div></section>
             <div className="vc4-price-large"><PriceDisplay product={selected.product}/></div>
