@@ -1037,7 +1037,7 @@ test('v4 account catalogue shows MLBB filters only for MLBB accounts', () => {
   assert.match(ownerV4, /Pilih game dan jenis produk/);
   assert.match(ownerV4, /Galeri Foto Produk/);
   assert.match(ownerV4, /Deskripsi Produk/);
-  assert.match(ownerV4, /Simpan spesifikasi produk/);
+  assert.match(ownerV4, /Simpan Produk/);
   assert.match(ownerRoutes, /field_key/);
   assert.match(ownerRoutes, /validateListingFields/);
   assert.match(ownerRoutes, /imageGallery/);
