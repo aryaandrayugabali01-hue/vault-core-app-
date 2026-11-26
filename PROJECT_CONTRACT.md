@@ -5,9 +5,9 @@
 |---|---|
 | Nama proyek | VAULT CORE |
 | Jenis dokumen | Kontrak spesifikasi dan acuan pelaksanaan proyek |
-| Versi | 1.6 — Addendum CR-11 (Authorized Account Credentials) |
+| Versi | 1.7 — Addendum CR-12 (Manual Account Credential Delivery) |
 | Tanggal dokumen | 27 November 2026 |
-| Status | Baseline v1.2, CR-03, CR-04, CR-05, CR-09, CR-10, dan CR-11 disetujui melalui instruksi tertulis pemilik; CR-11 menyelaraskan ketentuan kredensial akun dengan dukungan transfer akun bersyarat, 27 November 2026 |
+| Status | Baseline v1.2, CR-03, CR-04, CR-05, CR-09, CR-10, CR-11, dan CR-12 disetujui melalui instruksi tertulis Owner; CR-12 menetapkan pemenuhan akun manual maksimal 1 jam setelah pembayaran sukses dan melarang penyimpanan kredensial akun di sistem, 27 November 2026 |
 | Model usaha | Single-Vendor Store |
 | Kanal utama | Telegram Bot dan Telegram Mini App |
 | Domain rencana | `vaultcore.biz.id` (belum dikonfirmasi kepemilikannya dan konfigurasi DNS-nya) |
@@ -16,7 +16,7 @@
 >
  > **Rekaman persetujuan pemilik:** Status v1.2 CR-02 ditetapkan DISETUJUI berdasarkan instruksi tertulis pemilik proyek. Addendum CR-03 pada Bagian 27 disetujui pada 21 November 2026, CR-04 pada 22 November 2026, dan CR-05 pada 23 November 2026 melalui instruksi tertulis pemilik di percakapan proyek. Rekaman ini menetapkan keputusan operasional internal Owner, bukan sertifikasi hukum atau pengesampingan hak pihak ketiga. Nama legal dan sertifikat tanda tangan elektronik formal tidak tercantum dalam rekaman percakapan.
 >
-> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan fixture uji melalui CR-03; v1.4 menetapkan dukungan bersyarat transfer akun melalui CR-04; v1.5 melalui CR-05 menetapkan Owner sebagai otoritas internal untuk pencatatan, penilaian internal, persetujuan, rincian katalog, stok, metode pemenuhan, dan pengiriman. v1.6 melalui CR-11 menyelaraskan ketentuan kredensial pada Bagian 3.3 dan 7.6 dengan dukungan transfer akun pada CR-04; kewajiban eksternal, pembayaran XTR, dan sumber stok aktual tetap berlaku.
+> **Riwayat revisi:** v1.1 menilai CR-01; v1.2 mencatat CR-02; v1.3 menetapkan akuntansi aplikasi XTR-only dan fixture uji melalui CR-03; v1.4 menetapkan dukungan bersyarat transfer akun melalui CR-04; v1.5 melalui CR-05 menetapkan Owner sebagai otoritas internal untuk pencatatan, penilaian internal, persetujuan, rincian katalog, stok, metode pemenuhan, dan pengiriman. v1.6 melalui CR-11 menyelaraskan dukungan akun dengan CR-04. v1.7 melalui CR-12 menetapkan pemenuhan akun secara manual maksimal 1 jam setelah pembayaran sukses dan melarang penyimpanan kredensial akun di database/aplikasi; pembayaran XTR dan kewajiban eksternal tetap berlaku.
 
 ---
 
@@ -49,7 +49,7 @@ Tujuan pengembangan:
 | Hak akses | Customer dan Owner/Admin |
 | Pengelolaan katalog | Owner/Admin |
 | Pengelolaan modal | Owner/Admin; nilai historis transaksi tidak berubah ketika modal produk diperbarui |
-| Pengiriman | Otomatis setelah konfirmasi pembayaran valid dan stok/layanan siap; hanya untuk produk yang memiliki hak pemenuhan yang sah |
+| Pengiriman | Produk non-akun mengikuti metode delivery SKU; akun game diserahkan manual oleh Owner maksimal 1 jam setelah pembayaran sukses tanpa penyimpanan kredensial di sistem |
 | Tampilan stok | Jumlah publik harus bersumber dari stok tersedia aktual; mode tampilan dapat menyembunyikan angka rinci tanpa memalsukan jumlah |
 | Pembayaran | Telegram Stars melalui invoice Bot API untuk produk digital di dalam Telegram; tidak ada alamat wallet XTR manual |
 | Laporan | Penjualan, biaya/modal, margin, profit, refund, dan rekonsiliasi Stars |
@@ -95,7 +95,7 @@ VAULT CORE mendukung katalog, penyimpanan inventaris, pemrosesan, dan pemenuhan 
 
 Ketentuan operasional:
 
-- Kredensial yang memang diperlukan untuk menyerahkan akun kepada pembeli dapat disimpan sebagai payload inventaris terenkripsi dan dikirim melalui alur delivery yang terotorisasi.
+- Kredensial akun tidak disimpan dalam database, inventaris, backend, cache, log, analytics, atau penyimpanan aplikasi VAULT CORE. Setelah pembayaran sukses, Owner menyerahkan kredensial secara manual melalui kanal privat.
 - Data autentikasi tambahan seperti cookie, session token, OTP, recovery code, backup code, atau password email pribadi tidak otomatis termasuk dalam payload akun. Data tersebut hanya boleh diproses bila secara khusus diperlukan untuk metode transfer yang sah, berada dalam kewenangan Owner, dan memiliki kontrol keamanan serta retensi yang sesuai.
 - Sistem dilarang menggunakan kredensial untuk mengambil alih akun tanpa kewenangan, melewati autentikasi, menghindari kontrol keamanan penerbit, atau mengakses akun di luar tujuan pemenuhan yang disetujui.
 - Produk, item virtual, atau aset lain yang diperoleh melalui cara yang dilarang penerbit/platform tetap tidak dapat dijual.
@@ -333,12 +333,17 @@ Sistem wajib mencegah dua order menggunakan item stok yang sama. Pengurangan dan
 
 ## 7.6 Modul Delivery
 
-- Hanya berjalan setelah pembayaran valid tercatat.
-- Hanya berjalan setelah sistem memastikan item tersedia atau layanan dapat dijadwalkan.
-- Memiliki status `PENDING`, `PROCESSING`, `DELIVERED`, `FAILED`, atau `REVIEW_REQUIRED`.
-- Menyimpan waktu, metode, dan hasil pemenuhan.
-- Jika pengiriman gagal, order masuk antrean retry atau pemeriksaan manual tanpa membuat pemenuhan ganda.
-- Isi delivery dapat berupa kode/lisensi, instruksi resmi, detail layanan, atau payload akun game terenkripsi yang disetujui untuk transfer berdasarkan CR-04 dan CR-11. Kredensial hanya dapat diakses oleh Owner/layanan delivery berwenang setelah pembayaran valid dan pemeriksaan order terpenuhi.
+- Pemenuhan hanya dimulai setelah pembayaran valid (`successful_payment`) tercatat.
+- Produk non-akun mengikuti metode delivery yang ditetapkan pada SKU.
+- Untuk produk akun game, delivery dilakukan secara manual oleh Owner, bukan otomatis oleh backend/bot.
+- Batas penyerahan kredensial akun adalah maksimal 1 (satu) jam sejak timestamp `successful_payment` terverifikasi.
+- Sistem membuat tugas pemenuhan manual, memberi notifikasi kepada Owner, dan menampilkan status kepada customer.
+- Status minimum: `PAID_PENDING_MANUAL_DELIVERY`, `PROCESSING`, `DELIVERED`, `OVERDUE`, dan `REVIEW_REQUIRED`.
+- Sistem mencatat order ID, referensi customer, waktu pembayaran, tenggat, waktu penyerahan, status, dan aktor Owner.
+- Isi kredensial tidak disimpan pada database, inventaris, backend, cache, log, analytics, error trace, backup, atau ekspor.
+- Owner memeriksa kecocokan penerima dengan order lalu menyampaikan kredensial secara manual melalui kanal privat.
+- Jika tenggat satu jam terlewati, sistem menandai `OVERDUE` dan memberi notifikasi eskalasi kepada Owner sampai order diselesaikan atau ditangani sesuai kebijakan refund.
+- Status `DELIVERED` hanya dapat dicatat setelah Owner mengonfirmasi penyerahan manual.
 
 ## 7.7 Modul Owner Dashboard
 
@@ -1127,11 +1132,11 @@ Jika ketentuan penerbit melarang jual-beli atau pengalihan akun, atau bukti otor
 
 Untuk SKU yang lolos Bagian 28.2, sistem dapat menambahkan tipe pemenuhan GAME_ACCOUNT_TRANSFER melalui perubahan skema dan validasi backend yang terpisah. Payload akun wajib:
 
-- Dienkripsi dengan enkripsi kuat di sisi server saat disimpan dan saat dikirim melalui kanal yang aman.
-- Tidak dicatat dalam log, analytics, error trace, atau daftar inventaris biasa.
-- Hanya dapat diakses oleh layanan delivery setelah pembayaran valid dan order memenuhi syarat.
-- Memiliki audit log untuk akses, perubahan, pembatalan, dan pengiriman.
-- Dihapus atau dinonaktifkan sesuai kebijakan retensi setelah transfer selesai, sepanjang kewajiban audit dan hukum mengizinkan.
+- VAULT CORE tidak menyimpan kredensial akun dalam database, inventaris, backend, cache, log, analytics, error trace, backup, atau ekspor.
+- Setelah pembayaran Telegram Stars sukses terverifikasi, Owner menyerahkan kredensial secara manual melalui kanal privat paling lambat 1 (satu) jam sejak timestamp pembayaran sukses.
+- Sistem hanya menyimpan metadata order, status pemenuhan, timestamp pembayaran, timestamp penyerahan, dan aktor Owner; isi kredensial tidak boleh direkam.
+- Owner memastikan penerima sesuai dengan customer/order yang telah dibayar.
+- Jika penyerahan melewati tenggat, order ditandai terlambat dan dieskalasikan kepada Owner untuk penyelesaian atau refund sesuai kebijakan.
 - Tidak mencakup email pribadi vendor atau kredensial pihak lain yang tidak diperlukan untuk transfer. Cookie, session token, OTP, recovery code, dan backup code tidak boleh disertakan secara default; pengecualian memerlukan kebutuhan transfer terdokumentasi, kewenangan yang jelas, kontrol akses khusus, dan dasar yang sah.
 
 Sistem tidak boleh mengambil alih akun, melewati autentikasi, mengubah kepemilikan tanpa prosedur resmi, atau membantu menghindari mekanisme keamanan penerbit. Bila transfer resmi tidak membutuhkan pengiriman password, sistem wajib menggunakan metode transfer resmi tersebut.
@@ -1416,25 +1421,66 @@ Owner bertanggung jawab memastikan sumber akun, kepemilikan atau kewenangan vend
 
 ## 33.3 Pengamanan kredensial
 
-- Kredensial akun yang diperlukan untuk penyerahan disimpan terenkripsi; tidak boleh muncul pada log, analytics, error trace, katalog publik, ekspor laporan umum, atau daftar inventaris biasa.
-- Akses dibatasi pada Owner/layanan delivery yang berwenang dan hanya untuk tujuan pemenuhan order yang sah.
-- Setiap akses, perubahan, dan pengiriman dicatat dalam audit log tanpa merekam nilai rahasia kredensial.
+- Kredensial akun tidak boleh dimasukkan atau disimpan pada sistem VAULT CORE, termasuk database, inventaris, backend, cache, log, analytics, error trace, backup, ekspor laporan, atau katalog publik.
+- Penyerahan dilakukan langsung oleh Owner secara manual melalui kanal privat kepada customer yang terkait dengan order yang telah dibayar.
+- Audit log hanya mencatat order ID, referensi customer, waktu pembayaran sukses, tenggat, waktu penyerahan, status, dan aktor Owner; nilai kredensial tidak boleh dicatat.
 - Password email pribadi, cookie, session token, OTP, recovery code, dan backup code tidak menjadi bagian payload secara otomatis. Pemrosesan pengecualian memerlukan alasan operasional terdokumentasi, kewenangan yang jelas, dan kontrol keamanan khusus.
 - Kredensial tidak boleh digunakan untuk takeover tanpa izin, bypass autentikasi, atau akses di luar proses transfer yang dinyatakan.
 
 ## 33.4 Status implementasi
 
-CR-11 mengubah persyaratan kontrak dan menjadi dasar implementasi. Persetujuan kontrak ini tidak dengan sendirinya membuktikan bahwa seluruh API, database, Owner Console, enkripsi, delivery, dan audit log produksi telah mendukung penyimpanan/pengiriman kredensial. Kesiapan teknis harus diverifikasi dan diselesaikan sebelum kredensial akun nyata dimasukkan ke inventaris komersial.
+CR-12 menggantikan kewajiban penyimpanan terenkripsi pada CR-11. Sistem tidak perlu membangun fitur penyimpanan atau pengiriman otomatis kredensial akun. Implementasi harus menyediakan notifikasi Owner setelah pembayaran sukses, antrean pemenuhan manual, tenggat satu jam, status pemenuhan, dan audit metadata tanpa isi kredensial.
 
 ## 33.5 Kriteria penerimaan
 
 - Bagian 3.3 tidak lagi melarang seluruh format kredensial akun game.
-- Bagian 7.6 mengizinkan payload akun terenkripsi sesuai CR-04/CR-11.
+- Bagian 7.6 menetapkan penyerahan akun manual maksimal 1 jam setelah pembayaran sukses.
 - Ketentuan 28.3 konsisten dengan pemrosesan kredensial yang diperlukan.
-- Kredensial tidak bocor ke katalog, log, analytics, error trace, atau ekspor umum.
-- Owner memiliki kontrol akses dan audit untuk akses serta delivery.
+- Tidak ada kredensial akun yang disimpan di database, inventaris, backend, cache, log, analytics, error trace, backup, atau ekspor umum.
+- Owner menerima notifikasi dan menyelesaikan penyerahan manual; sistem mencatat status serta waktu tanpa menyimpan kredensial.
 - Pembayaran tetap Telegram Stars (`XTR`) dan delivery tetap mensyaratkan pembayaran valid.
 
 ---
 
-**Akhir dokumen — VAULT CORE Project Contract v1.6 (CR-11).**
+# 34. Addendum CR-12 — Penyerahan Kredensial Akun Secara Manual Maksimal 1 Jam
+
+**Tanggal:** 27 November 2026  
+**Status:** Disetujui melalui instruksi tertulis Owner pada percakapan proyek.  
+**Mengubah dan mengesampingkan:** Ketentuan CR-11 Bagian 33.1, 33.3, dan 33.4 sejauh mewajibkan atau mengizinkan penyimpanan kredensial akun di sistem, serta ketentuan yang bertentangan pada Bagian 2, 3.3, 7.6, dan 28.3. CR-04 tetap menjadi dasar pemeriksaan hak dan transfer akun.
+
+## 34.1 Keputusan final alur akun
+
+Setelah pembayaran Telegram Stars (`XTR`) dinyatakan sukses dan terverifikasi melalui `successful_payment`, kredensial akun diserahkan kepada customer secara manual oleh Owner dalam waktu maksimal **1 (satu) jam**. Penyerahan tidak dilakukan otomatis oleh backend, bot, atau sistem delivery.
+
+## 34.2 Tidak ada penyimpanan kredensial
+
+VAULT CORE tidak memerlukan dan tidak boleh menyimpan kredensial akun. Kredensial tidak boleh dimasukkan ke database, tabel inventaris, backend, cache, log, analytics, error trace, backup, ekspor, atau payload sistem. Sistem hanya mengelola data produk non-rahasia dan metadata status pemenuhan.
+
+## 34.3 Alur transaksi dan pemenuhan
+
+1. Customer menyelesaikan pembayaran melalui invoice Telegram Stars XTR.
+2. Backend memverifikasi `successful_payment` dan menetapkan waktu pembayaran sukses.
+3. Sistem membuat tugas `PAID_PENDING_MANUAL_DELIVERY`, menghitung tenggat satu jam, dan segera memberi notifikasi kepada Owner.
+4. Owner memeriksa order serta identitas penerima, lalu mengirimkan kredensial secara manual melalui kanal privat.
+5. Owner mencatat penyelesaian. Sistem menyimpan status, waktu penyerahan, dan aktor Owner tanpa menyimpan isi kredensial.
+6. Jika belum selesai setelah satu jam, status berubah menjadi `OVERDUE` dan Owner menerima eskalasi sampai order diselesaikan atau ditangani sesuai kebijakan refund yang berlaku.
+
+## 34.4 Audit dan batas data
+
+Audit log hanya menyimpan referensi order/customer yang diperlukan, timestamp pembayaran, tenggat, timestamp penyerahan, status, dan aktor Owner. Audit log tidak boleh memuat kredensial, tangkapan layar yang memperlihatkan kredensial, atau salinan pesan rahasia.
+
+## 34.5 Kriteria penerimaan
+
+- Tidak ada fitur penyimpanan atau pengiriman otomatis kredensial akun.
+- Tidak ada kolom/payload kredensial akun di inventaris atau database aplikasi.
+- Notifikasi Owner dibuat setelah pembayaran sukses terverifikasi.
+- Tenggat penyerahan dihitung dari timestamp `successful_payment` dan maksimum 1 jam.
+- Customer dapat melihat status menunggu penyerahan manual, diproses, selesai, atau terlambat.
+- Owner dapat mencatat penyelesaian manual.
+- Status `DELIVERED` hanya ditetapkan setelah Owner mengonfirmasi penyerahan.
+- Audit log menyimpan metadata pemenuhan saja, tanpa isi kredensial.
+- Produk non-akun, pembayaran XTR, dan pemeriksaan hak produk tetap mengikuti ketentuan masing-masing.
+
+---
+
+**Akhir dokumen — VAULT CORE Project Contract v1.7 (CR-12).**
