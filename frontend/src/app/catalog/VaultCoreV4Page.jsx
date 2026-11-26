@@ -168,7 +168,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       window.removeEventListener('focus',refreshWhenVisible);
       document.removeEventListener('visibilitychange',refreshWhenVisible);
     };
-  },[loadCatalog,loadOrders,loadCustomer]);
+  },[loadCatalog,loadOrders,loadCustomer,inTelegramMiniApp]);
 
   const flatProducts = useMemo(() => variants.flatMap((variant) =>
     (variant.skus || []).map((sku) => ({
@@ -200,7 +200,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       setCart([]);
     }
     setCartRestored(true);
-  },[flatProducts,loading]);
+  },[flatProducts,loading,inTelegramMiniApp]);
 
   useEffect(() => {
     if (!inTelegramMiniApp || !cartRestored) return;
@@ -209,7 +209,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     } else {
       sessionStorage.removeItem('vault-core-web-cart');
     }
-  },[cart,cartRestored]);
+  },[cart,cartRestored,inTelegramMiniApp]);
 
 
 
