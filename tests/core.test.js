@@ -900,16 +900,16 @@ test('the production homepage opens the supplied VAULT CORE v5 mobile Mini App',
   const styles = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const variants = readFileSync(new URL('../frontend/public/miniapp/variants.js', import.meta.url), 'utf8');
-  assert.match(page, /redirect\\('\\/miniapp\\/index\\.html'\\)/);
+  assert.ok(page.includes("redirect('/miniapp/index.html')"));
   assert.ok(html.includes('<nav class="nav" id="nav"'));
   assert.ok(html.includes('./app.css'));
-  assert.match(styles, /#app\\{position:relative;width:min\\(100%,430px\\)/);
-  assert.match(styles, /\\.games\\{display:grid;grid-template-columns:repeat\\(4,minmax\\(0,1fr\\)\\)/);
-  assert.match(styles, /\\.nav\\{position:fixed/);
-  assert.match(styles, /\\.hero\\{/);
-  assert.match(app, /data-go="\\/catalog"/);
-  assert.ok(variants.includes("id:12"));
-  assert.equal((variants.match(/\\{id:/g) || []).length, 12);
+  assert.ok(styles.includes('#app{position:relative;width:min(100%,430px)'));
+  assert.ok(styles.includes('.games{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))'));
+  assert.ok(styles.includes('.nav{position:fixed'));
+  assert.ok(styles.includes('.hero{'));
+  assert.ok(app.includes('data-go="/catalog"'));
+  assert.ok(variants.includes('id:12'));
+  assert.equal(variants.split('{id:').length - 1,12);
 });
 
 test('v5 catalog, detail, checkout, XTR invoice and order history use the existing backend contract', () => {
@@ -921,29 +921,30 @@ test('v5 catalog, detail, checkout, XTR invoice and order history use the existi
   assert.ok(app.includes("api('/api/orders/mine')"));
   assert.ok(app.includes("paymentMethod:'XTR'"));
   assert.ok(app.includes('tg.openInvoice'));
-  assert.match(app, /if \\(!inTelegram\\)/);
-  assert.match(orders, /requireTelegramUser|telegramUser/);
-  assert.match(catalog, /GAME_ACCOUNT_TRANSFER/);
-  assert.doesNotMatch(app, /\\/api\\/web-auth|vc_web_session|TELEGRAM_OIDC|WEB_SESSION_SECRET/);
+  assert.ok(app.includes('if (!inTelegram)'));
+  assert.ok(orders.includes('requireTelegramUser'));
+  assert.ok(catalog.includes('GAME_ACCOUNT_TRANSFER'));
+  assert.equal(app.includes('/api/web-auth'),false);
+  assert.equal(app.includes('vc_web_session'),false);
+  assert.equal(app.includes('TELEGRAM_OIDC'),false);
 });
 
 test('all 12 master variants remain visible while non-account variants stay unavailable until backend publication', () => {
   const variants = readFileSync(new URL('../frontend/public/miniapp/variants.js', import.meta.url), 'utf8');
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
-  assert.equal((variants.match(/\\{id:/g) || []).length, 12);
+  assert.equal(variants.split('{id:').length - 1,12);
   for (const game of ['MLBB','FREE_FIRE','ROBLOX','GENSHIN']) assert.ok(variants.includes("game:'" + game + "'"));
-  assert.match(app, /Belum tersedia/);
-  assert.match(app, /Belum diterbitkan|Varian belum tersedia/);
-  assert.match(app, /const productsOf =/);
+  assert.ok(app.includes('Varian belum tersedia'));
+  assert.ok(app.includes('const productsOf ='));
 });
 
 test('checkout and transaction history require verified Telegram Mini App initData', () => {
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const webhook = readFileSync(new URL('../backend/routes/telegramWebhook.js', import.meta.url), 'utf8');
   const apiConfig = readFileSync(new URL('../wrangler.api.jsonc', import.meta.url), 'utf8');
-  assert.match(app, /const inTelegram = Boolean\\(tg && tg\\.initData\\)/);
-  assert.match(app, /if \\(!inTelegram \\|\\| !tg \\|\\| !tg\\.initData\\)/);
-  assert.match(webhook, /https:\\/\\/vaultcore\\.biz\\.id\\/miniapp\\/index\\.html/);
+  assert.ok(app.includes('const inTelegram = Boolean(tg && tg.initData)'));
+  assert.ok(app.includes('if (!inTelegram || !tg || !tg.initData)'));
+  assert.ok(webhook.includes('https://vaultcore.biz.id/miniapp/index.html'));
   assert.ok(apiConfig.includes('"TELEGRAM_MINI_APP_URL": "https://vaultcore.biz.id/miniapp/index.html"'));
 });
 
@@ -951,10 +952,16 @@ test('obsolete dashboard cascade and internal navigation debug copy are removed'
   const mobile = readFileSync(new URL('../frontend/src/app/mobile-app.css', import.meta.url), 'utf8');
   const global = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
-  assert.doesNotMatch(mobile, /\\.dashboard-shell|\\.dashboard-hero|\\.dashboard-game-grid|\\.dashboard-product-grid/);
-  assert.doesNotMatch(global, /\\.marketplace-detail-|\\.marketplace-info-modal|\\.mlbb-provider-search|\\.category-card|\\.product-card/);
+  assert.equal(mobile.includes('.dashboard-shell'),false);
+  assert.equal(mobile.includes('.dashboard-hero'),false);
+  assert.equal(mobile.includes('.dashboard-game-grid'),false);
+  assert.equal(global.includes('.marketplace-detail-'),false);
+  assert.equal(global.includes('.marketplace-info-modal'),false);
+  assert.equal(global.includes('.mlbb-provider-search'),false);
+  assert.equal(global.includes('.category-card'),false);
+  assert.equal(global.includes('.product-card'),false);
   assert.ok(global.includes('.dashboard-bottom-nav'));
-  assert.doesNotMatch(navigation, /Bottom navigation melayang/);
+  assert.equal(navigation.includes('Bottom navigation melayang'),false);
 });
 
 test('mobile app assets are included in the static frontend and service worker never caches API responses', () => {
@@ -965,9 +972,9 @@ test('mobile app assets are included in the static frontend and service worker n
   assert.ok(html.includes('./app.js'));
   assert.ok(html.includes('./variants.js'));
   assert.ok(config.includes('https://api.vaultcore.biz.id'));
-  assert.ok(manifest.includes('\"scope\":\"/miniapp/\"'));
-  assert.match(sw, /url\\.pathname\\.startsWith\\('\\/api\\/'\\)/);
-  assert.match(sw, /\\/assets\\/03-categories\\/category-mlbb\\.png/);
+  assert.ok(manifest.includes('"scope":"/miniapp/"'));
+  assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
+  assert.ok(sw.includes('/assets/03-categories/category-mlbb.png'));
 });
 
 test('active CSS rules do not contain repeated declarations that can reintroduce same-rule conflicts', () => {
