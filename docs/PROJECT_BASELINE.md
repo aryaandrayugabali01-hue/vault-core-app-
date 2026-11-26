@@ -327,8 +327,9 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 ### Koneksi data dan batas transaksi
 - Katalog dinamis: `GET /api/catalog`.
 - Riwayat pesanan: `GET /api/orders/mine`.
-- Pembuatan order: `POST /api/orders` dengan `items: [{ productId, quantity }]`; invoice dibuka melalui Telegram WebApp `openInvoice`.
-- Checkout dan riwayat hanya aktif saat Mini App memiliki Telegram `initData`. Pembayaran tetap Telegram Stars (XTR); browser web hanya untuk melihat katalog/detail.
+- Pembuatan order: `POST /api/orders` dengan `items: [{ productId, quantity }]`; API membuat invoice link Telegram Stars (XTR). Mini App membukanya melalui `Telegram.WebApp.openInvoice`; browser membuka link invoice Telegram.
+- Autentikasi pelanggan: Telegram Mini App menggunakan `initData`; website menggunakan Telegram OIDC Authorization Code + PKCE dan cookie sesi pelanggan bertanda tangan. Keduanya melewati `requireTelegramUser` dan dipetakan ke `customers.telegram_user_id` yang sama.
+- Browser website mendukung profil, pembuatan pesanan, riwayat, dan data akses layanan lewat cookie pelanggan. Status pembayaran tetap hanya berubah setelah webhook Telegram mengonfirmasi pembayaran XTR.
 - Backend produksi saat ini menerima `productId` dan `quantity`; input ID/Username khusus pada mockup belum tersedia pada kontrak endpoint. Karena itu checkout tidak meminta data yang tidak dapat disimpan. Penyerahan mengikuti detail produk setelah pembayaran terkonfirmasi.
 - Dua belas varian master adalah struktur navigasi. Produk, harga, stok, dan kelayakan beli tetap berasal dari backend. Varian tanpa produk aktif menampilkan status belum tersedia; tidak ada SKU atau stok palsu.
 
