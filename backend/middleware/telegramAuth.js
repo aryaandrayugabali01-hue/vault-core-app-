@@ -50,3 +50,50 @@ export async function requireTelegramUser(req, res, next) {
     });
   }
 }
+
+/**
+ * Transactional customer endpoints require proof issued inside Telegram Mini App.
+ * A browser OIDC cookie authenticates the public web profile only.
+ */
+export async function requireTelegramMiniAppUser(req, res, next) {
+  const initData = req.get('x-telegram-init-data');
+  if (!initData) {
+    return res.status(401).json({
+      error: 'TELEGRAM_MINI_APP_REQUIRED',
+      message: 'Transaksi dan riwayat pesanan hanya tersedia melalui VAULT CORE Telegram Mini App.'
+    });
+  }
+
+  let user;
+  try {
+    user = validateTelegramInitData(initData, process.env.TELEGRAM_BOT_TOKEN);
+  } catch (error) {
+    console.warn('[telegram-mini-app-auth] initData rejected:', error.message);
+    return res.status(401).json({
+      error: 'TELEGRAM_AUTH_REQUIRED',
+      message: 'Sesi Telegram tidak dapat diverifikasi. Buka ulang VAULT CORE melalui bot Telegram.'
+    });
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO customers (telegram_user_id, username, first_name)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (telegram_user_id) DO UPDATE
+         SET username = EXCLUDED.username, first_name = EXCLUDED.first_name
+       RETURNING id, telegram_user_id, username, first_name`,
+      [String(user.id), user.username ?? null, user.first_name ?? '']
+    );
+    if (!rows[0]) throw new Error('CUSTOMER_SESSION_SYNC_EMPTY');
+    req.customer = rows[0];
+    req.telegramUser = user;
+    req.customerAuthMethod = 'telegram-mini-app';
+    return next();
+  } catch (error) {
+    console.error('[telegram-mini-app-customer-sync]', error.message);
+    return res.status(503).json({
+      error: 'CUSTOMER_SESSION_SYNC_UNAVAILABLE',
+      message: 'Sesi Telegram berhasil diverifikasi, tetapi data akun belum dapat disinkronkan. Coba kembali.'
+    });
+  }
+}
