@@ -136,17 +136,17 @@
 
 /* VAULT CORE dark Apple-inspired catalogue skin — aligned to PROJECT_BASELINE.md */
 :root{
-
-  --vc4-page:#090d14;
-  --vc4-card:#111925;
-  --vc4-ink:#f4f6fb;
-  --vc4-muted:#9aa7ba;
-  --vc4-line:rgba(186,199,219,.16);
-  --vc4-soft:rgba(186,199,219,.09);
-  --vc4-blue:#ffc928;
-  --vc4-green:#00d68a;
+  color-scheme:dark;
+  --vc4-page:#070914;
+  --vc4-card:#0d1422;
+  --vc4-ink:#f7f8fc;
+  --vc4-muted:#a9b4c8;
+  --vc4-line:rgba(160,139,255,.25);
+  --vc4-soft:rgba(255,255,255,.09);
+  --vc4-blue:#7c3aed;
+  --vc4-green:#34d399;
   --vc4-gold:#ffc928;
-  --vc4-gold-hover:#ffdf36;
+  --vc4-gold-hover:#f2a900;
 }
 body:has(.vc4-shell){
 background:var(--vc4-page);color:var(--vc4-ink);font-family:"Plus Jakarta Sans",system-ui,-apple-system,sans-serif;}
@@ -439,3 +439,34 @@ border-color:rgba(190,204,224,.25);background:rgba(15,23,36,.78);color:#e8edf5;}
 
 .vc4-listing-specs{margin:18px 0 0}
 .vc4-listing-specs h4{margin:0 0 10px;color:#f4d36f;font-size:12px;font-weight:850;letter-spacing:.04em}
+
+/* Shared VAULT CORE mobile visual system: website catalog matches the Telegram Mini App */
+body:has(.vc4-shell){background:#050711;color:var(--vc4-ink)}
+.vc4-shell{width:min(100%,430px);min-height:100dvh;margin:0 auto;overflow:hidden;background:radial-gradient(ellipse at 12% 0%,rgba(88,40,180,.24),transparent 34%),radial-gradient(ellipse at 100% 42%,rgba(26,61,125,.12),transparent 35%),linear-gradient(180deg,#080b17 0%,#080d18 55%,#070914 100%);box-shadow:0 0 0 1px rgba(165,139,255,.16)}
+.vc4-nav{height:auto;min-height:56px;flex-wrap:wrap;gap:8px;padding:calc(7px + env(safe-area-inset-top,0px)) 14px 8px;background:rgba(7,10,20,.92);border-bottom-color:rgba(160,139,255,.14)}
+.vc4-brand img{width:118px;max-height:30px}
+.vc4-nav-links{order:3;flex-basis:100%;gap:16px;padding:7px 0 1px;scrollbar-width:none}
+.vc4-nav-actions{margin-left:auto;gap:10px}
+.vc4-nav-links button,.vc4-nav-actions button,.vc4-nav-actions a{font-size:11px}
+.vc4-main{padding:18px 15px calc(108px + env(safe-area-inset-bottom,0px))}
+.vc4-page-head{grid-template-columns:1fr;gap:8px;margin:0 0 22px}
+.vc4-page-head h1{font-size:42px;letter-spacing:-.055em}
+.vc4-page-head h2{font-size:17px}
+.vc4-featured-hero{grid-template-columns:minmax(0,1fr) 82px;gap:8px;min-height:0;margin:13px 0 18px;padding:21px 17px;border-color:rgba(164,105,255,.7);border-radius:20px;background:linear-gradient(90deg,rgba(5,8,18,.96) 0%,rgba(7,10,25,.84) 48%,rgba(7,10,25,.12) 100%),linear-gradient(135deg,#21124c,#10172d);box-shadow:0 9px 28px rgba(0,0,0,.28),0 0 24px rgba(116,55,255,.14)}
+.vc4-featured-copy h2{font-size:clamp(23px,6vw,31px)}
+.vc4-featured-copy p{font-size:11px}
+.vc4-featured-art{min-height:110px}
+.vc4-featured-art img{width:95px;max-height:125px;object-fit:contain}
+.vc4-purchase-journey{border-color:var(--vc4-line);background:linear-gradient(150deg,#111a2b,#0c1320)}
+.vc4-grid{display:flex;flex-direction:column;gap:12px;overflow:visible;padding:0;scroll-snap-type:none}
+.vc4-card{width:100%;min-width:0;flex:1 1 auto;border-color:rgba(153,124,255,.25);border-radius:16px;background:linear-gradient(150deg,#151f31,#0d1421);box-shadow:0 6px 16px rgba(0,0,0,.18)}
+.vc4-card-main{display:block;padding:14px}
+.vc4-card-art{height:140px;margin-bottom:14px;border-radius:15px}
+.vc4-card-copy h3{font-size:15px}
+.vc4-primary{border-radius:12px}
+@media(max-width:380px){
+  .vc4-featured-hero{grid-template-columns:minmax(0,1fr) 58px}
+  .vc4-featured-art img{width:72px}
+  .vc4-nav-actions{gap:8px}
+  .vc4-nav-actions button,.vc4-nav-actions a{font-size:10px}
+}
