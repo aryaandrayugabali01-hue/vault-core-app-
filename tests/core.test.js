@@ -330,12 +330,13 @@ test('public catalog endpoints share one active, priced, approved and in-stock b
   assert.match(source, /rr\.owner_attested=TRUE/);
   assert.match(source, /rr\.valid_until>NOW\(\)/);
   assert.match(source, /stock\.available_stock>0/);
-  assert.match(source, /secret_scope='PRODUCT_ACCOUNT'/);
+  assert.doesNotMatch(source, /vault_core_secret_payloads/);
+  assert.match(source, /availability_mode/);
+  assert.match(source, /indent_deadline_days/);
+  assert.match(source, /customer_input_fields/);
   assert.match(source, /releaseExpiredPendingOrders/);
   assert.equal((source.match(/FROM vault_core_varian_wajib v/g)||[]).length,1);
-});
-
-test('v4 MLBB route opens the Apple catalog and account details use the public product DTO', () => {
+});test('v4 MLBB route opens the Apple catalog and account details use the public product DTO', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const routePage = readFileSync(new URL('../frontend/src/app/catalog/mlbb-akun/page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
@@ -905,29 +906,24 @@ test('cart normalization preserves legacy checkout and merges valid product line
 });
 
 
-test('v4 product lifecycle requires Owner rights review, all questions, stock and explicit publication', () => {
-  const adminRoute = readFileSync(new URL('../backend/routes/admin.js', import.meta.url), 'utf8');
+test('Owner SKU lifecycle saves one safe form and publishes eligible stock without a separate publish step', () => {
   const ownerRoute = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
   const ownerPage = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
-  const catalogPage = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
-  const migration = readFileSync(new URL('../database/migrations/016_remove_pending_review_product_status.sql', import.meta.url), 'utf8');
-  assert.doesNotMatch(adminRoute + ownerRoute + ownerPage + catalogPage, /PENDING_REVIEW|MENUNGGU REVIEW|belum dapat dibeli/i);
-  assert.match(adminRoute, /variant_id IS NULL/);
-  assert.match(ownerRoute, /isRightsReviewUsable/);
-  assert.match(ownerRoute, /completed_questions|response_status IN/);
-  assert.match(ownerRoute, /vault_core_secret_payloads/);
-  assert.match(ownerRoute, /V4_PRODUCT_PUBLICATION_REQUIREMENTS_NOT_MET/);
-  assert.match(ownerPage, /Simpan pemeriksaan hak/);
-  assert.match(ownerPage, /Simpan spesifikasi produk/);
-  assert.match(ownerPage, /Tambahkan stok/);
-  assert.match(ownerPage, /Terbitkan SKU/);
-  assert.ok(migration.includes('DROP CONSTRAINT IF EXISTS products_status_check'));
-  assert.ok(migration.includes("'DRAFT','ACTIVE','PAUSED','ARCHIVED'"));
-  const accountOnlyMigration = readFileSync(new URL('../database/migrations/021_pause_legacy_active_products.sql', import.meta.url), 'utf8');
-  assert.ok(accountOnlyMigration.includes("IS DISTINCT FROM 'GAME_ACCOUNT_TRANSFER'"));
-});
-
-test('web storefront and Owner routes retain global chrome while Mini App keeps its separate mobile shell', () => {
+  const catalog = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
+  assert.match(ownerRoute, /router\.post\('\/products'/);
+  assert.match(ownerRoute, /OWNER_PRODUCT_SINGLE_FORM_SAVED/);
+  assert.match(ownerRoute, /validateRightsReviewInput/);
+  assert.match(ownerRoute, /AUTHENTICATION_DATA_PROHIBITED/);
+  assert.match(ownerRoute, /USE_SINGLE_PRODUCT_FORM/);
+  assert.doesNotMatch(ownerRoute, /vault_core_secret_payloads|encryptSecretPayload|readJokiCustomerAccess/);
+  assert.match(ownerPage, /Simpan Produk/);
+  assert.match(ownerPage, /Form Akun Game/);
+  assert.match(ownerPage, /Form Jasa Joki/);
+  assert.match(ownerPage, /READY/);
+  assert.match(ownerPage, /INDENT/);
+  assert.match(ownerPage, /Player\/User ID/);
+  assert.match(catalog, /availability_mode/);
+});test('web storefront and Owner routes retain global chrome while Mini App keeps its separate mobile shell', () => {
   const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
   const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const owner = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
@@ -1242,47 +1238,34 @@ test('active CSS rules do not contain repeated declarations that can reintroduce
   }
 });
 
-test('public account catalog and checkout require a live per-item encrypted vault record', () => {
+test('account catalog and checkout use manual Owner handover without storing account credentials', () => {
   const catalog = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
   const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
-  assert.match(catalog, /v\.kategori_produk<>'Akun'[\s\S]*OR EXISTS/);
-  assert.match(catalog, /s\.secret_scope='PRODUCT_ACCOUNT'/);
-  assert.match(catalog, /s\.secret_status='ACTIVE'/);
-  assert.match(orders, /secureVaultOnly = !testMode/);
-  assert.match(orders, /s\.secret_scope='PRODUCT_ACCOUNT'/);
-  assert.match(orders, /s\.secret_status='ACTIVE'/);
+  const delivery = readFileSync(new URL('../backend/services/deliveryService.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(catalog, /vault_core_secret_payloads/);
+  assert.doesNotMatch(orders, /secureVaultOnly|vault_core_secret_payloads/);
+  assert.match(orders, /availability_mode_snapshot/);
+  assert.match(orders, /indent_deadline_days_snapshot/);
   assert.match(orders, /FOR UPDATE SKIP LOCKED/);
-});
-
-
-test('legacy SKU mapping is explicit, canonical-category-bound and keeps products in draft', () => {
+  assert.match(delivery, /fulfillment_type === 'GAME_ACCOUNT_TRANSFER'/);
+  assert.match(delivery, /OWNER_MANUAL_FULFILLMENT_REQUIRED/);
+});test('legacy SKU mapping remains category-bound and pauses the SKU for unified-form review', () => {
   const ownerRoute = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
-  const ownerPage = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
   assert.match(ownerRoute, /router\.put\('\/products\/:[^']+\/variant'/);
   for (const slug of ['mlbb-akun','free-fire-akun','roblox-akun','genshin-akun','roblox-blox-fruits','roblox-adopt-me','roblox-murder-mystery-2']) assert.ok(ownerRoute.includes("'" + slug + "'"));
   assert.match(ownerRoute, /LEGACY_CATEGORY_HAS_NO_V4_VARIANT/);
   assert.match(ownerRoute, /VARIANT_MAPPING_DOES_NOT_MATCH_LEGACY_PRODUCT/);
   assert.match(ownerRoute, /PRODUCT_VARIANT_ALREADY_ASSIGNED/);
-  assert.match(ownerRoute, /status=CASE WHEN status='ACTIVE' THEN 'DRAFT' ELSE status END/);
+  assert.match(ownerRoute, /status=CASE WHEN status='ACTIVE' THEN 'PAUSED' ELSE status END/);
   assert.match(ownerRoute, /V4_LEGACY_PRODUCT_VARIANT_MAPPED/);
-  assert.match(ownerPage, /LEGACY_VARIANT_BY_SLUG/);
-  assert.match(ownerPage, /pindahkan ke DRAFT/i);
-});
-
-test('legacy unvaulted account stock is retired only after explicit Owner confirmation and encrypted replacement', () => {
+});test('legacy multi-step question, inventory and publish endpoints are disabled', () => {
   const ownerRoute = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
-  const ownerPage = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
-  assert.match(ownerRoute, /replaceLegacyStock !== true/);
-  assert.match(ownerRoute, /LEGACY_STOCK_REPLACEMENT_ACK_REQUIRED/);
-  assert.match(ownerRoute, /SET status='UNAVAILABLE'/);
-  assert.match(ownerRoute, /NOT EXISTS \([\s\S]*secret_scope='PRODUCT_ACCOUNT'[\s\S]*secret_status='ACTIVE'/);
-  assert.match(ownerPage, /replaceLegacyStock/);
-  assert.match(ownerPage, /unit stok lama yang tidak memiliki record vault v4 aktif akan dinonaktifkan/);
-  assert.match(ownerPage, /data\.replacedLegacyStockCount/);
-});
-
-
-test('active stylesheets have unique selectors within each cascade context', () => {
+  assert.match(ownerRoute, /router\.get\('\/products\/:[^']+\/questions'.*USE_SINGLE_PRODUCT_FORM/);
+  assert.match(ownerRoute, /router\.put\('\/products\/:[^']+\/questions'.*USE_SINGLE_PRODUCT_FORM/);
+  assert.match(ownerRoute, /router\.post\('\/products\/:[^']+\/inventory'.*USE_SINGLE_PRODUCT_FORM/);
+  assert.match(ownerRoute, /router\.post\('\/products\/:[^']+\/publish'.*USE_SINGLE_PRODUCT_FORM/);
+  assert.doesNotMatch(ownerRoute, /encryptSecretPayload|vault_core_secret_payloads|readJokiCustomerAccess/);
+});test('active stylesheets have unique selectors within each cascade context', () => {
   const files = [
     '../frontend/src/app/globals.css',
     '../frontend/src/app/mobile-app.css',
