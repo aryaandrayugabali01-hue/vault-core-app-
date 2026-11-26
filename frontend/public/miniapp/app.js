@@ -232,7 +232,7 @@ function beginCheckout(id) {
   const product = state.products.find((item) => String(item.id) === String(id));
   if (!product || !isBuyable(product)) return toast('Produk tidak tersedia.');
   if (!inTelegram) return toast('Pembelian dan invoice resmi tersedia melalui Telegram Mini App. Buka VAULT CORE dari bot Telegram.');
-  checkout = { productId:String(id), step:1, buyerInput:'', busy:false, error:'' };
+  checkout = { productId:String(id), step:1, busy:false, error:'' };
   go('/checkout/' + encodeURIComponent(id));
 }
 function renderCheckout(id) {
@@ -242,7 +242,7 @@ function renderCheckout(id) {
     setPage(headerPage('Pembelian') + '<div class="empty">Checkout dan invoice resmi Telegram Stars (XTR) hanya dapat dibuka melalui Telegram Mini App.</div>', 'catalog', false);
     return;
   }
-  if (!checkout || checkout.productId !== String(id)) checkout = {productId:String(id),step:1,buyerInput:'',busy:false,error:''};
+  if (!checkout || checkout.productId !== String(id)) checkout = {productId:String(id),step:1,busy:false,error:''};
   const step = checkout.step;
   const steps = '<div class="stepper"><div class="step ' + (step===1?'on':step>1?'done':'') + '"><i>1</i>Data</div><div class="step ' + (step===2?'on':step>2?'done':'') + '"><i>2</i>Pembayaran</div><div class="step"><i>3</i>Selesai</div></div>';
   const input = step === 1 ?
@@ -255,7 +255,7 @@ function renderCheckout(id) {
     headerPage(step === 1 ? 'Pembelian' : 'Pembayaran') + '<main>' + steps +
     '<div class="list-card">' + productImage(product,'list-art') + '<span class="list-copy"><b>' + esc(product.name) + '</b><small>' + esc(gameOf(product.game_category).short) + '</small><b class="price">' + fmt(product.sale_price_xtr) + ' XTR</b></span></div>' +
     input +
-    '<div class="box info">' + icon('shield') + '<span>Pastikan data penerima sesuai instruksi produk. Pembayaran hanya sah setelah status dikonfirmasi sistem.</span></div>' +
+    '<div class="box info">' + icon('shield') + '<span>Untuk checkout ini tidak diperlukan data tambahan. Penyerahan mengikuti instruksi dan ketentuan produk setelah pembayaran dikonfirmasi sistem.</span></div>' +
     (checkout.error ? '<p class="error">' + esc(checkout.error) + '</p>' : '') +
     '<div class="dock">' + button + '</div></main>',
     'catalog', true
@@ -266,7 +266,6 @@ async function createOrder() {
   if (!inTelegram || !tg || !tg.initData) return toast('Buka aplikasi melalui Telegram untuk membuat pesanan.');
   const product = state.products.find((item) => String(item.id) === checkout.productId);
   if (!product || !isBuyable(product)) return toast('Stok produk berubah. Muat ulang katalog.');
-  checkout.buyerInput = ($('#buyer-input') && $('#buyer-input').value.trim()) || checkout.buyerInput || '';
   checkout.busy = true;
   checkout.error = '';
   renderCheckout(product.id);
@@ -447,7 +446,7 @@ function startCheckout(id) {
   const product = state.products.find((item) => String(item.id) === String(id));
   if (!product || !isBuyable(product)) return toast('Produk tidak tersedia atau stok sudah habis.');
   if (!inTelegram) return toast('Untuk membeli, buka VAULT CORE melalui Telegram Mini App.');
-  checkout = {productId:String(id),step:1,buyerInput:'',busy:false,error:''};
+  checkout = {productId:String(id),step:1,busy:false,error:''};
   go('/checkout/' + encodeURIComponent(id));
 }
 function handleClick(event) {
