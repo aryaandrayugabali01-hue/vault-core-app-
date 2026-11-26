@@ -75,7 +75,7 @@ export default function CustomerAccountPage() {
         </a>
         <span className="customer-account-kicker">AKUN PELANGGAN</span>
         <h1>Akun VAULT CORE</h1>
-        <p className="customer-account-intro">Gunakan satu akun Telegram untuk website dan Mini App. Profil, pesanan, dan riwayat transaksi tetap terhubung pada identitas yang sama.</p>
+        <p className="customer-account-intro">Gunakan satu akun Telegram untuk mengakses profil yang sama di website dan Mini App. Pesanan, pembayaran, dan riwayat transaksi dikelola melalui Telegram Mini App.</p>
 
         {status === 'checking' && <div className="customer-account-status">Memeriksa sesi akun…</div>}
 
