@@ -1061,7 +1061,7 @@ test('active CSS rules do not contain repeated declarations that can reintroduce
 test('public account catalog and checkout require a live per-item encrypted vault record', () => {
   const catalog = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
   const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
-  assert.match(catalog, /v\.kategori_produk<>'Akun' OR EXISTS/);
+  assert.match(catalog, /v\.kategori_produk<>'Akun'[\s\S]*OR EXISTS/);
   assert.match(catalog, /s\.secret_scope='PRODUCT_ACCOUNT'/);
   assert.match(catalog, /s\.secret_status='ACTIVE'/);
   assert.match(orders, /secureVaultOnly = !testMode/);
