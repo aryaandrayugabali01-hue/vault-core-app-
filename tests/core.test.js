@@ -13,6 +13,7 @@ import { createDatabaseAdapter } from '../backend/db/pool.js';
 import { canReconcileDelivery, isOwnerManualFulfillmentSource } from '../backend/services/deliveryService.js';
 import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
 import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } from '../backend/middleware/ownerSession.js';
+import { createCustomerSession, readCustomerSession, customerCookieHeader } from '../backend/middleware/customerSession.js';
 import { createTelegramOidcTransaction, validateTelegramOidcIdToken } from '../backend/utils/telegramOidc.js';
 import { splitInventoryPayloads } from '../frontend/src/lib/inventory.js';
 import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes } from '../backend/services/productDetailsService.js';
@@ -81,6 +82,54 @@ test('Owner login uses Telegram OIDC and does not load the deprecated iframe wid
   assert.match(ownerRoute, /validateTelegramOidcIdToken/);
 });
 
+test('Customer browser sessions are signed, separated from Owner cookies and expire after the configured window', () => {
+  const previous = process.env.TELEGRAM_BOT_TOKEN;
+  process.env.TELEGRAM_BOT_TOKEN = 'customer-session-test-token';
+  try {
+    const token = createCustomerSession({ id:'6888336983', username:'neuralgoldcs', first_name:'Nn' });
+    const user = readCustomerSession('vault_customer_session=' + token);
+    assert.equal(user.id, '6888336983');
+    assert.equal(user.username, 'neuralgoldcs');
+    assert.equal(user.first_name, 'Nn');
+    assert.equal(readCustomerSession('vault_owner_session=' + token), null);
+    assert.match(customerCookieHeader(token), /HttpOnly/);
+    assert.match(customerCookieHeader(token), /SameSite=Lax/);
+    assert.match(customerCookieHeader('', 0), /Max-Age=0/);
+    assert.equal(readCustomerSession('vault_customer_session=invalid.signature'), null);
+  } finally {
+    if (previous === undefined) delete process.env.TELEGRAM_BOT_TOKEN;
+    else process.env.TELEGRAM_BOT_TOKEN = previous;
+  }
+});
+
+test('Customer web OIDC and Mini App authentication resolve into the same customers table and order API', () => {
+  const customerRoute = readFileSync(new URL('../backend/routes/customerAuth.js', import.meta.url), 'utf8');
+  const sessionMiddleware = readFileSync(new URL('../backend/middleware/customerSession.js', import.meta.url), 'utf8');
+  const telegramMiddleware = readFileSync(new URL('../backend/middleware/telegramAuth.js', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../backend/app.js', import.meta.url), 'utf8');
+  assert.match(customerRoute, /api\/customer-auth\/oidc\/callback/);
+  assert.match(customerRoute, /INSERT INTO customers \(telegram_user_id, username, first_name\)/);
+  assert.match(customerRoute, /createCustomerSession/);
+  assert.match(sessionMiddleware, /vault_customer_session/);
+  assert.match(telegramMiddleware, /readCustomerSession/);
+  assert.match(telegramMiddleware, /validateTelegramInitData/);
+  assert.match(app, /app\.use\('\/api\/customer-auth', apiRateLimit, customerAuthRoutes\)/);
+  assert.match(app, /app\.use\('\/api\/orders', apiRateLimit, checkoutRateLimit, requireTelegramUser, ordersRoutes\)/);
+});
+
+test('Public website serves the backend-owned customer catalog and Telegram account page', () => {
+  const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
+  const catalogRoute = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const account = readFileSync(new URL('../frontend/src/app/account/page.jsx', import.meta.url), 'utf8');
+  const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  assert.match(home, /redirect\('\/catalog'\)/);
+  assert.match(catalogRoute, /VaultCoreV4Catalog/);
+  assert.match(account, /api\/customer-auth\/oidc\/start/);
+  assert.match(catalog, /api\/customer-auth\/session/);
+  assert.match(catalog, /credentials:'include'/);
+  assert.match(catalog, /window\.location\.assign\('\/account\?next=%2Fcatalog'\)/);
+});
+
 function topLevelCssProperty(styles, selector, property) {
   const root = postcss.parse(styles);
   const rule = root.nodes.find((node) => node.type === 'rule' && node.selector === selector);
@@ -105,8 +154,8 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
   const marketplace = readFileSync(new URL('../frontend/src/lib/marketplace.js', import.meta.url), 'utf8');
   const miniHtml = readFileSync(new URL('../frontend/public/miniapp/index.html', import.meta.url), 'utf8');
   const miniApp = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
-  assert.ok(catalogRoute.includes("from 'next/navigation'"));
-  assert.ok(catalogRoute.includes("redirect('/miniapp/index.html#/catalog')"));
+  assert.ok(catalogRoute.includes("from './VaultCoreV4Page'"));
+  assert.ok(catalogRoute.includes('return <VaultCoreV4Catalog />;'));
   assert.ok(catalog.includes('/assets/01-brand/vaultcore-horizontal.svg'));
   assert.ok(catalog.includes('GAME_ART[MARKET_GAME_CODE[code]]'));
   assert.ok(catalog.includes('GAME_ART[MARKET_GAME_CODE[variant.game_code]]'));
