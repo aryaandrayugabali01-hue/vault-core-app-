@@ -1365,3 +1365,15 @@ test('Mini App Joki customer access is submitted only through the authenticated 
   assert.ok(controller.includes("scope:'JOKI_CUSTOMER_ACCESS'"));
   assert.ok(controller.includes('encryptSecretPayload({ login, password }, context)'));
 });
+
+
+test('Home product cards preserve the selected SKU and display its actual listing availability', () => {
+  const home = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
+  const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  assert.match(home, /function getHomeProductAvailability\(product\)/);
+  assert.match(home, /availability\.startsWith\('Inden'\)/);
+  assert.match(home, /&product=' \+ encodeURIComponent\(product\.id\)/);
+  assert.match(home, /getHomeProductAvailability\(product\)/);
+  assert.match(catalog, /params\.get\('product'\)/);
+  assert.match(catalog, /setSelected\(\{variant_id:Number\(product\.variant_id\),product\}\)/);
+});

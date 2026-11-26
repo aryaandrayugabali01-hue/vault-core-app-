@@ -12,6 +12,20 @@ const GAME_CARDS = [
 ];
 const ART_BY_CODE = { MLBB:GAME_ART.MLBB, FF:GAME_ART.FREE_FIRE, ROBLOX:GAME_ART.ROBLOX, GI:GAME_ART.GENSHIN };
 const formatXtr = (value) => Number(value || 0).toLocaleString('id-ID');
+function getHomeProductAvailability(product) {
+  const entries = Object.entries(product?.attributes || {});
+  const normalizeKey = (value) => String(value).toLowerCase().replace(/[^a-z0-9]/g,'');
+  const read = (keys) => {
+    const found = entries.find(([key]) => keys.includes(normalizeKey(key)));
+    return found ? String(found[1] ?? '').trim() : '';
+  };
+  const kind = read(['availabilitystatus','availabilitytype','stocktype','ketersediaan']).toUpperCase();
+  const days = Number(read(['indentdays','indentdaycount','jumlahhariindent','durasiindent']));
+  if (kind === 'INDEN' || kind === 'INDENT') {
+    return Number.isSafeInteger(days) && days > 0 ? 'Inden ' + days + ' hari' : 'Inden';
+  }
+  return product?.is_available === true ? 'Ready' : 'Belum tersedia';
+}
 
 function HomeSkeleton() {
   return (
@@ -60,8 +74,10 @@ function VariantCard({ variant }) {
 
 function ProductCard({ product }) {
   const price = Number(product.sale_price_xtr || 0);
+  const availability = getHomeProductAvailability(product);
+  const statusClass = availability === 'Ready' ? 'is-ready' : availability.startsWith('Inden') ? 'is-indent' : '';
   return (
-    <a href={'/catalog?game=' + encodeURIComponent(product.game_code) + '&group=' + encodeURIComponent(product.group || 'Akun')} className={'vc-home-product-card' + (String(product.tier || '').toUpperCase()==='GOLD' ? ' vc-tier-gold' : '')}>
+    <a href={'/catalog?game=' + encodeURIComponent(product.game_code) + '&group=' + encodeURIComponent(product.group || 'Akun') + '&product=' + encodeURIComponent(product.id)} className={'vc-home-product-card' + (String(product.tier || '').toUpperCase()==='GOLD' ? ' vc-tier-gold' : '')}>
       <div className="vc-home-product-art">
         <img src={product.image_url || ART_BY_CODE[product.game_code] || GAME_ART.MLBB} alt="" loading="lazy"/>
         {String(product.tier || '').toUpperCase()==='GOLD' && <span className="vc-home-best-value">GOLD · BEST VALUE</span>}
@@ -70,7 +86,7 @@ function ProductCard({ product }) {
         <small>{product.game} · {product.group}</small>
         <strong>{product.name}</strong>
         <span className="vc-home-price">{formatXtr(price)} XTR</span>
-        <span className="vc-home-status is-ready">Ready</span>
+        <span className={'vc-home-status ' + statusClass}>{availability}</span>
       </div>
     </a>
   );

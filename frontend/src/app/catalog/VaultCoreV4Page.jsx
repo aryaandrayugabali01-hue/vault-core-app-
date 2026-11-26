@@ -200,6 +200,21 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
 
   useEffect(() => {
     if (loading) return;
+    const params = new URLSearchParams(window.location.search);
+    const requestedProductId = Number(params.get('product'));
+    if (!Number.isSafeInteger(requestedProductId) || requestedProductId <= 0) return;
+    const product = flatProducts.find((item) => item.id === requestedProductId);
+    if (!product) return;
+
+    setSelected({variant_id:Number(product.variant_id),product});
+    params.delete('product');
+    const query = params.toString();
+    const nextUrl = window.location.pathname + (query ? '?' + query : '') + window.location.hash;
+    window.history.replaceState(window.history.state,'',nextUrl);
+  },[flatProducts,loading]);
+
+  useEffect(() => {
+    if (loading) return;
     try {
       const stored = JSON.parse(sessionStorage.getItem('vault-core-web-cart') || '[]');
       const restored = Array.isArray(stored) ? stored.slice(0,10).map((entry) => {
