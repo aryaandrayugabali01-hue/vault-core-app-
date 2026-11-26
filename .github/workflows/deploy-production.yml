@@ -312,9 +312,15 @@ jobs:
           '
           curl --fail --silent --show-error --retry 20 --retry-delay 6 --retry-all-errors https://vaultcore.biz.id/ -o /dev/null
           curl --fail --silent --show-error --retry 20 --retry-delay 6 --retry-all-errors https://www.vaultcore.biz.id/ -o /dev/null
+          miniapp_entry="$(curl --fail --silent --show-error --location --retry 10 --retry-delay 3 --retry-all-errors --output /dev/null --write-out '%{http_code}|%{url_effective}' https://vaultcore.biz.id/miniapp)"
+          if [[ "$miniapp_entry" != "200|https://vaultcore.biz.id/miniapp/index.html" ]]; then
+            echo "::error::/miniapp did not resolve to the canonical Mini App entry: $miniapp_entry"
+            exit 1
+          fi
+          echo "Mini App short URL resolves to /miniapp/index.html."
           gateway_health="$(curl --fail --silent --show-error https://vaultcore.biz.id/_gateway/health)"
           echo "$gateway_health" | jq -e '.routes.apiConfigured == true and .routes.frontendConfigured == true' >/dev/null
-          echo "Root, www, api, TLS, and both gateway origins are responding."
+          echo "Root, www, api, Mini App entry, TLS, and both gateway origins are responding."
 
       - name: Verify storefront artwork is publicly served
         shell: bash
