@@ -214,7 +214,7 @@ function productPage(id) {
   if (product.description) details.push('<p>' + esc(product.description) + '</p>');
   if (attrs.length) details.push('<ul>' + attrs.map(([key,value]) => '<li><b>' + esc(key.replace(/[_-]/g,' ')) + ':</b> ' + esc(value) + '</li>').join('') + '</ul>');
   if (product.customer_terms) details.push('<p>' + esc(product.customer_terms) + '</p>');
-  details.push('<li>Pembayaran Telegram Stars (XTR)</li><li>Penyerahan mengikuti instruksi dan ketentuan produk.</li>');
+  details.push('<ul><li>Pembayaran Telegram Stars (XTR)</li><li>Penyerahan mengikuti instruksi dan ketentuan produk.</li></ul>');
   setPage(
     headerPage('Detail Produk') +
     '<main>' + productImage(product,'detail-art') +
