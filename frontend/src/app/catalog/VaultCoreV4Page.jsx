@@ -329,7 +329,8 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     finally { setAccessSaving(false); }
   };
 
-  const totalXtr = cart.reduce((sum,item) => sum + item.price * item.quantity,0);\n  const inTelegramMiniApp = Boolean(getInitData());
+  const totalXtr = cart.reduce((sum,item) => sum + item.price * item.quantity,0);
+  const inTelegramMiniApp = Boolean(getInitData());
   const activeVariant = selected ? variants.find((item) => Number(item.variant_id) === selected.variant_id) : null;
   const noActiveSku = visibleProducts.length === 0;
 
@@ -345,8 +346,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         </nav>
         <div className="vc4-nav-actions">
           <a className="vc4-account-link" href="/account">{customer ? 'Akun' : 'Masuk'}</a>
-          <button type="button" onClick={showOrders}>Pesanan</button>
-          <button type="button" className="vc4-cart-button" onClick={() => setCartOpen(true)}>Keranjang <span>{cart.reduce((n,item)=>n+item.quantity,0)}</span></button>
+          {inTelegramMiniApp && <><button type="button" onClick={showOrders}>Pesanan</button><button type="button" className="vc4-cart-button" onClick={() => setCartOpen(true)}>Keranjang <span>{cart.reduce((n,item)=>n+item.quantity,0)}</span></button></>}
         </div>
       </header>
 
