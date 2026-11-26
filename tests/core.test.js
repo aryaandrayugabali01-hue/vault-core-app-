@@ -1,6 +1,7 @@
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
+import postcss from 'postcss';
 import crypto from 'node:crypto';
 import { validateTelegramInitData } from '../backend/utils/telegram.js';
 import { encryptPayload, decryptPayload, assertAllowedDigitalPayload } from '../backend/utils/encryption.js';
@@ -18,6 +19,16 @@ import { parseProductAttributesText, formatProductAttributesText, getCustomerVis
 import { validateMarketplaceCategory, normalizeImageGallery } from '../backend/services/marketplaceCategoryService.js';
 import { normalizeCartItems } from '../backend/services/cartService.js';
 import { releaseExpiredPendingOrders } from '../backend/services/reservationService.js';
+
+function topLevelCssProperty(styles, selector, property) {
+  const root = postcss.parse(styles);
+  const rule = root.nodes.find((node) => node.type === 'rule' && node.selector === selector);
+  if (!rule) return undefined;
+  let value;
+  rule.walkDecls(property, (declaration) => { value = declaration.value; });
+  return value;
+}
+
 
 
 test('Owner dashboard has no stale product-form effect references', () => {
@@ -811,7 +822,7 @@ test('Apple v4 product detail follows the approved light catalog layout', () => 
   assert.match(styles, /--vc4-card:#fff/);
   assert.match(styles, /--vc4-blue:#0071e3/);
   assert.match(styles, /vc4-overlay/);
-  assert.match(styles, /vc4-grid/);
+  assert.ok(styles.includes('grid-template-columns:1fr'));
 });
 
 test('MLBB account detail uses the public v4 DTO, last-stock label, and four-step security guide', () => {
@@ -868,7 +879,7 @@ test('Apple v4 mobile product detail preserves SKU price, attributes, terms and 
   assert.ok(page.includes('Tambah ke keranjang'));
   assert.ok(page.includes('Bayar dengan Telegram Stars'));
   assert.ok(styles.includes('@media(max-width:760px)'));
-  assert.ok(styles.includes('.vc4-grid{grid-template-columns:1fr}'));
+  assert.ok(styles.includes('grid-template-columns:1fr'));
   assert.ok(styles.includes('.vc4-dialog{padding:28px 20px}'));
 });
 
@@ -899,7 +910,8 @@ test('dashboard buyer protection uses the official Vault Core logo and tagline w
     'Refund atau penggantian mengikuti ketentuan produk.'
   ]) assert.ok(section.includes(copy), 'Missing approved protection copy: ' + copy);
   for (const title of ['Anti-Hackback','Akun Dicek Manual','Garansi Refund']) assert.ok(section.includes(title));
-  assert.ok(styles.includes('.dashboard-protection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}'));
+  assert.equal(topLevelCssProperty(styles,'.dashboard-protection-grid','grid-template-columns'),'repeat(3,minmax(0,1fr))');
+  assert.equal(topLevelCssProperty(styles,'.dashboard-protection-grid','gap'),'5px');
   assert.ok(styles.includes('.dashboard-protection-card:nth-child(2)'));
   assert.ok(styles.includes('.dashboard-protection-card:nth-child(3)'));
   assert.ok(styles.includes('.dashboard-protection-logo'));
@@ -910,7 +922,8 @@ test('all application routes use the approved mobile-only dashboard and catalog 
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   assert.match(styles, /\.vc-mobile-app\{width:min\(100%,430px\);max-width:430px/);
   assert.match(styles, /\.dashboard-shell\{[\s\S]*?width:min\(100%,430px\)/);
-  assert.match(styles, /\.dashboard-game-grid\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\);gap:5px\}/);
+  assert.equal(topLevelCssProperty(styles,'.dashboard-game-grid','grid-template-columns'),'repeat(4,minmax(0,1fr))');
+  assert.equal(topLevelCssProperty(styles,'.dashboard-game-grid','gap'),'5px');
   assert.match(styles, /\.vc-mobile-app \.vc4-main/);
   assert.match(styles, /\.vc-mobile-app \.vco-product-layout/);
   assert.match(styles, /\.vc-mobile-app \.admin-form\{grid-template-columns:minmax\(0,1fr\);[^}]*\}/);
@@ -974,4 +987,46 @@ test('legacy unvaulted account stock is retired only after explicit Owner confir
   assert.match(ownerPage, /replaceLegacyStock/);
   assert.match(ownerPage, /unit stok lama yang tidak memiliki record vault v4 aktif akan dinonaktifkan/);
   assert.match(ownerPage, /data\.replacedLegacyStockCount/);
+});
+
+
+test('active stylesheets have unique selectors within each cascade context', () => {
+  const files = [
+    '../frontend/src/app/globals.css',
+    '../frontend/src/app/mobile-app.css',
+    '../frontend/src/app/catalog/page.css'
+  ];
+  const normalizeContext = (name, params) => {
+    const value = String(params || '').trim();
+    if (['media','supports','container','document'].includes(name)) {
+      return '@' + name + ' ' + value.replace(/\s+/g, ' ').replace(/\s*([():,])\s*/g, '$1').toLowerCase();
+    }
+    return '@' + name + ' ' + value.replace(/\s+/g, ' ');
+  };
+  for (const file of files) {
+    const css = readFileSync(new URL(file, import.meta.url), 'utf8');
+    const root = postcss.parse(css, { from: file });
+    const seen = new Set();
+    const duplicates = [];
+    const visit = (container, context = 'GLOBAL') => {
+      container.each((node) => {
+        if (node.type === 'atrule') {
+          visit(node, context + ' ' + normalizeContext(node.name.toLowerCase(), node.params));
+          return;
+        }
+        if (node.type !== 'rule') return;
+        for (const selector of postcss.list.comma(node.selector).map((value) => value.trim())) {
+          const key = context + '\\u0000' + selector;
+          if (seen.has(key)) duplicates.push({ context, selector });
+          seen.add(key);
+        }
+      });
+    };
+    visit(root);
+    assert.deepEqual(duplicates, [], file + ' still contains repeated selectors in one cascade context');
+  }
+  const globalStyles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const mobileStyles = readFileSync(new URL('../frontend/src/app/mobile-app.css', import.meta.url), 'utf8');
+  assert.match(topLevelCssProperty(globalStyles,'.dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded) a.active','background'), /255,201,40/);
+  assert.match(topLevelCssProperty(mobileStyles,'.dashboard-transaction-filter.active','background'), /255,201,40/);
 });

@@ -301,3 +301,17 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - Verifikasi: CI run `45672178434` **SUCCESS**; 63 test lulus, 0 gagal; build Mini App lulus; API Worker dry-run lulus. Production deployment run `45672178761` **SUCCESS**; API/frontend Worker, kesehatan Worker/database, gateway/domain, 13 aset publik, Telegram webhook, dan empat fixture Owner terenkripsi non-redeemable terverifikasi. Tidak ada invoice atau pembayaran yang dibuat oleh fixture bootstrap.
 - Screenshot Android langsung dan uji interaksi manual pada perangkat: **NOT TESTED** pada eksekusi ini.
 - File ZIP UniPin yang diunggah tidak tersedia pada path runtime sesi ini, dan file sumber `c.html` tidak ditemukan di repository. Karena itu, ukuran UniPin serta struktur asli `c.html` tetap **BELUM TERVERIFIKASI**. Nilai ukuran eksternal tidak boleh direka. Lanjutkan perbandingan setelah kedua sumber tersedia.
+
+## 23. CSS selector cascade consolidation — 26 November 2026
+
+- Acuan visual: mockup VAULT CORE mobile-only 12 layar yang diberikan pemilik. Source ZIP v5 digunakan sebagai jejak struktur sumber; repository `main` tetap menjadi basis produksi karena lebih baru dan memisahkan stylesheet Dashboard, katalog, serta komponen global.
+- Stylesheet aktif yang dikonsolidasikan:
+  - `frontend/src/app/globals.css`
+  - `frontend/src/app/mobile-app.css`
+  - `frontend/src/app/catalog/page.css`
+- Audit sebelum konsolidasi menemukan 248 selector-context berulang pada `globals.css` (164 memiliki deklarasi berbeda), 79 pada `mobile-app.css` (75 berbeda), dan 96 pada `catalog/page.css` (66 berbeda).
+- Setiap selector pada konteks cascade yang sama kini memiliki satu rule canonical. Urutan deklarasi sumber digabungkan pada posisi rule terakhir; konteks base, state, media query, prefers-reduced-motion, dan keyframes tetap dipisahkan.
+- Layer lintas-file tetap dipertahankan: `globals.css` dimuat root layout, `mobile-app.css` dimuat sesudahnya untuk kanvas mobile, dan `catalog/page.css` dimuat oleh route katalog.
+- State navigasi terpilih, filter transaksi aktif, dan tautan heading Dashboard memakai aksen emas sesuai mockup. Struktur route, harga, stok, API, order, invoice, checkout Telegram Stars (XTR), Owner, dan database tidak diubah.
+- Regression test baru memeriksa keunikan selector pada ketiga stylesheet aktif per konteks cascade.
+- Status hasil CI, build, dan deployment produksi dicatat setelah workflow rilis selesai. Screenshot langsung pada perangkat Android tetap memerlukan UAT pengguna.
