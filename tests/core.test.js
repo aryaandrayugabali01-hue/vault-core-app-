@@ -14,7 +14,7 @@ import { canReconcileDelivery, isOwnerManualFulfillmentSource } from '../backend
 import { resolveRateLimitKey } from '../backend/middleware/rateLimit.js';
 import { validateTelegramLoginPayload, createOwnerSession, ownerCookieHeader } from '../backend/middleware/ownerSession.js';
 import { createCustomerSession, readCustomerSession, customerCookieHeader } from '../backend/middleware/customerSession.js';
-import { createTelegramOidcTransaction, validateTelegramOidcIdToken } from '../backend/utils/telegramOidc.js';
+import { createTelegramOidcTransaction, validateTelegramOidcIdToken, safeCustomerReturnPath } from '../backend/utils/telegramOidc.js';
 import { splitInventoryPayloads } from '../frontend/src/lib/inventory.js';
 import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes } from '../backend/services/productDetailsService.js';
 import { parseProductAttributesText, formatProductAttributesText, getCustomerVisibleProductAttributes, normalizeCustomerDisplayText } from '../frontend/src/lib/product-attributes.js';
@@ -39,6 +39,15 @@ test('Telegram OIDC transaction creates independent state, nonce and PKCE values
   assert.notEqual(first.nonce, second.nonce);
   assert.notEqual(first.verifier, second.verifier);
   assert.equal(crypto.createHash('sha256').update(first.verifier).digest('base64url'), first.challenge);
+});
+
+test('Customer OIDC return path is restricted to local account and catalog pages', () => {
+  assert.equal(safeCustomerReturnPath('/catalog'), '/catalog');
+  assert.equal(safeCustomerReturnPath('/catalog/mlbb-akun?sort=price#products'), '/catalog/mlbb-akun?sort=price#products');
+  assert.equal(safeCustomerReturnPath('/account?next=%2Fcatalog'), '/account?next=%2Fcatalog');
+  for (const value of ['https://evil.example','//evil.example','/\\\\evil.example','/admin','/api/customer-auth/oidc/start','']) {
+    assert.equal(safeCustomerReturnPath(value), '/account', 'Rejected unsafe return path: ' + value);
+  }
 });
 
 test('Telegram OIDC ID token validation verifies RS256 signature, issuer, audience, expiry and nonce', async () => {
@@ -110,6 +119,9 @@ test('Customer web OIDC and Mini App authentication resolve into the same custom
   assert.match(customerRoute, /api\/customer-auth\/oidc\/callback/);
   assert.match(customerRoute, /INSERT INTO customers \(telegram_user_id, username, first_name\)/);
   assert.match(customerRoute, /createCustomerSession/);
+  assert.match(customerRoute, /vault_customer_oidc_return/);
+  assert.match(customerRoute, /safeCustomerReturnPath/);
+  assert.match(customerRoute, /new URL\(returnPath, FRONTEND_ACCOUNT_URL\)/);
   assert.match(sessionMiddleware, /vault_customer_session/);
   assert.match(telegramMiddleware, /readCustomerSession/);
   assert.match(telegramMiddleware, /validateTelegramInitData/);
@@ -125,6 +137,8 @@ test('Public website serves the backend-owned customer catalog and Telegram acco
   assert.match(home, /redirect\('\/catalog'\)/);
   assert.match(catalogRoute, /VaultCoreV4Catalog/);
   assert.match(account, /api\/customer-auth\/oidc\/start/);
+  assert.match(account, /nextPath \? '\?next=' \+ encodeURIComponent\(nextPath\)/);
+  assert.match(account, /href=\{destination\}/);
   assert.match(catalog, /api\/customer-auth\/session/);
   assert.match(catalog, /credentials:'include'/);
   assert.match(catalog, /window\.location\.assign\('\/account\?next=%2Fcatalog'\)/);
