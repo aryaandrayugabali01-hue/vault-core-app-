@@ -9,6 +9,7 @@ import ordersRoutes from './routes/orders.js';
 import adminRoutes from './routes/admin.js';
 import telegramWebhookRoutes from './routes/telegramWebhook.js';
 import ownerAuthRoutes from './routes/ownerAuth.js';
+import customerAuthRoutes from './routes/customerAuth.js';
 import { requireOwnerSession } from './middleware/ownerSession.js';
 import { requireTelegramUser } from './middleware/telegramAuth.js';
 import { isOwnerTelegramUser, requireOwner } from './middleware/adminAuth.js';
@@ -33,13 +34,14 @@ app.get('/api/session', apiRateLimit, requireTelegramUser, async (req, res) => {
   try {
     const userId = String(req.telegramUser.id);
     const isOwner = await isOwnerTelegramUser(userId);
-    return res.json({ userId, username: req.telegramUser.username ?? null, isOwner });
+    return res.json({ userId, username: req.telegramUser.username ?? null, firstName: req.telegramUser.first_name ?? '', isOwner, authMethod: req.customerAuthMethod ?? 'telegram-mini-app' });
   } catch (error) {
     console.error('[session-check]', error.message);
     return res.status(503).json({ error: 'SESSION_CHECK_UNAVAILABLE' });
   }
 });
 app.use('/api/owner-auth', apiRateLimit, ownerAuthRoutes);
+app.use('/api/customer-auth', apiRateLimit, customerAuthRoutes);
 app.get('/api/owner-auth/session', apiRateLimit, requireOwnerSession, requireOwner, (req, res) => res.json({ authenticated: true, user: { id: String(req.telegramUser.id), username: req.telegramUser.username ?? null, first_name: req.telegramUser.first_name ?? '' } }));
 app.use('/api/catalog', apiRateLimit, catalogRoutes);
 app.use('/api/catalog/v4', apiRateLimit, catalogV4Routes);
