@@ -64,19 +64,17 @@ router.get('/config', (_req, res) => {
 
 router.get('/session', requireTelegramUser, async (req, res) => {
   const customer = req.customer;
+  const { rows: ownerRows } = await pool.query(
+    'SELECT 1 FROM owner_accounts WHERE telegram_user_id=$1 AND is_active=TRUE LIMIT 1',
+    [String(customer.telegram_user_id)]
+  );
   return res.json({
     authenticated: true,
     user: {
       id: String(customer.telegram_user_id),
       username: customer.username ?? null,
       first_name: customer.first_name ?? '',
-      isOwner: Boolean(await (async () => {
-        const { rows } = await pool.query(
-          'SELECT 1 FROM owner_accounts WHERE telegram_user_id=$1 AND is_active=TRUE LIMIT 1',
-          [String(customer.telegram_user_id)]
-        );
-        return rows.length;
-      })())
+      isOwner: ownerRows.length > 0
     }
   });
 });
