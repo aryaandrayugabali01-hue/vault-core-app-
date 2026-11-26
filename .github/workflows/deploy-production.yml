@@ -253,6 +253,9 @@ jobs:
           if [[ -n "${TELEGRAM_OIDC_CLIENT_ID:-}" && -n "${TELEGRAM_OIDC_CLIENT_SECRET:-}" ]]; then
             printf '%s' "$TELEGRAM_OIDC_CLIENT_ID" | npx --yes wrangler@latest secret put TELEGRAM_OIDC_CLIENT_ID --config wrangler.api.jsonc
             printf '%s' "$TELEGRAM_OIDC_CLIENT_SECRET" | npx --yes wrangler@latest secret put TELEGRAM_OIDC_CLIENT_SECRET --config wrangler.api.jsonc
+          else
+            npx --yes wrangler@latest secret delete TELEGRAM_OIDC_CLIENT_ID --config wrangler.api.jsonc || true
+            npx --yes wrangler@latest secret delete TELEGRAM_OIDC_CLIENT_SECRET --config wrangler.api.jsonc || true
           fi
 
       - name: Deploy frontend Worker
