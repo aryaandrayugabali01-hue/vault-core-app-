@@ -162,14 +162,22 @@ test('test fixtures are never visible through the public catalog policy', () => 
   assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: true, sale_price_xtr: 2 }), false);
 });
 
-test('public catalog only exposes active, priced, approved commercial products', () => {
-  const route = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
-  assert.ok(route.includes("p.status='ACTIVE'"));
-  assert.doesNotMatch(route, /PENDING_REVIEW|Menunggu pemeriksaan Owner/);
-  assert.ok(route.includes("p.sale_price_xtr > 1"));
-  assert.ok(route.includes("rr.review_status='APPROVED'"));
-  assert.ok(route.includes("rr.owner_attested=TRUE"));
-  assert.ok(route.includes("rr.valid_until>NOW()"));
+test('public catalog endpoints share one active, priced, approved and in-stock backend source', () => {
+  const legacy = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
+  const v4 = readFileSync(new URL('../backend/routes/catalogV4.js', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
+  assert.ok(legacy.includes('getPublicCatalogVariants'));
+  assert.ok(v4.includes('getPublicCatalogVariants'));
+  assert.match(source, /p\.status='ACTIVE'/);
+  assert.match(source, /COALESCE\(p\.is_test,FALSE\)=FALSE/);
+  assert.match(source, /p\.sale_price_xtr>1/);
+  assert.match(source, /rr\.review_status='APPROVED'/);
+  assert.match(source, /rr\.owner_attested=TRUE/);
+  assert.match(source, /rr\.valid_until>NOW\(\)/);
+  assert.match(source, /stock\.available_stock>0/);
+  assert.match(source, /secret_scope='PRODUCT_ACCOUNT'/);
+  assert.match(source, /releaseExpiredPendingOrders/);
+  assert.equal((source.match(/FROM vault_core_varian_wajib v/g)||[]).length,1);
 });
 
 test('v4 MLBB route opens the Apple catalog and account details use the public product DTO', () => {
@@ -188,22 +196,19 @@ test('v4 MLBB route opens the Apple catalog and account details use the public p
   assert.match(styles, /overflow-wrap:anywhere/);
 });
 
-test('v4 customer catalog and Owner product routes are mounted behind the correct policies', () => {
+test('v4 customer catalog and Owner product routes use the canonical source behind their policies', () => {
   const app = readFileSync(new URL('../backend/app.js', import.meta.url), 'utf8');
   const route = readFileSync(new URL('../backend/routes/catalogV4.js', import.meta.url), 'utf8');
+  const service = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const ownerRoute = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
   assert.match(app, /app\.use\('\/api\/catalog\/v4', apiRateLimit, catalogV4Routes\)/);
   assert.match(app, /app\.use\('\/api\/admin\/v4', apiRateLimit, ownerRateLimit, requireOwnerSession, requireOwner, ownerV4Routes\)/);
   assert.match(page, /fetch\(API \+ '\/api\/catalog\/v4\/variants'/);
-  assert.match(route, /p\.status='ACTIVE'/);
-  assert.match(route, /COALESCE\(p\.is_test,FALSE\)=FALSE/);
-  assert.match(route, /p\.sale_price_xtr>1/);
-  assert.match(route, /rr\.review_status='APPROVED'/);
-  assert.match(route, /rr\.owner_attested=TRUE/);
-  assert.match(route, /rr\.valid_until>NOW\(\)/);
-  assert.match(route, /stock\.available_stock>0/);
-  assert.ok(route.includes('Object.fromEntries(Object.entries(sku.attributes ?? {})'));
+  assert.match(route, /getPublicCatalogVariants/);
+  assert.match(service, /FROM vault_core_varian_wajib v/);
+  assert.match(service, /stock\.available_stock>0/);
+  assert.ok(service.includes('Object.fromEntries'));
   assert.match(ownerRoute, /router\.get\('\/products'/);
   assert.match(ownerRoute, /router\.post\('\/products\/:[^']+\/publish'/);
 });
@@ -829,7 +834,7 @@ test('v4 product detail keeps the approved dark Vault Core catalog palette', () 
 test('MLBB account detail uses the public v4 DTO, last-stock label, and four-step security guide', () => {
   const route = readFileSync(new URL('../frontend/src/app/catalog/mlbb-akun/page.jsx', import.meta.url), 'utf8');
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
-  const catalogApi = readFileSync(new URL('../backend/routes/catalogV4.js', import.meta.url), 'utf8');
+  const catalogApi = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   const guard = readFileSync(new URL('../database/migrations/026_vault_question_plaintext_guard_regex.sql', import.meta.url), 'utf8');
   assert.match(route, /initialCategory="MLBB"/);
@@ -841,7 +846,8 @@ test('MLBB account detail uses the public v4 DTO, last-stock label, and four-ste
   assert.match(page, /Aktifkan verifikasi dua langkah/);
   assert.match(page, /metode pemulihan/);
   assert.match(catalogApi, /display_stock:/);
-  assert.ok(catalogApi.includes('Object.fromEntries(Object.entries(sku.attributes ?? {})'));
+  assert.ok(catalogApi.includes('Object.fromEntries'));
+  assert.ok(catalogApi.includes("Object.entries(sku.attributes ?? {})"));
   assert.match(styles, /vc4-mlbb-filters/);
   assert.match(styles, /vc4-mlbb-grid/);
   assert.match(guard, /login\|password\|pass\|sandi\|otp\|session\|recovery\|token/);
@@ -895,52 +901,71 @@ test('v4 customer catalog footer follows XTR, account-security and Telegram paym
   assert.ok(styles.includes('.vc4-footer'));
 });
 
-test('the production homepage opens the supplied VAULT CORE v5 mobile Mini App', () => {
+test('the production homepage opens the v5 Mini App with backend-owned master variants', () => {
   const page = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
   const html = readFileSync(new URL('../frontend/public/miniapp/index.html', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
-  const variants = readFileSync(new URL('../frontend/public/miniapp/variants.js', import.meta.url), 'utf8');
+  const route = readFileSync(new URL('../backend/routes/catalogV4.js', import.meta.url), 'utf8');
+  const migration = readFileSync(new URL('../database/migrations/024_vault_core_v4_master_secret_vault.sql', import.meta.url), 'utf8');
+  const seed = migration.match(/jsonb_array_elements\(\$\$([\s\S]*?)\$\$::jsonb\)/);
+  assert.ok(seed, 'Canonical 12-variant seed must remain available');
+  assert.equal(JSON.parse(seed[1]).length,12);
   assert.ok(page.includes("redirect('/miniapp/index.html')"));
   assert.ok(html.includes('<nav class="nav" id="nav"'));
   assert.ok(html.includes('./app.css'));
+  assert.equal(html.includes('./variants.js'),false);
   assert.ok(styles.includes('#app{position:relative;width:min(100%,430px)'));
   assert.ok(styles.includes('.games{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))'));
   assert.ok(styles.includes('.nav{position:fixed'));
   assert.ok(styles.includes('.hero{'));
   assert.ok(app.includes('data-go="/catalog"'));
-  assert.ok(variants.includes('id:12'));
-  assert.equal(variants.split('{id:').length - 1,12);
+  assert.ok(app.includes("api('/api/catalog/v4/variants')"));
+  assert.ok(route.includes('getPublicCatalogVariants'));
+  assert.equal(app.includes('window.VAULT_VARIANTS'),false);
 });
 
-test('v5 catalog, detail, checkout, XTR invoice and order history use the existing backend contract', () => {
-  const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+test('Mini App and React catalog use the same catalog, order, and XTR payment API contract', () => {
+  const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const react = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
   const api = readFileSync(new URL('../backend/app.js', import.meta.url), 'utf8');
-  const catalog = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
-  assert.ok(app.includes("api('/api/catalog')"));
-  assert.ok(app.includes("api('/api/orders'"));
-  assert.ok(app.includes("api('/api/orders/mine')"));
-  assert.ok(app.includes("paymentMethod:'XTR'"));
-  assert.ok(app.includes('tg.openInvoice'));
-  assert.ok(app.includes('if (!inTelegram)'));
+  const config = readFileSync(new URL('../frontend/public/miniapp/config.js', import.meta.url), 'utf8');
+  assert.ok(mini.includes("api('/api/catalog/v4/variants')"));
+  assert.ok(react.includes("'/api/catalog/v4/variants'"));
+  assert.ok(mini.includes("api('/api/orders'"));
+  assert.ok(react.includes("fetch(API + '/api/orders'"));
+  assert.ok(mini.includes("api('/api/orders/mine')"));
+  assert.ok(react.includes("'/api/orders/mine'"));
+  assert.ok(mini.includes("const body = {items:[{productId:Number(product.id),quantity:1}]}"));
+  assert.ok(react.includes("items:cart.map(({productId,quantity}) => ({productId,quantity}))"));
+  assert.ok(mini.includes('tg.openInvoice'));
+  assert.ok(react.includes('openInvoice(data.invoiceUrl,data.orderNumber)'));
+  assert.ok(mini.includes("api('/api/orders/' + encodeURIComponent(target.orderNumber) + '/customer-access'"));
   assert.ok(api.includes('requireTelegramUser'));
   assert.ok(orders.includes('normalizeCartItems'));
-  assert.ok(catalog.includes('GAME_ACCOUNT_TRANSFER'));
-  assert.equal(app.includes('/api/web-auth'),false);
-  assert.equal(app.includes('vc_web_session'),false);
-  assert.equal(app.includes('TELEGRAM_OIDC'),false);
+  assert.ok(config.includes("apiBase: ''"));
+  assert.equal(mini.includes("api('/api/catalog')"),false);
+  assert.equal(mini.includes("paymentMethod:'XTR'"),false);
+  assert.equal(mini.includes('/api/web-auth'),false);
+  assert.equal(mini.includes('vc_web_session'),false);
+  assert.equal(mini.includes('TELEGRAM_OIDC'),false);
 });
 
-test('all 12 master variants remain visible while non-account variants stay unavailable until backend publication', () => {
-  const variants = readFileSync(new URL('../frontend/public/miniapp/variants.js', import.meta.url), 'utf8');
+test('all 12 master variants and every published SKU are loaded from the canonical backend response', () => {
+  const migration = readFileSync(new URL('../database/migrations/024_vault_core_v4_master_secret_vault.sql', import.meta.url), 'utf8');
+  const service = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
-  assert.equal(variants.split('{id:').length - 1,12);
-  assert.ok(app.includes('Untuk checkout ini tidak diperlukan data tambahan'));
-  assert.equal(app.includes('buyer-input'),false);
-  for (const game of ['MLBB','FREE_FIRE','ROBLOX','GENSHIN']) assert.ok(variants.includes("game:'" + game + "'"));
-  assert.ok(app.includes('Varian belum tersedia'));
+  const seed = migration.match(/jsonb_array_elements\(\$\$([\s\S]*?)\$\$::jsonb\)/);
+  assert.ok(seed);
+  assert.equal(JSON.parse(seed[1]).length,12);
+  assert.ok(service.includes('FROM vault_core_varian_wajib v'));
+  assert.ok(app.includes('state.variants = Array.isArray(variants) ? variants : []'));
+  assert.ok(app.includes('state.variants.flatMap'));
   assert.ok(app.includes('function productsOf('));
+  assert.ok(app.includes('Varian belum tersedia'));
+  assert.equal(app.includes('window.VAULT_VARIANTS'),false);
+  assert.equal(app.includes('buyer-input'),false);
 });
 
 test('Mini App header and bottom navigation do not stack over the product detail CTA', () => {
@@ -963,7 +988,7 @@ test('product detail converts escaped backend newlines into readable sections an
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(sw.includes('vault-core-miniapp-v4'));
+  assert.ok(sw.includes('vault-core-miniapp-v5'));
   assert.ok(app.includes(".replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n')"));
   assert.ok(app.includes("renderDetailCopy(product.customer_terms)"));
   assert.ok(app.includes("details.push(renderDetailCopy(product.description))"));
@@ -1005,8 +1030,8 @@ test('mobile app assets are included in the static frontend and service worker n
   const config = readFileSync(new URL('../frontend/public/miniapp/config.js', import.meta.url), 'utf8');
   const manifest = readFileSync(new URL('../frontend/public/miniapp/manifest.webmanifest', import.meta.url), 'utf8');
   assert.ok(html.includes('./app.js'));
-  assert.ok(html.includes('./variants.js'));
-  assert.ok(config.includes('https://api.vaultcore.biz.id'));
+  assert.equal(html.includes('./variants.js'),false);
+  assert.ok(config.includes("apiBase: ''"));
   assert.ok(manifest.includes('"scope":"/miniapp/"'));
   assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
   assert.ok(sw.includes('/assets/03-categories/category-mlbb.png'));
@@ -1033,8 +1058,8 @@ test('active CSS rules do not contain repeated declarations that can reintroduce
   }
 });
 
-test('v4 account catalog and checkout require a live per-item encrypted vault record', () => {
-  const catalog = readFileSync(new URL('../backend/routes/catalogV4.js', import.meta.url), 'utf8');
+test('public account catalog and checkout require a live per-item encrypted vault record', () => {
+  const catalog = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
   const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
   assert.match(catalog, /v\.kategori_produk<>'Akun' OR EXISTS/);
   assert.match(catalog, /s\.secret_scope='PRODUCT_ACCOUNT'/);
@@ -1144,4 +1169,14 @@ test('mobile shell reserves fixed navigation space once instead of stacking over
   assert.equal(mobile.includes('.vc-mobile-app .vco-shell{padding-bottom:'), false);
   assert.ok(owner.includes('min-height:100vh;padding:0 0 28px;'));
   assert.ok(global.includes('padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))'));
+});
+
+test('Mini App Joki customer access is submitted only through the authenticated encrypted API route', () => {
+  const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const controller = readFileSync(new URL('../backend/controllers/secretController.js', import.meta.url), 'utf8');
+  assert.ok(mini.includes("item.category === 'Jasa Joki'"));
+  assert.ok(mini.includes("'/customer-access'"));
+  assert.ok(mini.includes("data-action=\"submit-joki-access\""));
+  assert.ok(controller.includes("scope:'JOKI_CUSTOMER_ACCESS'"));
+  assert.ok(controller.includes('encryptSecretPayload({ login, password }, context)'));
 });

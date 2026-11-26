@@ -2,12 +2,11 @@
 'use strict';
 
 const C = window.VAULT_CONFIG || {};
-const VARIANTS = window.VAULT_VARIANTS || [];
 const tg = window.Telegram && window.Telegram.WebApp;
 const inTelegram = Boolean(tg && tg.initData);
 const $ = (selector) => document.querySelector(selector);
 const money = new Intl.NumberFormat('id-ID');
-const state = { products: [], categories: [], loaded: false, loadError: '', orderFilter: 'all', orderRows: [] };
+const state = { variants: [], products: [], loaded: false, loadError: '', orderFilter: 'all', orderRows: [], accessTarget: null };
 let checkout = null;
 let lastInvoice = null;
 let renderId = 0;
@@ -15,9 +14,9 @@ let pollTimer = null;
 
 const GAMES = {
   MLBB: { name:'Mobile Legends Bang Bang', short:'MLBB', art:'/assets/03-categories/category-mlbb.png' },
-  FREE_FIRE: { name:'Free Fire', short:'Free Fire', art:'/assets/03-categories/category-free-fire.png' },
+  FF: { name:'Free Fire', short:'Free Fire', art:'/assets/03-categories/category-free-fire.png' },
   ROBLOX: { name:'Roblox', short:'Roblox', art:'/assets/03-categories/category-roblox.png' },
-  GENSHIN: { name:'Genshin Impact', short:'Genshin', art:'/assets/03-categories/category-genshin.png' }
+  GI: { name:'Genshin Impact', short:'Genshin', art:'/assets/03-categories/category-genshin.png' }
 };
 const GAME_CODES = Object.keys(GAMES);
 const ICONS = {
@@ -53,7 +52,29 @@ const discountPercent = (product) => {
   const compare = comparePrice(product);
   return compare ? Math.round(((compare - Number(product.sale_price_xtr)) / compare) * 100) : 0;
 };
-const stockLabel = (product) => isBuyable(product) ? 'Stok tersedia' : 'Stok habis';
+const stockLabel = (product) => {
+  if (!isBuyable(product)) return 'Stok habis';
+  if (product.display_stock === 1) return 'STOK TERAKHIR';
+  if (product.display_stock === null || product.display_stock === 'IN_STOCK') return 'Stok tersedia';
+  return Number(product.display_stock) > 1 ? 'Stok tersedia' : 'Stok habis';
+};
+const categoryLabel = (product) => product && product.variant_category || 'Produk Digital';
+function normalizeCatalogVariants(variants) {
+  state.variants = Array.isArray(variants) ? variants : [];
+  state.products = state.variants.flatMap((variant) =>
+    (Array.isArray(variant.skus) ? variant.skus : []).map((sku) => ({
+      ...sku,
+      id:Number(sku.id),
+      game_category:variant.game_code,
+      variant_id:Number(variant.variant_id),
+      variant_name:variant.name,
+      variant_category:variant.category,
+      fulfillment_type:sku.fulfillment_type || (variant.category === 'Akun' ? 'GAME_ACCOUNT_TRANSFER' : 'SERVICE_INSTRUCTIONS'),
+      is_purchaseable:sku.is_purchaseable === true && Number(sku.sale_price_xtr) > 1,
+      is_available:sku.is_available === true
+    }))
+  );
+}
 
 function toast(message) {
   const old = $('.toast');
@@ -104,20 +125,17 @@ function productImage(product, cls) {
 function productCard(product) {
   return '<button type="button" class="product-card" data-go="/product/' + encodeURIComponent(product.id) + '">' +
     productImage(product,'product-art') +
-    '<div class="product-copy"><small>' + esc(gameOf(product.game_category).name) + ' · Akun Game</small><b>' + esc(product.name) + '</b>' +
+    '<div class="product-copy"><small>' + esc(gameOf(product.game_category).name) + ' · ' + esc(categoryLabel(product)) + '</small><b>' + esc(product.name) + '</b>' +
     priceMarkup(product,true) + '<small>' + esc(stockLabel(product)) + '</small></div></button>';
 }
 function productRow(product) {
   return '<button type="button" class="list-card" data-go="/product/' + encodeURIComponent(product.id) + '">' +
     productImage(product,'list-art') +
-    '<span class="list-copy"><b>' + esc(product.name) + '</b><small>' + esc(gameOf(product.game_category).name) + ' · ' + esc(stockLabel(product)) + '</small>' + priceMarkup(product,true) + '</span>' +
+    '<span class="list-copy"><b>' + esc(product.name) + '</b><small>' + esc(gameOf(product.game_category).name) + ' · ' + esc(categoryLabel(product)) + ' · ' + esc(stockLabel(product)) + '</small>' + priceMarkup(product,true) + '</span>' +
     '<span class="chevron">›</span></button>';
 }
 function productsOf(variant) {
-  return state.products.filter((product) => product.game_category === variant.game &&
-    (product.attributes && product.attributes.variant_id
-      ? Number(product.attributes.variant_id) === Number(variant.id)
-      : variant.kind === 'AKUN' && product.fulfillment_type === 'GAME_ACCOUNT_TRANSFER'));
+  return state.products.filter((product) => Number(product.variant_id) === Number(variant.variant_id));
 }
 function home() {
   const available = state.products.filter(isBuyable);
@@ -135,13 +153,13 @@ function home() {
       '<section class="hero"><div class="hero-copy"><span class="eyebrow">VAULT CORE DIGITAL STORE</span><h1>Akun Game Premium<em>Pilihan Terbaik</em></h1><p>Mobile Legends • Free Fire • Roblox • Genshin Impact</p><button class="hero-cta" type="button" data-go="/catalog">Jelajahi Katalog <span>→</span></button></div></section>' +
       '<div class="dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div>' +
       '<section class="games">' + GAME_CODES.map((code) => {
-        const count = VARIANTS.filter((variant) => variant.game === code).length;
+        const count = state.variants.filter((variant) => variant.game_code === code).length;
         return '<button class="game-tile" type="button" data-go="/game/' + code + '"><span class="game-art"><img src="' + gameOf(code).art + '" alt="" loading="lazy"></span><b>' + esc(gameOf(code).short) + '</b></button>';
       }).join('') + '</section>' +
       banner +
       '<div class="section-head"><h2>Rekomendasi Hari Ini</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
       (recommended.length ? '<div class="products-strip">' + recommended.map(productCard).join('') + '</div>' :
-        '<div class="empty">' + (state.loaded ? 'Belum ada akun yang siap dijual. Silakan cek kembali nanti.' : 'Memuat katalog…') + '</div>') +
+        '<div class="empty">' + (state.loadError ? esc(state.loadError) : state.loaded ? 'Belum ada produk yang siap dijual. Silakan cek kembali nanti.' : 'Memuat katalog…') + '</div>') +
       '<div class="section-head"><h2>4 Game · 12 Varian</h2><button type="button" data-go="/catalog">Buka Katalog ›</button></div>' +
       '<div class="box info">' + icon('shield') + '<span>Periksa deskripsi, spesifikasi, stok, dan ketentuan sebelum melanjutkan pembelian. Pembayaran hanya melalui Telegram Stars (XTR).</span></div>' +
     '</main>',
@@ -156,7 +174,7 @@ function catalog() {
     headerPage('Katalog Game') +
     '<main><label class="search">' + icon('search') + '<input id="catalog-search" type="search" placeholder="Cari produk, akun, atau game..." value="' + esc(query) + '" autocomplete="off"></label>' +
     '<div id="catalog-games">' + filtered.map((code) => {
-      const variants = VARIANTS.filter((variant) => variant.game === code);
+      const variants = state.variants.filter((variant) => variant.game_code === code);
       return '<button class="list-card" type="button" data-go="/game/' + code + '">' +
         productImage({game_category:code},'list-art') +
         '<span class="list-copy"><b>' + esc(gameOf(code).name) + '</b><small>Game marketplace</small><span class="badge">' + variants.length + ' Varian</span></span><span class="chevron">›</span></button>';
@@ -168,7 +186,7 @@ function catalog() {
 function gamePage(code) {
   const game = GAMES[code];
   if (!game) return go('/catalog');
-  const variants = VARIANTS.filter((variant) => variant.game === code);
+  const variants = state.variants.filter((variant) => variant.game_code === code);
   const activeCount = state.products.filter((product) => product.game_category === code && isBuyable(product)).length;
   setPage(
     headerPage(game.name) +
@@ -178,22 +196,22 @@ function gamePage(code) {
       const products = productsOf(variant);
       const count = products.filter(isBuyable).length;
       const canOpen = count > 0;
-      return '<button class="list-card" type="button" data-go="/variant/' + variant.id + '">' +
+      return '<button class="list-card" type="button" data-go="/variant/' + variant.variant_id + '">' +
         productImage({game_category:code},'list-art') +
-        '<span class="list-copy"><b>' + esc(variant.name) + '</b><small>' + esc(variant.sub.join(' · ')) + '</small><span class="badge ' + (canOpen ? '' : 'muted') + '">' + (canOpen ? count + ' Produk tersedia' : 'Segera hadir') + '</span></span><span class="chevron">›</span></button>';
+        '<span class="list-copy"><b>' + esc(variant.name) + '</b><small>' + esc(variant.category) + '</small><span class="badge ' + (canOpen ? '' : 'muted') + '">' + (canOpen ? count + ' Produk tersedia' : 'Segera hadir') + '</span></span><span class="chevron">›</span></button>';
     }).join('') +
     '<div class="sub">' + activeCount + ' produk aktif dan dapat dibeli pada game ini.</div></main>',
     'catalog', false
   );
 }
 function variantPage(id) {
-  const variant = VARIANTS.find((item) => Number(item.id) === Number(id));
+  const variant = state.variants.find((item) => Number(item.variant_id) === Number(id));
   if (!variant) return go('/catalog');
   const products = productsOf(variant).filter(isBuyable);
   setPage(
     headerPage(variant.name) +
     '<main>' +
-    '<p class="sub">' + esc(gameOf(variant.game).name) + ' · ' + esc(variant.kind) + '</p>' +
+    '<p class="sub">' + esc(gameOf(variant.game_code).name) + ' · ' + esc(variant.category) + '</p>' +
     (products.length ? products.map(productRow).join('') :
       '<div class="empty"><b>Varian belum tersedia</b><br>Produk aktif untuk varian ini belum diterbitkan. Tidak ada stok atau harga yang ditampilkan sebelum tersedia dari backend.</div>') +
     '</main>',
@@ -238,10 +256,14 @@ function productPage(id) {
     headerPage('Detail Produk') +
     '<main>' + productImage(product,'detail-art') +
     '<h2 class="detail-title">' + esc(product.name) + '</h2>' +
-    '<div class="chips"><span class="chip">' + esc(gameOf(product.game_category).short) + '</span><span class="chip">Akun Game</span></div>' +
+    '<div class="chips"><span class="chip">' + esc(gameOf(product.game_category).short) + '</span><span class="chip">' + esc(categoryLabel(product)) + '</span></div>' +
     '<div class="detail-price">' + fmt(product.sale_price_xtr) + ' XTR</div>' +
     '<div class="box"><h3>Detail & Spesifikasi</h3>' + details.join('') + '</div>' +
-    '<div class="box info">' + icon('info') + '<span>Jangan pernah membagikan kata sandi, OTP, session, atau kode pemulihan. Isi ID/Username hanya jika diminta pada instruksi produk.</span></div>' +
+    (product.variant_category === 'Akun'
+      ? '<div class="box info">' + icon('info') + '<span>Periksa spesifikasi akun. Jangan pernah membagikan kata sandi, OTP, session, atau kode pemulihan di luar proses penyerahan resmi.</span></div>'
+      : product.variant_category === 'Jasa Joki'
+        ? '<div class="box info">' + icon('info') + '<span>Data akses untuk pengerjaan Joki disampaikan setelah pembayaran terkonfirmasi melalui formulir aman dan disimpan terenkripsi.</span></div>'
+        : '<div class="box info">' + icon('info') + '<span>Metode pengiriman item mengikuti petunjuk dan ketentuan pada detail produk.</span></div>') +
     '<div class="dock"><button class="cta" type="button" data-action="buy" data-id="' + esc(product.id) + '" ' + (isBuyable(product) ? '' : 'disabled') + '>' + (isBuyable(product) ? 'Beli Sekarang →' : 'Stok tidak tersedia') + '</button></div>' +
     '</main>',
     'catalog', true
@@ -265,7 +287,7 @@ function renderCheckout(id) {
   const step = checkout.step;
   const steps = '<div class="stepper"><div class="step ' + (step===1?'on':step>1?'done':'') + '"><i>1</i>Data</div><div class="step ' + (step===2?'on':step>2?'done':'') + '"><i>2</i>Pembayaran</div><div class="step"><i>3</i>Selesai</div></div>';
   const input = step === 1 ?
-    '<div class="box info">' + icon('info') + '<span>Untuk checkout ini tidak diperlukan data tambahan. Data penyerahan mengikuti instruksi dan ketentuan pada detail produk setelah pembayaran dikonfirmasi.</span></div>' :
+    '<div class="box info">' + icon('info') + '<span>Data penyerahan mengikuti kategori dan ketentuan produk. Data akses Joki baru dikirim setelah pembayaran terkonfirmasi melalui formulir aman.</span></div>' :
     '<div class="pay-card"><span class="star">★</span><span><b>Bayar dengan Telegram Stars (XTR)</b><small>Invoice resmi diproses oleh Telegram.</small></span></div>';
   const button = step === 1 ?
     '<button class="cta" type="button" data-action="checkout-next">Lanjut ke Pembayaran →</button>' :
@@ -274,7 +296,7 @@ function renderCheckout(id) {
     headerPage(step === 1 ? 'Pembelian' : 'Pembayaran') + '<main>' + steps +
     '<div class="list-card">' + productImage(product,'list-art') + '<span class="list-copy"><b>' + esc(product.name) + '</b><small>' + esc(gameOf(product.game_category).short) + '</small><b class="price">' + fmt(product.sale_price_xtr) + ' XTR</b></span></div>' +
     input +
-    '<div class="box info">' + icon('shield') + '<span>Untuk checkout ini tidak diperlukan data tambahan. Penyerahan mengikuti instruksi dan ketentuan produk setelah pembayaran dikonfirmasi sistem.</span></div>' +
+    '<div class="box info">' + icon('shield') + '<span>Invoice dan status pesanan diproses oleh backend VAULT CORE. Penyerahan mengikuti kategori dan ketentuan produk setelah pembayaran dikonfirmasi.</span></div>' +
     (checkout.error ? '<p class="error">' + esc(checkout.error) + '</p>' : '') +
     '<div class="dock">' + button + '</div></main>',
     'catalog', true
@@ -289,7 +311,7 @@ async function createOrder() {
   checkout.error = '';
   renderCheckout(product.id);
   try {
-    const body = {items:[{productId:Number(product.id),quantity:1}],paymentMethod:'XTR'};
+    const body = {items:[{productId:Number(product.id),quantity:1}]};
     const result = await api('/api/orders',{method:'POST',body});
     lastInvoice = {number:result.orderNumber,url:result.invoiceUrl};
     checkout = null;
@@ -394,10 +416,42 @@ function paintOrderRows() {
     return;
   }
   list.innerHTML = rows.map((row) => {
-    const itemNames = (Array.isArray(row.items)?row.items:[]).map((item) => item.name).filter(Boolean).join(', ');
+    const items = Array.isArray(row.items) ? row.items : [];
+    const itemNames = items.map((item) => item.name).filter(Boolean).join(', ');
     const date = row.created_at ? new Date(row.created_at).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-    return '<div class="order-row"><span class="list-art"><img src="/assets/01-brand/vaultcore-mark.svg" alt=""></span><span class="tx"><small>' + esc(row.order_number) + ' · ' + esc(date) + '</small><b>' + esc(itemNames || 'Pesanan VAULT CORE') + '</b><small>★ ' + fmt(row.total_xtr) + ' XTR</small></span><span class="status ' + statusClass(row.status) + '">' + esc(STATUS[row.status] || row.status) + '</span></div>';
+    const jokiItems = ['PAID','FULFILLING'].includes(row.status)
+      ? items.filter((item) => item.category === 'Jasa Joki' && item.orderItemId)
+      : [];
+    const jokiActions = jokiItems.map((item) =>
+      '<button class="cta alt" type="button" data-action="joki-access" data-order="' + esc(row.order_number) + '" data-item="' + esc(item.orderItemId) + '">Kirim akses aman untuk ' + esc(item.name) + '</button>'
+    ).join('');
+    const form = state.accessTarget && state.accessTarget.orderNumber === row.order_number
+      ? '<div class="box"><b>Data akses Joki</b><p>Data dikirim langsung ke backend dan disimpan dalam vault terenkripsi.</p><label class="label" for="joki-login">Username / Email</label><input class="input" id="joki-login" type="text" autocomplete="off" maxlength="240"><label class="label" for="joki-password">Kata sandi</label><input class="input" id="joki-password" type="password" autocomplete="new-password" maxlength="1200"><button class="cta" type="button" data-action="submit-joki-access">Simpan akses terenkripsi</button><button class="cta alt" type="button" data-action="cancel-joki-access">Batalkan</button></div>'
+      : '';
+    return '<div class="order-row"><span class="list-art"><img src="/assets/01-brand/vaultcore-mark.svg" alt=""></span><span class="tx"><small>' + esc(row.order_number) + ' · ' + esc(date) + '</small><b>' + esc(itemNames || 'Pesanan VAULT CORE') + '</b><small>★ ' + fmt(row.total_xtr) + ' XTR</small></span><span class="status ' + statusClass(row.status) + '">' + esc(STATUS[row.status] || row.status) + '</span></div>' + jokiActions + form;
   }).join('');
+}
+
+async function submitJokiAccess() {
+  const target = state.accessTarget;
+  const login = $('#joki-login')?.value || '';
+  const password = $('#joki-password')?.value || '';
+  if (!target || login.trim().length < 2 || password.trim().length < 6) return toast('Lengkapi username/email dan kata sandi sesuai ketentuan.');
+  const button = $('[data-action="submit-joki-access"]');
+  if (button) { button.disabled = true; button.textContent = 'Menyimpan terenkripsi…'; }
+  try {
+    await api('/api/orders/' + encodeURIComponent(target.orderNumber) + '/customer-access',{
+      method:'POST',
+      body:{orderItemId:target.orderItemId,login,password}
+    });
+    state.accessTarget = null;
+    toast('Data akses Joki tersimpan dalam vault terenkripsi.');
+    state.orderRows = await fetchOrders();
+    paintOrderRows();
+  } catch (error) {
+    toast(error.message || 'Data akses tidak dapat disimpan.');
+    if (button) { button.disabled = false; button.textContent = 'Simpan akses terenkripsi'; }
+  }
 }
 function renderProfile() {
   const user = inTelegram && tg.initDataUnsafe ? tg.initDataUnsafe.user || null : null;
@@ -493,6 +547,13 @@ function handleClick(event) {
   }
   if (action === 'pay') { createOrder(); return; }
   if (action === 'invoice') { openInvoice(); return; }
+  if (action === 'joki-access') {
+    state.accessTarget = {orderNumber:button.getAttribute('data-order'),orderItemId:Number(button.getAttribute('data-item'))};
+    paintOrderRows();
+    return;
+  }
+  if (action === 'cancel-joki-access') { state.accessTarget=null; paintOrderRows(); return; }
+  if (action === 'submit-joki-access') { submitJokiAccess(); return; }
   if (action === 'copy') {
     const value = button.getAttribute('data-copy') || '';
     if (navigator.clipboard && value) navigator.clipboard.writeText(value).then(() => toast('Order ID disalin')).catch(() => toast(value));
@@ -514,7 +575,7 @@ function handleInput(event) {
     if (!list) return;
     const matches = GAME_CODES.filter((code) => gameOf(code).name.toLowerCase().includes(query) || gameOf(code).short.toLowerCase().includes(query));
     list.innerHTML = matches.map((code) => {
-      const count = VARIANTS.filter((variant) => variant.game === code).length;
+      const count = state.variants.filter((variant) => variant.game_code === code).length;
       return '<button class="list-card" type="button" data-go="/game/' + code + '">' +
         productImage({game_category:code},'list-art') +
         '<span class="list-copy"><b>' + esc(gameOf(code).name) + '</b><small>Game marketplace</small><span class="badge">' + count + ' Varian</span></span><span class="chevron">›</span></button>';
@@ -536,9 +597,8 @@ function init() {
   window.addEventListener('hashchange',render);
   const splash = $('#splash');
   const started = Date.now();
-  api('/api/catalog').then((result) => {
-    state.products = Array.isArray(result.products) ? result.products : [];
-    state.categories = Array.isArray(result.categories) ? result.categories : [];
+  api('/api/catalog/v4/variants').then((result) => {
+    normalizeCatalogVariants(result.variants);
     state.loaded = true;
   }).catch((error) => {
     state.loadError = error.message || 'Katalog belum dapat dimuat.';

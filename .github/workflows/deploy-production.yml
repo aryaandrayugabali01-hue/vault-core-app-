@@ -258,7 +258,18 @@ jobs:
           for path in /miniapp/index.html /miniapp/app.css /miniapp/app.js /miniapp/variants.js /miniapp/manifest.webmanifest; do
             curl --fail --silent --show-error --retry 3 --retry-delay 2 --retry-all-errors "$WEB_ORIGIN$path" -o /dev/null
           done
-          echo "API Worker, frontend Worker, and VAULT CORE v5 Mini App assets returned successful responses."
+          v4_catalog="$(curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors https://vaultcore.biz.id/api/catalog/v4/variants)"
+          legacy_catalog="$(curl --fail --silent --show-error --retry 5 --retry-delay 2 --retry-all-errors https://vaultcore.biz.id/api/catalog)"
+          echo "$v4_catalog" | jq -e '.variants | length == 12' >/dev/null
+          echo "$legacy_catalog" | jq -e '.variants | length == 12' >/dev/null
+          v4_ids="$(echo "$v4_catalog" | jq -r '[.variants[].variant_id] | sort | join(",")')"
+          legacy_ids="$(echo "$legacy_catalog" | jq -r '[.variants[].variant_id] | sort | join(",")')"
+          if [[ "$v4_ids" != "$legacy_ids" ]]; then
+            echo "::error::Legacy catalog adapter and V4 catalog returned different master variant IDs."
+            exit 1
+          fi
+          echo "Both catalog API contracts return the same 12 backend-owned master variants."
+          echo "API Worker, frontend Worker, shared catalog API, and VAULT CORE v5 Mini App assets returned successful responses."
 
       - name: Configure existing gateway upstream origins
         shell: bash

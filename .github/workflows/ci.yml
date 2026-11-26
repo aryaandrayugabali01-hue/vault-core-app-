@@ -125,7 +125,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in frontend/public/miniapp/index.html frontend/public/miniapp/app.css frontend/public/miniapp/app.js frontend/public/miniapp/config.js frontend/public/miniapp/variants.js frontend/public/miniapp/manifest.webmanifest frontend/public/miniapp/sw.js; do
+          for file in frontend/public/miniapp/index.html frontend/public/miniapp/app.css frontend/public/miniapp/app.js frontend/public/miniapp/config.js frontend/public/miniapp/manifest.webmanifest frontend/public/miniapp/sw.js; do
             test -s "$file" || { echo "::error::Missing Mini App asset: $file"; exit 1; }
           done
           node --check frontend/public/miniapp/app.js
