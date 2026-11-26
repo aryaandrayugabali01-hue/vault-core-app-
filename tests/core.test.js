@@ -36,16 +36,16 @@ test('Owner dashboard has no stale product-form effect references', () => {
   assert.doesNotMatch(ownerPage, /\b(?:skuManual|setForm|suggestedSku)\b/);
 });
 
-test('v4 storefront and Owner branding use the supplied logo and mapped game artwork', () => {
-  const dashboard = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
+test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain available', () => {
   const catalogRoute = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const owner = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
   const ownerV4 = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
   const marketplace = readFileSync(new URL('../frontend/src/lib/marketplace.js', import.meta.url), 'utf8');
-  const logo = '/assets/01-brand/vaultcore-horizontal.svg';
+  const miniHtml = readFileSync(new URL('../frontend/public/miniapp/index.html', import.meta.url), 'utf8');
+  const miniApp = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   assert.ok(catalogRoute.includes("import VaultCoreV4Catalog from './VaultCoreV4Page.jsx'"));
-  assert.ok(catalog.includes(logo));
+  assert.ok(catalog.includes('/assets/01-brand/vaultcore-horizontal.svg'));
   assert.ok(catalog.includes('GAME_BACKGROUNDS[MARKET_GAME_CODE[code]]'));
   assert.ok(catalog.includes('GAME_ART[MARKET_GAME_CODE[code]]'));
   assert.ok(catalog.includes('GAME_BACKGROUNDS[MARKET_GAME_CODE[variant.game_code]]'));
@@ -59,7 +59,8 @@ test('v4 storefront and Owner branding use the supplied logo and mapped game art
     'https://d1x91p7vw3vuq8.cloudfront.net/game/2024711/93cu2pbsceeiior5v9yc2q.png',
     'https://d1x91p7vw3vuq8.cloudfront.net/game/2025118/z9t30wkd81lxiwmaio40v.webp'
   ]) assert.ok(marketplace.includes(asset));
-  assert.ok(dashboard.includes('/assets/01-brand/vaultcore-horizontal.svg'));
+  assert.ok(miniHtml.includes('/assets/01-brand/vaultcore-mark.svg'));
+  assert.ok(miniApp.includes('/assets/01-brand/vaultcore-horizontal.svg'));
 });
 
 test('v4 public catalog uses Telegram Mini App and official Telegram Stars checkout', () => {
@@ -762,7 +763,7 @@ test('v4 storefront and Owner routes retain global chrome while using the approv
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   const catalogStyles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
-  assert.ok(home.includes('StoreHeader'));
+  assert.ok(home.includes("redirect('/miniapp/index.html')"));
   assert.ok(owner.includes('StoreHeader'));
   assert.ok(owner.includes('/admin/v4'));
   assert.ok(ownerV4.includes('Dashboard Owner'));
@@ -780,12 +781,13 @@ test('customer display text normalizes repeated escaped newline sequences', () =
   assert.equal(normalizeCustomerDisplayText('A\\\\r\\\\nB'), 'A\nB');
 });
 
-test('detail specification labels and values have independent wrapping columns', () => {
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  assert.ok(styles.includes('grid-template-columns:minmax(132px,38%) minmax(0,1fr)'));
-  assert.ok(styles.includes('grid-template-columns:18px minmax(0,1fr)'));
-  assert.match(styles, /overflow-wrap:anywhere/);
-  assert.match(styles, /dashboard-bottom-nav-embedded/);
+test('v4 product specifications keep label/value columns readable on the dark mobile catalog', () => {
+  const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
+  assert.ok(styles.includes('.vc4-details>div{display:flex;justify-content:space-between'));
+  assert.ok(styles.includes('.vc4-details span{text-transform:capitalize'));
+  assert.ok(styles.includes('.vc4-details strong{text-align:right'));
+  assert.ok(styles.includes('overflow-wrap:anywhere;word-break:break-word'));
+  assert.ok(styles.includes('max-width:62%'));
 });
 
 test('customer detail text converts escaped newlines into readable line breaks', async () => {
@@ -809,7 +811,7 @@ test('v4 product details wrap long specifications and refresh inventory from the
   assert.ok(styles.includes('vc4-details'));
 });
 
-test('Apple v4 product detail follows the approved light catalog layout', () => {
+test('v4 product detail keeps the approved dark Vault Core catalog palette', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   assert.ok(page.includes('vc4-nav'));
@@ -818,11 +820,10 @@ test('Apple v4 product detail follows the approved light catalog layout', () => 
   assert.ok(page.includes('vc4-dialog'));
   assert.ok(page.includes('vc4-product-terms'));
   assert.ok(page.includes('vc4-security-guide'));
-  assert.match(styles, /--vc4-page:#f5f5f7/);
-  assert.match(styles, /--vc4-card:#fff/);
-  assert.match(styles, /--vc4-blue:#0071e3/);
-  assert.match(styles, /vc4-overlay/);
-  assert.ok(styles.includes('grid-template-columns:1fr'));
+  assert.match(styles, /--vc4-page:#090d14/);
+  assert.match(styles, /--vc4-card:#111925/);
+  assert.match(styles, /--vc4-gold:#ffc928/);
+  assert.ok(styles.includes('.vc4-grid{grid-template-columns:1fr'));
 });
 
 test('MLBB account detail uses the public v4 DTO, last-stock label, and four-step security guide', () => {
@@ -1077,8 +1078,7 @@ test('active stylesheets have unique selectors within each cascade context', () 
     visit(root);
     assert.deepEqual(duplicates, [], file + ' still contains repeated selectors in one cascade context');
   }
-  const globalStyles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  const mobileStyles = readFileSync(new URL('../frontend/src/app/mobile-app.css', import.meta.url), 'utf8');
-  assert.match(topLevelCssProperty(globalStyles,'.dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded) a.active','background'), /255,201,40/);
-  assert.match(topLevelCssProperty(mobileStyles,'.dashboard-transaction-filter.active','background'), /255,201,40/);
+  const miniAppStyles = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
+  assert.ok(miniAppStyles.includes('.nav button.on{color:var(--gold)'));
+  assert.ok(miniAppStyles.includes('.filters button.on{border-color:rgba(255,201,40,.65)'));
 });
