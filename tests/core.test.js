@@ -1041,7 +1041,9 @@ test('active CSS rules do not contain repeated declarations that can reintroduce
   const files = [
     '../frontend/src/app/globals.css',
     '../frontend/src/app/mobile-app.css',
-    '../frontend/src/app/catalog/page.css'
+    '../frontend/src/app/catalog/page.css',
+    '../frontend/src/app/admin/v4/page.css',
+    '../frontend/public/miniapp/app.css'
   ];
   for (const file of files) {
     const root = postcss.parse(readFileSync(new URL(file, import.meta.url), 'utf8'), { from:file });
@@ -1102,7 +1104,9 @@ test('active stylesheets have unique selectors within each cascade context', () 
   const files = [
     '../frontend/src/app/globals.css',
     '../frontend/src/app/mobile-app.css',
-    '../frontend/src/app/catalog/page.css'
+    '../frontend/src/app/catalog/page.css',
+    '../frontend/src/app/admin/v4/page.css',
+    '../frontend/public/miniapp/app.css'
   ];
   const normalizeContext = (name, params) => {
     const value = String(params || '').trim();

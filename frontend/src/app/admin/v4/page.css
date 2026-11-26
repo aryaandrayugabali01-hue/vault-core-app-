@@ -20,8 +20,8 @@
   border-bottom:1px solid rgba(160,139,255,.18);background:rgba(7,10,20,.94);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
 }
-.vco-header a,.vco-header button{border:0;background:none;color:var(--vco-gold);font:inherit;font-size:11px;font-weight:800;text-decoration:none;cursor:pointer;white-space:nowrap}
-.vco-header button{padding:8px 11px;border:1px solid rgba(255,201,40,.35);border-radius:10px;background:rgba(255,201,40,.10)}
+.vco-header a{color:var(--vco-gold);font:inherit;font-size:11px;font-weight:800;text-decoration:none;cursor:pointer;white-space:nowrap}
+.vco-header button{padding:8px 11px;border:1px solid rgba(255,201,40,.35);border-radius:10px;background:rgba(255,201,40,.10);color:var(--vco-gold);font:inherit;font-size:11px;font-weight:800;text-decoration:none;cursor:pointer;white-space:nowrap}
 .vco-header-brand{display:flex;align-items:center;justify-self:center;gap:7px;min-width:0}
 .vco-header-brand img{display:block;width:clamp(88px,24vw,112px);max-height:28px;object-fit:contain}
 .vco-header-brand span{color:#a9b4c8;font-size:8px;font-weight:850;letter-spacing:.1em;white-space:nowrap}
@@ -68,8 +68,8 @@
 .vco-question{display:grid;grid-template-columns:70px minmax(0,1fr);gap:8px 12px;padding:13px;border:1px solid rgba(160,139,255,.15);border-radius:13px;background:rgba(7,14,25,.6)}
 .vco-question>span{color:#f4d36f;font-size:9px;font-weight:850}
 .vco-question>strong{color:#f3f6fb;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
-.vco-question>label,.vco-secret-note{grid-column:2}
-.vco-secret-note{padding:11px;border:1px solid rgba(160,139,255,.16);border-radius:10px;background:#0c1625;color:var(--vco-muted);font-size:10px;line-height:1.55}
+.vco-question>label{grid-column:2}
+.vco-secret-note{grid-column:2;padding:11px;border:1px solid rgba(160,139,255,.16);border-radius:10px;background:#0c1625;color:var(--vco-muted);font-size:10px;line-height:1.55}
 .vco-secret-note p{margin:0 0 7px;color:#c5d0e0}
 .vco-secret-note small{color:var(--vco-muted)}
 .vco-check{display:flex!important;flex-direction:row!important;align-items:flex-start;gap:8px!important;color:#dce5f2!important;font-size:10px!important;font-weight:600!important}
@@ -80,18 +80,19 @@
 .vco-map-legacy{display:grid;gap:12px;margin:15px 0;padding:13px;border:1px solid rgba(39,191,255,.2);border-radius:13px;background:rgba(18,53,78,.22)}
 .vco-map-legacy>div{display:grid;gap:5px}
 .vco-map-legacy strong{color:#edf6ff;font-size:11px}
-.vco-map-legacy small,.vco-map-blocked{color:var(--vco-muted);font-size:10px;line-height:1.5}
+.vco-map-legacy small{color:var(--vco-muted);font-size:10px;line-height:1.5}
 .vco-map-legacy label{display:grid;gap:6px;color:#dbe3f0;font-size:10px}
 .vco-map-legacy select{padding:10px;border:1px solid var(--vco-line);border-radius:10px;background:#080f1d;color:#f5f7fc}
 .vco-map-legacy button{justify-self:start;padding:9px 15px;border:1px solid #ffe07a;border-radius:20px;background:#ffc928;color:#17131a;font-size:10px;font-weight:850}
-.vco-map-blocked{margin:0;padding:10px;border:1px solid rgba(251,113,133,.2);border-radius:9px;background:rgba(120,28,48,.18);color:#ffc1ca}
+.vco-map-blocked{margin:0;padding:10px;border:1px solid rgba(251,113,133,.2);border-radius:9px;background:rgba(120,28,48,.18);color:#ffc1ca;font-size:10px;line-height:1.5}
 .vco-secret-result{display:grid;gap:12px;margin-top:16px;padding:15px;border:1px solid var(--vco-line);border-radius:14px;background:#0b1422;color:#f5f7fc}
 .vco-secret-result>div{display:grid;gap:6px;min-width:0}
 .vco-secret-result span{color:#f4d36f;font-size:9px;font-weight:850;letter-spacing:.08em}
 .vco-secret-result strong{font-size:12px;overflow-wrap:anywhere}
 .vco-secret-password{display:flex;gap:8px;min-width:0}
 .vco-secret-password input{flex:1;min-width:0;padding:9px;border:1px solid var(--vco-line);border-radius:9px;background:#080f1d;color:#fff}
-.vco-secret-password button,.vco-clear-secret{padding:8px 12px;border:1px solid var(--vco-line);border-radius:18px;background:#172338;color:#e5eaf4;font-size:10px;cursor:pointer}
+.vco-secret-password button,.vco-clear-secret{padding:8px 12px;border:1px solid var(--vco-line);border-radius:18px;background:#172338;font-size:10px;cursor:pointer}
+.vco-secret-password button{color:#e5eaf4}
 .vco-clear-secret{justify-self:start;color:#ffc1ca}
 @media(max-width:760px){
   .vco-header{padding:12px 15px}
