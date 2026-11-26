@@ -6,7 +6,7 @@ Single-vendor Telegram Mini App store for transferable digital products, voucher
 
 ## Source of truth
 
-Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current baseline: **Project Contract v2.1 (CR-16)**. Section 38 defines the single mobile-first Owner product form and one-submit save/publish flow. Section 37 continues to control temporary website QRIS (IDR), Telegram Mini App XTR, and shared customer/catalog/order/inventory data. Sections 28–37 remain applicable except where CR-16 explicitly amends them.
+Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current baseline: **Project Contract v2.1 (CR-16)**. Section 38 defines the single mobile-first Owner product form, one-action database save, and catalog display flow. Section 37 continues to control temporary website QRIS (IDR), Telegram Mini App XTR, and shared customer/catalog/order/inventory data. Sections 28–37 remain applicable except where CR-16 explicitly amends them.
 
 ## Project documents
 
