@@ -943,6 +943,34 @@ test('all 12 master variants remain visible while non-account variants stay unav
   assert.ok(app.includes('function productsOf('));
 });
 
+test('Mini App header and bottom navigation do not stack over the product detail CTA', () => {
+  const html = readFileSync(new URL('../frontend/public/miniapp/index.html', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
+  assert.equal((html.match(/<nav\b/g) || []).length,1);
+  assert.ok(html.includes('id="nav" aria-label="Navigasi utama" hidden'));
+  assert.ok(app.includes("nav.hidden = Boolean(hideNav)"));
+  assert.ok(app.includes("headerPage('Detail Produk')"));
+  assert.ok(app.includes("'catalog', true"));
+  assert.ok(css.includes('.nav[hidden]{display:none!important}'));
+  assert.equal((app.match(/function headerHome\(/g) || []).length,1);
+  assert.equal((app.match(/function headerPage\(/g) || []).length,1);
+  assert.ok(css.includes('.topbar{position:sticky'));
+  assert.ok(css.includes('.pagebar{position:sticky'));
+});
+
+test('product detail converts escaped backend newlines into readable sections and avoids duplicate generic terms', () => {
+  const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
+  assert.ok(app.includes(".replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n')"));
+  assert.ok(app.includes("renderDetailCopy(product.customer_terms)"));
+  assert.ok(app.includes("details.push(renderDetailCopy(product.description))"));
+  assert.equal(app.includes("details.push('<ul><li>Pembayaran Telegram Stars (XTR)</li>"),false);
+  assert.ok(app.includes('<h4>') && app.includes('<br>'));
+  assert.ok(css.includes('.detail-copy h4{'));
+  assert.ok(css.includes('.detail-copy p{'));
+});
+
 test('checkout and transaction history require verified Telegram Mini App initData', () => {
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const webhook = readFileSync(new URL('../backend/routes/telegramWebhook.js', import.meta.url), 'utf8');
