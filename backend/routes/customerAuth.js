@@ -35,10 +35,12 @@ function safeEqual(left, right) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-function finishWithError(res, error) {
+function finishWithError(res, error, returnPath = '/account') {
   console.error('[customer-oidc]', error?.message ?? 'CUSTOMER_LOGIN_FAILED');
   res.setHeader('Set-Cookie', clearOidcCookies());
-  return res.redirect(302, FRONTEND_ACCOUNT_URL + '?login_error=telegram_login_failed');
+  const target = new URL(safeCustomerReturnPath(returnPath), FRONTEND_ACCOUNT_URL);
+  target.searchParams.set('login_error', 'telegram_login_failed');
+  return res.redirect(302, target.toString());
 }
 
 async function syncCustomer(user) {
@@ -112,14 +114,14 @@ router.get('/oidc/callback', ownerRateLimit, async (req, res) => {
     const verifier = decodeURIComponent(cookies.vault_customer_oidc_verifier ?? '');
     const returnPath = safeCustomerReturnPath(decodeURIComponent(cookies.vault_customer_oidc_return ?? ''));
     if (!queryState || !cookieState || !safeEqual(queryState, cookieState) || !nonce || !verifier) {
-      return finishWithError(res, new Error('TELEGRAM_OIDC_STATE_INVALID'));
+      return finishWithError(res, new Error('TELEGRAM_OIDC_STATE_INVALID'), returnPath);
     }
     if (req.query.error || typeof req.query.code !== 'string') {
-      return finishWithError(res, new Error('TELEGRAM_OIDC_AUTHORIZATION_DENIED'));
+      return finishWithError(res, new Error('TELEGRAM_OIDC_AUTHORIZATION_DENIED'), returnPath);
     }
     const clientId = process.env.TELEGRAM_OIDC_CLIENT_ID;
     const clientSecret = process.env.TELEGRAM_OIDC_CLIENT_SECRET;
-    if (!clientId || !clientSecret) return finishWithError(res, new Error('TELEGRAM_OIDC_UNAVAILABLE'));
+    if (!clientId || !clientSecret) return finishWithError(res, new Error('TELEGRAM_OIDC_UNAVAILABLE'), returnPath);
 
     const body = new URLSearchParams({
       grant_type: 'authorization_code',
@@ -146,7 +148,7 @@ router.get('/oidc/callback', ownerRateLimit, async (req, res) => {
         contentType: tokenResponse.headers.get('content-type') ?? '',
         responseFormat: 'non-json'
       }));
-      return finishWithError(res, new Error('TELEGRAM_OIDC_TOKEN_RESPONSE_INVALID'));
+      return finishWithError(res, new Error('TELEGRAM_OIDC_TOKEN_RESPONSE_INVALID'), returnPath);
     }
     if (!tokenResponse.ok || !tokenData || typeof tokenData !== 'object' || typeof tokenData.id_token !== 'string') {
       console.error('[customer-oidc-token-exchange]', JSON.stringify({
@@ -154,7 +156,7 @@ router.get('/oidc/callback', ownerRateLimit, async (req, res) => {
         error: typeof tokenData.error === 'string' ? tokenData.error.slice(0, 80) : 'id_token_missing',
         responseFields: Object.keys(tokenData ?? {}).filter((key) => !/token|secret|code/i.test(key))
       }));
-      return finishWithError(res, new Error('TELEGRAM_OIDC_TOKEN_EXCHANGE_FAILED'));
+      return finishWithError(res, new Error('TELEGRAM_OIDC_TOKEN_EXCHANGE_FAILED'), returnPath);
     }
 
     const user = await validateTelegramOidcIdToken(tokenData.id_token, { clientId, nonce });
@@ -165,7 +167,12 @@ router.get('/oidc/callback', ownerRateLimit, async (req, res) => {
     if (target.pathname === '/account') target.searchParams.set('login', 'success');
     return res.redirect(302, target.toString());
   } catch (error) {
-    return finishWithError(res, error);
+    let returnPath = '/account';
+    try {
+      const cookies = parseCookies(req.headers.cookie);
+      returnPath = safeCustomerReturnPath(decodeURIComponent(cookies.vault_customer_oidc_return ?? ''));
+    } catch {}
+    return finishWithError(res, error, returnPath);
   }
 });
 
