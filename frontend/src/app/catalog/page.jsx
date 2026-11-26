@@ -1,7 +1,7 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import VaultCoreV4Catalog from './VaultCoreV4Page.jsx';
-
-export default function CatalogPage({ initialCategory = 'ALL' } = {}) {
-  return <VaultCoreV4Catalog initialCategory={initialCategory}/>;
+// /catalog is a public alias for the canonical customer catalog.
+// Keep one customer experience across direct links and in-app navigation.
+export default function CatalogPage() {
+  redirect('/miniapp/index.html#/catalog');
 }
