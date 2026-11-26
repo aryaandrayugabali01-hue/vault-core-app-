@@ -75,6 +75,7 @@ function matchesMlbb(product, filters) {
 }
 
 export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
+  const inTelegramMiniApp = Boolean(getInitData());
   const [variants,setVariants] = useState([]);
   const [customer,setCustomer] = useState(null);
   const [game,setGame] = useState(initialCategory === 'ALL' ? 'ALL' : initialCategory);
@@ -150,11 +151,12 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     loadCatalog();
     loadCustomer().catch(() => setCustomer(null));
     const paid = () => {
+      if (!inTelegramMiniApp) return;
       setNotice('Telegram mengonfirmasi pembayaran. Memperbarui pesanan…');
       loadOrders().catch(() => {});
     };
     const refreshWhenVisible = () => {
-      if (document.visibilityState === 'visible') {
+      if (inTelegramMiniApp && document.visibilityState === 'visible') {
         loadCustomer().then((activeCustomer) => activeCustomer && loadOrders().catch(() => {})).catch(() => {});
       }
     };
@@ -182,6 +184,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
 
   useEffect(() => {
     if (loading) return;
+    if (!inTelegramMiniApp) { setCart([]); setCartRestored(true); return; }
     try {
       const stored = JSON.parse(sessionStorage.getItem('vault-core-web-cart') || '[]');
       const restored = Array.isArray(stored) ? stored.slice(0,10).map((entry) => {
@@ -200,7 +203,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   },[flatProducts,loading]);
 
   useEffect(() => {
-    if (!cartRestored) return;
+    if (!inTelegramMiniApp || !cartRestored) return;
     if (cart.length) {
       sessionStorage.setItem('vault-core-web-cart',JSON.stringify(cart.map(({productId,quantity}) => ({productId,quantity}))));
     } else {
@@ -251,6 +254,10 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   };
 
   const checkout = async () => {
+    if (!inTelegramMiniApp) {
+      setNotice('Checkout tersedia melalui VAULT CORE Telegram Mini App.');
+      return;
+    }
     if (!cart.length) return;
     let activeCustomer = customer;
     if (!activeCustomer) activeCustomer = await loadCustomer().catch(() => null);
@@ -283,6 +290,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   };
 
   const showOrders = useCallback(async () => {
+    if (!inTelegramMiniApp) return;
     const activeCustomer = await loadCustomer().catch(() => null);
     if (!activeCustomer) {
       window.location.assign('/account?next=%2Fcatalog');
@@ -294,19 +302,20 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     try { await loadOrders(); }
     catch(e) { setOrdersError(e.message || 'Riwayat pesanan tidak dapat dimuat.'); }
     finally { setOrdersLoading(false); }
-  },[loadCustomer,loadOrders]);
+  },[inTelegramMiniApp,loadCustomer,loadOrders]);
 
   useEffect(() => {
     const openOrdersFromHash = () => {
-      if (window.location.hash === '#transactions') showOrders();
+      if (inTelegramMiniApp && window.location.hash === '#transactions') showOrders();
     };
     openOrdersFromHash();
     window.addEventListener('hashchange',openOrdersFromHash);
     return () => window.removeEventListener('hashchange',openOrdersFromHash);
-  },[showOrders]);
+  },[inTelegramMiniApp,showOrders]);
 
   const submitJokiAccess = async () => {
     const initData = getInitData();
+    if (!initData) { setAccessNotice('Pengiriman data akses hanya tersedia melalui Telegram Mini App.'); return; }
     if (!accessTarget || !accessForm.login.trim() || accessForm.password.length < 6) {
       setAccessNotice('Lengkapi login dan kata sandi dengan benar.');
       return;
@@ -330,7 +339,6 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   };
 
   const totalXtr = cart.reduce((sum,item) => sum + item.price * item.quantity,0);
-  const inTelegramMiniApp = Boolean(getInitData());
   const activeVariant = selected ? variants.find((item) => Number(item.variant_id) === selected.variant_id) : null;
   const noActiveSku = visibleProducts.length === 0;
 
@@ -380,7 +388,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           <ol>
             <li><span>01</span><div><strong>Pilih game</strong><small>Tentukan kategori dan akun</small></div></li>
             <li><span>02</span><div><strong>Periksa detail</strong><small>Cek spesifikasi dan ketentuan</small></div></li>
-            <li><span>03</span><div><strong>Bayar dengan XTR</strong><small>Lanjutkan invoice di Telegram</small></div></li>
+            <li><span>03</span><div><strong>Lanjutkan di Mini App</strong><small>Checkout dan invoice resmi diproses di Telegram</small></div></li>
           </ol>
         </section>
 
