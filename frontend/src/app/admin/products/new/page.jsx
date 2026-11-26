@@ -5,7 +5,7 @@ import { getInitData } from '../../../../lib/telegram';
 import { splitInventoryPayloads } from '../../../../lib/inventory';
 import { parseProductAttributesText } from '../../../../lib/product-attributes';
 import { GAME_NAMES } from '../../../../lib/marketplace.js';
-import { StoreHeader, StoreBottomNav } from '../../../../components/store-navigation.jsx';
+import { StoreHeader } from '../../../../components/store-navigation.jsx';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const CATEGORIES = [

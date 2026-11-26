@@ -5,7 +5,7 @@ import { getInitData } from '../../lib/telegram';
 import { GAME_LABELS } from '../../lib/marketplace.js';
 import { splitInventoryPayloads } from '../../lib/inventory';
 import { parseProductAttributesText, formatProductAttributesText } from '../../lib/product-attributes';
-import { StoreHeader, StoreBottomNav } from '../../components/store-navigation.jsx';
+import { StoreHeader } from '../../components/store-navigation.jsx';
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 const STATUS_LABELS = {

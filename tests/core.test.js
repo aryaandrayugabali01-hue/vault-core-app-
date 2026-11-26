@@ -1112,3 +1112,25 @@ test('active stylesheets have unique selectors within each cascade context', () 
   assert.ok(miniAppStyles.includes('.nav button.on{color:var(--gold)'));
   assert.ok(miniAppStyles.includes('.filters button.on{border-color:rgba(255,201,40,.65)'));
 });
+
+
+test('clean /miniapp route redirects to the canonical deployed static Mini App entry', () => {
+  const entry = readFileSync(new URL('../frontend/src/app/miniapp/page.jsx', import.meta.url), 'utf8');
+  const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
+  const webhook = readFileSync(new URL('../backend/routes/telegramWebhook.js', import.meta.url), 'utf8');
+  const config = readFileSync(new URL('../wrangler.api.jsonc', import.meta.url), 'utf8');
+  assert.ok(entry.includes("redirect('/miniapp/index.html')"));
+  assert.ok(home.includes("redirect('/miniapp/index.html')"));
+  assert.ok(webhook.includes("https://vaultcore.biz.id/miniapp/index.html"));
+  assert.ok(config.includes('"TELEGRAM_MINI_APP_URL": "https://vaultcore.biz.id/miniapp/index.html"'));
+});
+
+test('Owner shared header has responsive styling and does not render customer footer links', () => {
+  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  for (const selector of ['.dashboard-topbar{','.dashboard-brand{','.dashboard-header-label{','.dashboard-header-actions{','.dashboard-search{']) {
+    assert.ok(styles.includes(selector), 'Missing shared header style: ' + selector);
+  }
+  assert.ok(styles.includes('@media(max-width:380px){'));
+  assert.ok(navigation.includes("{!isOwnerPage && <StoreFooter/>}"));
+});

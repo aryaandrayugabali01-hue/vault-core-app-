@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getInitData } from '../../../lib/telegram';
-import { StoreHeader, StoreBottomNav } from '../../../components/store-navigation.jsx';
+import { StoreHeader } from '../../../components/store-navigation.jsx';
 
 const API=process.env.NEXT_PUBLIC_API_BASE_URL||'';
 const headers=()=>({'content-type':'application/json','x-telegram-init-data':getInitData()});
