@@ -39,13 +39,14 @@ Copy only the generated output into the secret. The deployment preflight ignores
 
 Telegram Login OIDC:
 - BotFather Allowed Origin: `https://vaultcore.biz.id`
-- BotFather Redirect URI: `https://api.vaultcore.biz.id/api/owner-auth/oidc/callback`
+- Owner Redirect URI: `https://api.vaultcore.biz.id/api/owner-auth/oidc/callback`
+- Customer Redirect URI: `https://api.vaultcore.biz.id/api/customer-auth/oidc/callback`
 - Store the Client Secret as GitHub Actions secret `TELEGRAM_OIDC_CLIENT_SECRET`; never commit or expose it.
 
 Optional:
 - `SUPPORT_CONTACT`: the support contact displayed by the payment-support bot command.
 
-The deployment workflow validates the encryption key and provisions `TELEGRAM_OIDC_CLIENT_SECRET` to the existing `vault-core-api` Worker. Owner authorization is read only from active `owner_accounts` records in Neon. `TELEGRAM_OIDC_CLIENT_ID` and `TELEGRAM_OIDC_REDIRECT_URI` are public configuration values in `wrangler.api.jsonc`. The latest production run passed these checks. The deployed API adapter fix is being applied to the existing source and the workflow is configured to redeploy when that API entrypoint or the deployment workflow changes on `main`.
+The deployment workflow validates the encryption key and provisions `TELEGRAM_OIDC_CLIENT_SECRET` to the existing `vault-core-api` Worker. Owner authorization is read only from active `owner_accounts` records in Neon. Customer web sessions are separate signed cookies and resolve into the existing `customers` table; Mini App sessions continue to use validated Telegram `initData`. `TELEGRAM_OIDC_CLIENT_ID` and `TELEGRAM_OIDC_REDIRECT_URI` are public configuration values in `wrangler.api.jsonc`. The latest production run passed these checks. The deployed API adapter fix is being applied to the existing source and the workflow is configured to redeploy when that API entrypoint or the deployment workflow changes on `main`.
 
 ## Database connection model
 
