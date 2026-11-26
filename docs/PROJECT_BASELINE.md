@@ -26,10 +26,10 @@
 | Workers | `vault-core-web`, `vault-core-api`, `vault-core-gateway` |
 | Database | Neon PostgreSQL, `vault_core` |
 | Stack | Next.js/Vinext, Node.js/Express, Cloudflare Workers, Neon, Telegram Mini App |
-| Pembayaran | Telegram Stars (XTR) saja |
+| Pembayaran | Website: QRIS statis merchant dalam IDR untuk sementara; Telegram Mini App: Telegram Stars (XTR) |
 | Tagline resmi | **Lebih Yakin Bersama Vault Core** |
 
-Checkout, invoice, dan pembayaran tetap melalui VAULT CORE Telegram Mini App. Website publik menampilkan katalog dan detail produk.
+Website memproses checkout melalui QRIS statis IDR untuk sementara sesuai CR-15. Telegram Mini App tetap memproses checkout melalui invoice Telegram Stars XTR.
 
 ## 3. Register LOCKED / CHANGE
 
@@ -41,7 +41,7 @@ Checkout, invoice, dan pembayaran tetap melalui VAULT CORE Telegram Mini App. We
 | Kategori MLBB dan subkategori Akun | LOCKED | Pertahankan baseline visual yang disetujui. |
 | Urutan lima filter MLBB | LOCKED | Win Rate, Jumlah Skin, Jumlah Hero, Rank Saat Ini, Akun Terhubung Pada. |
 | Harga produk yang ditetapkan | LOCKED | Jangan mengubah nilai harga melalui pekerjaan UI. |
-| Checkout dan pembayaran XTR | LOCKED | Jangan mengubah invoice, validasi harga/stok, atau konfirmasi pembayaran di luar instruksi eksplisit. |
+| Checkout dan pembayaran XTR Mini App | LOCKED | Pertahankan invoice, validasi harga/stok, pre-checkout, webhook, dan konfirmasi XTR. QRIS website adalah kanal terpisah yang diatur CR-15. |
 | Detail produk MLBB | APPROVED / LOCKED (25 Nov 2026) | Ikuti referensi tiga tampilan terbaru: detail produk penuh, modal Anti-Hackback, modal Cara Beli & Tips. |
 | Detail produk game lain | CHANGE | Terapkan struktur konsisten dengan data produk dan kebijakan SKU yang tersedia. |
 | Modal Garansi dan Panduan | APPROVED / LOCKED (25 Nov 2026) | Dua modal terpisah, mobile-first, overlay gelap, scroll internal, close X, body scroll lock. |
@@ -53,7 +53,7 @@ Checkout, invoice, dan pembayaran tetap melalui VAULT CORE Telegram Mini App. We
 ### Referensi visual detail produk
 
 Referensi terbaru yang diberikan pada 25 November 2026 terdiri dari tiga tampilan:
-1. Detail Produk: header VAULT CORE, galeri/thumbnail, nama, indikator stok, rating/ulasan (belum tersedia sampai ada sumber data), keamanan, garansi, harga XTR, Cara Beli & Tips, deskripsi, spesifikasi akun, dan sticky purchase bar.
+1. Detail Produk: header VAULT CORE, galeri/thumbnail, nama, indikator stok, rating/ulasan (belum tersedia sampai ada sumber data), keamanan, garansi, harga sesuai kanal pembayaran (IDR untuk website, XTR untuk Mini App), Cara Beli & Tips, deskripsi, spesifikasi akun, dan sticky purchase bar.
 2. Modal Anti-Hackback: cakupan dan ketentuan garansi yang tercatat untuk SKU.
 3. Modal Cara Beli & Tips: langkah pembelian, penyerahan informasi oleh VAULT CORE, dan tips keamanan akun.
 
@@ -63,7 +63,7 @@ Referensi terbaru yang diberikan pada 25 November 2026 terdiri dari tiga tampila
 - Endpoint publik tunggal daftar produk jual: `GET /api/catalog`. Respons mempertahankan bentuk `{ products, categories }`.
 - Halaman utama dan seluruh katalog customer membaca data jual melalui `/api/catalog`; detail produk menggunakan objek produk dari respons yang sama. Tidak diperlukan endpoint publik detail produk terpisah.
 - `GET /api/admin/products` tetap merupakan jalur privat Owner untuk manajemen katalog, bukan sumber data halaman penjualan customer.
-- DTO publik hanya menyertakan ID, nama, game, kategori Akun, deskripsi, harga XTR, galeri, atribut customer-visible, ketentuan, panduan, status pembelian, dan nilai stok yang memang boleh ditampilkan. Metadata pemeriksaan hak hanya digunakan internal di query backend.
+- DTO publik hanya menyertakan ID, nama, game, kategori Akun, deskripsi, harga sesuai kanal checkout (IDR website atau XTR Mini App), galeri, atribut customer-visible, ketentuan, panduan, status pembelian, dan nilai stok yang memang boleh ditampilkan. Metadata pemeriksaan hak hanya digunakan internal di query backend.
 - SKU internal, status database mentah, metadata pemeriksaan hak, stok aktual mentah, harga modal, jumlah terjual, dan rata-rata pengiriman tidak dikirim ke DTO publik.
 - Detail tidak memiliki panel status pengiriman, jumlah terjual, rata-rata pengiriman, minimum pembelian, catatan penyerahan manual, kontrol kuantitas, informasi toko, atau rekomendasi produk.
 - Pembelian dari detail dilakukan satu akun per aksi. Indikator stok menggunakan `display_stock`: angka 1 ditampilkan sebagai `STOK TERAKHIR`; mode penyembunyian angka tetap hanya menampilkan `STOK TERSEDIA`. Checkout tetap memvalidasi stok aktual di server.
@@ -72,7 +72,7 @@ Referensi terbaru ini menetapkan acuan detail produk MLBB dan menggantikan statu
 
 ## 4. Aturan data dan copywriting
 
-- Nama, harga XTR, galeri, deskripsi, atribut, stok, dan ketentuan produk diambil dari API/backend.
+- Nama, harga sesuai kanal (IDR website atau XTR Mini App), galeri, deskripsi, atribut, stok, dan ketentuan produk diambil dari API/backend.
 - Stok customer diambil dari nilai `display_stock` yang dihitung backend sesuai mode tampilan produk; angka stok aktual tidak dikirim secara mentah.
 - Checkout tetap memvalidasi stok aktual dan reservasi di backend.
 - Statistik penjualan/pengiriman tidak ditampilkan pada halaman detail customer.
@@ -81,7 +81,7 @@ Referensi terbaru ini menetapkan acuan detail produk MLBB dan menggantikan statu
 - Ketentuan garansi harus berasal dari data resmi SKU. Jangan menggeneralisasi garansi satu SKU ke semua SKU.
 - Untuk SKU tanpa ketentuan Anti-Hackback tercatat, tampilkan status belum tersedia.
 - Panduan pembelian diambil dari purchase_guide kategori backend. Jangan mengubah aturan transaksi atau instruksi login yang sudah tercatat tanpa persetujuan.
-- Jangan menambahkan IDR atau metode pembayaran selain Telegram Stars (XTR).
+- Gunakan QRIS statis IDR hanya pada checkout website dan Telegram Stars XTR hanya pada Mini App sesuai CR-15. Nominal harus bersumber dari backend.
 
 ## 5. Prosedur perubahan
 
@@ -131,9 +131,9 @@ Seluruh halaman menggunakan satu sistem desain bersama. Aturan visual berlaku gl
 | CAT-09 | Anti-Hackback | Ketentuan sesuai SKU; SKU tanpa ketentuan ditandai belum tersedia. |
 | CAT-10 | Cara Beli & Tips | Data panduan kategori ditampilkan dan VAULT CORE menjadi pihak yang berhubungan dengan pembeli. |
 | CAT-11 | Modal | Dua modal terpisah, X berfungsi, scroll internal, body belakang terkunci. |
-| CAT-12 | Sticky purchase bar | Harga satu akun XTR benar; aksi hanya menuju alur Mini App. |
+| CAT-12 | Sticky purchase bar | Harga mengikuti kanal: IDR untuk web, XTR untuk Mini App; aksi checkout tetap pada kanal masing-masing. |
 | CAT-13 | Detail ringkas | Tidak menampilkan sold count, rata-rata pengiriman, minimum pembelian, atau panel penyerahan manual. |
-| CAT-14 | Checkout | Validasi harga/stok dan invoice XTR tidak berubah. |
+| CAT-14 | Checkout | Validasi harga/stok backend bersama; QRIS statis IDR untuk web dan invoice XTR untuk Mini App. |
 | CAT-15 | Mobile | Tidak ada overflow/clipping pada Android. |
 | CAT-16 | Build/test | Semua pemeriksaan CI yang relevan lulus. |
 | CAT-17 | Produksi | Website, API, aset, gateway, dan webhook terverifikasi. |
@@ -183,7 +183,7 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - Center the VAULT CORE brand above a compact toolbar with back, search, share, and cart actions.
 - Use a short landscape gallery and thumbnail strip.
 - Use near-black/navy surfaces with gold price and purchase CTA.
-- Main content order: product title and stock; truthful rating status; three inline trust indicators; left-aligned gold XTR price with final-price note; separate blue Anti-Hackback trigger; compact three-row sales/delivery/minimum-purchase panel; full-width single-row Cara Beli & Tips trigger; description; account specifications with contextual emoji; remaining product content and terms.
+- Main content order: product title and stock; truthful rating status; three inline trust indicators; channel-specific price with final-price note (IDR on website, XTR in Mini App); separate blue Anti-Hackback trigger; compact three-row sales/delivery/minimum-purchase panel; full-width single-row Cara Beli & Tips trigger; description; account specifications with contextual emoji; remaining product content and terms.
 - Sales and average-delivery values are shown as “Belum tersedia” while the public catalog DTO does not expose those fields; minimum purchase is the approved constant 1. Price, stock, attributes, warranty terms, and guide steps remain backed by selected-product data or approved constants.
 - Rating and review counts remain “Belum tersedia” until a real backend source exists; do not copy sample values from the reference.
 - Both information sheets remain dark-navy blue-neon bottom sheets with gold “Mengerti” actions.
@@ -201,7 +201,7 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - Convert escaped customer text sequences (\`\\n\`, \`\\r\\n\`, \`\\r\`) into real line breaks for product descriptions, visible account attributes, and customer terms. Keep the original backend content; only normalize its display representation.
 - The mobile account-specification rows use a constrained two-column grid. Long labels and values wrap inside their own columns without overlapping adjacent rows.
 - Refresh the public catalog snapshot when a customer opens a product detail. The displayed availability, stock badge, price, description, gallery, and attributes then use the latest customer DTO. If refresh fails, retain the last successful snapshot; checkout continues to validate price and stock on the server.
-- Preserve the approved detail composition, XTR checkout flow, Telegram Mini App transaction restriction, image gallery source URLs, and sticky purchase bar.
+- Preserve the approved detail composition and shared visual system. Website checkout uses temporary static QRIS IDR; Telegram Mini App retains its XTR checkout flow.
 
 
 ## 15. Shared navigation and detail rendering — 25 Nov 2026
@@ -211,16 +211,16 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - On product detail, keep the purchase action bar immediately above the shared bottom navigation.
 - Long account specification labels and values occupy independent wrapping columns.
 - Customer terms normalize repeated escaped newline sequences before display.
-- Preserve existing product data, price, stock, XTR checkout, catalog filters, and page content.
+- Preserve existing product data, channel-specific price snapshots, stock, website QRIS/Mini App XTR checkout rules, catalog filters, and page content.
 
 ## 16. Customer catalog footer — 25 Nov 2026
 
 - Footer katalog memakai permukaan charcoal/navy dan token warna global Vault Core; layout mobile memakai satu kolom dan tidak mengubah header, bottom navigation, kartu produk, filter, atau detail produk.
 - Konten FAQ khusus Mobile Legends tampil saat kategori MLBB dipilih dan mode uji tidak aktif. Isinya mengikuti materi pembelian, pemeriksaan akun, keamanan email/perangkat, bind, penyelesaian pesanan, dan penggantian nama yang diberikan pemilik proyek.
-- Langkah transaksi wajib menjelaskan bahwa website publik hanya untuk melihat katalog/detail; pembuatan pesanan, pembayaran invoice Telegram Stars (XTR), dan pemantauan pesanan dilakukan melalui VAULT CORE Telegram Mini App.
+- Langkah transaksi website menjelaskan checkout QRIS statis IDR sementara sesuai CR-15; langkah transaksi Telegram Mini App tetap menjelaskan invoice Telegram Stars XTR. Kedua kanal memakai katalog, identitas pelanggan, order, dan data stok backend yang sama.
 - Informasi akun yang diterima pembeli disampaikan oleh VAULT CORE. Jangan menampilkan nama mitra sebagai pihak yang harus dihubungi pembeli.
 - Informasi garansi mengarahkan pembeli ke ketentuan pada detail SKU. Periode 14 hari kalender disebut hanya untuk produk yang tercakup dalam ketentuan Garansi Anti-Hackback tersebut; klaim valid mendapat refund 100% dengan pemrosesan maksimal 48 jam sejak laporan dan bukti diterima.
-- Panel metode pembayaran hanya menampilkan Telegram Stars (XTR). Dilarang menambahkan logo bank, minimarket, e-wallet, PayLater, atau QRIS karena bertentangan dengan kontrak pembayaran.
+- Panel metode pembayaran website menampilkan QRIS merchant statis VAULT CORE dalam IDR sesuai CR-15; Mini App hanya menampilkan Telegram Stars (XTR). Metode lain seperti transfer ke rekening pribadi, e-wallet, PayLater, atau Rekber/Escrow tidak ditambahkan.
 - Navigasi footer hanya mengarah ke route dan anchor yang benar-benar tersedia. Halaman legal, karier, kanal sosial, dan URL kontak eksternal yang belum ada tidak dibuat sebagai tautan mati.
 - Baris hak cipta tidak menyalin identitas badan usaha atau tahun berdiri milik situs referensi.
 
@@ -280,7 +280,7 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - Teks heading, label, harga, deskripsi, dan CTA dinaikkan ke skala yang mudah dibaca pada layar ponsel.
 - **Hanya nilai ukuran** yang boleh diambil dari referensi. Pertahankan seluruh warna, gradient, background, logo, ikon, artwork, border, radius, struktur konten, urutan section, dan perilaku carousel milik VAULT CORE.
 - Jangan menyalin identitas visual, komponen, copywriting, metode pembayaran, promo, maupun aset UniPin.
-- Area dashboard, katalog, detail produk, navigation, data produk, harga, stok, checkout XTR, dan perlindungan pembeli tetap mengikuti aturan LOCKED sebelumnya.
+- Area dashboard, katalog, detail produk, navigation, data produk, harga, stok, checkout QRIS website dan XTR Mini App, serta perlindungan pembeli tetap mengikuti aturan LOCKED sebelumnya.
 
 
 ## 22. Global footer and bottom navigation — 26 Nov 2026
@@ -319,7 +319,7 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 ## 24. Rebuild storefront berdasarkan VAULT CORE SOURCE v5 dan mockup mobile — 26 November 2026
 
 ### Arah visual
-- Mockup 12 layar mobile menjadi acuan struktur pelanggan: splash, Home, katalog game, daftar varian, detail produk, checkout bertahap, pembayaran XTR, hasil/status pesanan, riwayat transaksi, dan profil.
+- Mockup 12 layar mobile menjadi acuan struktur Mini App: splash, Home, katalog game, daftar varian, detail produk, checkout bertahap, pembayaran XTR, hasil/status pesanan, riwayat transaksi, dan profil. Website mempertahankan struktur dan ritme visual yang sama; langkah pembayaran web menggunakan QRIS IDR sesuai CR-15.
 - Kanvas maksimum 430px, empat game dalam satu baris, tema navy gelap dengan aksen violet dan gold, navigasi bawah empat tab: Home, Katalog, Transaksi, Profil.
 - Root website diarahkan ke `/miniapp/index.html`. Tombol `/start` Telegram juga diarahkan ke jalur yang sama.
 - Shell v5 berada di `frontend/public/miniapp/` dan ikut paket frontend Worker `vault-core-web`; tidak menambah Worker, hosting, atau database.
@@ -327,9 +327,9 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 ### Koneksi data dan batas transaksi
 - Katalog dinamis: `GET /api/catalog`.
 - Riwayat pesanan: `GET /api/orders/mine`.
-- Pembuatan order: `POST /api/orders` dengan `items: [{ productId, quantity }]`; API membuat invoice link Telegram Stars (XTR). Mini App membukanya melalui `Telegram.WebApp.openInvoice`; browser membuka link invoice Telegram.
+- Implementasi saat ini: `POST /api/orders` membuat invoice Telegram Stars (XTR); Mini App membukanya melalui `Telegram.WebApp.openInvoice`. QRIS website sesuai CR-15 belum tersedia di kode produksi dan memerlukan jalur pembayaran IDR serta verifikasi settlement Owner.
 - Autentikasi pelanggan: Telegram Mini App menggunakan `initData`; website menggunakan Telegram OIDC Authorization Code + PKCE dan cookie sesi pelanggan bertanda tangan. Keduanya melewati `requireTelegramUser` dan dipetakan ke `customers.telegram_user_id` yang sama.
-- Browser website mendukung profil, pembuatan pesanan, riwayat, dan data akses layanan lewat cookie pelanggan. Status pembayaran tetap hanya berubah setelah webhook Telegram mengonfirmasi pembayaran XTR.
+- Browser website mendukung profil dan autentikasi pelanggan melalui Telegram OIDC cookie. Status web saat ini belum memiliki alur QRIS; setelah implementasi CR-15, status QRIS hanya dapat berubah menjadi PAID melalui verifikasi settlement Owner/Admin. Mini App tetap menggunakan webhook Telegram untuk konfirmasi XTR.
 - Backend produksi saat ini menerima `productId` dan `quantity`; input ID/Username khusus pada mockup belum tersedia pada kontrak endpoint. Karena itu checkout tidak meminta data yang tidak dapat disimpan. Penyerahan mengikuti detail produk setelah pembayaran terkonfirmasi.
 - Dua belas varian master adalah struktur navigasi. Produk, harga, stok, dan kelayakan beli tetap berasal dari backend. Varian tanpa produk aktif menampilkan status belum tersedia; tidak ada SKU atau stok palsu.
 
@@ -357,3 +357,17 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - The storefront mapping `GAME_ART`, the public catalog game tiles and variant artwork, and the Telegram Mini App use these same four local assets. The Mini App service-worker shell cache was bumped to v6 and includes all four files.
 - Remote Itemku artwork URLs and the old category-background images are no longer used as the four primary game marks. Product-specific SKU images remain driven by their existing product records.
 - This visual asset update does not change catalog records, backend APIs, inventory, pricing, orders, fulfillment, Telegram authentication, or XTR checkout behavior.
+
+
+## 25. CR-15 — Website QRIS statis sementara, Mini App XTR tetap, dan konsistensi visual — 27 Nov 2026
+
+- Checkout website ditetapkan menggunakan QRIS statis merchant VAULT CORE dalam IDR untuk sementara.
+- Telegram Mini App tetap menggunakan invoice resmi Telegram Stars XTR. QRIS tidak ditampilkan atau diterima di Mini App; alur invoice, pre-checkout, webhook `successful_payment`, dan refund Stars tidak berubah.
+- Website dan Mini App memakai satu backend API, database Neon, record pelanggan `customers`, katalog, stok, order, reservasi, fulfillment, dan riwayat transaksi.
+- Website memakai Telegram OIDC customer cookie yang tervalidasi; Mini App memakai Telegram `initData` yang tervalidasi. Keduanya dipetakan ke `customers.telegram_user_id` yang sama.
+- Snapshot nilai web dicatat dalam IDR; snapshot Mini App dicatat dalam XTR. Tidak ada konversi otomatis atau penjumlahan lintas mata uang tanpa kebijakan kurs Owner yang terpisah.
+- Standar visual tetap satu: kanvas mobile maksimum 430px, warna, tipografi, kartu, artwork, hierarki informasi, navigasi, dan urutan katalog → detail → ringkasan → pembayaran → status → riwayat → profil. Perbedaan hanya metode dan mata uang pembayaran.
+- QRIS hanya dapat diverifikasi melalui pencocokan settlement merchant oleh Owner/Admin berwenang. Screenshot, callback browser, dan klaim customer adalah bukti pendukung saja, bukan pemicu status PAID.
+- Aset QRIS merchant, nama merchant, harga IDR per SKU, settlement access/prosedur verifikasi, refund QRIS, serta timeout dan reservasi order masih **BELUM DIKETAHUI** dari dokumentasi saat CR-15 disetujui.
+- **Status kode produksi: QRIS web BELUM DIIMPLEMENTASIKAN.** CTA pembelian website saat ini masih mengarahkan pelanggan ke Telegram Mini App dan controller order yang ada masih membuat invoice Telegram Stars. Perubahan dokumen ini tidak mengaktifkan checkout QRIS; implementasi, migrasi data IDR, kontrol verifikasi Owner, regression test, dan UAT diperlukan sebelum kanal tersebut dinyatakan aktif.
+
