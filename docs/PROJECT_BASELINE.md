@@ -343,4 +343,7 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 ### Validasi dan deployment
 - CI ditambah pemeriksaan keberadaan shell v5, sintaks JavaScript, dan referensi aset Mini App.
 - Regression tests memeriksa redirect homepage, 12 varian, layout 430px, empat game, kontrak API/XTR, autentikasi Telegram, service worker, dan duplikasi deklarasi CSS.
-- Status akhir CI/build/deployment dicatat setelah workflow selesai. Screenshot Android aktual tetap memerlukan uji manual di perangkat.
+- CI run [45780201632](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45780201632): **SUCCESS** (backend/core tests, Mini App asset/syntax check, frontend build, API Worker dry-run).
+- Production run [45780201631](https://github.com/aryaandrayugabali01-hue/vault-core-app-/actions/runs/45780201631): **SUCCESS**. API/frontend Worker, database health, gateway/domain, five Mini App static files, artwork, Telegram webhook read-back, dan fixture Owner berhasil diperiksa.
+- Cloudflare production: `vault-core-web` v161, `vault-core-api` v841, `vault-core-gateway` v320; masing-masing melayani 100% traffic. Source commit: `75fd4695b5d5eb57d83e2477603098d0256623e0`.
+- Screenshot Android aktual dan uji interaksi manual perangkat masih **BELUM DILAKUKAN**. Smoke test aset/Worker bukan pengganti perbandingan visual langsung pada perangkat.
