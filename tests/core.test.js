@@ -940,7 +940,7 @@ test('all 12 master variants remain visible while non-account variants stay unav
   assert.equal(app.includes('buyer-input'),false);
   for (const game of ['MLBB','FREE_FIRE','ROBLOX','GENSHIN']) assert.ok(variants.includes("game:'" + game + "'"));
   assert.ok(app.includes('Varian belum tersedia'));
-  assert.ok(app.includes('const productsOf ='));
+  assert.ok(app.includes('function productsOf('));
 });
 
 test('checkout and transaction history require verified Telegram Mini App initData', () => {
