@@ -695,7 +695,8 @@ test('Owner product attributes are normalized and bounded for marketplace filter
   assert.equal(normalizeProductAttributes(['Rank','Mythic']).ok, false);
   assert.equal(normalizeProductAttributes({ Rank:'Mythic', rank:'Epic' }).ok, false);
   assert.equal(normalizeProductAttributes(Object.fromEntries([['constructor','unsafe']])).ok, false);
-  assert.equal(normalizeProductAttributes({ Detail:'x'.repeat(161) }).ok, false);
+  assert.equal(normalizeProductAttributes({ Detail:'x'.repeat(500) }).ok, true);
+  assert.equal(normalizeProductAttributes({ Detail:'x'.repeat(501) }).ok, false);
   assert.equal(normalizeProductAttributes(Object.fromEntries(Array.from({length:25},(_,i)=>['Key'+i,'Value']))).ok, false);
 });
 
