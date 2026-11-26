@@ -53,9 +53,9 @@ export function StoreBottomNav({ active = 'dashboard', embedded = false }) {
   ];
   const customerItems = [
     { id: 'dashboard', label: 'Home', icon: 'home', href: '/' },
-    { id: 'catalog', label: 'Katalog', icon: 'catalog', href: '/catalog' },
-    { id: 'transactions', label: 'Transaksi', icon: 'receipt', href: '/catalog#transactions' },
-    { id: 'account', label: 'Profil', icon: 'user', href: '/account' }
+    { id: 'catalog', label: 'Store', icon: 'catalog', href: '/catalog' },
+    { id: 'transactions', label: 'My Orders', icon: 'receipt', href: '/catalog#transactions' },
+    { id: 'account', label: 'Profile', icon: 'user', href: '/account' }
   ];
   const items = accountView ? ownerItems : customerItems;
   return <nav className={'dashboard-bottom-nav' + (embedded ? ' dashboard-bottom-nav-embedded' : '')} aria-label="Navigasi utama">

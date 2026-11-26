@@ -6,7 +6,7 @@ const tg = window.Telegram && window.Telegram.WebApp;
 const inTelegram = Boolean(tg && tg.initData);
 const $ = (selector) => document.querySelector(selector);
 const money = new Intl.NumberFormat('id-ID');
-const state = { variants: [], products: [], loaded: false, loadError: '', orderFilter: 'all', orderRows: [], accessTarget: null };
+const state = { variants: [], products: [], loaded: false, loadError: '', orderFilter: 'all', orderRows: [], accessTarget: null, catalogGroup:'ALL', catalogGame:'ALL', search:'' };
 let checkout = null;
 let lastInvoice = null;
 let renderId = 0;
@@ -95,9 +95,9 @@ function setPage(markup, active, hideNav) {
   nav.hidden = Boolean(hideNav);
   nav.innerHTML = [
     ['home','Home','home'],
-    ['catalog','Katalog','grid'],
-    ['orders','Transaksi','receipt'],
-    ['profile','Profil','user']
+    ['catalog','Store','grid'],
+    ['orders','My Orders','receipt'],
+    ['profile','Profile','user']
   ].map(([key,label,symbol]) => '<button type="button" data-go="/' + key + '" class="' + (active === key ? 'on' : '') + '" aria-current="' + (active === key ? 'page' : 'false') + '">' + icon(symbol) + '<span>' + label + '</span></button>').join('');
   if (inTelegram && tg.BackButton) {
     if (hideNav || active === 'home' || active === 'catalog' || active === 'orders' || active === 'profile') tg.BackButton.hide();
@@ -148,32 +148,48 @@ function productsOf(variant) {
   return state.products.filter((product) => Number(product.variant_id) === Number(variant.variant_id));
 }
 function home() {
+  const accounts = state.variants.filter((variant) => variant.category === 'Akun');
+  const services = state.variants.filter((variant) => variant.category === 'Jasa Joki');
   const available = state.products.filter(isBuyable);
-  const recommended = available.slice().sort((a,b) =>
-    Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)) ||
-    Number(b.display_stock || 0) - Number(a.display_stock || 0)
-  ).slice(0,8);
-  const comingSoon = state.variants.filter((variant) => productsOf(variant).filter(isBuyable).length === 0);
-  const promo = available.find((product) => comparePrice(product));
-  const banner = promo
-    ? '<button class="promo" type="button" data-go="/product/' + encodeURIComponent(promo.id) + '"><span class="promo-copy"><b>Promo Spesial</b><em>' + esc(promo.name) + '</em><p>Harga promo terverifikasi · ' + discountPercent(promo) + '%</p></span><span class="promo-mark">%' + '</span></button>'
-    : '<button class="promo" type="button" data-go="/catalog"><span class="promo-copy"><b>Pilihan Spesial</b><em>Akun game pilihan</em><p>Lihat varian dan stok yang tersedia</p></span><span class="promo-mark">★</span></button>';
+  const featured = available.slice(0,4);
+  const gameTiles = GAME_CODES.map((code) => {
+    return '<button class="game-tile" type="button" data-go="/game/' + code + '"><span class="game-art"><img src="' + gameOf(code).art + '" alt="" loading="lazy"></span><b>' + esc(gameOf(code).short) + '</b></button>';
+  }).join('');
+  const variantCard = (variant) => {
+    const products = productsOf(variant);
+    const ready = products.filter(isBuyable).length;
+    const joki = variant.category === 'Jasa Joki';
+    const preview = products.find((product) => product.fulfillment_eta);
+    return '<button class="home-variant" type="button" data-go="/variant/' + variant.variant_id + '">' +
+      '<span class="home-variant-art"><img src="' + gameOf(variant.game_code).art + '" alt="" loading="lazy"><small>' + (joki?'JOKI GAME':'AKUN GAME') + '</small></span>' +
+      '<span class="home-variant-copy"><small>' + esc(gameOf(variant.game_code).short) + ' · ' + esc(variant.category) + '</small><b>' + esc(variant.name) + '</b>' +
+      '<span class="home-variant-status ' + (ready?'ready':'') + '">' + (ready?'Ready · '+ready+' tersedia':joki?'Layanan belum tersedia':'Belum tersedia') + '</span>' +
+      (preview && preview.fulfillment_eta ? '<small class="home-variant-eta">Estimasi: ' + esc(preview.fulfillment_eta) + '</small>' : '') +
+      '</span><span class="home-variant-arrow">›</span></button>';
+  };
+  const skeleton = !state.loaded
+    ? '<div class="home-skeleton-grid"><i class="vc-skeleton"></i><i class="vc-skeleton"></i><i class="vc-skeleton"></i><i class="vc-skeleton"></i></div>'
+    : '';
   setPage(
     headerHome() +
-    '<main>' +
-      '<section class="hero"><div class="hero-copy"><span class="eyebrow">VAULT CORE DIGITAL STORE</span><h1>Akun Game Premium<em>Pilihan Terbaik</em></h1><p>Mobile Legends • Free Fire • Roblox • Genshin Impact</p><button class="hero-cta" type="button" data-go="/catalog">Jelajahi Katalog <span>→</span></button></div></section>' +
-      '<div class="dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div>' +
-      '<section class="games">' + GAME_CODES.map((code) => {
-        const count = state.variants.filter((variant) => variant.game_code === code).length;
-        return '<button class="game-tile" type="button" data-go="/game/' + code + '"><span class="game-art"><img src="' + gameOf(code).art + '" alt="" loading="lazy"></span><b>' + esc(gameOf(code).short) + '</b></button>';
-      }).join('') + '</section>' +
-      banner +
-      '<div class="section-head"><h2>Rekomendasi Hari Ini</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
-      (recommended.length ? '<div class="products-strip">' + recommended.map(productCard).join('') + '</div>' :
-        '<div class="empty">' + (state.loadError ? esc(state.loadError) : state.loaded ? 'Belum ada produk yang siap dijual. Silakan cek kembali nanti.' : 'Memuat katalog…') + '</div>') +
-      (comingSoon.length ? '<div class="section-head"><h2>Akan Tersedia</h2><button type="button" data-go="/catalog">Lihat Katalog ›</button></div><div class="products-strip">' + comingSoon.map(comingSoonCard).join('') + '</div>' : '') +
-      '<div class="section-head"><h2>4 Game · 12 Varian</h2><button type="button" data-go="/catalog">Buka Katalog ›</button></div>' +
-      '<div class="box info">' + icon('shield') + '<span>Periksa deskripsi, spesifikasi, stok, dan ketentuan sebelum melanjutkan pembelian. Pembayaran hanya melalui Telegram Stars (XTR).</span></div>' +
+    '<main class="home-v3">' +
+      '<label class="search home-search">' + icon('search') + '<input id="home-search" type="search" placeholder="Cari akun game atau layanan joki..." autocomplete="off"><button type="button" data-go="/catalog" aria-label="Buka Store">' + icon('next') + '</button></label>' +
+      '<section class="home-promo"><div><small>PROMO AKUN GAME</small><h1>Distribusi Aset Digital Game</h1><p>Akun premium dan layanan joki dari empat game pilihan.</p><button type="button" data-go="/catalog">Jelajahi Store <b>↗</b></button></div><span class="home-promo-mark">VC</span></section>' +
+      '<div class="section-head"><h2>Kategori Game</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
+      '<section class="games home-games">' + gameTiles + '</section>' +
+      '<div class="home-group-tabs"><button type="button" class="on" data-go="/catalog">Semua</button><button type="button" data-go="/catalog">Akun</button><button type="button" data-go="/catalog">Joki</button></div>' +
+      (skeleton ? skeleton :
+        '<div class="section-head"><h2>Akun Game</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
+        (accounts.length ? '<div class="home-variant-list">' + accounts.map(variantCard).join('') + '</div>' : '<div class="empty">Varian akun belum dapat dimuat.</div>') +
+        '<div class="section-head"><h2>Layanan Joki</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
+        (services.length ? '<div class="home-variant-list">' + services.map(variantCard).join('') + '</div>' : '<div class="empty">Varian Joki belum dapat dimuat.</div>') +
+        '<div class="section-head"><h2>Produk Tersedia</h2><button type="button" data-go="/catalog">Buka Store ›</button></div>' +
+        (featured.length ? '<div class="products-strip">' + featured.map(productCard).join('') + '</div>' : '<div class="empty">' + (state.loadError ? esc(state.loadError) : 'Produk yang siap dipesan akan tampil setelah SKU, harga, hak, dan stok memenuhi ketentuan katalog.') + '</div>')
+      ) +
+      '<div class="section-head"><h2>Aktivitas Pesanan</h2><button type="button" data-go="/orders">My Orders ›</button></div>' +
+      '<div class="home-activity"><span>' + icon('receipt') + '</span><div><b>Riwayat pesanan pribadi</b><small>Status pesanan ditampilkan pada akun pelanggan yang terverifikasi.</small></div><span class="home-activity-arrow">›</span></div>' +
+      '<div class="section-head"><h2>Keunggulan VAULT CORE</h2></div>' +
+      '<div class="home-benefits"><div>' + icon('shield') + '<b>Transaksi Terpantau</b><small>Riwayat dan status pada akun pelanggan.</small></div><div>' + icon('help') + '<b>Pusat Bantuan</b><small>Dukungan melalui kanal resmi VAULT CORE.</small></div></div>' +
     '</main>',
     'home', false
   );
@@ -499,7 +515,7 @@ function render() {
   if (name !== 'checkout') checkout = null;
   switch (name || 'home') {
     case 'home': home(); break;
-    case 'catalog': state.search=''; catalog(); break;
+    case 'catalog': state.search=''; state.catalogGroup='ALL'; state.catalogGame='ALL'; catalog(); break;
     case 'game': gamePage(arg); break;
     case 'variant': variantPage(arg); break;
     case 'product': productPage(arg); break;
@@ -607,16 +623,19 @@ function init() {
   document.addEventListener('input',handleInput);
   window.addEventListener('hashchange',render);
   const splash = $('#splash');
-  const started = Date.now();
+  render();
+  window.setTimeout(() => {
+    if (splash) splash.classList.add('out');
+    window.setTimeout(() => splash && splash.remove(),380);
+  },320);
   api('/api/catalog/v4/variants').then((result) => {
     normalizeCatalogVariants(result.variants);
     state.loaded = true;
   }).catch((error) => {
+    state.loaded = true;
     state.loadError = error.message || 'Katalog belum dapat dimuat.';
   }).finally(() => {
     render();
-    const delay = Math.max(0,900 - (Date.now() - started));
-    setTimeout(() => { if (splash) splash.classList.add('out'); setTimeout(() => splash && splash.remove(),380); },delay);
   });
   if ('serviceWorker' in navigator && !inTelegram) navigator.serviceWorker.register('./sw.js',{scope:'/miniapp/'}).catch(() => {});
 }
