@@ -14,7 +14,6 @@ function configureEnvironment(env) {
     'TELEGRAM_BOT_TOKEN',
     'TELEGRAM_WEBHOOK_SECRET',
     'TELEGRAM_MINI_APP_URL',
-    'ADMIN_TELEGRAM_IDS',
     'APP_ENCRYPTION_KEY',
     'FRONTEND_ORIGIN',
     'SUPPORT_CONTACT',
