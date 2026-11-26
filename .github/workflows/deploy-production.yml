@@ -34,7 +34,6 @@ jobs:
       CLOUDFLARE_ZONE_ID: "74092a358232c7bf501da8d822fabb47"
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
-      ADMIN_TELEGRAM_IDS: ${{ secrets.ADMIN_TELEGRAM_IDS }}
       APP_ENCRYPTION_KEY: ${{ secrets.APP_ENCRYPTION_KEY }}
       SUPPORT_CONTACT: ${{ secrets.SUPPORT_CONTACT }}
       WEB_ORIGIN: "https://vault-core-web.premiumdigital-id.workers.dev"
@@ -184,7 +183,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for key in CLOUDFLARE_API_TOKEN TELEGRAM_BOT_TOKEN TELEGRAM_WEBHOOK_SECRET ADMIN_TELEGRAM_IDS APP_ENCRYPTION_KEY; do
+          for key in CLOUDFLARE_API_TOKEN TELEGRAM_BOT_TOKEN TELEGRAM_WEBHOOK_SECRET APP_ENCRYPTION_KEY; do
             if [[ -z "${!key:-}" ]]; then
               echo "::error::Required repository secret is missing: ${key}"
               exit 1
@@ -207,11 +206,6 @@ jobs:
               const fs = await import("node:fs");
               fs.appendFileSync(process.env.GITHUB_ENV, "APP_ENCRYPTION_KEY=" + key + "\n");
             }
-            const ids = process.env.ADMIN_TELEGRAM_IDS.split(",").map((v) => v.trim()).filter(Boolean);
-            if (!ids.length || ids.some((v) => !/^[0-9]+$/.test(v))) {
-              console.error("ADMIN_TELEGRAM_IDS must be a comma-separated list of numeric Telegram user IDs.");
-              process.exit(1);
-            }
           '
           token_status="$(curl --fail --silent --show-error -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" https://api.cloudflare.com/client/v4/user/tokens/verify)"
           echo "$token_status" | jq -e '.success == true and .result.status == "active"' >/dev/null
@@ -231,7 +225,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for key in TELEGRAM_BOT_TOKEN TELEGRAM_WEBHOOK_SECRET ADMIN_TELEGRAM_IDS APP_ENCRYPTION_KEY; do
+          for key in TELEGRAM_BOT_TOKEN TELEGRAM_WEBHOOK_SECRET APP_ENCRYPTION_KEY; do
             printf '%s' "${!key}" | npx --yes wrangler@latest secret put "$key" --config wrangler.api.jsonc
           done
           if [[ -n "${SUPPORT_CONTACT:-}" ]]; then
