@@ -114,21 +114,19 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   },[]);
 
   const loadCustomer = useCallback(async () => {
-    try {
-      const initData = getInitData();
-      const response = await fetch(API + '/api/customer-auth/session',{
-        headers: initData ? { 'x-telegram-init-data':initData } : {},
-        credentials:'include',
-        cache:'no-store'
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setCustomer(null);
-        return null;
-      }
-      setCustomer(data.user || null);
-      return data.user || null;
+    const initData = getInitData();
+    const response = await fetch(API + '/api/customer-auth/session',{
+      headers: initData ? { 'x-telegram-init-data':initData } : {},
+      credentials:'include',
+      cache:'no-store'
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setCustomer(null);
+      return null;
     }
+    setCustomer(data.user || null);
+    return data.user || null;
   },[]);
 
   const loadOrders = useCallback(async () => {
