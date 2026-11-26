@@ -17,5 +17,5 @@ export function openInvoice(url, orderNumber = null) {
     });
     return;
   }
-  window.open(url, '_blank', 'noopener,noreferrer');
+  window.location.assign(url);
 }
