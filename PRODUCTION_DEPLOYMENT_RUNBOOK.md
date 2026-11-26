@@ -25,6 +25,7 @@ Add the following secrets to the GitHub repository under **Settings → Secrets 
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API token scoped to account `67d2069a9ae076d3ce63a9aca629ea8b` with **Workers Scripts: Edit** and **Hyperdrive: Read**; it must also allow attaching Worker Custom Domains in the active zone |
 | `TELEGRAM_BOT_TOKEN` | Production bot token from BotFather |
 | `TELEGRAM_WEBHOOK_SECRET` | Random secret token to authenticate Telegram webhook requests |
+| `TELEGRAM_OIDC_CLIENT_SECRET` | Client Secret issued by BotFather → Login Widget for the existing VAULT CORE bot |
 | `ADMIN_TELEGRAM_IDS` | Comma-separated numeric Telegram user IDs authorized as admins/owner |
 | `APP_ENCRYPTION_KEY` | Standard Base64 encoding of exactly 32 random bytes, used for AES-256-GCM inventory encryption |
 
@@ -36,10 +37,15 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 Copy only the generated output into the secret. The deployment preflight ignores line breaks/whitespace around or within the Base64 value and reports only its character and decoded-byte counts; it never prints the key.
 
+Telegram Login OIDC:
+- BotFather Allowed Origin: `https://vaultcore.biz.id`
+- BotFather Redirect URI: `https://api.vaultcore.biz.id/api/owner-auth/oidc/callback`
+- Store the Client Secret as GitHub Actions secret `TELEGRAM_OIDC_CLIENT_SECRET`; never commit or expose it.
+
 Optional:
 - `SUPPORT_CONTACT`: the support contact displayed by the payment-support bot command.
 
-The deployment workflow validates the encryption key before deploying. Owner authorization is read from the active `owner_accounts` records in Neon. The latest production run passed these checks. The deployed API adapter fix is being applied to the existing source and the workflow is configured to redeploy when that API entrypoint or the deployment workflow changes on `main`.
+The deployment workflow validates the encryption key and provisions `TELEGRAM_OIDC_CLIENT_SECRET` to the existing `vault-core-api` Worker. Owner authorization is read only from active `owner_accounts` records in Neon. `TELEGRAM_OIDC_CLIENT_ID` and `TELEGRAM_OIDC_REDIRECT_URI` are public configuration values in `wrangler.api.jsonc`. The latest production run passed these checks. The deployed API adapter fix is being applied to the existing source and the workflow is configured to redeploy when that API entrypoint or the deployment workflow changes on `main`.
 
 ## Database connection model
 
