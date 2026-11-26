@@ -103,6 +103,18 @@ test('Customer browser sessions are signed, separated from Owner cookies and exp
     assert.equal(readCustomerSession('vault_owner_session=' + token), null);
     assert.match(customerCookieHeader(token), /HttpOnly/);
     assert.match(customerCookieHeader(token), /SameSite=Lax/);
+    const previousNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      const productionCookie = customerCookieHeader(token);
+      assert.match(productionCookie, /HttpOnly/);
+      assert.match(productionCookie, /Secure/);
+      assert.match(productionCookie, /Domain=\\.vaultcore\\.biz\\.id/);
+      assert.match(productionCookie, /Path=\\//);
+    } finally {
+      if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = previousNodeEnv;
+    }
     assert.match(customerCookieHeader('', 0), /Max-Age=0/);
     assert.equal(readCustomerSession('vault_customer_session=invalid.signature'), null);
   } finally {
@@ -121,6 +133,9 @@ test('Customer web OIDC and Mini App authentication resolve into the same custom
   assert.match(customerRoute, /createCustomerSession/);
   assert.match(customerRoute, /vault_customer_oidc_return/);
   assert.match(customerRoute, /safeCustomerReturnPath/);
+  assert.match(customerRoute, /Path=\\/api\\/customer-auth/);
+  assert.match(customerRoute, /Domain=\\.vaultcore\\.biz\\.id/);
+  assert.match(customerRoute, /target.searchParams.set\('next', safePath\)/);
   assert.match(customerRoute, /new URL\(returnPath, FRONTEND_ACCOUNT_URL\)/);
   assert.match(sessionMiddleware, /vault_customer_session/);
   assert.match(telegramMiddleware, /readCustomerSession/);
