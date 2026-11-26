@@ -246,7 +246,7 @@ function renderCheckout(id) {
   const step = checkout.step;
   const steps = '<div class="stepper"><div class="step ' + (step===1?'on':step>1?'done':'') + '"><i>1</i>Data</div><div class="step ' + (step===2?'on':step>2?'done':'') + '"><i>2</i>Pembayaran</div><div class="step"><i>3</i>Selesai</div></div>';
   const input = step === 1 ?
-    '<label class="label" for="buyer-input">Data Penerima</label><input class="input" id="buyer-input" maxlength="64" value="' + esc(checkout.buyerInput) + '" placeholder="ID / Username (jika diperlukan)" autocomplete="off"><p class="helptext">Isi sesuai instruksi produk jika diperlukan. Jangan masukkan kata sandi atau OTP.</p>' :
+    '<div class="box info">' + icon('info') + '<span>Untuk checkout ini tidak diperlukan data tambahan. Data penyerahan mengikuti instruksi dan ketentuan pada detail produk setelah pembayaran dikonfirmasi.</span></div>' :
     '<div class="pay-card"><span class="star">★</span><span><b>Bayar dengan Telegram Stars (XTR)</b><small>Invoice resmi diproses oleh Telegram.</small></span></div>';
   const button = step === 1 ?
     '<button class="cta" type="button" data-action="checkout-next">Lanjut ke Pembayaran →</button>' :
@@ -272,7 +272,6 @@ async function createOrder() {
   renderCheckout(product.id);
   try {
     const body = {items:[{productId:Number(product.id),quantity:1}],paymentMethod:'XTR'};
-    if (checkout.buyerInput) body.buyerInput = {gameId:checkout.buyerInput};
     const result = await api('/api/orders',{method:'POST',body});
     lastInvoice = {number:result.orderNumber,url:result.invoiceUrl};
     checkout = null;
@@ -470,7 +469,6 @@ function handleClick(event) {
   if (action === 'back') { history.length > 1 ? history.back() : go('/home'); return; }
   if (action === 'buy') { startCheckout(button.getAttribute('data-id')); return; }
   if (action === 'checkout-next') {
-    if ($('#buyer-input')) checkout.buyerInput = $('#buyer-input').value.trim();
     checkout.step = 2;
     renderCheckout(checkout.productId);
     return;
@@ -504,7 +502,6 @@ function handleInput(event) {
         '<span class="list-copy"><b>' + esc(gameOf(code).name) + '</b><small>Game marketplace</small><span class="badge">' + count + ' Varian</span></span><span class="chevron">›</span></button>';
     }).join('') || '<div class="empty">Game tidak ditemukan.</div>';
   }
-  if (event.target && event.target.id === 'buyer-input' && checkout) checkout.buyerInput = event.target.value;
 }
 function init() {
   if (inTelegram) {
