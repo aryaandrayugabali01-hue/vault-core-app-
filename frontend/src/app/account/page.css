@@ -7,9 +7,9 @@
 .customer-account-intro{margin:0;color:#aab4c5;font-size:13px;line-height:1.7;text-align:center}
 .customer-account-status{padding:12px 14px;border:1px solid rgba(255,255,255,.09);border-radius:13px;background:rgba(255,255,255,.035);color:#cbd3df;font-size:12px;text-align:center}
 .customer-account-status.is-success{border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.07);color:#9ce9ca}
-.customer-account-primary{display:flex;min-height:52px;align-items:center;justify-content:center;padding:12px 18px;border-radius:13px;background:linear-gradient(135deg,#42a5f5,#229ed9);color:#fff;text-decoration:none;font-size:14px;font-weight:900;box-shadow:0 8px 22px rgba(34,158,217,.2)}
+.customer-account-primary{display:flex;min-height:52px;align-items:center;justify-content:center;padding:12px 18px;border-radius:13px;background:linear-gradient(180deg,#ffe16a,#ffbd16);color:#17131a;text-decoration:none;font-size:14px;font-weight:950;box-shadow:0 8px 22px rgba(255,190,23,.19)}
 .customer-account-primary:hover{filter:brightness(1.06)}
-.customer-account-secondary{display:flex;justify-content:center;color:#f5c451;text-decoration:none;font-size:12px;font-weight:800}
+.customer-account-secondary{display:flex;justify-content:center;color:#ffc928;text-decoration:none;font-size:12px;font-weight:800}
 .customer-account-logout{min-height:44px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:transparent;color:#bbc5d5;font-size:12px;font-weight:800;cursor:pointer}
 .customer-account-logout:disabled{opacity:.55;cursor:wait}
 .customer-account-identity{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:rgba(255,255,255,.035)}
@@ -20,3 +20,5 @@
 .customer-account-note{color:#929fb2;font-size:11px;line-height:1.6;text-align:center}
 .customer-account-message{margin:0;padding:11px 13px;border-radius:12px;background:rgba(245,196,81,.08);color:#f5d990;font-size:12px;line-height:1.55;text-align:center}
 @media(max-width:520px){.customer-account-page{min-height:calc(100vh - 160px);padding:24px 14px 46px}.customer-account-card{padding:25px 18px}}
+
+.customer-account-primary:focus-visible,.customer-account-secondary:focus-visible,.customer-account-logout:focus-visible{outline:2px solid #8ce7ff;outline-offset:3px}
