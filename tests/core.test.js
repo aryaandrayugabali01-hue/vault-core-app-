@@ -934,7 +934,8 @@ test('web storefront and Owner routes retain global chrome while Mini App keeps 
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   const catalogStyles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
-  assert.ok(home.includes("redirect('/catalog')"));
+  assert.ok(home.includes("VaultCoreHomePage"));
+  assert.ok(home.includes("return <VaultCoreHomePage />"));
   assert.ok(owner.includes('StoreHeader'));
   assert.ok(owner.includes('/admin/v4'));
   assert.ok(ownerV4.includes('Dashboard Owner'));
@@ -1082,9 +1083,11 @@ test('the production website opens the React catalog while the Telegram Mini App
   const seed = migration.match(/jsonb_array_elements\(\$\$([\s\S]*?)\$\$::jsonb\)/);
   assert.ok(seed, 'Canonical 12-variant seed must remain available');
   assert.equal(JSON.parse(seed[1]).length,12);
-  assert.ok(page.includes("redirect('/catalog')"));
+  assert.ok(page.includes("VaultCoreHomePage"));
+  assert.ok(page.includes("return <VaultCoreHomePage />"));
   assert.ok(html.includes('<nav class="nav" id="nav"'));
-  assert.ok(page.includes("redirect('/catalog')"));
+  assert.ok(page.includes("VaultCoreHomePage"));
+  assert.ok(page.includes("return <VaultCoreHomePage />"));
   assert.ok(html.includes('./app.css'));
   assert.equal(html.includes('./variants.js'),false);
   assert.ok(styles.includes('#app{position:relative;width:min(100%,430px)'));
@@ -1326,7 +1329,8 @@ test('clean /miniapp route and Telegram bot still open the canonical static Mini
   const webhook = readFileSync(new URL('../backend/routes/telegramWebhook.js', import.meta.url), 'utf8');
   const config = readFileSync(new URL('../wrangler.api.jsonc', import.meta.url), 'utf8');
   assert.ok(entry.includes("redirect('/miniapp/index.html')"));
-  assert.ok(home.includes("redirect('/catalog')"));
+  assert.ok(home.includes("VaultCoreHomePage"));
+  assert.ok(home.includes("return <VaultCoreHomePage />"));
   assert.ok(webhook.includes("https://vaultcore.biz.id/miniapp/index.html"));
   assert.ok(config.includes('"TELEGRAM_MINI_APP_URL": "https://vaultcore.biz.id/miniapp/index.html"'));
 });
