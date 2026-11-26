@@ -100,6 +100,10 @@ jobs:
           const sources = [
             'frontend/src/app/globals.css',
             'frontend/src/app/mobile-app.css',
+            'frontend/src/app/catalog/page.css',
+            'frontend/public/miniapp/app.css',
+            'frontend/public/miniapp/app.js',
+            'frontend/public/miniapp/index.html',
             'frontend/src/app/page.jsx',
             'frontend/src/app/catalog/page.jsx',
             'frontend/src/app/admin/page.jsx',
@@ -251,7 +255,10 @@ jobs:
             if (h.status !== "ok" || h.database !== "connected") throw new Error("API health/database check failed");
           '
           curl --fail --silent --show-error --retry 10 --retry-delay 5 --retry-all-errors "$WEB_ORIGIN/" -o /dev/null
-          echo "API Worker and frontend Worker returned successful responses."
+          for path in /miniapp/index.html /miniapp/app.css /miniapp/app.js /miniapp/variants.js /miniapp/manifest.webmanifest; do
+            curl --fail --silent --show-error --retry 3 --retry-delay 2 --retry-all-errors "$WEB_ORIGIN$path" -o /dev/null
+          done
+          echo "API Worker, frontend Worker, and VAULT CORE v5 Mini App assets returned successful responses."
 
       - name: Configure existing gateway upstream origins
         shell: bash

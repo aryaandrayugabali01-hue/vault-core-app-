@@ -36,16 +36,16 @@ test('Owner dashboard has no stale product-form effect references', () => {
   assert.doesNotMatch(ownerPage, /\b(?:skuManual|setForm|suggestedSku)\b/);
 });
 
-test('v4 storefront and Owner branding use the supplied logo and mapped game artwork', () => {
-  const dashboard = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
+test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain available', () => {
   const catalogRoute = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
   const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const owner = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
   const ownerV4 = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
   const marketplace = readFileSync(new URL('../frontend/src/lib/marketplace.js', import.meta.url), 'utf8');
-  const logo = '/assets/01-brand/vaultcore-horizontal.svg';
+  const miniHtml = readFileSync(new URL('../frontend/public/miniapp/index.html', import.meta.url), 'utf8');
+  const miniApp = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   assert.ok(catalogRoute.includes("import VaultCoreV4Catalog from './VaultCoreV4Page.jsx'"));
-  assert.ok(catalog.includes(logo));
+  assert.ok(catalog.includes('/assets/01-brand/vaultcore-horizontal.svg'));
   assert.ok(catalog.includes('GAME_BACKGROUNDS[MARKET_GAME_CODE[code]]'));
   assert.ok(catalog.includes('GAME_ART[MARKET_GAME_CODE[code]]'));
   assert.ok(catalog.includes('GAME_BACKGROUNDS[MARKET_GAME_CODE[variant.game_code]]'));
@@ -59,7 +59,8 @@ test('v4 storefront and Owner branding use the supplied logo and mapped game art
     'https://d1x91p7vw3vuq8.cloudfront.net/game/2024711/93cu2pbsceeiior5v9yc2q.png',
     'https://d1x91p7vw3vuq8.cloudfront.net/game/2025118/z9t30wkd81lxiwmaio40v.webp'
   ]) assert.ok(marketplace.includes(asset));
-  assert.ok(dashboard.includes('/assets/01-brand/vaultcore-horizontal.svg'));
+  assert.ok(miniHtml.includes('/assets/01-brand/vaultcore-mark.svg'));
+  assert.ok(miniApp.includes('/assets/01-brand/vaultcore-horizontal.svg'));
 });
 
 test('v4 public catalog uses Telegram Mini App and official Telegram Stars checkout', () => {
@@ -762,7 +763,7 @@ test('v4 storefront and Owner routes retain global chrome while using the approv
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   const catalogStyles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
-  assert.ok(home.includes('StoreHeader'));
+  assert.ok(home.includes("redirect('/miniapp/index.html')"));
   assert.ok(owner.includes('StoreHeader'));
   assert.ok(owner.includes('/admin/v4'));
   assert.ok(ownerV4.includes('Dashboard Owner'));
@@ -780,12 +781,13 @@ test('customer display text normalizes repeated escaped newline sequences', () =
   assert.equal(normalizeCustomerDisplayText('A\\\\r\\\\nB'), 'A\nB');
 });
 
-test('detail specification labels and values have independent wrapping columns', () => {
-  const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  assert.ok(styles.includes('grid-template-columns:minmax(132px,38%) minmax(0,1fr)'));
-  assert.ok(styles.includes('grid-template-columns:18px minmax(0,1fr)'));
-  assert.match(styles, /overflow-wrap:anywhere/);
-  assert.match(styles, /dashboard-bottom-nav-embedded/);
+test('v4 product specifications keep label/value columns readable on the dark mobile catalog', () => {
+  const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
+  assert.ok(styles.includes('.vc4-details>div{display:flex;justify-content:space-between'));
+  assert.ok(styles.includes('.vc4-details span{text-transform:capitalize'));
+  assert.ok(styles.includes('.vc4-details strong{text-align:right'));
+  assert.ok(styles.includes('overflow-wrap:anywhere;word-break:break-word'));
+  assert.ok(styles.includes('max-width:62%'));
 });
 
 test('customer detail text converts escaped newlines into readable line breaks', async () => {
@@ -809,7 +811,7 @@ test('v4 product details wrap long specifications and refresh inventory from the
   assert.ok(styles.includes('vc4-details'));
 });
 
-test('Apple v4 product detail follows the approved light catalog layout', () => {
+test('v4 product detail keeps the approved dark Vault Core catalog palette', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   assert.ok(page.includes('vc4-nav'));
@@ -818,11 +820,10 @@ test('Apple v4 product detail follows the approved light catalog layout', () => 
   assert.ok(page.includes('vc4-dialog'));
   assert.ok(page.includes('vc4-product-terms'));
   assert.ok(page.includes('vc4-security-guide'));
-  assert.match(styles, /--vc4-page:#f5f5f7/);
-  assert.match(styles, /--vc4-card:#fff/);
-  assert.match(styles, /--vc4-blue:#0071e3/);
-  assert.match(styles, /vc4-overlay/);
-  assert.ok(styles.includes('grid-template-columns:1fr'));
+  assert.match(styles, /--vc4-page:#090d14/);
+  assert.match(styles, /--vc4-card:#111925/);
+  assert.match(styles, /--vc4-gold:#ffc928/);
+  assert.ok(styles.includes('.vc4-grid{grid-template-columns:1fr'));
 });
 
 test('MLBB account detail uses the public v4 DTO, last-stock label, and four-step security guide', () => {
@@ -894,60 +895,112 @@ test('v4 customer catalog footer follows XTR, account-security and Telegram paym
   assert.ok(styles.includes('.vc4-footer'));
 });
 
-test('dashboard buyer protection uses the official Vault Core logo and tagline while preserving three trust cards', () => {
+test('the production homepage opens the supplied VAULT CORE v5 mobile Mini App', () => {
   const page = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/mobile-app.css', import.meta.url), 'utf8');
-  const start = page.indexOf('<section className="dashboard-protection"');
-  const end = page.indexOf("</section>", start);
-  assert.ok(start >= 0 && end > start);
-  const section = page.slice(start, end);
-  assert.ok(section.includes('src="/assets/01-brand/vaultcore-horizontal.svg"'));
-  assert.ok(section.includes('alt="VAULT CORE"'));
-  assert.ok(section.includes('Lebih Yakin Bersama Vault Core'));
-  for (const copy of [
-    'Perlindungan sesuai masa garansi dan ketentuan produk.',
-    'Detail akun diperiksa VAULT CORE sebelum ditampilkan.',
-    'Refund atau penggantian mengikuti ketentuan produk.'
-  ]) assert.ok(section.includes(copy), 'Missing approved protection copy: ' + copy);
-  for (const title of ['Anti-Hackback','Akun Dicek Manual','Garansi Refund']) assert.ok(section.includes(title));
-  assert.equal(topLevelCssProperty(styles,'.dashboard-protection-grid','grid-template-columns'),'repeat(3,minmax(0,1fr))');
-  assert.equal(topLevelCssProperty(styles,'.dashboard-protection-grid','gap'),'5px');
-  assert.ok(styles.includes('.dashboard-protection-card:nth-child(2)'));
-  assert.ok(styles.includes('.dashboard-protection-card:nth-child(3)'));
-  assert.ok(styles.includes('.dashboard-protection-logo'));
+  const html = readFileSync(new URL('../frontend/public/miniapp/index.html', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const variants = readFileSync(new URL('../frontend/public/miniapp/variants.js', import.meta.url), 'utf8');
+  assert.ok(page.includes("redirect('/miniapp/index.html')"));
+  assert.ok(html.includes('<nav class="nav" id="nav"'));
+  assert.ok(html.includes('./app.css'));
+  assert.ok(styles.includes('#app{position:relative;width:min(100%,430px)'));
+  assert.ok(styles.includes('.games{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))'));
+  assert.ok(styles.includes('.nav{position:fixed'));
+  assert.ok(styles.includes('.hero{'));
+  assert.ok(app.includes('data-go="/catalog"'));
+  assert.ok(variants.includes('id:12'));
+  assert.equal(variants.split('{id:').length - 1,12);
 });
 
-test('all application routes use the approved mobile-only dashboard and catalog composition', () => {
-  const styles = readFileSync(new URL('../frontend/src/app/mobile-app.css', import.meta.url), 'utf8');
-  const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
-  assert.match(styles, /\.vc-mobile-app\{width:min\(100%,430px\);max-width:430px/);
-  assert.match(styles, /\.dashboard-shell\{[\s\S]*?width:min\(100%,430px\)/);
-  assert.equal(topLevelCssProperty(styles,'.dashboard-game-grid','grid-template-columns'),'repeat(4,minmax(0,1fr))');
-  assert.equal(topLevelCssProperty(styles,'.dashboard-game-grid','gap'),'5px');
-  assert.match(styles, /\.vc-mobile-app \.vc4-main/);
-  assert.match(styles, /\.vc-mobile-app \.vco-product-layout/);
-  assert.match(styles, /\.vc-mobile-app \.admin-form\{grid-template-columns:minmax\(0,1fr\);[^}]*\}/);
-  assert.match(layout, /className="vc-mobile-app"/);
-  assert.doesNotMatch(styles, /\.dashboard-game-grid\{grid-template-columns:minmax\(0,1fr\)/);
+test('v5 catalog, detail, checkout, XTR invoice and order history use the existing backend contract', () => {
+  const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  const api = readFileSync(new URL('../backend/app.js', import.meta.url), 'utf8');
+  const catalog = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
+  assert.ok(app.includes("api('/api/catalog')"));
+  assert.ok(app.includes("api('/api/orders'"));
+  assert.ok(app.includes("api('/api/orders/mine')"));
+  assert.ok(app.includes("paymentMethod:'XTR'"));
+  assert.ok(app.includes('tg.openInvoice'));
+  assert.ok(app.includes('if (!inTelegram)'));
+  assert.ok(api.includes('requireTelegramUser'));
+  assert.ok(orders.includes('normalizeCartItems'));
+  assert.ok(catalog.includes('GAME_ACCOUNT_TRANSFER'));
+  assert.equal(app.includes('/api/web-auth'),false);
+  assert.equal(app.includes('vc_web_session'),false);
+  assert.equal(app.includes('TELEGRAM_OIDC'),false);
 });
 
-test('global legacy chrome remains available while the v4 storefront owns its Apple header', () => {
+test('all 12 master variants remain visible while non-account variants stay unavailable until backend publication', () => {
+  const variants = readFileSync(new URL('../frontend/public/miniapp/variants.js', import.meta.url), 'utf8');
+  const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  assert.equal(variants.split('{id:').length - 1,12);
+  assert.ok(app.includes('Untuk checkout ini tidak diperlukan data tambahan'));
+  assert.equal(app.includes('buyer-input'),false);
+  for (const game of ['MLBB','FREE_FIRE','ROBLOX','GENSHIN']) assert.ok(variants.includes("game:'" + game + "'"));
+  assert.ok(app.includes('Varian belum tersedia'));
+  assert.ok(app.includes('function productsOf('));
+});
+
+test('checkout and transaction history require verified Telegram Mini App initData', () => {
+  const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const webhook = readFileSync(new URL('../backend/routes/telegramWebhook.js', import.meta.url), 'utf8');
+  const apiConfig = readFileSync(new URL('../wrangler.api.jsonc', import.meta.url), 'utf8');
+  assert.ok(app.includes('const inTelegram = Boolean(tg && tg.initData)'));
+  assert.ok(app.includes('if (!inTelegram || !tg || !tg.initData)'));
+  assert.ok(webhook.includes('https://vaultcore.biz.id/miniapp/index.html'));
+  assert.ok(apiConfig.includes('"TELEGRAM_MINI_APP_URL": "https://vaultcore.biz.id/miniapp/index.html"'));
+});
+
+test('obsolete dashboard cascade and internal navigation debug copy are removed', () => {
+  const mobile = readFileSync(new URL('../frontend/src/app/mobile-app.css', import.meta.url), 'utf8');
+  const global = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
-  const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
-  const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
-  const notFound = readFileSync(new URL('../frontend/src/app/not-found.jsx', import.meta.url), 'utf8');
-  const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
-  const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
-  for (const label of ['Beranda','Produk','Bantuan','Akun','Katalog','Kategori','Cara Beli','Syarat & Ketentuan','Kebijakan Refund']) assert.ok(navigation.includes(label));
-  assert.ok(layout.includes('<StoreChrome />'));
-  assert.match(navigation,/catalog-footer-buy-guide/);
-  assert.match(navigation,/usePathname/);
-  assert.match(navigation,/store-bottom-nav-shell/);
-  assert.ok(!notFound.includes('StoreBottomNav'));
-  assert.ok(home.includes('StoreHeader'));
-  assert.ok(catalog.includes('className="vc4-nav"'));
-  assert.ok(styles.includes('body:has(.vc4-shell) .store-global-footer'));
-  assert.ok(styles.includes('body:has(.vc4-shell) .store-bottom-nav-shell'));
+  assert.equal(mobile.includes('.dashboard-shell'),false);
+  assert.equal(mobile.includes('.dashboard-hero'),false);
+  assert.equal(mobile.includes('.dashboard-game-grid'),false);
+  assert.equal(global.includes('.marketplace-detail-'),false);
+  assert.equal(global.includes('.marketplace-info-modal'),false);
+  assert.equal(global.includes('.mlbb-provider-search'),false);
+  assert.equal(global.includes('.category-card'),false);
+  assert.equal(global.includes('.product-card'),false);
+  assert.ok(global.includes('.dashboard-bottom-nav'));
+  assert.equal(navigation.includes('Bottom navigation melayang'),false);
+});
+
+test('mobile app assets are included in the static frontend and service worker never caches API responses', () => {
+  const html = readFileSync(new URL('../frontend/public/miniapp/index.html', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
+  const config = readFileSync(new URL('../frontend/public/miniapp/config.js', import.meta.url), 'utf8');
+  const manifest = readFileSync(new URL('../frontend/public/miniapp/manifest.webmanifest', import.meta.url), 'utf8');
+  assert.ok(html.includes('./app.js'));
+  assert.ok(html.includes('./variants.js'));
+  assert.ok(config.includes('https://api.vaultcore.biz.id'));
+  assert.ok(manifest.includes('"scope":"/miniapp/"'));
+  assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
+  assert.ok(sw.includes('/assets/03-categories/category-mlbb.png'));
+});
+
+test('active CSS rules do not contain repeated declarations that can reintroduce same-rule conflicts', () => {
+  const files = [
+    '../frontend/src/app/globals.css',
+    '../frontend/src/app/mobile-app.css',
+    '../frontend/src/app/catalog/page.css'
+  ];
+  for (const file of files) {
+    const root = postcss.parse(readFileSync(new URL(file, import.meta.url), 'utf8'), { from:file });
+    const conflicts = [];
+    root.walkRules((rule) => {
+      const seen = new Set();
+      rule.walkDecls((decl) => {
+        const property = decl.prop.startsWith('--') ? decl.prop : decl.prop.toLowerCase();
+        if (seen.has(property)) conflicts.push({selector:rule.selector,property});
+        seen.add(property);
+      });
+    });
+    assert.deepEqual(conflicts, [], file + ' contains repeated declarations inside one selector block');
+  }
 });
 
 test('v4 account catalog and checkout require a live per-item encrypted vault record', () => {
@@ -1025,8 +1078,7 @@ test('active stylesheets have unique selectors within each cascade context', () 
     visit(root);
     assert.deepEqual(duplicates, [], file + ' still contains repeated selectors in one cascade context');
   }
-  const globalStyles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
-  const mobileStyles = readFileSync(new URL('../frontend/src/app/mobile-app.css', import.meta.url), 'utf8');
-  assert.match(topLevelCssProperty(globalStyles,'.dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded) a.active','background'), /255,201,40/);
-  assert.match(topLevelCssProperty(mobileStyles,'.dashboard-transaction-filter.active','background'), /255,201,40/);
+  const miniAppStyles = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
+  assert.ok(miniAppStyles.includes('.nav button.on{color:var(--gold)'));
+  assert.ok(miniAppStyles.includes('.filters button.on{border-color:rgba(255,201,40,.65)'));
 });

@@ -140,7 +140,6 @@ export function StoreChrome() {
     <StoreFooter/>
     <div className="store-bottom-nav-shell">
       <StoreBottomNav active={active}/>
-      <p>Bottom navigation melayang — terpisah dari footer</p>
     </div>
   </>;
 }

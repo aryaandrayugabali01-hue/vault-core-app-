@@ -76,6 +76,11 @@ jobs:
           import fs from 'node:fs';
           const sources = [
             'frontend/src/app/globals.css',
+            'frontend/src/app/mobile-app.css',
+            'frontend/src/app/catalog/page.css',
+            'frontend/public/miniapp/app.css',
+            'frontend/public/miniapp/app.js',
+            'frontend/public/miniapp/index.html',
             'frontend/src/app/page.jsx',
             'frontend/src/app/catalog/page.jsx',
             'frontend/src/app/admin/page.jsx',
@@ -115,6 +120,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Validate VAULT CORE v5 Mini App shell and JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in frontend/public/miniapp/index.html frontend/public/miniapp/app.css frontend/public/miniapp/app.js frontend/public/miniapp/config.js frontend/public/miniapp/variants.js frontend/public/miniapp/manifest.webmanifest frontend/public/miniapp/sw.js; do
+            test -s "$file" || { echo "::error::Missing Mini App asset: $file"; exit 1; }
+          done
+          node --check frontend/public/miniapp/app.js
+          node --check frontend/public/miniapp/sw.js
+          echo "VAULT CORE v5 Mini App shell and JavaScript syntax passed."
 
       - name: Install workspace dependencies
         run: npm install --workspaces --include-workspace-root --no-audit --no-fund

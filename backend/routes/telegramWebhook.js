@@ -37,11 +37,11 @@ router.post('/', async (req, res) => {
       return res.sendStatus(200);
     }
     if (message?.text?.startsWith('/start')) {
-      const appUrl = process.env.TELEGRAM_MINI_APP_URL;
+      const appUrl = process.env.TELEGRAM_MINI_APP_URL || 'https://vaultcore.biz.id/miniapp/index.html';
       await telegramCall('sendMessage', {
         chat_id: message.chat.id,
-        text: 'Selamat datang di VAULT CORE. Jelajahi katalog produk digital, voucher, lisensi, dan layanan gaming yang tersedia.',
-        reply_markup: { inline_keyboard: [[{ text: 'Buka toko VAULT CORE', web_app: { url: appUrl } }]] }
+        text: 'Selamat datang di VAULT CORE. Pilih game dan varian akun yang tersedia, lalu selesaikan pembayaran melalui Telegram Stars (XTR).',
+        reply_markup: { inline_keyboard: [[{ text: 'Buka VAULT CORE', web_app: { url: appUrl } }]] }
       });
       return res.sendStatus(200);
     }

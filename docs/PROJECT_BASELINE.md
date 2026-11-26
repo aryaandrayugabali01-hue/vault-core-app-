@@ -315,3 +315,32 @@ The latest three-screen owner reference controls the MLBB product detail visual 
 - State navigasi terpilih, filter transaksi aktif, dan tautan heading Dashboard memakai aksen emas sesuai mockup. Struktur route, harga, stok, API, order, invoice, checkout Telegram Stars (XTR), Owner, dan database tidak diubah.
 - Regression test baru memeriksa keunikan selector pada ketiga stylesheet aktif per konteks cascade.
 - Status hasil CI, build, dan deployment produksi dicatat setelah workflow rilis selesai. Screenshot langsung pada perangkat Android tetap memerlukan UAT pengguna.
+
+## 24. Rebuild storefront berdasarkan VAULT CORE SOURCE v5 dan mockup mobile — 26 November 2026
+
+### Arah visual
+- Mockup 12 layar mobile menjadi acuan struktur pelanggan: splash, Home, katalog game, daftar varian, detail produk, checkout bertahap, pembayaran XTR, hasil/status pesanan, riwayat transaksi, dan profil.
+- Kanvas maksimum 430px, empat game dalam satu baris, tema navy gelap dengan aksen violet dan gold, navigasi bawah empat tab: Home, Katalog, Transaksi, Profil.
+- Root website diarahkan ke `/miniapp/index.html`. Tombol `/start` Telegram juga diarahkan ke jalur yang sama.
+- Shell v5 berada di `frontend/public/miniapp/` dan ikut paket frontend Worker `vault-core-web`; tidak menambah Worker, hosting, atau database.
+
+### Koneksi data dan batas transaksi
+- Katalog dinamis: `GET /api/catalog`.
+- Riwayat pesanan: `GET /api/orders/mine`.
+- Pembuatan order: `POST /api/orders` dengan `items: [{ productId, quantity }]`; invoice dibuka melalui Telegram WebApp `openInvoice`.
+- Checkout dan riwayat hanya aktif saat Mini App memiliki Telegram `initData`. Pembayaran tetap Telegram Stars (XTR); browser web hanya untuk melihat katalog/detail.
+- Backend produksi saat ini menerima `productId` dan `quantity`; input ID/Username khusus pada mockup belum tersedia pada kontrak endpoint. Karena itu checkout tidak meminta data yang tidak dapat disimpan. Penyerahan mengikuti detail produk setelah pembayaran terkonfirmasi.
+- Dua belas varian master adalah struktur navigasi. Produk, harga, stok, dan kelayakan beli tetap berasal dari backend. Varian tanpa produk aktif menampilkan status belum tersedia; tidak ada SKU atau stok palsu.
+
+### Pembersihan stylesheet
+- `frontend/src/app/globals.css`: 152.465 byte menjadi 66.125 byte; 688 selector legacy yang tidak lagi dipakai storefront v5 dibuang.
+- `frontend/src/app/mobile-app.css`: 26.903 byte menjadi 6.546 byte; CSS Dashboard lama dikeluarkan, sementara shell mobile, katalog v4, Owner, Admin, dan chrome route terkait dipertahankan.
+- `frontend/src/app/catalog/page.css`: 26.196 byte menjadi 23.865 byte.
+- Deklarasi properti berulang di dalam rule CSS dibersihkan: globals 593, mobile app 4, catalog 114. Pemeriksaan ulang sebelum release harus memastikan tidak ada duplikasi deklarasi di dalam blok rule.
+- Pembersihan file tidak dilakukan massal. Route Owner/katalog lama dan aset/ZIP sumber tetap dipertahankan karena masih menjadi input runtime, workflow, atau route aktif.
+- Teks debug `Bottom navigation melayang — terpisah dari footer` dihapus.
+
+### Validasi dan deployment
+- CI ditambah pemeriksaan keberadaan shell v5, sintaks JavaScript, dan referensi aset Mini App.
+- Regression tests memeriksa redirect homepage, 12 varian, layout 430px, empat game, kontrak API/XTR, autentikasi Telegram, service worker, dan duplikasi deklarasi CSS.
+- Status akhir CI/build/deployment dicatat setelah workflow selesai. Screenshot Android aktual tetap memerlukan uji manual di perangkat.
