@@ -32,6 +32,27 @@ function getAttr(product, keys) {
   const found = entries.find(([key]) => set.has(normalize(key)));
   return found ? String(found[1] ?? '') : '';
 }
+
+function getComparePrice(product) {
+  const sale = Number(product?.sale_price_xtr);
+  const raw = product?.original_price_xtr ?? product?.compare_at_price_xtr;
+  const compare = Number(raw);
+  return Number.isSafeInteger(compare) && Number.isSafeInteger(sale) && compare > sale && sale > 0
+    ? compare
+    : null;
+}
+
+function PriceDisplay({ product, compact = false }) {
+  const sale = Number(product?.sale_price_xtr);
+  const compare = getComparePrice(product);
+  const discount = compare ? Math.round(((compare - sale) / compare) * 100) : 0;
+  return (
+    <span className={`vc4-price-stack${compact ? ' is-compact' : ''}`}>
+      {compare && <span className="vc4-price-before"><del>{fmt(compare)} XTR</del><b>-{discount}%</b></span>}
+      <strong>{fmt(product.sale_price_xtr)} XTR</strong>
+    </span>
+  );
+}
 function matchesMlbb(product, filters) {
   const checks = [
     ['win_rate',['win_rate','win rate','winrate'],filters.winMin,filters.winMax],
@@ -127,6 +148,12 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       group:variant.category
     }))
   ),[variants]);
+
+  const featuredProduct = useMemo(() =>
+    flatProducts.find((product) => product.is_available === true && Number(product.sale_price_xtr) > 1)
+      || flatProducts.find((product) => Number(product.sale_price_xtr) > 1)
+      || null,
+  [flatProducts]);
 
   const visibleProducts = useMemo(() => flatProducts.filter((product) => {
     if (game !== 'ALL' && product.game_code !== game) return false;
@@ -251,7 +278,32 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           </div>
         </section>
 
-        <section className="vc4-game-row" aria-label="Pilih game">
+        <section className="vc4-featured-hero" aria-label="Sorotan katalog" style={{'--vc4-feature-image':`url("${GAME_BACKGROUNDS[MARKET_GAME_CODE[featuredProduct?.game_code]] || GAME_BACKGROUNDS.MLBB}")`}}>
+          <div className="vc4-featured-copy">
+            <div className="vc4-featured-kicker"><span>VAULT CORE PICKS</span><span className="vc4-featured-live">KATALOG AKTIF</span></div>
+            <h2>{featuredProduct ? featuredProduct.name : 'Temukan akun game pilihanmu.'}</h2>
+            <p>{featuredProduct ? `${featuredProduct.game} · ${featuredProduct.variant_name} · Detail dan stok diperbarui dari katalog.` : 'Jelajahi akun game dengan detail produk dan status ketersediaan yang bersumber dari katalog.'}</p>
+            {featuredProduct && <div className="vc4-featured-price"><small>HARGA SAAT INI</small><PriceDisplay product={featuredProduct}/></div>}
+            <div className="vc4-featured-actions">
+              {featuredProduct && <button type="button" onClick={() => setSelected({variant_id:featuredProduct.variant_id,product:featuredProduct})}>Lihat detail produk <span>↗</span></button>}
+              <a href="#game-catalog">Jelajahi semua game <span>↓</span></a>
+            </div>
+          </div>
+          <div className="vc4-featured-art" aria-hidden="true">
+            <img src={GAME_ART[MARKET_GAME_CODE[featuredProduct?.game_code]] || GAME_ART.MLBB} alt="" loading="lazy"/>
+          </div>
+        </section>
+
+        <section className="vc4-purchase-journey" aria-label="Alur pembelian">
+          <div className="vc4-journey-heading"><span>MUDAH & TERARAH</span><strong>Alur pembelian</strong></div>
+          <ol>
+            <li><span>01</span><div><strong>Pilih game</strong><small>Tentukan kategori dan akun</small></div></li>
+            <li><span>02</span><div><strong>Periksa detail</strong><small>Cek spesifikasi dan ketentuan</small></div></li>
+            <li><span>03</span><div><strong>Bayar dengan XTR</strong><small>Lanjutkan invoice di Telegram</small></div></li>
+          </ol>
+        </section>
+
+        <section className="vc4-game-row" id="game-catalog" aria-label="Pilih game">
           <button type="button" className={game==='ALL'?'selected':''} onClick={() => setGame('ALL')}>
             <span className="vc4-game-tile vc4-all-games">VC</span><span>Semua</span>
           </button>
@@ -300,7 +352,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
                       {product.image_url ? <img src={product.image_url} alt="" loading="lazy"/> : <span className="vc4-sku-thumb">◇</span>}
                       <span><strong>{product.name}</strong><small>{product.sku} · {product.display_stock===null?'Stok tersedia':product.display_stock===1?'STOK TERAKHIR':typeof product.display_stock==='number'?fmt(product.display_stock)+' stok':product.display_stock}</small></span>
                     </button>
-                    <div className="vc4-sku-buy"><strong>★ {fmt(product.sale_price_xtr)} XTR</strong><button type="button" onClick={()=>addToCart(product)}>Tambah</button></div>
+                    <div className="vc4-sku-buy"><PriceDisplay product={product} compact/><button type="button" onClick={()=>addToCart(product)}>Tambah</button></div>
                   </div>)}</div>}
                 </article>;
               })}
@@ -329,7 +381,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             {selected.product.fulfillment_eta && <p className="vc4-eta">Estimasi pemenuhan: {selected.product.fulfillment_eta}</p>}
             {selected.product.group === 'Akun' && <section className="vc4-security-guide"><h3>Keamanan Akun</h3><ol><li>Periksa detail akun dan kesesuaian spesifikasi sebelum konfirmasi.</li><li>Ganti kata sandi setelah menerima akses akun.</li><li>Aktifkan verifikasi dua langkah pada akun yang mendukung.</li><li>Pastikan email dan metode pemulihan berada dalam kendali pembeli.</li></ol><p>Garansi mengikuti ketentuan yang ditetapkan pada detail produk.</p></section>}
             <div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ')}</span><strong>{String(value)}</strong></div>)}</div>
-            <p className="vc4-price-large">★ {fmt(selected.product.sale_price_xtr)} XTR</p>
+            <div className="vc4-price-large"><PriceDisplay product={selected.product}/></div>
             <button className="vc4-primary" type="button" onClick={()=>addToCart(selected.product)}>Tambah ke keranjang</button>
           </> : <p>Produk pada varian ini akan tampil setelah Owner menyelesaikan SKU, harga, stok, dan verifikasi yang diwajibkan.</p>}
         </section>
