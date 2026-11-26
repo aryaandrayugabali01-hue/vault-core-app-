@@ -6,12 +6,12 @@ Single-vendor Telegram Mini App store for transferable digital products, voucher
 
 ## Source of truth
 
-Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current baseline: **Project Contract v1.5 (CR-05), supplemented by Addendum CR-09**. See Section 29 for Owner authority over the internal product lifecycle, structured rights-review records, inventory sourcing, and fulfillment. Section 28's external rights and platform constraints remain applicable. Owner approval was recorded in writing through the project conversation on 21 November 2026; see Section 26.6. Formal legal name/e-signature certificate details are not recorded.
+Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current baseline: **Project Contract v2.0 (CR-15)**. Section 37 controls the temporary website QRIS static-payment lane, preserves Telegram Mini App XTR checkout, and requires shared customer identity, catalog/order/inventory data, and visual standards. Sections 28–36 remain applicable except where CR-15 explicitly amends them.
 
 ## Project documents
 
 - [Blueprint and Master Operation (MO)](docs/VAULT_CORE_BLUEPRINT_MASTER_OPERATION.md) — complete execution blueprint, operating procedures, QA, deployment, risk register, and go-live gates.
-- [Project Contract](PROJECT_CONTRACT.md) — current project contract v1.5 CR-05; see Section 29 for Owner product authority and Section 27 for the XTR-only model.
+- [Project Contract](PROJECT_CONTRACT.md) — current project contract v2.0 CR-15; see Section 37 for temporary website QRIS and unchanged Mini App XTR checkout.
 - [Deployment Status](DEPLOYMENT_STATUS.md) — infrastructure and production readiness record.
 - [Production Deployment Runbook](PRODUCTION_DEPLOYMENT_RUNBOOK.md) — secrets, workflow, routing, and Telegram webhook procedure.
 
@@ -21,16 +21,17 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 - API: Node.js / Express
 - Database: PostgreSQL (Neon)
 - Bot: Telegram Bot API webhook
-- Payments: official Telegram Stars invoice (`XTR`) for digital goods/services inside Telegram
+- Payments: temporary static merchant QRIS (`IDR`) for website checkout; official Telegram Stars invoice (`XTR`) remains mandatory inside Telegram Mini App
 - Digital inventory: AES-256-GCM encrypted payloads
 
 ## Customer storefront — website and Telegram Mini App
 
 - The public website root redirects to `/catalog`, which renders the existing Next.js/React customer catalog. `/account` provides Telegram OIDC customer sign-in, profile, and web logout.
 - The Telegram bot continues to open the mobile-first static Mini App at `/miniapp/index.html`. Its native customer journey retains the approved 12-screen design, Telegram WebApp navigation, and native `initData` authentication.
-- Website and Mini App use the same `vault-core-api`, catalog services, order endpoints, customer records in Neon `customers`, and inventory/transaction tables. Website authentication uses a signed HttpOnly customer cookie; Mini App authentication continues to use server-validated Telegram `initData`.
-- Both channels create orders through `POST /api/orders` and read history through `GET /api/orders/mine`. Invoice creation and payment confirmation remain handled by the existing Telegram Stars (XTR) Bot API and webhook. A browser opens the Telegram invoice link; an embedded Mini App uses `Telegram.WebApp.openInvoice`.
-- Product, price, stock, purchase eligibility, and order status are always sourced from the backend. No customer account table, payment provider, Worker, API, or database was duplicated.
+- Website and Mini App are required to use the same `vault-core-api`, catalog, Neon `customers`, order, inventory, reservation, and fulfillment records. Website identity uses the signed HttpOnly Telegram OIDC customer cookie; Mini App identity uses server-validated Telegram `initData` and both map to the same `customers.telegram_user_id`.
+- CR-15 approves website checkout through temporary static merchant QRIS in IDR. **Implementation status: NOT IMPLEMENTED in the current source**; the website purchase CTA still directs customers to Telegram Mini App, and the shared order controller still creates a Telegram Stars invoice. QRIS checkout, Owner settlement verification, IDR price records, and UAT must be completed before web QRIS is enabled.
+- Telegram Mini App orders continue through `POST /api/orders` and `GET /api/orders/mine`. Invoice creation and payment confirmation remain handled by the existing Telegram Stars (XTR) Bot API and webhook. The Mini App uses `Telegram.WebApp.openInvoice`; QRIS is not shown or accepted in this channel.
+- Product, price, stock, purchase eligibility, and order status are sourced from the shared backend. Web price snapshots are IDR and Mini App price snapshots are XTR; no implicit FX conversion is permitted. Both channels must share customer identity and order/inventory source. No new customer database, payment provider, Worker, API, or standalone backend is allowed.
 
 ## Visual asset source of truth
 
@@ -98,14 +99,14 @@ Store the Client Secret in GitHub Actions as `TELEGRAM_OIDC_CLIENT_SECRET`. The 
 - Owner is the internal decision-maker for product detail, source records, approval, inventory, and fulfillment. Internal approval does not create third-party ownership/license or override publisher/platform terms or applicable law. Account takeover credentials, email/password bundles, session tokens, OTP seeds, recovery codes, or third-party account credentials remain unsupported as fulfillment assets.
 - Public display stock is calculated from real sellable inventory. `display_stock_override` is a display cap and can never raise displayed stock above actual availability.
 - Telegram digital goods/services are paid through official Telegram Stars invoices. No manual XTR wallet-address payment flow is implemented.
-- **Single transaction channel (CR-10):** the public website is catalog/detail-only. Order creation, checkout, official XTR invoice payment, order status, and transaction history are available only inside the VAULT CORE Telegram Mini App opened through the existing bot. No Rekber/escrow, bank transfer, direct seller transfer, manual wallet payment, or off-platform payment is accepted.
-- `successful_payment` is the only event that marks an order paid. Screenshot claims or client-side callbacks never mark an order paid.
+- **CR-10 as amended by CR-15:** website checkout uses temporary static merchant QRIS in IDR; Telegram Mini App checkout remains official Telegram Stars XTR. Website QRIS orders are marked PAID only after authorized Owner/Admin verifies the real merchant settlement and records the external reference, received amount, verification time, and actor. Screenshots and client claims never mark an order paid. No personal-account transfer, direct seller transfer, e-wallet, PayLater, third-party escrow, or manual XTR wallet payment is accepted.
+- For Telegram Stars orders, validated `successful_payment` is the only event that marks an order paid. For website QRIS, server-side Owner/Admin verification against merchant settlement is required; screenshots and client-side callbacks never mark an order paid.
 - `/paysupport` provides a buyer-facing support path. Owner refund requests use Telegram's `refundStarPayment` method and are recorded in the transaction/order status.
 - Payment audit snapshots retain payment identifiers and required order metadata only; buyer profile/chat fields are excluded.
 - API endpoints have IP-based rate limits. The built-in store is process-local; use a shared store or edge-level controls before scaling to multiple API instances.
 - Delivery claims record attempt count/time and failure reason. Definitive Telegram API rejection can be retried; stale or ambiguous send outcomes enter `REVIEW_REQUIRED` and must be reconciled by Owner before retry.
 - Stars refunds use a two-phase `REFUND_PENDING` state. If Telegram reports an already-refunded charge, the service checks the Stars transaction ledger before finalizing the internal status.
-- Sale price, cost, expenses, order snapshots, reports, refunds, and profit are recorded and displayed in XTR only.
+- Sale price, cost, expenses, order snapshots, reports, refunds, and profit are recorded by payment currency. IDR website transactions and XTR Mini App transactions remain separate ledger totals unless an Owner-approved exchange-rate policy is later recorded.
 
 - Four TEST-only fixtures are maintained separately from commercial SKUs. The current production snapshot contains four fixture inventory items; these are dummy test payloads, not sellable commercial inventory. Completing a fixture invoice charges 1 real Telegram Star if the Owner actually pays it.
 
