@@ -83,32 +83,35 @@ router.patch('/marketplace-categories/:id', async (_req,res) => {
 router.get('/products', async (_req, res) => {
   await releaseExpiredPendingOrders();
   const { rows } = await pool.query(
-    `SELECT p.*, mc.name AS marketplace_category_name, mc.slug AS marketplace_category_slug, rr.review_status AS rights_review_status,
-            rr.valid_until AS rights_valid_until, rr.reviewed_at AS rights_reviewed_at,
-            rr.rights_basis, rr.publisher_platform,
-            COUNT(i.id) FILTER (WHERE i.status='AVAILABLE'
-              AND i.rights_review_id=p.current_rights_review_id
-              AND i.source_reference IS NOT NULL
-              AND rr.review_status='APPROVED' AND rr.owner_attested=TRUE
-              AND rr.valid_until>NOW())::int AS actual_stock
+    `SELECT p.id,p.sku,p.name,p.description,p.status,p.game_category,p.tier,
+            p.variant_id,p.variant_subtype,p.sale_price_xtr,p.cost_price_xtr,
+            p.image_url,p.image_gallery,p.attributes,p.availability_mode,p.indent_deadline_days,
+            p.stock_quantity_declared,p.created_at,p.updated_at,
+            mc.name AS marketplace_category_name,mc.slug AS marketplace_category_slug,
+            COUNT(i.id) FILTER (
+              WHERE i.status='AVAILABLE'
+                AND i.reserved_order_id IS NULL
+                AND i.reserved_until IS NULL
+                AND i.rights_review_id=p.current_rights_review_id
+                AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
+            )::int AS actual_stock
      FROM products p
-     LEFT JOIN product_rights_reviews rr
-       ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
      LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
      LEFT JOIN inventory_items i ON i.product_id=p.id
      WHERE COALESCE(p.is_test,FALSE)=FALSE
-       AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER'
-       AND p.game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
-       AND mc.is_active=TRUE
-       AND mc.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun')
-     GROUP BY p.id,rr.id,mc.id ORDER BY p.created_at DESC`
+     GROUP BY p.id,mc.id
+     ORDER BY p.created_at DESC,p.id DESC`
   );
-  const products = rows.map((product) => ({
+  res.json({ products:rows.map((product) => ({
     ...product,
-    rights_review_usable: product.rights_review_status === 'APPROVED'
-      && product.rights_valid_until && new Date(product.rights_valid_until) > new Date()
-  }));
-  res.json({ products });
+    id:Number(product.id),
+    sale_price_xtr:Number(product.sale_price_xtr),
+    cost_price_xtr:Number(product.cost_price_xtr),
+    actual_stock:Number(product.actual_stock || 0),
+    stock_quantity_declared:Number(product.stock_quantity_declared || 0),
+    image_gallery:Array.isArray(product.image_gallery) ? product.image_gallery : [],
+    attributes:product.attributes && typeof product.attributes==='object' ? product.attributes : {}
+  })) });
 });
 
 router.post('/products', async (req, res) => {
