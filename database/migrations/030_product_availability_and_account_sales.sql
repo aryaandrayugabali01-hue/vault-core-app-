@@ -2,48 +2,11 @@
 -- Historical rights-review rows remain available for audit, but no publisher or
 -- review status may prevent account, item, gift, or service SKU publication.
 
-CREATE OR REPLACE FUNCTION vault_core_enforce_product_rights_activation()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  IF NEW.status='ACTIVE'
-     AND COALESCE(NEW.is_test,FALSE)=FALSE
-     AND NEW.fulfillment_type IS NULL THEN
-    RAISE EXCEPTION 'PRODUCT_FULFILLMENT_TYPE_REQUIRED'
-      USING ERRCODE='23514',
-            CONSTRAINT='products_active_requires_fulfillment_type';
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION vault_core_enforce_inventory_rights_source()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $$
-DECLARE
-  product_record products%ROWTYPE;
-BEGIN
-  SELECT * INTO product_record FROM products WHERE id=NEW.product_id;
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'INVENTORY_PRODUCT_NOT_FOUND';
-  END IF;
-
-  IF COALESCE(product_record.is_test,FALSE)=TRUE THEN
-    RETURN NEW;
-  END IF;
-
-  IF NEW.source_reference IS NULL
-     OR length(btrim(NEW.source_reference))<3 THEN
-    RAISE EXCEPTION 'INVENTORY_SOURCE_REFERENCE_REQUIRED'
-      USING ERRCODE='23514',
-            CONSTRAINT='inventory_requires_source_reference';
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
+-- Remove the CR-05/CR-17 triggers from the commercial sales path.
+-- The historical review tables remain for reference; they do not control listing,
+-- inventory, checkout, or delivery.
+DROP TRIGGER IF EXISTS trg_products_rights_activation ON products;
+DROP TRIGGER IF EXISTS trg_inventory_rights_source ON inventory_items;
 
 -- Existing commercial SKUs are made visible using their recorded sellable
 -- inventory units. Reserved units remain reserved for their current orders.
