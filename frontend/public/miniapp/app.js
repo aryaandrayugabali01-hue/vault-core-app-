@@ -168,7 +168,7 @@ function setPage(markup, active, hideNav) {
   window.scrollTo(0,0);
 }
 function headerHome() {
-  return '<header class="topbar"><a class="brand" href="#/home" aria-label="VAULT CORE Home"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"></a><div class="top-actions"><button class="icon-btn" type="button" data-go="/catalog" aria-label="Cari produk">' + icon('search') + '</button><button class="icon-btn" type="button" data-go="/profile" aria-label="Profil">' + icon('user') + '</button></div></header>';
+  return '<header class="topbar"><a class="brand" href="#/home" aria-label="VAULT CORE Home"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"></a><div class="top-actions"><button class="icon-btn" type="button" data-go="/catalog" aria-label="Cari produk">' + icon('search') + '</button><button class="icon-btn" type="button" data-go="/orders" aria-label="Status pesanan">' + icon('bell') + '</button><button class="icon-btn" type="button" data-go="/profile" aria-label="Profil">' + icon('user') + '</button></div></header>';
 }
 function headerPage(title) {
   return '<header class="pagebar"><button class="back-btn" type="button" data-action="back" aria-label="Kembali">' + icon('back') + '</button><h1>' + esc(title) + '</h1><span class="spacer"></span></header>';
@@ -182,7 +182,7 @@ function priceMarkup(product, compact) {
   const small = compact ? ' class="small"' : '';
   return '<div class="price"' + small + '>' +
     (compare ? '<span class="discount">-' + discountPercent(product) + '%</span><del>' + fmt(compare) + '</del> ' : '') +
-    '<b>★ ' + fmt(product.sale_price_xtr) + ' XTR</b></div>';
+    '<b>' + fmt(product.sale_price_xtr) + ' XTR</b></div>';
 }
 function productImage(product, cls) {
   const url = product.image_url || gameOf(product.game_category).art;
@@ -235,24 +235,19 @@ function productsOf(variant) {
   return state.products.filter((product) => Number(product.variant_id) === Number(variant.variant_id));
 }
 function home() {
-  const accounts = state.variants.filter((variant) => variant.category === 'Akun');
   const services = state.variants.filter((variant) => variant.category === 'Jasa Joki');
   const available = state.products.filter(isBuyable);
-  const featured = available.slice(0,4);
+  const recommendedAccounts = available.filter((product) => product.variant_category === 'Akun').slice(0,2);
+  const jokiByGame = GAME_CODES.map((code) => services.find((variant) => variant.game_code === code)).filter(Boolean);
   const gameTiles = GAME_CODES.map((code) => {
     return '<button class="game-tile" type="button" data-go="/game/' + code + '"><span class="game-art"><img src="' + gameOf(code).art + '" alt="" loading="lazy"></span><b>' + esc(gameOf(code).short) + '</b></button>';
   }).join('');
-  const variantCard = (variant) => {
-    const products = productsOf(variant);
-    const ready = products.filter(isBuyable).length;
-    const joki = variant.category === 'Jasa Joki';
-    const preview = products.find((product) => product.fulfillment_eta);
-    return '<button class="home-variant" type="button" data-go="/variant/' + variant.variant_id + '">' +
-      '<span class="home-variant-art"><img src="' + gameOf(variant.game_code).art + '" alt="" loading="lazy"><small>' + (joki?'JOKI GAME':'AKUN GAME') + '</small></span>' +
-      '<span class="home-variant-copy"><small>' + esc(gameOf(variant.game_code).short) + ' · ' + esc(variant.category) + '</small><b>' + esc(variant.name) + '</b>' +
-      '<span class="home-variant-status ' + (ready?'ready':'') + '">' + (ready?'Ready · '+ready+' tersedia':joki?'Layanan belum tersedia':'Belum tersedia') + '</span>' +
-      (preview && preview.fulfillment_eta ? '<small class="home-variant-eta">Estimasi: ' + esc(preview.fulfillment_eta) + '</small>' : '') +
-      '</span><span class="home-variant-arrow">›</span></button>';
+  const jokiCard = (variant) => {
+    const ready = productsOf(variant).filter(isBuyable).length;
+    return '<button class="home-joki-card" type="button" data-go="/variant/' + variant.variant_id + '">' +
+      '<span class="home-joki-art"><img src="' + gameOf(variant.game_code).art + '" alt="" loading="lazy"><small>JOKI</small></span>' +
+      '<span class="home-joki-copy"><small>' + esc(gameOf(variant.game_code).short) + ' · LAYANAN</small><b>' + esc(variant.name) + '</b>' +
+      '<span class="home-joki-status ' + (ready?'ready':'') + '">' + (ready?'Ready · '+ready+' layanan':'Belum tersedia') + '</span></span></button>';
   };
   const skeleton = !state.loaded
     ? '<div class="home-skeleton-grid"><i class="vc-skeleton"></i><i class="vc-skeleton"></i><i class="vc-skeleton"></i><i class="vc-skeleton"></i></div>'
@@ -261,20 +256,18 @@ function home() {
     headerHome() +
     '<main class="home-v3">' +
       '<label class="search home-search">' + icon('search') + '<input id="home-search" type="search" placeholder="Cari akun game atau layanan joki..." autocomplete="off"><button type="button" data-go="/catalog" aria-label="Buka Store">' + icon('next') + '</button></label>' +
-      '<section class="home-promo"><div><small>PROMO AKUN GAME</small><h1>Distribusi Aset Digital Game</h1><p>Akun premium dan layanan joki dari empat game pilihan.</p><button type="button" data-go="/catalog">Jelajahi Store <b>↗</b></button></div><span class="home-promo-mark">VC</span></section>' +
+      '<section class="home-promo"><div><small>PROMO AKUN GAME</small><h1>Pilihan Premium VAULT CORE</h1><p>Akun game dan layanan Joki dari empat game pilihan.</p><button type="button" data-go="/catalog">Jelajahi Store <b>↗</b></button></div><span class="home-promo-mark">VC</span></section>' +
       '<div class="section-head"><h2>Kategori Game</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
       '<section class="games home-games">' + gameTiles + '</section>' +
       '<div class="home-group-tabs"><button type="button" class="on" data-store-group="ALL">Semua</button><button type="button" data-store-group="Akun">Akun</button><button type="button" data-store-group="Jasa Joki">Joki</button></div>' +
       (skeleton ? skeleton :
-        '<div class="section-head"><h2>Akun Game</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
-        (accounts.length ? '<div class="home-variant-list">' + accounts.map(variantCard).join('') + '</div>' : '<div class="empty">Varian akun belum dapat dimuat.</div>') +
-        '<div class="section-head"><h2>Layanan Joki</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
-        (services.length ? '<div class="home-variant-list">' + services.map(variantCard).join('') + '</div>' : '<div class="empty">Varian Joki belum dapat dimuat.</div>') +
-        '<div class="section-head"><h2>Produk Tersedia</h2><button type="button" data-go="/catalog">Buka Store ›</button></div>' +
-        (featured.length ? '<div class="products-strip">' + featured.map(productCard).join('') + '</div>' : '<div class="empty">' + (state.loadError ? esc(state.loadError) : 'Produk yang siap dipesan akan tampil setelah SKU, harga, hak, dan stok memenuhi ketentuan katalog.') + '</div>')
+        '<div class="section-head"><h2>Pilihan Akun</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
+        (recommendedAccounts.length ? '<div class="home-featured-grid">' + recommendedAccounts.map(productCard).join('') + '</div>' : '<div class="empty">Belum ada akun yang siap dipesan pada katalog publik.</div>') +
+        '<div class="section-head"><h2>Layanan Joki</h2><button type="button" data-store-group="Jasa Joki">Lihat Kategori ›</button></div>' +
+        (jokiByGame.length ? '<div class="home-joki-grid">' + jokiByGame.map(jokiCard).join('') + '</div>' : '<div class="empty">Kategori layanan Joki belum dapat dimuat.</div>')
       ) +
       '<div class="section-head"><h2>Aktivitas Pesanan</h2><button type="button" data-go="/orders">My Orders ›</button></div>' +
-      '<div class="home-activity"><span>' + icon('receipt') + '</span><div><b>Riwayat pesanan pribadi</b><small>Status pesanan ditampilkan pada akun pelanggan yang terverifikasi.</small></div><span class="home-activity-arrow">›</span></div>' +
+      '<div class="home-activity"><span>' + icon('receipt') + '</span><div><b>Riwayat pesanan pribadi</b><small>Status dan detail pesanan tampil pada akun pelanggan terverifikasi.</small></div><span class="home-activity-arrow">›</span></div>' +
       '<div class="section-head"><h2>Keunggulan VAULT CORE</h2></div>' +
       '<div class="home-benefits"><div>' + icon('shield') + '<b>Transaksi Terpantau</b><small>Riwayat dan status pada akun pelanggan.</small></div><div>' + icon('help') + '<b>Pusat Bantuan</b><small>Dukungan melalui kanal resmi VAULT CORE.</small></div></div>' +
     '</main>',

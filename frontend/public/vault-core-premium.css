@@ -230,6 +230,32 @@
 .home-benefits small{color:#9e98a9;font-size:7px;line-height:1.35}
 .home-skeleton-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .home-skeleton-grid .vc-skeleton{height:152px}
+
+/* Dashboard composition follows the approved Home reference and live catalog data. */
+.home-featured-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-items:stretch}
+.home-featured-grid .product-card{position:relative;display:flex;flex:initial;flex-direction:column;width:100%;height:100%;min-width:0;overflow:hidden;border-radius:15px;background:linear-gradient(145deg,#211a2d,#121117);text-align:left}
+.home-featured-grid .product-art{height:auto;aspect-ratio:1.18;overflow:hidden}
+.home-featured-grid .product-copy{display:grid;gap:5px;flex:1;padding:9px;min-width:0}
+.home-featured-grid .product-copy>b{font-size:10px;min-height:28px}
+.home-featured-grid .price{color:var(--vc-green)!important;font-size:12px}
+.home-featured-grid .product-stock-caption{font-size:8px!important}
+.home-joki-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.home-joki-card{display:grid;grid-template-columns:48px minmax(0,1fr);align-items:center;gap:8px;min-width:0;min-height:76px;padding:8px;border:1px solid rgba(145,127,172,.24);border-radius:14px;background:linear-gradient(145deg,#211a2d,#121117);text-align:left}
+.home-joki-art{position:relative;width:48px;height:48px;overflow:hidden;border-radius:10px;background:#171320}
+.home-joki-art img{width:100%;height:100%;object-fit:cover}
+.home-joki-art small{position:absolute;left:3px;bottom:3px;padding:2px 4px;border-radius:4px;background:rgba(8,7,13,.84);color:#cdb4ff;font-size:6px;font-weight:950}
+.home-joki-copy{display:grid;gap:3px;min-width:0}
+.home-joki-copy>small{color:#a79bbd;font-size:7px;letter-spacing:.04em}
+.home-joki-copy>b{display:-webkit-box;overflow:hidden;color:#f5f1fa;font-size:9px;line-height:1.3;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.home-joki-status{color:#aaa3b2;font-size:8px}
+.home-joki-status.ready{color:rgba(195,255,132,.78)}
+.home-featured-grid .product-availability-dot{top:7px;right:7px;padding:4px 6px;font-size:7px}
+@media(max-width:360px){
+ .home-featured-grid,.home-joki-grid{gap:7px}
+ .home-featured-grid .product-copy{padding:7px}
+ .home-joki-card{grid-template-columns:42px minmax(0,1fr);gap:6px;padding:7px}
+ .home-joki-art{width:42px;height:42px}
+}
 .store-v3{display:grid;gap:12px}
 .store-search{margin-bottom:0!important;border-radius:13px!important}
 .store-game-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}

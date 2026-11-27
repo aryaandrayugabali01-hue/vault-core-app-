@@ -1198,6 +1198,22 @@ test('all 12 master variants and every published SKU are loaded from the canonic
   assert.equal(app.includes('buyer-input'),false);
 });
 
+test('Mini App Home uses live account recommendations and a truthful 2x2 Joki category grid', () => {
+  const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
+  assert.ok(app.includes("available.filter((product) => product.variant_category === 'Akun').slice(0,2)"));
+  assert.ok(app.includes('id="catalog-products"') === false || app.includes('function paintCatalogProducts()'));
+  assert.ok(app.includes("class=\"home-featured-grid\""));
+  assert.ok(app.includes("GAME_CODES.map((code) => services.find((variant) => variant.game_code === code)).filter(Boolean)"));
+  assert.ok(app.includes("class=\"home-joki-grid\""));
+  assert.ok(app.includes("'Belum tersedia'"));
+  assert.ok(app.includes("data-store-group=\"Jasa Joki\""));
+  assert.ok(app.includes("data-go=\"/orders\" aria-label=\"Status pesanan\""));
+  assert.ok(!app.includes("★ ' + fmt(product.sale_price_xtr)"));
+  assert.ok(styles.includes('.home-featured-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'));
+  assert.ok(styles.includes('.home-joki-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'));
+});
+
 test('Mini App Store presents purchasable backend products in a responsive two-column grid', () => {
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
@@ -1276,7 +1292,7 @@ test('product detail converts escaped backend newlines into readable sections an
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(sw.includes('vault-core-miniapp-v11'));
+  assert.ok(sw.includes('vault-core-miniapp-v12'));
   assert.ok(app.includes(".replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n')"));
   assert.ok(app.includes("renderDetailCopy(product.customer_terms)"));
   assert.ok(app.includes("details.push(renderDetailCopy(product.description))"));
@@ -1323,7 +1339,7 @@ test('mobile app assets are included in the static frontend and service worker n
   assert.ok(manifest.includes('"scope":"/miniapp/"'));
   assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
   for (const asset of ['/game-icons/mlbb.webp','/game-icons/free-fire.webp','/game-icons/roblox.webp','/game-icons/genshin-impact.webp']) assert.ok(sw.includes(asset));
-  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v11'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v12'"));
 });
 
 test('active CSS rules do not contain repeated declarations that can reintroduce same-rule conflicts', () => {
