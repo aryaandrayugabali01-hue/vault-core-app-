@@ -3,7 +3,6 @@ import { pool } from '../db/pool.js';
 import { normalizeProductText, normalizeProductAttributes } from '../services/productDetailsService.js';
 import { normalizeImageGallery } from '../services/marketplaceCategoryService.js';
 import { encryptPayload } from '../utils/encryption.js';
-import { isRightsReviewUsable, validateRightsReviewInput } from '../services/rightsReviewService.js';
 
 const router = Router();
 const GAME_CATEGORY = Object.freeze({
@@ -183,9 +182,8 @@ router.post('/products',async(req,res)=>{
  if(!v)return res.status(400).json({error:'VARIANT_NOT_FOUND'});
  const account=v.kategori_produk==='Akun',joki=v.kategori_produk==='Jasa Joki',item=v.kategori_produk==='Item In-Game';
  if(!account&&!joki&&!item)return res.status(400).json({error:'UNSUPPORTED_PRODUCT_CATEGORY'});
- if((account&&!['READY','INDENT'].includes(mode))||(!account&&mode!=='READY'))return res.status(400).json({error:'INVALID_AVAILABILITY_FOR_CATEGORY'});
- if(account&&mode==='INDENT'&&(!Number.isSafeInteger(indent)||indent<1||indent>365))return res.status(400).json({error:'INDENT_DEADLINE_REQUIRED'});
- if(account&&mode==='READY'&&!['Instan','15 menit','30 menit','Maksimal 1 jam'].includes(b.fulfillmentEta))return res.status(400).json({error:'READY_SLA_MAX_ONE_HOUR'});
+ if(!['READY','INDENT'].includes(mode))return res.status(400).json({error:'INVALID_PRODUCT_AVAILABILITY'});
+ if(mode==='INDENT'&&(!Number.isSafeInteger(indent)||indent<1||indent>365))return res.status(400).json({error:'INDENT_DEADLINE_REQUIRED'});
  if(qty>0&&String(b.stockSourceReference||'').trim().length<3)return res.status(400).json({error:'STOCK_SOURCE_REFERENCE_REQUIRED'});
  const fields=await getVariantListingFields(pool,variantId),checked=validateListingFields(fields,b.attributes||{});
  if(!checked.ok)return res.status(400).json({error:checked.error,field:checked.field||null});
@@ -196,40 +194,35 @@ router.post('/products',async(req,res)=>{
  if(customer.length>12||customer.some(f=>!normalizeProductText(f?.label,80)||bad.test(String(f?.label||''))))return res.status(400).json({error:'INVALID_CUSTOMER_INPUT_FIELDS'});
  if(account&&customer.length)return res.status(400).json({error:'ACCOUNT_HANDOVER_IS_MANUAL_NO_CUSTOMER_CREDENTIAL_FORM'});
  if(joki&&!customer.length)return res.status(400).json({error:'JOKI_CUSTOMER_FIELDS_REQUIRED'});
- const validated=validateRightsReviewInput(b.rightsReview||{});if(!validated.ok)return res.status(400).json({error:'INVALID_RIGHTS_REVIEW',details:validated.errors});
- const rights=validated.value,usable=isRightsReviewUsable({review_status:rights.reviewStatus,valid_until:rights.validUntil,owner_attested:rights.ownerAttested});
- const eta=account?(mode==='INDENT'?'Maksimal '+indent+' hari kalender':b.fulfillmentEta):normalizeProductText(b.fulfillmentEta,160);
+ const eta=mode==='INDENT'?'Maksimal '+indent+' hari kalender':normalizeProductText(b.fulfillmentEta,160);
  const source='VAULTCORE_OWNER_MANUAL_FULFILLMENT_V1:'+String(b.stockSourceReference||'').trim();
  const client=await pool.connect();
  try{
   await client.query('BEGIN');let p;
   if(productId){
-   const {rows}=await client.query('SELECT id,sku,variant_id FROM products WHERE id=$1 AND COALESCE(is_test,FALSE)=FALSE FOR UPDATE',[productId]);p=rows[0];
+   const {rows}=await client.query('SELECT id,sku,variant_id,current_rights_review_id FROM products WHERE id=$1 AND COALESCE(is_test,FALSE)=FALSE FOR UPDATE',[productId]);p=rows[0];
    if(!p){await client.query('ROLLBACK');return res.status(404).json({error:'PRODUCT_NOT_FOUND'});}
    if(p.sku!==sku||Number(p.variant_id)!==variantId){await client.query('ROLLBACK');return res.status(409).json({error:'SKU_VARIANT_IMMUTABLE'});}
    const {rows:reserved}=await client.query("SELECT COUNT(*)::int AS n FROM inventory_items WHERE product_id=$1 AND status='RESERVED'",[productId]);
    if(reserved[0].n){await client.query('ROLLBACK');return res.status(409).json({error:'SKU_HAS_RESERVED_ORDERS'});}
    await client.query(`UPDATE products SET name=$2,description=$3,sale_price_xtr=$4,cost_price_xtr=$5,variant_subtype=$6,image_url=$7,image_gallery=$8::jsonb,attributes=$9::jsonb,customer_terms=$10,fulfillment_eta=$11,availability_mode=$12,indent_deadline_days=$13,stock_quantity_declared=$14,stock_source_reference=$15,customer_input_fields=$16::jsonb,status='PAUSED',updated_at=NOW() WHERE id=$1`,
-    [productId,name,description,sale,cost,normalizeProductText(b.variantSubtype,120)||null,gallery.value[0],JSON.stringify(gallery.value),JSON.stringify(attrs.value),normalizeProductText(b.customerTerms,4000),eta,account?mode:'READY',indent,qty,source,JSON.stringify(customer)]);
+    [productId,name,description,sale,cost,normalizeProductText(b.variantSubtype,120)||null,gallery.value[0],JSON.stringify(gallery.value),JSON.stringify(attrs.value),normalizeProductText(b.customerTerms,4000),eta,mode,indent,qty,source,JSON.stringify(customer)]);
   }else{
    const {rows:dups}=await client.query('SELECT id FROM products WHERE sku=$1 AND COALESCE(is_test,FALSE)=FALSE',[sku]);
    if(dups.length){await client.query('ROLLBACK');return res.status(409).json({error:'SKU_ALREADY_EXISTS',productId:Number(dups[0].id)});}
    const {rows}=await client.query(`INSERT INTO products(sku,game_category,tier,name,description,fulfillment_type,sale_price_xtr,cost_price_xtr,status,is_test,variant_id,variant_subtype,image_url,image_gallery,attributes,customer_terms,fulfillment_eta,availability_mode,indent_deadline_days,stock_quantity_declared,stock_source_reference,customer_input_fields)
     VALUES($1,$2,'SERVICE',$3,$4,$5,$6,$7,'PAUSED',FALSE,$8,$9,$10,$11::jsonb,$12::jsonb,$13,$14,$15,$16,$17,$18,$19::jsonb) RETURNING id,sku`,
-    [sku,GAME_CATEGORY[v.game_code],name,description,account?'GAME_ACCOUNT_TRANSFER':'SERVICE_INSTRUCTIONS',sale,cost,variantId,normalizeProductText(b.variantSubtype,120)||null,gallery.value[0],JSON.stringify(gallery.value),JSON.stringify(attrs.value),normalizeProductText(b.customerTerms,4000),eta,account?mode:'READY',indent,qty,source,JSON.stringify(customer)]);
+    [sku,GAME_CATEGORY[v.game_code],name,description,account?'GAME_ACCOUNT_TRANSFER':'SERVICE_INSTRUCTIONS',sale,cost,variantId,normalizeProductText(b.variantSubtype,120)||null,gallery.value[0],JSON.stringify(gallery.value),JSON.stringify(attrs.value),normalizeProductText(b.customerTerms,4000),eta,mode,indent,qty,source,JSON.stringify(customer)]);
    p=rows[0];
   }
   for(const f of fields)await client.query(`INSERT INTO vault_core_product_question_responses(product_id,question_id,response_text,proof_urls,response_status,created_by_telegram_id) VALUES($1,$2,$3,'[]'::jsonb,'ANSWERED',$4) ON CONFLICT(product_id,question_id) DO UPDATE SET response_text=EXCLUDED.response_text,response_status='ANSWERED',updated_at=NOW()`,[p.id,f.pertanyaan_id,attrs.value[f.field_key]||'',String(req.telegramUser.id)]);
-  const {rows:rr}=await client.query(`INSERT INTO product_rights_reviews(product_id,rights_basis,publisher_platform,official_terms_url,authorization_evidence_reference,chain_of_title,transfer_method,region,reviewer_telegram_user_id,valid_until,review_status,review_notes,owner_attested) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
-   [p.id,rights.rightsBasis,rights.publisherPlatform,rights.officialTermsUrl,rights.authorizationEvidenceReference,rights.chainOfTitle,rights.transferMethod,rights.region,String(req.telegramUser.id),rights.validUntil,rights.reviewStatus,rights.reviewNotes,rights.ownerAttested]);
-  await client.query('UPDATE products SET current_rights_review_id=$2 WHERE id=$1',[p.id,rr[0].id]);
   await client.query("UPDATE inventory_items SET status='UNAVAILABLE' WHERE product_id=$1 AND status='AVAILABLE' AND reserved_order_id IS NULL",[p.id]);
-  let added=0;if(usable&&qty>0){const marker=encryptPayload('VAULTCORE_MANUAL_FULFILLMENT_SLOT_V1');for(let n=0;n<qty;n++){await client.query(`INSERT INTO inventory_items(product_id,payload_ciphertext,payload_nonce,payload_tag,rights_review_id,source_reference) VALUES($1,$2,$3,$4,$5,$6)`,[p.id,marker.payload_ciphertext,marker.payload_nonce,marker.payload_tag,rr[0].id,source]);added++;}}
-  const status=usable&&added>0?'ACTIVE':'PAUSED';
+  let added=0;if(qty>0){const marker=encryptPayload('VAULTCORE_MANUAL_FULFILLMENT_SLOT_V1');for(let n=0;n<qty;n++){await client.query(`INSERT INTO inventory_items(product_id,payload_ciphertext,payload_nonce,payload_tag,rights_review_id,source_reference) VALUES($1,$2,$3,$4,$5,$6)`,[p.id,marker.payload_ciphertext,marker.payload_nonce,marker.payload_tag,p.current_rights_review_id??null,source]);added++;}}
+  const status=added>0?'ACTIVE':'PAUSED';
   const {rows:result}=await client.query("UPDATE products SET status=$2,updated_at=NOW() WHERE id=$1 RETURNING id,sku,name,status,variant_id,availability_mode,indent_deadline_days,stock_quantity_declared",[p.id,status]);
-  await client.query(`INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata) VALUES($1,'OWNER_PRODUCT_SINGLE_FORM_SAVED','PRODUCT',$2,$3::jsonb)`,[String(req.telegramUser.id),String(p.id),JSON.stringify({sku,variantId,category:v.kategori_produk,status,qty,mode:account?mode:null,indentDays:indent})]);
+  await client.query(`INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata) VALUES($1,'OWNER_PRODUCT_SINGLE_FORM_SAVED','PRODUCT',$2,$3::jsonb)`,[String(req.telegramUser.id),String(p.id),JSON.stringify({sku,variantId,category:v.kategori_produk,status,qty,mode,indentDays:indent})]);
   await client.query('COMMIT');
-  return res.status(productId?200:201).json({ok:true,product:result[0],publication:status,stockAvailable:added,message:status==='ACTIVE'?'Produk tersimpan dan tampil pada katalog.':'Produk tersimpan tetapi ditahan sampai review hak disetujui dan stok aktual tersedia.'});
+  return res.status(productId?200:201).json({ok:true,product:result[0],publication:status,stockAvailable:added,message:status==='ACTIVE'?'Produk tersimpan dan tampil pada katalog.':'Produk tersimpan sebagai tidak tersedia karena belum memiliki slot pemenuhan.'});
  }catch(e){try{await client.query('ROLLBACK');}catch{}if(e.code==='23505')return res.status(409).json({error:'SKU_ALREADY_EXISTS'});console.error('[owner-product-save]',e.message);return res.status(500).json({error:'OWNER_PRODUCT_SAVE_FAILED'});}finally{client.release();}
 });
 router.put('/products/:productId/questions',(_req,res)=>res.status(410).json({error:'USE_SINGLE_PRODUCT_FORM'}));
