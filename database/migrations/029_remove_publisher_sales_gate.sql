@@ -108,7 +108,7 @@ reactivated AS (
 INSERT INTO admin_audit_logs
   (actor_telegram_user_id,action,entity_type,entity_id,metadata)
 SELECT
-  'SYSTEM_MIGRATION_029',
+  0,
   'PRODUCT_REACTIVATED_AFTER_PUBLISHER_GATE_REMOVAL',
   'PRODUCT',
   id::text,
