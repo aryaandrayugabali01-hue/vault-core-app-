@@ -136,3 +136,37 @@ background:rgba(9,13,20,.95);}
 .vc-mobile-app .dashboard-bottom-nav-icon svg{width:17px;height:17px}
 
 .vc-mobile-app .dashboard-bottom-nav-label{font-size:9px}
+
+
+/* Keep the compact, safe-area-aware customer dock in source-controlled production CSS. */
+@media(max-width:767px) {
+  .vc-mobile-app {
+    padding-bottom:calc(116px + env(safe-area-inset-bottom,0px))!important;
+  }
+  .vc-mobile-app .store-bottom-nav-shell {
+    padding:7px 10px calc(7px + env(safe-area-inset-bottom,0px))!important;
+    background:rgba(16,14,8,.97)!important;
+    border-color:rgba(245,197,66,.18)!important;
+  }
+  .vc-mobile-app .dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded) {
+    min-height:78px!important;
+    padding:7px 9px!important;
+    align-items:center!important;
+    gap:4px!important;
+  }
+  .vc-mobile-app .dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded) a {
+    min-height:62px!important;
+    padding:6px 8px!important;
+    gap:4px!important;
+    border-radius:20px!important;
+  }
+  .vc-mobile-app .dashboard-bottom-nav-icon,
+  .vc-mobile-app .dashboard-bottom-nav-icon-inner {
+    width:40px!important;
+    height:40px!important;
+  }
+  .vc-mobile-app .dashboard-bottom-nav-label {
+    font-size:11px!important;
+    line-height:1.15!important;
+  }
+}
