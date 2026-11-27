@@ -298,7 +298,7 @@ function safeAttributes(source) {
   return Object.entries(source || {}).filter(([key]) => {
     const normalized = String(key).toLowerCase().replace(/[^a-z0-9]/g,'');
     return !PRIVATE_ATTRIBUTE_KEYS.has(normalized)
-      && !['xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview'].some((prefix) => normalized.startsWith(prefix))
+      && !['xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview','stocksource'].some((prefix) => normalized.startsWith(prefix))
       && !/(login|password|sandi|otp|session|recovery|token|credential|username|email)/i.test(key)
       && !/(^|[^a-z0-9])pass(?:word)?(?:$|[^a-z0-9])/i.test(key)
       && normalized !== 'variantid';

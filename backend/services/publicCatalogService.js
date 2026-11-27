@@ -1,4 +1,5 @@
 import { pool } from '../db/pool.js';
+import { resolveDisplayStock } from './catalogService.js';
 import { releaseExpiredPendingOrders } from './reservationService.js';
 
 const SENSITIVE_ATTRIBUTE = /(login|password|sandi|otp|session|recovery|token|credential|email|username)/i;
@@ -12,7 +13,7 @@ const PRIVATE_CUSTOMER_ATTRIBUTE_KEYS = new Set([
   'reviewertelegramuserid','validuntil'
 ]);
 const PRIVATE_CUSTOMER_ATTRIBUTE_PREFIXES = [
-  'xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview'
+  'xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview','stocksource'
 ];
 function normalizeCustomerAttributeKey(key) {
   return String(key ?? '').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -42,7 +43,7 @@ export function toPublicCatalogProduct(sku) {
     fulfillment_eta:sku?.fulfillment_eta ?? '',
     availability_mode:sku?.availability_mode ?? 'READY',
     indent_deadline_days:sku?.indent_deadline_days ?? null,
-    display_stock:null,
+    display_stock:resolveDisplayStock({actualStock:actual,mode:sku?.display_stock_mode,override:sku?.display_stock_override}) === 1 ? 1 : null,
     is_purchaseable:Number.isSafeInteger(price) && price>1,
     is_available:actual>0
   };

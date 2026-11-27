@@ -42,7 +42,7 @@ const HIDDEN_CUSTOMER_PRODUCT_ATTRIBUTE_KEYS = new Set([
   'reviewertelegramuserid','validuntil'
 ]);
 const HIDDEN_CUSTOMER_ATTRIBUTE_PREFIXES = [
-  'xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview','stocksource'
+  'xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview','stocksource','stocksource'
 ];
 export function getCustomerVisibleProductAttributes(attributes) {
   if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) return [];

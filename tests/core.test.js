@@ -922,7 +922,7 @@ test('public catalog DTO is an allowlist and never exposes SKU, cost, handover i
     'customer_terms','fulfillment_eta','availability_mode','indent_deadline_days',
     'display_stock','is_purchaseable','is_available'
   ]);
-  assert.equal(product.display_stock,null);
+  assert.equal(product.display_stock,1);
   assert.equal(product.is_available,true);
   assert.equal(product.is_purchaseable,true);
   assert.equal(JSON.stringify(product).includes('FF-001'),false);

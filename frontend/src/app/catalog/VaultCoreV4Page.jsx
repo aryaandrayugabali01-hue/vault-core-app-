@@ -402,7 +402,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           {['ALL',...GROUPS].map((item) => <button type="button" key={item} className={group===item?'active':''} onClick={() => setGroup(item)}>
             {item==='ALL'?'Semua jenis':item}
           </button>)}
-          <input type="search" value={search} onChange={(event)=>setSearch(event.target.value)} placeholder="Cari produk atau varian…" aria-label="Cari varian atau SKU"/>
+          <input type="search" value={search} onChange={(event)=>setSearch(event.target.value)} placeholder="Cari produk atau varian…" aria-label="Cari produk atau varian"/>
         </section>
 
         {game==='MLBB' && group==='Akun' && <section className="vc4-mlbb-filters">
@@ -436,7 +436,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
                   {products.length>0 && <div className="vc4-sku-list">{products.map((product)=><div className="vc4-sku" key={product.id}>
                     <button type="button" className="vc4-sku-info" onClick={()=>setSelected({variant_id:Number(variant.variant_id),product})}>
                       {product.image_url ? <img src={product.image_url} alt="" loading="lazy"/> : <span className="vc4-sku-thumb">◇</span>}
-                      <span><strong>{product.name}</strong><small>{getProductAvailability(product)}</small></span>
+                      <span><strong>{product.name}</strong><small>{product.display_stock===1?'STOK TERAKHIR':getProductAvailability(product)}</small></span>
                     </button>
                     <div className="vc4-sku-buy"><PriceDisplay product={product} compact/><button type="button" onClick={()=>addToCart(product)}>Tambah</button></div>
                   </div>)}</div>}
