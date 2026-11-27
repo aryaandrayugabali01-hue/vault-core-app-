@@ -1116,7 +1116,7 @@ test('v4 product details wrap long specifications and refresh inventory from the
   assert.ok(styles.includes('vc4-details'));
 });
 
-test('v4 product detail keeps the approved dark Vault Core catalog palette', () => {
+test('v4 product detail uses the approved dark-gold and neon-lime Vault Core palette', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   assert.ok(page.includes('vc4-nav'));
@@ -1126,9 +1126,10 @@ test('v4 product detail keeps the approved dark Vault Core catalog palette', () 
   assert.ok(page.includes('vc4-dialog'));
   assert.ok(page.includes('vc4-product-terms'));
   assert.ok(page.includes('vc4-security-guide'));
-  assert.match(styles, /--vc4-page:#090d14/);
-  assert.match(styles, /--vc4-card:#111925/);
-  assert.match(styles, /--vc4-gold:#ffc928/);
+  assert.match(styles, /--vc4-page:#0d0a04/);
+  assert.match(styles, /--vc4-card:#191407/);
+  assert.match(styles, /--vc4-gold:#f3c45a/);
+  assert.match(styles, /--vc4-green:#d7ff00/);
   assert.ok(styles.includes('.vc4-product-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))'));
 });
 
@@ -1379,7 +1380,7 @@ test('Mini App header and bottom navigation do not stack over the product detail
   assert.ok(css.includes('width:min(calc(100% - 24px),430px)'));
   assert.ok(css.includes('border-radius:26px'));
   assert.ok(css.includes('.nav .ic{box-sizing:border-box;display:block;width:36px;height:36px'));
-  assert.ok(css.includes('linear-gradient(100deg,rgba(92,246,133,.9),rgba(163,245,43,.74) 52%,rgba(92,246,133,.68)'));
+  assert.ok(css.includes('linear-gradient(100deg,rgba(215,255,0,.96),rgba(243,196,90,.82) 52%,rgba(215,255,0,.9)'));
   assert.equal((app.match(/function headerHome\(/g) || []).length,1);
   assert.equal((app.match(/function headerPage\(/g) || []).length,1);
   assert.ok(css.includes('.topbar{position:sticky'));
