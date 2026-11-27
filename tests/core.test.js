@@ -220,7 +220,7 @@ test('storefront click targets and Mini App actions resolve to working routes or
   assert.match(miniApp, /form\.id !== 'home-search-form'[\s\S]*?go\('\/catalog'\)/);
   assert.match(miniApp, /case 'about': case 'terms': case 'privacy': case 'refund': renderInfo\(name\)/);
   assert.match(miniApp, /if \(!product && !state\.loaded\)[\s\S]*?Memuat detail produk/);
-  assert.match(miniApp, /if \(!product\)[\s\S]*?Produk tidak ditemukan[\s\S]*?data-go="\\/catalog"/);
+  assert.match(miniApp, /if \(!product\)[\s\S]*?Produk tidak ditemukan[\s\S]*?data-go="\/catalog"/);
   const renderedActions = new Set([...miniApp.matchAll(/data-action=["']([^"']+)["']/g)].map((match) => match[1]));
   const handledActions = new Set([...miniApp.matchAll(/action === '([^']+)'/g)].map((match) => match[1]));
   for (const action of renderedActions) assert.ok(handledActions.has(action), 'Missing Mini App click handler: ' + action);
