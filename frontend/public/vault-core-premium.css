@@ -543,3 +543,62 @@ html,body,.vc-mobile-app{background:#100E08!important;color:#F7F3E8}
 .customer-account-primary{background:linear-gradient(180deg,#FFE18A,#F5C542)!important;color:#211805!important}
 .vc-home a:focus-visible,.vc4-shell button:focus-visible,.vc4-shell a:focus-visible,.dashboard-topbar a:focus-visible{outline-color:#F5C542!important}
 @media(prefers-reduced-motion:reduce){.vc-home-promo-copy>a,.vc-home-search button,.vc-home-game,.vc-home-variant-card,.vc-home-product-card,.vc4-primary,.dashboard-bottom-nav a{transition:none!important}}
+
+
+/* Final consistency pass: legacy global, Owner/Admin and footer surfaces use the approved Golden Dark tokens. */
+body{background:#100E08!important;background-color:#100E08!important;background-image:radial-gradient(ellipse at 50% -15%,rgba(245,197,66,.07),transparent 48%)!important;color:#F7F3E8!important}
+.topbar{background:rgba(16,14,8,.95)!important;border-bottom-color:rgba(245,197,66,.16)!important}
+.brand-mark,.profile-avatar{background:linear-gradient(145deg,#FFE18A,#F5C542 58%,#9A6A0A)!important;border-color:rgba(245,197,66,.4)!important;color:#211805!important;box-shadow:0 7px 18px rgba(245,197,66,.12)!important}
+.brand-light{color:#FFE18A!important}
+.top-searchbox,.filter-chip,.catalog-search-panel,.catalog-search-result,.catalog-search-input-wrap{
+  background:#1D190E!important;border-color:rgba(245,197,66,.20)!important;color:#F7F3E8!important
+}
+.top-searchbox:focus-within,.catalog-search-input-wrap:focus-within{border-color:rgba(245,197,66,.65)!important;box-shadow:0 0 0 3px rgba(245,197,66,.10)!important}
+.top-searchbox input,.catalog-search-input-wrap input{color:#F7F3E8!important}
+.top-searchbox input::placeholder,.catalog-search-input-wrap input::placeholder{color:#8D846F!important}
+.filter-chip:hover,.filter-chip.active{border-color:#F5C542!important;background:rgba(245,197,66,.13)!important;color:#FFE18A!important;box-shadow:0 5px 16px rgba(245,197,66,.10)!important}
+.buy-button,.admin-primary{border-color:#FFE18A!important;background:#F5C542!important;color:#211805!important;box-shadow:0 6px 17px rgba(245,197,66,.15)!important}
+.buy-button:hover,.admin-primary:hover{background:#FFDA68!important;box-shadow:0 9px 22px rgba(245,197,66,.2)!important}
+.buy-button:disabled,.admin-primary:disabled{background:#62552F!important;color:#D8CFB6!important}
+.admin-shell,.owner-login-screen{color:#F7F3E8!important}
+.owner-login-screen{background:radial-gradient(circle at 50% 0%,rgba(245,197,66,.11),transparent 42%),#100E08!important}
+.admin-panel,.owner-login-card,.admin-stats>div,.catalog-search-panel{
+  background:linear-gradient(150deg,#262012,#1D190E)!important;border-color:rgba(245,197,66,.18)!important
+}
+.admin-panel{background-image:linear-gradient(145deg,rgba(38,32,18,.96),rgba(29,25,14,.97))!important}
+.admin-form label,.admin-indent-days{color:#D8CFB6!important}
+.admin-form input,.admin-form textarea,.admin-form select,.cap-input,.admin-indent-days input{
+  background:#151208!important;border-color:rgba(245,197,66,.22)!important;color:#F7F3E8!important
+}
+.admin-form input:focus,.admin-form textarea:focus,.admin-form select:focus,.cap-input:focus{
+  background:#1D190E!important;border-color:rgba(245,197,66,.72)!important;box-shadow:0 0 0 3px rgba(245,197,66,.10)!important
+}
+.admin-table-wrap{background:rgba(21,18,8,.76)!important;border-color:rgba(245,197,66,.16)!important}
+.admin-table th{background:#262012!important;border-bottom-color:rgba(245,197,66,.22)!important;color:#DCCB9C!important}
+.admin-table td{color:#E7DFCA!important}
+.admin-table tbody tr:hover td{background:rgba(245,197,66,.045)!important}
+.admin-actions button,.icon-button{background:#262012!important;border-color:rgba(245,197,66,.24)!important;color:#F7F3E8!important}
+.admin-actions button:hover,.icon-button:hover{border-color:rgba(245,197,66,.62)!important;background:#302817!important}
+.admin-pill,.admin-status.active,.order-status.fulfilled{border-color:rgba(183,255,53,.24)!important;background:rgba(183,255,53,.07)!important;color:#B7FF35!important}
+.stock-dot,.pulse{background:#B7FF35!important;box-shadow:0 0 0 3px rgba(183,255,53,.09),0 0 12px rgba(183,255,53,.22)!important}
+.admin-notice,.toast{border-color:rgba(183,255,53,.20)!important;background:rgba(183,255,53,.055)!important;color:#D2FF83!important}
+.admin-availability-buttons button[aria-pressed="true"]{border-color:rgba(245,197,66,.6)!important;background:rgba(245,197,66,.12)!important;color:#FFE18A!important}
+.store-global-footer,.store-bottom-nav-shell{background:#100E08!important;color:#F7F3E8!important}
+.store-trust-strip,.store-footer-badges span,.store-footer-column li a:hover{border-color:rgba(245,197,66,.16)!important;background:rgba(245,197,66,.035)!important}
+.store-trust-icon.trust-green,.store-trust-icon.trust-blue,.store-trust-icon.trust-purple{background:linear-gradient(145deg,#FFE18A,#F5C542 58%,#9A6A0A)!important;color:#211805!important}
+.store-footer-help-link{border-color:rgba(245,197,66,.22)!important;background:rgba(245,197,66,.06)!important}
+.store-footer-help-icon{background:linear-gradient(145deg,#FFE18A,#F5C542 58%,#9A6A0A)!important;color:#211805!important}
+.store-footer-help-link>svg{color:#FFE18A!important}
+.store-footer-stars-link{background:rgba(245,197,66,.07)!important}
+.catalog-info-footer{background:radial-gradient(90% 80% at 100% 0%,rgba(245,197,66,.08),transparent 62%),linear-gradient(155deg,#262012,#100E08)!important}
+.catalog-info-panel{background:linear-gradient(145deg,#262012,#1D190E)!important;border-color:rgba(245,197,66,.16)!important}
+.catalog-info-account h2,.catalog-info-panel h3,.catalog-info-details summary{color:#F7F3E8!important}
+.catalog-info-lead,.catalog-info-details ol,.catalog-info-details ul,.catalog-info-details p,.catalog-info-panel>p{color:#B9B09B!important}
+.catalog-search-trigger,.catalog-search-input-wrap{border-color:rgba(245,197,66,.38)!important;background:rgba(245,197,66,.08)!important;color:#FFE18A!important}
+.catalog-search-cancel,.catalog-search-result-copy b{color:#FFE18A!important}
+.catalog-search-backdrop{background:rgba(8,7,4,.90)!important}
+.profile-orders-button,.reset-filters,.detail-secondary-button{border-color:rgba(245,197,66,.20)!important;background:#262012!important;color:#F7F3E8!important}
+.order-status.fulfilled,.admin-status.active,.stock-label.in-stock{color:#B7FF35!important;border-color:rgba(183,255,53,.22)!important;background:rgba(183,255,53,.06)!important}
+.stock-label,.account-product-badge{background:rgba(16,14,8,.88)!important;border-color:rgba(245,197,66,.18)!important;color:#E7DFCA!important}
+.stock-label.out-of-stock{color:#FFB4A8!important}
+@media(prefers-reduced-motion:reduce){.buy-button,.admin-primary,.filter-chip,.catalog-search-trigger{transition:none!important}}
