@@ -1695,3 +1695,16 @@ test('website and Mini App share a green four-game promo board', () => {
   assert.doesNotMatch(webHome + mini, /Diskon hingga|Diskon 50%|harga coret/);
 });
 
+test('Golden Dark storefront theme keeps the animated loop visible in the hero', () => {
+  const home = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
+  const theme = readFileSync(new URL('../frontend/public/golden-theme.css', import.meta.url), 'utf8');
+  const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
+  assert.match(home, /className="vc-home-promo-visual"/);
+  assert.match(home, /src="\\/assets\\/02-hero\\/hero-vaultcore-loop\\.webp"/);
+  assert.doesNotMatch(home, /vc-home-promo-board/);
+  assert.match(theme, /--vc-bg:\s*#100e08/i);
+  assert.match(theme, /--vc-green:\s*#b7ff35/i);
+  assert.match(theme, /--vc-gold:\s*#f5c542/i);
+  assert.match(theme, /@keyframes vc-core-orbit/);
+  assert.match(layout, /href="\\/golden-theme\\.css"/);
+});
