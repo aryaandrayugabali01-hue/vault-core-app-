@@ -6,7 +6,7 @@ import './page.css';
 import { GAME_ART } from '../../lib/marketplace.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-const GROUPS = ['Akun','Jasa Joki'];
+const GROUPS = ['Akun','Jasa Joki','Item In-Game','Produk Lainnya'];
 const GAME_NAMES = { MLBB:'Mobile Legends', FF:'Free Fire', ROBLOX:'Roblox', GI:'Genshin Impact' };
 const MARKET_GAME_CODE = { MLBB:'MLBB', FF:'FREE_FIRE', ROBLOX:'ROBLOX', GI:'GENSHIN' };
 const STATUS = {
@@ -361,7 +361,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           <h1>Katalog<span>.</span></h1>
           <div>
             <h2>Akun game premium dan layanan joki pilihan.</h2>
-            <p>Pilih game, Akun atau Joki. Harga, ketersediaan, dan estimasi mengikuti listing backend.</p>
+            <p>Pilih game dan jenis produk. Harga, ketersediaan, dan estimasi mengikuti listing backend.</p>
           </div>
         </section>
 
@@ -384,7 +384,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         <section className="vc4-purchase-journey" aria-label="Alur pembelian">
           <div className="vc4-journey-heading"><span>MUDAH & TERARAH</span><strong>Alur pembelian</strong></div>
           <ol>
-            <li><span>01</span><div><strong>Pilih game</strong><small>Tentukan kategori dan akun</small></div></li>
+            <li><span>01</span><div><strong>Pilih game</strong><small>Tentukan jenis produk</small></div></li>
             <li><span>02</span><div><strong>Periksa detail</strong><small>Cek spesifikasi dan ketentuan</small></div></li>
             <li><span>03</span><div><strong>Bayar dengan XTR</strong><small>Lanjutkan invoice di Telegram</small></div></li>
           </ol>
@@ -424,7 +424,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           const list = visibleVariants.filter((variant)=>variant.category===category);
           if (!list.length) return null;
           return <section className="vc4-shelf" key={category}>
-            <div className="vc4-shelf-head"><div><span>VAULT CORE · {category.toUpperCase()}</span><h2>{category}.</h2></div><p>{category==='Akun'?'Akun game dengan spesifikasi dan status ketersediaan pada listing.':'Layanan joki dengan jenis pekerjaan dan estimasi sesuai listing.'}</p></div>
+            <div className="vc4-shelf-head"><div><span>VAULT CORE · {category.toUpperCase()}</span><h2>{category}.</h2></div><p>{category==='Akun'?'Akun game dengan spesifikasi dan status ketersediaan pada listing.':category==='Jasa Joki'?'Layanan joki dengan jenis pekerjaan dan estimasi sesuai listing.':category==='Item In-Game'?'Item dan aset digital di dalam game.':'Kategori produk lain yang sudah tersedia di katalog VAULT CORE.'}</p></div>
             <div className="vc4-grid">
               {list.map((variant) => {
                 const products = visibleProducts.filter((product)=>product.variant_id===Number(variant.variant_id));
