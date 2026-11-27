@@ -49,6 +49,17 @@ router.get('/products',async(_req,res)=>{
    p.variant_id,p.variant_subtype,p.sale_price_xtr,p.cost_price_xtr,p.image_url,p.image_gallery,p.attributes,
    p.customer_terms,p.fulfillment_eta,p.availability_mode,p.indent_deadline_days,p.stock_quantity_declared,
    p.stock_source_reference,p.customer_input_fields,p.current_rights_review_id,p.created_at,p.updated_at,
+   mc.slug AS legacy_category_slug,
+   CASE mc.slug
+    WHEN 'mlbb-akun' THEN 1
+    WHEN 'free-fire-akun' THEN 4
+    WHEN 'roblox-akun' THEN 8
+    WHEN 'genshin-akun' THEN 10
+    WHEN 'roblox-blox-fruits' THEN 6
+    WHEN 'roblox-adopt-me' THEN 7
+    WHEN 'roblox-murder-mystery-2' THEN 7
+    ELSE NULL
+   END AS legacy_variant_id,
    v.kategori_produk AS variant_category,v.jenis_varian AS variant_name,v.nama_game AS game_name,
    rr.review_status,rr.valid_until,rr.owner_attested,rr.rights_basis,rr.publisher_platform,rr.official_terms_url,
    rr.authorization_evidence_reference,rr.chain_of_title,rr.transfer_method,rr.region,rr.review_notes,
@@ -56,14 +67,15 @@ router.get('/products',async(_req,res)=>{
    COUNT(DISTINCT q.pertanyaan_id) FILTER(WHERE r.response_status='ANSWERED')::int AS completed_questions,
    COUNT(DISTINCT i.id) FILTER(WHERE i.status='AVAILABLE' AND i.rights_review_id=p.current_rights_review_id)::int AS available_stock
    FROM products p LEFT JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
+   LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
    LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
    LEFT JOIN vault_core_pertanyaan_wajib_only q ON q.variant_id=p.variant_id AND q.is_public=TRUE
     AND q.pertanyaan_wajib !~* '(login|password|sandi|otp|session|recovery|backup|token|credential|email|username|cookie|retrieval|moderasi|kapasitas tenaga|harga dagangan|stok)'
    LEFT JOIN vault_core_product_question_responses r ON r.product_id=p.id AND r.question_id=q.pertanyaan_id
    LEFT JOIN inventory_items i ON i.product_id=p.id
-   WHERE COALESCE(p.is_test,FALSE)=FALSE GROUP BY p.id,v.variant_id,rr.id ORDER BY p.updated_at DESC LIMIT 250`
+   WHERE COALESCE(p.is_test,FALSE)=FALSE GROUP BY p.id,v.variant_id,rr.id,mc.slug ORDER BY p.updated_at DESC LIMIT 250`
  );
- return res.json({products:rows.map(r=>({...r,id:Number(r.id),sale_price_xtr:Number(r.sale_price_xtr),cost_price_xtr:Number(r.cost_price_xtr),available_stock:Number(r.available_stock),stock_quantity_declared:Number(r.stock_quantity_declared||0),customer_input_fields:Array.isArray(r.customer_input_fields)?r.customer_input_fields:[]}))});
+ return res.json({products:rows.map(r=>({...r,id:Number(r.id),sale_price_xtr:Number(r.sale_price_xtr),cost_price_xtr:Number(r.cost_price_xtr),available_stock:Number(r.available_stock),stock_quantity_declared:Number(r.stock_quantity_declared||0),legacy_variant_id:r.legacy_variant_id==null?null:Number(r.legacy_variant_id),customer_input_fields:Array.isArray(r.customer_input_fields)?r.customer_input_fields:[]}))});
 });
 router.put('/products/:productId/variant', async (req,res) => {
   const productId=Number(req.params.productId);
