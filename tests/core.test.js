@@ -262,7 +262,6 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
   assert.ok(miniApp.includes('function comingSoonCard(variant)'));
   assert.ok(miniApp.includes('Akan Tersedia'));
   const miniCss = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
-  const golden = readFileSync(new URL('../frontend/public/golden-theme.css', import.meta.url), 'utf8');
   assert.ok(miniCss.includes('.product-card-soon'));
   assert.ok(ownerV4.includes('/api/admin/test-fixtures'));
   assert.ok(ownerV4.includes('/api/orders/test'));
@@ -1680,10 +1679,10 @@ test('Legacy Joki credential endpoint remains closed while safe customer fields 
 
 
 test('website and Mini App expose the approved animated promotional hero', () => {
+  const golden = readFileSync(new URL('../frontend/public/golden-theme.css', import.meta.url), 'utf8');
   const webHome = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
   const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const premium = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
-  const miniCss = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
   assert.ok(webHome.includes('vc-home-promo-visual'));
   assert.ok(webHome.includes('PAPAN PROMO'));
