@@ -1686,12 +1686,16 @@ test('website and Mini App share a green four-game promo board', () => {
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
   assert.ok(webHome.includes('vc-home-promo-visual'));
   assert.ok(webHome.includes('PAPAN PROMO'));
-  assert.ok(mini.includes('home-promo-board-grid'));
+  assert.ok(mini.includes('vc-miniapp-promo-visual'));
+  assert.ok(mini.includes('hero-vaultcore-loop.webp'));
+  assert.ok(mini.includes('hero-vaultcore.jpg'));
   assert.ok(mini.includes('promoBoardArt'));
   assert.ok(premium.includes('--vc-green:#a8f06a'));
   assert.ok(premium.includes('.home-promo.promo-board{'));
   assert.ok(miniCss.includes('--green:#a8f06a'));
   assert.ok(sw.includes("'/vault-core-premium.css'"));
+  assert.ok(sw.includes("'/golden-theme.css'"));
+  assert.ok(sw.includes("'/assets/02-hero/hero-vaultcore.jpg'"));
   assert.doesNotMatch(webHome + mini, /Diskon hingga|Diskon 50%|harga coret/);
 });
 
@@ -1709,4 +1713,21 @@ test('Golden Dark storefront theme keeps the animated loop visible in the hero',
   assert.match(theme, /--vc-gold:\s*#f5c542/i);
   assert.match(theme, /@keyframes vc-core-orbit/);
   assert.ok(layout.includes('href="/golden-theme.css"'));
+});
+
+
+test('Telegram Mini App loads the Golden Dark theme and accessible animated hero assets', () => {
+  const html = readFileSync(new URL('../frontend/public/miniapp/index.html', import.meta.url), 'utf8');
+  const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const theme = readFileSync(new URL('../frontend/public/golden-theme.css', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
+  assert.ok(html.includes('href="/golden-theme.css"'));
+  assert.ok(html.includes('content="#100e08"'));
+  assert.ok(mini.includes('class="vc-miniapp-promo-visual"'));
+  assert.ok(mini.includes('srcset="/assets/02-hero/hero-vaultcore-loop.webp"'));
+  assert.ok(mini.includes('src="/assets/02-hero/hero-vaultcore.jpg"'));
+  assert.ok(theme.includes('.vc-miniapp-promo-visual'));
+  assert.ok(theme.includes('.hero {'));
+  assert.ok(sw.includes("vault-core-miniapp-v17"));
+  assert.ok(sw.includes("'/assets/02-hero/hero-vaultcore.jpg'"));
 });
