@@ -156,9 +156,9 @@ font-family:"Plus Jakarta Sans",system-ui,-apple-system,sans-serif;
 background:radial-gradient(ellipse at 50% -15%,rgba(47,64,90,.25),transparent 55%),var(--vc4-page);color:var(--vc4-ink);}
 .vc4-nav{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:22px;padding:0 max(22px,calc((100vw - 1160px)/2));height:58px;backdrop-filter:saturate(180%) blur(18px);
 background:rgba(9,13,20,.88);border-bottom:1px solid var(--vc4-line);box-shadow:0 8px 28px rgba(0,0,0,.16);}
-.vc4-nav-links button{background:none;border:0;font:500 13px Inter;cursor:pointer;padding:7px 0;
+.vc4-nav-links button{background:none;border:0;font:500 13px Plus Jakarta Sans;cursor:pointer;padding:7px 0;
 color:#bdc7d6;}
-.vc4-nav-actions button{background:none;border:0;font:500 13px Inter;cursor:pointer;padding:7px 0;
+.vc4-nav-actions button{background:none;border:0;font:500 13px Plus Jakarta Sans;cursor:pointer;padding:7px 0;
 color:#bdc7d6;}
 .vc4-nav-links button.active{font-weight:700;
 color:#fff;}
@@ -191,7 +191,7 @@ box-shadow:0 0 0 2px var(--vc4-gold),0 0 0 5px var(--vc4-page);}
 border-color:var(--vc4-line);background:#111925;color:#c4cede;}
 .vc4-filter-bar button.active{
 border-color:var(--vc4-gold);background:rgba(255,201,40,.12);color:var(--vc4-gold);}
-.vc4-filter-bar input{margin-left:auto;min-width:180px;max-width:260px;padding:10px 13px;border:1px solid var(--vc4-line);border-radius:22px;font:13px Inter;
+.vc4-filter-bar input{margin-left:auto;min-width:180px;max-width:260px;padding:10px 13px;border:1px solid var(--vc4-line);border-radius:22px;font:13px Plus Jakarta Sans;
 border-color:var(--vc4-line);background:#0c131e;color:#f4f6fb;}
 .vc4-filter-bar input::placeholder{color:#76849a}
 .vc4-mlbb-filters{border-radius:20px;padding:16px 20px;margin:8px 0 20px;border:1px solid var(--vc4-soft);
@@ -207,9 +207,9 @@ color:#f1f4f9;}
 color:#9aa7ba;}
 .vc4-mlbb-grid legend{font-size:12px;
 color:#9aa7ba;}
-.vc4-mlbb-grid input{width:100%;padding:9px 10px;border:1px solid var(--vc4-line);border-radius:10px;font:13px Inter;
+.vc4-mlbb-grid input{width:100%;padding:9px 10px;border:1px solid var(--vc4-line);border-radius:10px;font:13px Plus Jakarta Sans;
 border-color:#344156;background:#0a111b;color:#f4f6fb;color-scheme:dark;}
-.vc4-mlbb-grid select{width:100%;padding:9px 10px;border:1px solid var(--vc4-line);border-radius:10px;font:13px Inter;
+.vc4-mlbb-grid select{width:100%;padding:9px 10px;border:1px solid var(--vc4-line);border-radius:10px;font:13px Plus Jakarta Sans;
 border-color:#344156;background:#0a111b;color:#f4f6fb;color-scheme:dark;}
 .vc4-mlbb-grid fieldset{border:1px solid var(--vc4-soft);border-radius:12px;padding:10px;display:flex;gap:8px;flex-wrap:wrap;
 border-color:var(--vc4-line);}
@@ -268,7 +268,7 @@ font-size:10px;
 color:#9aa7ba;}
 .vc4-sku-buy strong{font-size:10px;
 color:#9aa7ba;}
-.vc4-sku-buy button{border-radius:18px;padding:6px 10px;font:600 10px Inter;cursor:pointer;
+.vc4-sku-buy button{border-radius:18px;padding:6px 10px;font:600 10px Plus Jakarta Sans;cursor:pointer;
 border:1px solid rgba(255,201,40,.5);background:var(--vc4-gold);color:#111827;font-weight:800;}
 .vc4-sku-buy button:hover{background:var(--vc4-gold-hover)}
 .vc4-primary:hover{background:var(--vc4-gold-hover)}
@@ -297,7 +297,7 @@ overflow-wrap:anywhere;word-break:break-word;max-width:62%;
 color:#eaf0f8;}
 .vc4-price-large{font-size:19px!important;font-weight:700;
 color:var(--vc4-gold)!important;}
-.vc4-primary{width:100%;padding:13px 18px;font:600 14px Inter;cursor:pointer;
+.vc4-primary{width:100%;padding:13px 18px;font:600 14px Plus Jakarta Sans;cursor:pointer;
 border:1px solid rgba(255,223,54,.65);border-radius:11px;background:var(--vc4-gold);box-shadow:0 7px 20px rgba(255,201,40,.18);color:#111827;font-weight:850;}
 .vc4-primary:disabled{cursor:not-allowed;
 border-color:var(--vc4-line);background:#293343;color:#8995a8;opacity:1;}
@@ -324,7 +324,7 @@ color:#9aa7ba;}
 border-color:var(--vc4-gold);background:transparent;color:var(--vc4-gold);}
 .vc4-dialog label{display:flex;flex-direction:column;gap:7px;margin:12px 0;font-size:12px;
 color:#aab5c6;}
-.vc4-dialog label input{border:1px solid var(--vc4-line);border-radius:11px;padding:12px;font:14px Inter;
+.vc4-dialog label input{border:1px solid var(--vc4-line);border-radius:11px;padding:12px;font:14px Plus Jakarta Sans;
 border-color:#3b4a60;background:#0a111a;color:#f4f6fb;color-scheme:dark;}
 .vc4-access-notice{padding:10px;border-radius:10px;
 border:1px solid rgba(0,214,138,.2);background:rgba(0,214,138,.08);color:#b8f3dc!important;}
