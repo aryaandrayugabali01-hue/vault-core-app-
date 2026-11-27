@@ -1589,8 +1589,8 @@ test('active stylesheets have unique selectors within each cascade context', () 
     assert.deepEqual(duplicates, [], file + ' still contains repeated selectors in one cascade context');
   }
   const miniAppStyles = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
-  assert.ok(miniAppStyles.includes('--green:#a8f06a'));
-  assert.ok(miniAppStyles.includes('--gold:#f2c45a'));
+  assert.ok(miniAppStyles.includes('--green:#d7ff00'));
+  assert.ok(miniAppStyles.includes('--gold:#f3c45a'));
   assert.ok(miniAppStyles.includes('.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;padding:12px 14px;border:1px solid rgba(211,255,122,.82)'));
   assert.ok(miniAppStyles.includes('.nav button.on{background:rgba(163,245,43,.12);color:var(--green)'));
   assert.ok(miniAppStyles.includes('.nav button.on .ic{background:linear-gradient(180deg,#d8ff8b,#a3e635)'));
@@ -1687,19 +1687,22 @@ test('Legacy Joki credential endpoint remains closed while safe customer fields 
 });
 
 
-test('website and Mini App share a green four-game promo board', () => {
+test('website and Mini App share a gold promo panel with a visible rotating feature loop', () => {
   const webHome = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
   const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const premium = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
   const miniCss = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(webHome.includes('vc-home-promo-board-grid'));
+  assert.ok(webHome.includes('vc-home-promo-loop'));
   assert.ok(webHome.includes('PAPAN PROMO'));
-  assert.ok(mini.includes('home-promo-board-grid'));
-  assert.ok(mini.includes('promoBoardArt'));
-  assert.ok(premium.includes('--vc-green:#a8f06a'));
+  assert.ok(mini.includes('home-promo-loop'));
+  assert.ok(!mini.includes('promoBoardArt'));
+  assert.ok(premium.includes('--vc-green:#d7ff00'));
+  assert.ok(premium.includes('@keyframes vc-promo-orbit-spin'));
+  assert.ok(premium.includes('.vc-home-promo-board::before'));
+  assert.ok(premium.includes('.home-promo-board-art::before'));
   assert.ok(premium.includes('.home-promo.promo-board{'));
-  assert.ok(miniCss.includes('--green:#a8f06a'));
+  assert.ok(miniCss.includes('--green:#d7ff00'));
   assert.ok(sw.includes("'/vault-core-premium.css'"));
   assert.doesNotMatch(webHome + mini, /Diskon hingga|Diskon 50%|harga coret/);
 });
