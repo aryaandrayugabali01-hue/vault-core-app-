@@ -1646,6 +1646,8 @@ test('Home product cards preserve the selected SKU and display its actual listin
   const home = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
   const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   assert.match(home, /function getHomeProductAvailability\(product\)/);
+  assert.match(home, /available > 0 \? ' is-ready' : ''/);
+  assert.doesNotMatch(home, /\bready\s*\?/);
   assert.match(home, /availability\.startsWith\('Inden'\)/);
   assert.match(home, /&product=' \+ encodeURIComponent\(product\.id\)/);
   assert.match(home, /getHomeProductAvailability\(product\)/);
