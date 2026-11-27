@@ -7,7 +7,7 @@ const inTelegram = Boolean(tg && tg.initData);
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 const money = new Intl.NumberFormat('id-ID');
-const state = { variants: [], products: [], loaded: false, loadError: '', orderFilter: 'all', orderRows: [], catalogGroup:'ALL', catalogGame:'ALL', search:'' };
+const state = { variants: [], products: [], loaded: false, loadError: '', orderFilter: 'all', orderRows: [], catalogGroup:'ALL', catalogGame:'ALL', search:'', customerInputs:{} };
 let creatingOrder = false;
 let lastInvoice = null;
 let renderId = 0;
@@ -333,19 +333,36 @@ function productPage(id) {
   if (attrs.length) details.push('<ul class="detail-copy">' + attrs.map(([key,value]) => '<li><b>' + esc(key.replace(/[_-]/g,' ')) + ':</b> ' + esc(value) + '</li>').join('') + '</ul>');
   if (product.customer_terms) details.push(renderDetailCopy(product.customer_terms));
   if (product.availability_mode === 'INDENT' && Number(product.indent_deadline_days)>0) details.push('<p class="detail-copy">Tenggat INDENT: maksimal ' + esc(product.indent_deadline_days) + ' hari kalender setelah pembayaran.</p>');
+  const customerFields = Array.isArray(product.customer_input_fields) ? product.customer_input_fields : [];
+  const savedInput = state.customerInputs[String(product.id)] || {};
+  const customerForm = customerFields.length
+    ? '<section class="box buyer-fields"><h3>Data untuk Pesanan</h3><p>Isi identitas game dan parameter pekerjaan sesuai produk.</p>' +
+      customerFields.map((field) => {
+        const label = esc(field.label);
+        const value = esc(savedInput[field.label] || '');
+        const id = ' data-customer-input="1" data-product-id="' + esc(product.id) + '" data-field-label="' + label + '" ';
+        const required = field.required ? ' required ' : '';
+        const maxLength = Math.min(240,Math.max(1,Number(field.maxLength || 240)));
+        const control = field.type === 'textarea'
+          ? '<textarea' + id + 'maxlength="' + maxLength + '"' + required + '>' + value + '</textarea>'
+          : '<input type="' + (field.type === 'number' ? 'number' : 'text') + '"' + id + (field.type === 'number' ? '' : 'maxlength="' + maxLength + '"') + required + 'value="' + value + '">';
+        return '<label class="buyer-field">' + label + (field.required ? ' <small>Wajib</small>' : '') + control + '</label>';
+      }).join('') + '</section>' : '';
   setPage(
     headerPage('Detail Produk') +
     '<main>' + productImage(product,'detail-art') +
     '<h2 class="detail-title">' + esc(product.name) + '</h2>' +
     '<div class="chips"><span class="chip">' + esc(gameOf(product.game_category).short) + '</span><span class="chip">' + esc(categoryLabel(product)) + '</span></div>' +
+    (String(product.tier || '').toUpperCase() === 'GOLD' ? '<div class="detail-gold">✦ GOLD · BEST VALUE</div>' : '') +
     '<div class="detail-price">' + fmt(product.sale_price_xtr) + ' XTR</div>' +
     '<div class="detail-availability">' + esc(accountAvailability(product)) + '</div>' +
     '<div class="box"><h3>Detail & Spesifikasi</h3>' + details.join('') + '</div>' +
     (product.variant_category === 'Akun'
       ? '<div class="box info">' + icon('info') + '<span>Periksa spesifikasi akun. Jangan pernah membagikan kata sandi, OTP, session, atau kode pemulihan di luar proses penyerahan resmi.</span></div>'
       : product.variant_category === 'Jasa Joki'
-        ? '<div class="box info">' + icon('info') + '<span>Data akses untuk pengerjaan Joki disampaikan setelah pembayaran terkonfirmasi melalui formulir aman dan disimpan terenkripsi.</span></div>'
+        ? '<div class="box info">' + icon('info') + '<span>Isi hanya identitas game dan parameter pengerjaan. Password, OTP, serta kode autentikasi tidak diminta.</span></div>'
         : '<div class="box info">' + icon('info') + '<span>Metode pengiriman item mengikuti petunjuk dan ketentuan pada detail produk.</span></div>') +
+    customerForm +
     '<div class="dock"><button class="cta" type="button" data-action="buy" data-id="' + esc(product.id) + '" ' + (isBuyable(product) ? '' : 'disabled') + '>' + (isBuyable(product) ? 'Beli Sekarang →' : 'Stok tidak tersedia') + '</button></div>' +
     '</main>',
     'catalog', false
@@ -372,7 +389,11 @@ async function createOrder(id) {
   }
 
   try {
-    const body = {items:[{productId:Number(product.id),quantity:1}]};
+    const fields = Array.isArray(product.customer_input_fields) ? product.customer_input_fields : [];
+    const customerInput = state.customerInputs[String(product.id)] || {};
+    const missing = fields.find((field) => field.required && !String(customerInput[field.label] || '').trim());
+    if (missing) throw new Error('Lengkapi data ' + missing.label + ' terlebih dahulu.');
+    const body = {items:[{productId:Number(product.id),quantity:1,customerInput}]};
     const result = await api('/api/orders',{method:'POST',body});
     if (!result.orderNumber || !result.invoiceUrl) throw new Error('Invoice Telegram belum tersedia. Silakan periksa riwayat pesanan.');
     lastInvoice = {number:result.orderNumber,url:result.invoiceUrl};
@@ -484,10 +505,15 @@ function paintOrderRows() {
     const items = Array.isArray(row.items) ? row.items : [];
     const itemNames = items.map((item) => item.name).filter(Boolean).join(', ');
     const date = row.created_at ? new Date(row.created_at).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-    const jokiNotice = items.some((item) => item.category === 'Jasa Joki')
-      ? '<div class="box info">Form data Joki tanpa kredensial belum tersedia. Jangan kirim password, OTP, atau kode autentikasi.</div>'
-      : '';
-    return '<div class="order-row"><span class="list-art"><img src="/assets/01-brand/vaultcore-mark.svg" alt=""></span><span class="tx"><small>' + esc(row.order_number) + ' · ' + esc(date) + '</small><b>' + esc(itemNames || 'Pesanan VAULT CORE') + '</b><small>★ ' + fmt(row.total_xtr) + ' XTR</small></span><span class="status ' + statusClass(row.status) + '">' + esc(STATUS[row.status] || row.status) + '</span></div>' + jokiNotice;
+    const itemDetails = items.map((item) => {
+      const inputs = Object.entries(item.customerInputs || {}).map(([label,value]) =>
+        '<div class="order-input"><b>' + esc(label) + '</b><span>' + esc(value) + '</span></div>'
+      ).join('');
+      const deadline = item.fulfillmentDeadlineAt
+        ? '<small class="order-deadline">Tenggat: ' + esc(new Date(item.fulfillmentDeadlineAt).toLocaleString('id-ID')) + '</small>' : '';
+      return (inputs ? '<div class="order-inputs">' + inputs + '</div>' : '') + deadline;
+    }).join('');
+    return '<div class="order-row"><span class="list-art"><img src="/assets/01-brand/vaultcore-mark.svg" alt=""></span><span class="tx"><small>' + esc(row.order_number) + ' · ' + esc(date) + '</small><b>' + esc(itemNames || 'Pesanan VAULT CORE') + '</b><small>★ ' + fmt(row.total_xtr) + ' XTR</small></span><span class="status ' + statusClass(row.status) + '">' + esc(STATUS[row.status] || row.status) + '</span></div>' + (itemDetails ? '<div class="order-input-panel">' + itemDetails + '</div>' : '');
   }).join('');
 }
 
@@ -611,6 +637,15 @@ function handleClick(event) {
   }
 }
 function handleInput(event) {
+  const customerInput = event.target && event.target.closest('[data-customer-input]');
+  if (customerInput) {
+    const productId = String(customerInput.getAttribute('data-product-id') || '');
+    const label = String(customerInput.getAttribute('data-field-label') || '');
+    if (productId && label) {
+      state.customerInputs[productId] = {...(state.customerInputs[productId] || {}),[label]:customerInput.value || ''};
+    }
+    return;
+  }
   if (event.target && event.target.id === 'catalog-search') {
     state.search = event.target.value || '';
     paintCatalogVariants();

@@ -19,8 +19,8 @@ function getHomeProductAvailability(product) {
     const found = entries.find(([key]) => keys.includes(normalizeKey(key)));
     return found ? String(found[1] ?? '').trim() : '';
   };
-  const kind = read(['availabilitystatus','availabilitytype','stocktype','ketersediaan']).toUpperCase();
-  const days = Number(read(['indentdays','indentdaycount','jumlahhariindent','durasiindent']));
+  const kind = String(product?.availability_mode || read(['availabilitystatus','availabilitytype','stocktype','ketersediaan'])).toUpperCase();
+  const days = Number(product?.indent_deadline_days || read(['indentdays','indentdaycount','jumlahhariindent','durasiindent']));
   if (kind === 'INDEN' || kind === 'INDENT') {
     return Number.isSafeInteger(days) && days > 0 ? 'Inden ' + days + ' hari' : 'Inden';
   }
