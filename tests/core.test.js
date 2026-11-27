@@ -1593,10 +1593,10 @@ test('active stylesheets have unique selectors within each cascade context', () 
   assert.ok(miniAppStyles.includes('--green:#d7ff00'));
   assert.ok(miniAppStyles.includes('--gold:#f3c45a'));
   assert.ok(miniAppStyles.includes('.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;padding:12px 14px;border:1px solid rgba(211,255,122,.82)'));
-  assert.ok(miniAppStyles.includes('.nav button.on{background:rgba(163,245,43,.12);color:var(--green)'));
-  assert.ok(miniAppStyles.includes('.nav button.on .ic{background:linear-gradient(180deg,#d8ff8b,#a3e635)'));
+  assert.ok(miniAppStyles.includes('.nav button.on{background:rgba(215,255,0,.14);color:var(--green)'));
+  assert.ok(miniAppStyles.includes('.nav button.on .ic{background:linear-gradient(180deg,#efff72,#d7ff00)'));
   assert.ok(miniAppStyles.includes('.detail-price{margin:10px 0 13px;color:var(--green)'));
-  assert.ok(miniAppStyles.includes('.filters button.on{border-color:rgba(163,245,43,.7);background:rgba(163,245,43,.13);color:var(--green)'));
+  assert.ok(miniAppStyles.includes('.filters button.on{border-color:rgba(215,255,0,.78);background:rgba(215,255,0,.14);color:var(--green)'));
 });
 
 
