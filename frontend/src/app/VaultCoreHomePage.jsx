@@ -154,7 +154,10 @@ export default function VaultCoreHomePage() {
           <a href="/catalog">Jelajahi Store <b>↗</b></a>
         </div>
         <div className="vc-home-promo-visual" aria-hidden="true">
-          <img src="/assets/02-hero/hero-vaultcore-loop.webp" alt="" />
+          <picture>
+            <source media="(prefers-reduced-motion: no-preference)" srcSet="/assets/02-hero/hero-vaultcore-loop.webp" type="image/webp" />
+            <img src="/assets/02-hero/hero-vaultcore.jpg" alt="" />
+          </picture>
           <span>VAULT CORE · DIGITAL STORE</span>
         </div>
       </section>
