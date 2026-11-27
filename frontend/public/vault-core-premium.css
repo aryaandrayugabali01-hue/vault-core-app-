@@ -474,3 +474,72 @@
 @media(prefers-reduced-motion:reduce){
   .vc-home-promo-copy>a,.vc-home-search button,.vc-home-game,.vc-home-variant-card,.vc-home-product-card,.vc4-primary,.dashboard-bottom-nav a{transition:none!important}
 }
+
+
+/* VAULT CORE palette v4: Premium Golden Dark, shared across website and Telegram Mini App. */
+:root{
+  --bg:#100E08;--surface:#1D190E;--surface-2:#262012;--surface-3:#302817;
+  --panel2:#262012;--line:rgba(245,197,66,.18);--line-soft:rgba(255,255,255,.075);
+  --text:#F7F3E8;--muted:#B9B09B;--subtle:#8D846F;--gold:#F5C542;
+  --violet:#F5C542;--cyan:#B7FF35;--green:#B7FF35;--red:#FF8585;
+  --vc-bg:#100E08;--vc-surface:#1D190E;--vc-card:#211C10;--vc-line:rgba(245,197,66,.18);
+  --vc-muted:#B9B09B;--vc-text:#F7F3E8;--vc-purple:#F5C542;--vc-purple-2:#FFE18A;
+  --vc-green:#B7FF35;--vc-green-2:#D2FF83;--vc-gold:#F5C542;--vc-radius:16px;--vc-pad:16px;
+  --vc-color-canvas:#100E08;--vc-color-detail:#100E08;--vc-color-surface:#1D190E;--vc-color-surface-raised:#262012;
+  --vc-color-text:#F7F3E8;--vc-color-muted:#B9B09B;--vc-color-border:rgba(245,197,66,.18);
+  --vc-color-brand:#F5C542;--vc-color-brand-hover:#FFDA68;--vc-color-brand-active:#DDAE24;
+  --vc-color-brand-foreground:#211805;--vc-color-brand-soft:rgba(245,197,66,.12);--vc-color-brand-border:rgba(245,197,66,.42);
+  --vc-color-success:#B7FF35;--vc-color-danger:#FF8585;--vc-color-info:#D9C58B;
+  --vc-cta-border:#FFE18A;--vc-cta-shadow:0 7px 20px rgba(245,197,66,.18);--vc-cta-shadow-hover:0 8px 22px rgba(245,197,66,.24);
+}
+html,body,.vc-mobile-app{background:#100E08!important;color:#F7F3E8}
+.vc-mobile-app{min-height:100vh}
+.dashboard-topbar{background:rgba(16,14,8,.96)!important;border-bottom-color:rgba(245,197,66,.18)!important}
+.dashboard-search,.admin-form input,.admin-form textarea,.admin-form select,.cap-input,.admin-indent-days input{
+  background:#151208!important;border-color:rgba(245,197,66,.22)!important;color:#F7F3E8!important
+}
+.dashboard-search input::placeholder,.admin-form input::placeholder,.admin-form textarea::placeholder{color:#8D846F!important}
+.dashboard-search button{background:rgba(245,197,66,.10)!important;color:#F5C542!important;border-color:rgba(245,197,66,.28)!important}
+.dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded){
+  background:linear-gradient(180deg,rgba(35,29,15,.98),rgba(16,14,8,.99)) padding-box,linear-gradient(100deg,rgba(245,197,66,.72),rgba(245,197,66,.18),rgba(183,255,53,.35)) border-box!important;
+  box-shadow:0 12px 35px rgba(0,0,0,.5),0 0 20px rgba(245,197,66,.08)!important
+}
+.dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded) a.active{color:#F5C542!important;background:rgba(245,197,66,.10)!important;box-shadow:inset 0 0 0 1px rgba(245,197,66,.32),0 0 16px rgba(245,197,66,.07)!important}
+.dashboard-bottom-nav-icon{border-color:rgba(245,197,66,.25)!important;background:linear-gradient(145deg,#302817,#1D190E)!important;color:#FFE18A!important}
+.dashboard-bottom-nav a.active .dashboard-bottom-nav-icon{color:#211805!important;background:linear-gradient(145deg,#FFF0B0,#F5C542)!important;border-color:rgba(255,225,138,.7)!important}
+.admin-stats>div,.admin-panel,.admin-card,.owner-panel,.owner-card,.orders-modal{
+  background:linear-gradient(150deg,#262012,#1D190E)!important;border-color:rgba(245,197,66,.16)!important
+}
+.admin-table-wrap{background:rgba(21,18,8,.72)!important;border-color:rgba(245,197,66,.16)!important}
+.admin-table th{background:#262012!important;border-bottom-color:rgba(245,197,66,.22)!important;color:#DCCB9C!important}
+.admin-table td{color:#E7DFCA!important}
+.admin-table tbody tr:hover td{background:rgba(245,197,66,.045)!important}
+.admin-actions button,.icon-button{background:#262012!important;border-color:rgba(245,197,66,.24)!important;color:#F7F3E8!important}
+.admin-actions button:hover,.icon-button:hover{border-color:rgba(245,197,66,.62)!important;background:#302817!important}
+.admin-primary,.vc4-primary,.vc4-featured-actions button,.vc4-sku-buy button,.vc-home-promo-copy>a{
+  background:#F5C542!important;border-color:#FFE18A!important;color:#211805!important
+}
+.admin-primary:hover,.vc4-primary:hover,.vc4-featured-actions button:hover,.vc4-sku-buy button:hover,.vc-home-promo-copy>a:hover{background:#FFDA68!important}
+.vc-home,.vc4-shell,.vc-mobile-app .customer-account-page{background:#100E08!important;color:#F7F3E8!important}
+.vc-home-search,.vc-home-empty,.vc4-card,.vc4-product-tile,.vc4-product-skeleton,.vc4-purchase-journey,.vc4-dialog,.vc4-cart-row,.vc4-order{
+  background:linear-gradient(150deg,#262012,#1D190E)!important;border-color:rgba(245,197,66,.16)!important
+}
+.vc-home-promo,.vc4-featured-hero{background-color:#1D190E!important;border-color:rgba(245,197,66,.38)!important}
+.vc-home-price,.vc4-featured-price,.vc4-price-large,.vc4-price-stack strong,.vc-home-promo-copy h1 em{color:#FFE18A!important}
+.vc-home-stock-dot.is-ready,.vc-home-stock-dot.is-ready i,.vc-home-status.is-ready,.vc4-status-ready,.vc4-status-ready .vc4-status-dot{color:#B7FF35!important}
+.vc-home-stock-dot.is-ready i,.vc4-stock-indicator.is-ready i{background:#B7FF35!important}
+.vc-home-stock-dot.is-indent,.vc4-status-indent,.vc4-stock-indicator.is-pending{color:#B9B09B!important}
+.vc-home-stock-dot.is-indent i,.vc4-stock-indicator.is-pending i{background:#8D846F!important}
+.vc4-stock-indicator.is-ready{color:#D2FF83!important}
+.vc-home-quick-filters a.is-selected,.vc4-filter-bar button.active{background:rgba(245,197,66,.12)!important;border-color:#F5C542!important;color:#FFE18A!important}
+.vc-home-game,.vc-home-variant-card,.vc-home-activity,.vc-home-benefits article,.vc-home-product-card{
+  background:linear-gradient(150deg,#262012,#1D190E)!important;border-color:rgba(245,197,66,.16)!important
+}
+.customer-account-page{background:radial-gradient(ellipse at 12% 0%,rgba(245,197,66,.10),transparent 36%),linear-gradient(180deg,#100E08,#151208 55%,#100E08)!important}
+.customer-account-card{background:linear-gradient(150deg,#262012,#1D190E)!important;border-color:rgba(245,197,66,.22)!important;color:#F7F3E8!important}
+.customer-account-intro,.customer-account-note{color:#B9B09B!important}
+.customer-account-status,.customer-account-identity{background:rgba(255,255,255,.035)!important;border-color:rgba(245,197,66,.16)!important}
+.customer-account-kicker,.customer-account-secondary{color:#FFE18A!important}
+.customer-account-primary{background:linear-gradient(180deg,#FFE18A,#F5C542)!important;color:#211805!important}
+.vc-home a:focus-visible,.vc4-shell button:focus-visible,.vc4-shell a:focus-visible,.dashboard-topbar a:focus-visible{outline-color:#F5C542!important}
+@media(prefers-reduced-motion:reduce){.vc-home-promo-copy>a,.vc-home-search button,.vc-home-game,.vc-home-variant-card,.vc-home-product-card,.vc4-primary,.dashboard-bottom-nav a{transition:none!important}}
