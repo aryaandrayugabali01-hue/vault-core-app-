@@ -152,12 +152,8 @@ export default function VaultCoreHomePage() {
           <a href="/catalog">Jelajahi Store <b>↗</b></a>
         </div>
         <aside className="vc-home-promo-board" aria-hidden="true">
-          <div className="vc-home-promo-board-head"><b>FEATURED</b><small>VAULT CORE / STORE</small></div>
-          <div className="vc-home-promo-board-grid">
-            {GAME_CARDS.map((game) => <span key={game.code}><img src={game.art} alt=""/><i>{game.short}</i></span>)}
-          </div>
-          <div className="vc-home-promo-board-foot"><span>DISCOVER</span><span>PLAY</span></div>
-        </aside>
+           <img className="vc-home-promo-loop" src="/assets/02-hero/hero-vaultcore-loop.webp" alt="" fetchPriority="high"/>
+         </aside>
       </section>
 
       <section className="vc-home-section" id="categories">
