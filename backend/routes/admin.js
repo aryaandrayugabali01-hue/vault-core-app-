@@ -239,9 +239,7 @@ router.patch('/products/:id', async (req, res) => {
   if (req.body.status === 'ACTIVE') {
     const { rows } = await pool.query(
       `SELECT p.id,p.is_test,p.fulfillment_type,p.sale_price_xtr,p.current_rights_review_id,
-              rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested,
-              rr.rights_basis,rr.publisher_platform,rr.official_terms_url,
-              rr.authorization_evidence_reference,rr.chain_of_title,rr.transfer_method,rr.region
+              rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
        FROM products p LEFT JOIN product_rights_reviews rr
          ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
        WHERE p.id=$1`,
@@ -269,15 +267,6 @@ router.patch('/products/:id', async (req, res) => {
         error: 'PRODUCT_RIGHTS_REVIEW_REQUIRED',
         message: 'Aktivasi memerlukan pemeriksaan internal Owner berstatus APPROVED yang lengkap dan masih berlaku.'
       });
-    }
-    if ((product.rights_basis && !['OWNER_CREATED','OWNER_OWNED','SERVICE'].includes(product.rights_basis)
-         || String(product.publisher_platform || '').toUpperCase() !== 'INTERNAL_OWNER')
-        && !product.authorization_evidence_reference) {
-      return res.status(409).json({ error: 'AUTHORIZATION_EVIDENCE_REFERENCE_REQUIRED' });
-    }
-    if (String(product.publisher_platform || '').toUpperCase() !== 'INTERNAL_OWNER'
-        && !product.official_terms_url) {
-      return res.status(409).json({ error: 'OFFICIAL_TERMS_URL_REQUIRED' });
     }
   }
 

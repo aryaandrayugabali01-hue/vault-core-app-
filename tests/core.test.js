@@ -749,28 +749,29 @@ test('Owner-created product review can be approved only with complete internal a
   assert.ok(new Date(result.value.validUntil) > now);
 });
 
-test('external product approval requires an official terms URL and authorization reference', () => {
+test('external account product approval does not require publisher terms or authorization references', () => {
   const now = new Date('2026-11-23T12:00:00.000Z');
   const base = {
     rightsBasis:'AUTHORIZED_VENDOR',
     publisherPlatform:'Example Publisher',
-    chainOfTitle:'Vendor source and seller authority are documented in the reviewed agreement.',
-    transferMethod:'Use the publisher-approved transfer process.',
+    chainOfTitle:'Vendor source and seller authority are recorded by the store owner.',
+    transferMethod:'Manual account handover to the customer after confirmed payment.',
     region:'Indonesia',
     validUntil:'2026-12-31',
     reviewStatus:'APPROVED',
     ownerAttested:true
   };
-  assert.deepEqual(
-    validateRightsReviewInput(base, now).errors.sort(),
-    ['AUTHORIZATION_EVIDENCE_REFERENCE_REQUIRED','OFFICIAL_TERMS_URL_REQUIRED'].sort()
-  );
-  const complete = validateRightsReviewInput({
+  const approvedWithoutPublisherDocuments = validateRightsReviewInput(base, now);
+  assert.equal(approvedWithoutPublisherDocuments.ok, true);
+  assert.equal(approvedWithoutPublisherDocuments.value.officialTermsUrl, null);
+  assert.equal(approvedWithoutPublisherDocuments.value.authorizationEvidenceReference, null);
+
+  const noPublisherLabel = validateRightsReviewInput({
     ...base,
-    officialTermsUrl:'https://publisher.example/terms',
-    authorizationEvidenceReference:'DOC-OWNER-2026-001'
+    publisherPlatform:''
   }, now);
-  assert.equal(complete.ok, true);
+  assert.equal(noPublisherLabel.ok, true);
+  assert.equal(noPublisherLabel.value.publisherPlatform, null);
 });
 
 test('Owner review rejects incomplete declarations, invalid URLs and expired validity dates', () => {
@@ -790,6 +791,16 @@ test('Owner review rejects incomplete declarations, invalid URLs and expired val
   assert.ok(result.errors.includes('OWNER_ATTESTATION_REQUIRED'));
   assert.ok(result.errors.includes('VALID_UNTIL_MUST_BE_FUTURE'));
   assert.ok(result.errors.includes('OFFICIAL_TERMS_URL_MUST_BE_HTTPS'));
+});
+
+test('account activation has no publisher terms or publisher evidence gate', () => {
+  const rights = readFileSync(new URL('../backend/services/rightsReviewService.js', import.meta.url), 'utf8');
+  const admin = readFileSync(new URL('../backend/routes/admin.js', import.meta.url), 'utf8');
+  const migration = readFileSync(new URL('../database/migrations/029_remove_publisher_sales_gate.sql', import.meta.url), 'utf8');
+  assert.doesNotMatch(rights, /AUTHORIZATION_EVIDENCE_REFERENCE_REQUIRED|OFFICIAL_TERMS_URL_REQUIRED/);
+  assert.doesNotMatch(admin, /AUTHORIZATION_EVIDENCE_REFERENCE_REQUIRED|OFFICIAL_TERMS_URL_REQUIRED/);
+  assert.match(migration, /DROP CONSTRAINT IF EXISTS product_rights_review_evidence_required/);
+  assert.doesNotMatch(migration, /PRODUCT_RIGHTS_AUTHORIZATION_REFERENCE_REQUIRED|PRODUCT_OFFICIAL_TERMS_URL_REQUIRED/);
 });
 
 test('rights review validity expires at its date and inventory must use the current review', () => {

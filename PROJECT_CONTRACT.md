@@ -5,9 +5,9 @@
 |---|---|
 | Nama proyek | VAULT CORE |
 | Jenis dokumen | Kontrak spesifikasi dan acuan pelaksanaan proyek |
-| Versi | 2.1 — CR-16 Unified Product Input and UI |
+| Versi | 2.2 — CR-17 Removal of Publisher Sales Gate |
 | Tanggal dokumen | 27 November 2026 |
-| Status | CR-03 s.d. CR-15 tetap berlaku; CR-16 menetapkan form produk terpadu satu aksi dan standar UI berdasarkan instruksi tertulis Owner, 27 November 2026 |
+| Status | CR-17 menghapus pemeriksaan ketentuan penerbit sebagai filter penjualan internal; CR-16 dan ketentuan lain tetap berlaku sejauh tidak diubah CR-17 |
 | Model usaha | Single-Vendor Store |
 | Kanal utama | Website, Telegram Bot, dan Telegram Mini App |
 | Domain rencana | `vaultcore.biz.id` (belum dikonfirmasi kepemilikannya dan konfigurasi DNS-nya) |
@@ -1828,4 +1828,33 @@ Rating, angka penjualan, promo, diskon, jam dukungan, dan klaim operasional lain
 
 ---
 
-**Akhir Addendum CR-16 — VAULT CORE Project Contract v2.1 (27 November 2026).**
+# 39. Addendum CR-17 — Penghapusan Filter Penerbit dari Aktivasi dan Penjualan SKU Akun
+
+**Tanggal:** 27 November 2026  
+**Status:** Diperintahkan secara eksplisit oleh Owner dalam percakapan proyek.  
+**Berlaku:** Mengubah Bagian 3.3, 28.1, 28.2, 28.4, 28.5, 35.2, 36.2, dan 36.4 sejauh bagian tersebut menjadikan ketentuan penerbit/platform sebagai syarat teknis penjualan VAULT CORE. Jika ada pertentangan, CR-17 berlaku untuk perilaku aplikasi.
+
+## 39.1 Keputusan ruang lingkup
+
+VAULT CORE tidak menerapkan larangan menyeluruh atau filter otomatis penjualan akun berdasarkan nama penerbit, tautan ketentuan penerbit, ada/tidaknya surat otorisasi penerbit, maupun penilaian teks kebijakan penerbit. Status SKU tidak boleh otomatis menjadi PAUSED/REJECTED hanya karena penerbit/platform eksternal atau karena kolom referensi penerbit tidak diisi.
+
+Kolom `publisher_platform`, `official_terms_url`, dan `authorization_evidence_reference` diperlakukan sebagai metadata opsional. Kolom tersebut tidak menjadi syarat untuk menyimpan review, menetapkan review APPROVED, mengaktifkan SKU, menampilkan SKU, atau membuat order.
+
+## 39.2 Kriteria aktivasi yang tetap digunakan
+
+Perubahan ini hanya menghapus gerbang penerbit. Kriteria kesiapan katalog yang sudah ada tetap digunakan: status produk, harga komersial XTR, pemetaan varian/kategori, review internal Owner yang valid dan attested, serta stok aktual yang dapat dijual. CR-17 tidak menambahkan kriteria penjualan baru.
+
+Tidak ada kode yang menafsirkan teks kebijakan penerbit untuk memutuskan status SKU. Tidak ada tindakan otomatis untuk menghentikan penjualan hanya berdasarkan publisher/platform. Catatan publisher dapat disimpan bila Owner ingin mengisinya, tetapi kosongnya metadata itu tidak boleh memblokir transaksi.
+
+## 39.3 Batas perubahan
+
+CR-17 tidak mengubah pembayaran Telegram Stars (XTR), struktur produk, harga, stok, reservasi, order, refund, SLA READY/INDENT, metode pemenuhan manual, maupun larangan menyimpan kredensial akun di dalam aplikasi.
+
+Perubahan ini menetapkan perilaku internal VAULT CORE. Aplikasi tidak menyatakan bahwa penerbit telah memberikan izin atau bahwa ketentuan eksternal tertentu telah berubah. VAULT CORE juga tidak membuat penilaian hukum otomatis atas transaksi. Tanggung jawab keputusan komersial dan data sumber produk tetap berada pada Owner sesuai deklarasi internal yang sudah ada.
+
+## 39.4 Implementasi dan pemulihan SKU
+
+Validasi backend, constraint database, dan trigger aktivasi tidak lagi mensyaratkan URL ketentuan penerbit maupun referensi bukti otorisasi penerbit. SKU akun yang sebelumnya dijeda semata-mata oleh gerbang publisher dapat diaktifkan kembali apabila memenuhi kriteria kesiapan yang sudah ada. Riwayat audit pemblokiran lama tetap disimpan sebagai catatan historis; aktivasi ulang dicatat sebagai peristiwa audit baru.
+
+**Akhir Addendum CR-17 — VAULT CORE Project Contract v2.2 (27 November 2026).**
+

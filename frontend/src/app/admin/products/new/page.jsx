@@ -135,7 +135,7 @@ export default function NewProductPage() {
       }
 
       const reviewReady = Boolean(
-        rightsForm.rightsBasis && rightsForm.publisherPlatform.trim()
+        rightsForm.rightsBasis
         && rightsForm.chainOfTitle.trim() && rightsForm.transferMethod.trim()
         && rightsForm.region.trim() && rightsForm.validUntil
       );
@@ -225,9 +225,9 @@ export default function NewProductPage() {
         <label className="span-2">Referensi hak lama (opsional) <small className="field-hint">Catatan bebas ini bukan pengganti pemeriksaan CR-05</small><input value={form.rightsReviewReference} onChange={(e)=>change('rightsReviewReference',e.target.value)} placeholder="URL atau nomor referensi terdahulu" /></label>
         <div className="admin-section-head span-2"><div><span className="eyebrow muted">LANGKAH 2 · CR-05</span><h2>Pemeriksaan internal Owner</h2></div></div>
         <label>Dasar hak<select value={rightsForm.rightsBasis} onChange={e=>setRightsForm({...rightsForm,rightsBasis:e.target.value})}><option value="">Pilih dasar hak</option><option value="OWNER_CREATED">Dibuat internal Owner</option><option value="OWNER_OWNED">Dimiliki Owner</option><option value="AUTHORIZED_VENDOR">Vendor berotorisasi</option><option value="OFFICIAL_DISTRIBUTION">Distribusi resmi</option><option value="LICENSED_CONTENT">Konten berlisensi</option><option value="SERVICE">Layanan internal</option><option value="OTHER">Lainnya</option></select></label>
-        <label>Penerbit / platform<input value={rightsForm.publisherPlatform} onChange={e=>setRightsForm({...rightsForm,publisherPlatform:e.target.value})} placeholder="INTERNAL_OWNER untuk produk internal" /></label>
-        <label className="span-2">Official terms URL<input type="url" value={rightsForm.officialTermsUrl} onChange={e=>setRightsForm({...rightsForm,officialTermsUrl:e.target.value})} placeholder="https://... bila platform eksternal" /></label>
-        <label className="span-2">Referensi bukti otorisasi<input value={rightsForm.authorizationEvidenceReference} onChange={e=>setRightsForm({...rightsForm,authorizationEvidenceReference:e.target.value})} placeholder="URL, nomor surat, kontrak, atau ID dokumen" /></label>
+        <label>Penerbit / platform (opsional)<input value={rightsForm.publisherPlatform} onChange={e=>setRightsForm({...rightsForm,publisherPlatform:e.target.value})} placeholder="Metadata opsional" /></label>
+        <label className="span-2">Tautan referensi (opsional)<input type="url" value={rightsForm.officialTermsUrl} onChange={e=>setRightsForm({...rightsForm,officialTermsUrl:e.target.value})} placeholder="https://..." /></label>
+        <label className="span-2">Referensi tambahan (opsional)<input value={rightsForm.authorizationEvidenceReference} onChange={e=>setRightsForm({...rightsForm,authorizationEvidenceReference:e.target.value})} placeholder="Catatan pendukung, bila ada" /></label>
         <label className="span-2">Chain of title / asal produk<textarea rows="3" value={rightsForm.chainOfTitle} onChange={e=>setRightsForm({...rightsForm,chainOfTitle:e.target.value})} placeholder="Asal produk, pemilik sebelumnya, vendor, dan dasar kewenangan." /></label>
         <label className="span-2">Metode transfer / pemenuhan<textarea rows="3" value={rightsForm.transferMethod} onChange={e=>setRightsForm({...rightsForm,transferMethod:e.target.value})} placeholder="Jelaskan prosedur pemenuhan aktual." /></label>
         <label>Wilayah / region<input value={rightsForm.region} onChange={e=>setRightsForm({...rightsForm,region:e.target.value})} placeholder="Indonesia / Global" /></label>
@@ -235,7 +235,7 @@ export default function NewProductPage() {
         <label>Status review<select value={rightsForm.reviewStatus} onChange={e=>setRightsForm({...rightsForm,reviewStatus:e.target.value})}><option value="PENDING">PENDING</option><option value="APPROVED">APPROVED</option><option value="REJECTED">REJECTED</option></select></label>
         <label className="span-2">Catatan review<textarea rows="3" value={rightsForm.reviewNotes} onChange={e=>setRightsForm({...rightsForm,reviewNotes:e.target.value})} placeholder="Catatan keputusan internal Owner." /></label>
         <label className="span-2 field-check"><input type="checkbox" checked={rightsForm.ownerAttested} onChange={e=>setRightsForm({...rightsForm,ownerAttested:e.target.checked})} /> Saya menyatakan data yang dimasukkan benar dan bertanggung jawab atas keputusan internal Owner.</label>
-        <div className="span-2 admin-form-hint">APPROVED merupakan persetujuan internal Owner. Hak pihak ketiga dan aturan penerbit tetap berlaku.</div>
+        <div className="span-2 admin-form-hint">Penerbit dan tautan referensi hanya metadata opsional, bukan syarat aktivasi SKU di VAULT CORE.</div>
         <div className="admin-section-head span-2"><div><span className="eyebrow muted">LANGKAH 3</span><h2>Stok awal</h2></div></div>
         <label className="span-2">Referensi sumber/vendor atau asal internal Owner<input value={stockSourceReference} onChange={e=>setStockSourceReference(e.target.value)} placeholder="Nomor dokumen / ID asal stok" /></label>
         <label className="span-2">Data akun, satu JSON per baris <small className="field-hint">Data akun hanya disimpan setelah pemeriksaan internal Owner berstatus APPROVED.</small><textarea rows="6" value={stock} onChange={(e)=>setStock(e.target.value)} placeholder={'{"account_id":"...","account_password":"...","login_method":"..."}'} /></label>
