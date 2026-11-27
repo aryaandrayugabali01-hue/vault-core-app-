@@ -96,7 +96,7 @@ export default function CustomerAccountPage() {
         </a>
         <span className="customer-account-kicker">AKUN PELANGGAN</span>
         <h1>Akun VAULT CORE</h1>
-        <p className="customer-account-intro">Gunakan satu akun Telegram untuk mengakses profil yang sama di website dan Mini App. Pesanan, pembayaran, dan riwayat transaksi dikelola melalui Telegram Mini App.</p>
+        <p className="customer-account-intro">Gunakan satu akun Telegram pada website dan Mini App. Profil dan riwayat pesanan terhubung ke sistem VAULT CORE yang sama. Pembayaran diproses melalui kanal checkout yang tersedia.</p>
 
         {status === 'checking' && <div className="customer-account-status">Memeriksa sesi akun…</div>}
 
@@ -111,6 +111,7 @@ export default function CustomerAccountPage() {
           </div>
           <div className="customer-account-status is-success">Akun Telegram terverifikasi</div>
           {customer.isOwner && <a className="customer-account-secondary" href="/admin">Buka Dashboard Owner</a>}
+          <a className="customer-account-secondary" href="/catalog#transactions">Lihat Riwayat Pesanan</a>
           <a className="customer-account-primary" href={destination}>Lanjutkan</a>
           <button className="customer-account-logout" type="button" onClick={logout} disabled={busy}>{busy ? 'Memproses…' : 'Keluar dari akun web'}</button>
         </>}
