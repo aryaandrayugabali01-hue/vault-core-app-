@@ -33,22 +33,24 @@ export function normalizeCustomerDisplayText(value) {
 }
 
 const HIDDEN_CUSTOMER_PRODUCT_ATTRIBUTE_KEYS = new Set([
-  'xtr_price',
-  'price_note',
-  'price_currency',
-  'price_min_idr',
-  'price_max_idr',
-  'cost_price_note',
-  'cost_price_status',
-  'fulfillment_mode',
-  'owner_attestation_ref',
-  'authorization_evidence_status'
+  'sku','skucode','productcode','kodeproduk',
+  'subcategory','subkategori','deliverymethod','metodepenyerahan','handovermethod','transfermethod',
+  'xtrprice','pricenote','priceminidr','pricemaxidr','pricecurrency',
+  'costpricenote','costpricestatus','costpricextr','fulfillmentmode','fulfillmenttype',
+  'ownerattestationref','authorizationevidencestatus','authorizationevidencereference',
+  'rightsbasis','publisherplatform','officialtermsurl','chainoftitle','reviewstatus','reviewnotes',
+  'reviewertelegramuserid','validuntil','stocksource','stocksource reference'
 ]);
-
+const HIDDEN_CUSTOMER_ATTRIBUTE_PREFIXES = [
+  'xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview'
+];
 export function getCustomerVisibleProductAttributes(attributes) {
   if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) return [];
-  return Object.entries(attributes).filter(([key]) =>
-    !HIDDEN_CUSTOMER_PRODUCT_ATTRIBUTE_KEYS.has(key)
-    && !key.startsWith('xtr_conversion_')
-  );
+  return Object.entries(attributes).filter(([key]) => {
+    const normalized = String(key).toLowerCase().replace(/[^a-z0-9]/g,'');
+    return !HIDDEN_CUSTOMER_PRODUCT_ATTRIBUTE_KEYS.has(normalized)
+      && !HIDDEN_CUSTOMER_ATTRIBUTE_PREFIXES.some((prefix) => normalized.startsWith(prefix))
+      && !/(login|password|sandi|otp|session|recovery|token|credential|email|username)/i.test(key)
+      && !/(^|[^a-z0-9])pass(?:word)?(?:$|[^a-z0-9])/i.test(key);
+  });
 }

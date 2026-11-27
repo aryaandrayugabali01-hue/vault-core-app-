@@ -285,11 +285,24 @@ function variantPage(id) {
     'catalog', false
   );
 }
+const PRIVATE_ATTRIBUTE_KEYS = new Set([
+  'sku','skucode','productcode','kodeproduk',
+  'subcategory','subkategori','deliverymethod','metodepenyerahan','handovermethod','transfermethod',
+  'xtrprice','pricenote','priceminidr','pricemaxidr','pricecurrency',
+  'costpricenote','costpricestatus','costpricextr','fulfillmentmode','fulfillmenttype',
+  'ownerattestationref','authorizationevidencestatus','authorizationevidencereference',
+  'rightsbasis','publisherplatform','officialtermsurl','chainoftitle','reviewstatus','reviewnotes',
+  'reviewertelegramuserid','validuntil','stocksource'
+]);
 function safeAttributes(source) {
-  return Object.entries(source || {}).filter(([key]) =>
-    !/(login|password|pass|sandi|otp|session|recovery|token|credential|username|email)/i.test(key) &&
-    !/^(variant_id)$/i.test(key)
-  );
+  return Object.entries(source || {}).filter(([key]) => {
+    const normalized = String(key).toLowerCase().replace(/[^a-z0-9]/g,'');
+    return !PRIVATE_ATTRIBUTE_KEYS.has(normalized)
+      && !['xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview'].some((prefix) => normalized.startsWith(prefix))
+      && !/(login|password|sandi|otp|session|recovery|token|credential|username|email)/i.test(key)
+      && !/(^|[^a-z0-9])pass(?:word)?(?:$|[^a-z0-9])/i.test(key)
+      && normalized !== 'variantid';
+  });
 }
 function renderDetailCopy(value) {
   const normalized = String(value ?? '')

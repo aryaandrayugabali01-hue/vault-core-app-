@@ -1,8 +1,52 @@
 import { pool } from '../db/pool.js';
-import { resolveDisplayStock } from './catalogService.js';
 import { releaseExpiredPendingOrders } from './reservationService.js';
 
 const SENSITIVE_ATTRIBUTE = /(login|password|sandi|otp|session|recovery|token|credential|email|username)/i;
+const PRIVATE_CUSTOMER_ATTRIBUTE_KEYS = new Set([
+  'sku','skucode','productcode','kodeproduk',
+  'subcategory','subkategori','deliverymethod','metodepenyerahan','handovermethod','transfermethod',
+  'pricenote','priceminidr','pricemaxidr','pricecurrency','xtrprice',
+  'costpricenote','costpricestatus','costpricextr','fulfillmentmode','fulfillmenttype',
+  'ownerattestationref','authorizationevidencestatus','authorizationevidencereference',
+  'rightsbasis','publisherplatform','officialtermsurl','chainoftitle','reviewstatus','reviewnotes',
+  'reviewertelegramuserid','validuntil','stocksource reference','stocksource'
+]);
+const PRIVATE_CUSTOMER_ATTRIBUTE_PREFIXES = [
+  'xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview'
+];
+function normalizeCustomerAttributeKey(key) {
+  return String(key ?? '').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+export function sanitizeCustomerProductAttributes(attributes) {
+  if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) return {};
+  return Object.fromEntries(Object.entries(attributes).filter(([key]) => {
+    const normalized = normalizeCustomerAttributeKey(key);
+    return !SENSITIVE_ATTRIBUTE.test(key)
+      && !/(^|[^a-z0-9])pass(?:word)?(?:$|[^a-z0-9])/i.test(key)
+      && !PRIVATE_CUSTOMER_ATTRIBUTE_KEYS.has(normalized)
+      && !PRIVATE_CUSTOMER_ATTRIBUTE_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+  }));
+}
+export function toPublicCatalogProduct(sku) {
+  const actual = Math.max(0,Number(sku?.actual_stock) || 0);
+  const price = Number(sku?.sale_price_xtr);
+  return {
+    id:Number(sku?.id),
+    name:sku?.name ?? '',
+    description:sku?.description ?? '',
+    sale_price_xtr:price,
+    image_url:sku?.image_url ?? null,
+    image_gallery:Array.isArray(sku?.image_gallery) ? sku.image_gallery : [],
+    attributes:sanitizeCustomerProductAttributes(sku?.attributes),
+    customer_terms:sku?.customer_terms ?? '',
+    fulfillment_eta:sku?.fulfillment_eta ?? '',
+    availability_mode:sku?.availability_mode ?? 'READY',
+    indent_deadline_days:sku?.indent_deadline_days ?? null,
+    display_stock:null,
+    is_purchaseable:Number.isSafeInteger(price) && price>1,
+    is_available:actual>0
+  };
+}
 const GAME_CATEGORY_BY_CODE = Object.freeze({
   MLBB:'MLBB',
   FF:'FREE_FIRE',
@@ -82,24 +126,7 @@ export async function getPublicCatalogVariants(db = pool) {
     category:variant.kategori_produk,
     name:variant.jenis_varian,
     order_ready:true,
-    skus:(variant.skus ?? []).map((sku) => {
-      const actual = Math.max(0,Number(sku.actual_stock) || 0);
-      const price = Number(sku.sale_price_xtr);
-      return {
-        ...sku,
-        attributes:Object.fromEntries(
-          Object.entries(sku.attributes ?? {}).filter(([key]) => !SENSITIVE_ATTRIBUTE.test(key) && !String(key).toLowerCase().split(/[^a-z0-9]+/).includes('pass'))
-        ),
-        actual_stock:actual,
-        display_stock:resolveDisplayStock({
-          actualStock:actual,
-          mode:sku.display_stock_mode,
-          override:sku.display_stock_override
-        }),
-        is_purchaseable:Number.isSafeInteger(price) && price>1,
-        is_available:actual>0
-      };
-    })
+    skus:(variant.skus ?? []).map(toPublicCatalogProduct)
   }));
 }
 
