@@ -67,7 +67,7 @@ $$;
 
 DROP TRIGGER IF EXISTS trg_products_rights_activation ON products;
 CREATE TRIGGER trg_products_rights_activation
-BEFORE INSERT OR UPDATE OF status, current_rights_review_id, fulfillment_type, is_test
+BEFORE INSERT OR UPDATE OF status, current_rights_review_id, fulfillment_type, is_test, attributes
 ON products
 FOR EACH ROW
 EXECUTE FUNCTION vault_core_enforce_product_rights_activation();
