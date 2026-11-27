@@ -3,7 +3,6 @@ import { pool } from '../db/pool.js';
 import { normalizeProductText, normalizeProductAttributes } from '../services/productDetailsService.js';
 import { normalizeImageGallery } from '../services/marketplaceCategoryService.js';
 import { encryptPayload } from '../utils/encryption.js';
-import { isRightsReviewUsable, validateRightsReviewInput } from '../services/rightsReviewService.js';
 
 const router = Router();
 const GAME_CATEGORY = Object.freeze({
