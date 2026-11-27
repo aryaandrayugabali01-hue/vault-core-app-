@@ -938,7 +938,7 @@ test('store footer keeps the requested compact navigation and removes the Help/P
   assert.match(navigation, /Single Vendor/);
   assert.match(navigation, /aria-label="Navigasi footer"/);
   assert.match(navigation, /store-global-footer-copy/);
-  assert.doesNotMatch(navigation, /Bantuan Telegram|Hubungi Admin VAULT CORE|Bayar menggunakan Stars|Telegram Stars \\(XTR\\)|Pembayaran diproses melalui invoice resmi Telegram\\./);
+  assert.doesNotMatch(navigation, /aria-label="Bantuan dan pembayaran"|Hubungi Admin VAULT CORE|Bayar menggunakan Stars|Telegram Stars \(XTR\)|Pembayaran diproses melalui invoice resmi Telegram/);
   assert.doesNotMatch(navigation, /Anti-Hackback|Akun Dicek Manual|Garansi Refund|Terverifikasi|Sejak 2024|EST 2024/);
 });
 
