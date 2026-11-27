@@ -452,7 +452,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada produk yang tersedia untuk dipesan saat ini.</p>}
         <footer className="vc4-footer">
           <p>VAULT CORE adalah penjual tunggal. Website dan Telegram Mini App menggunakan akun pelanggan dan backend yang sama.</p>
-          <p>Telegram Mini App menggunakan invoice resmi Telegram Stars (XTR). Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram. Data akses Joki ditangani melalui vault terenkripsi dan tidak ditampilkan pada katalog.</p>
+          <p>Telegram Mini App menggunakan invoice resmi Telegram Stars (XTR). Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram. Data Joki hanya berupa identitas game dan parameter pengerjaan; password, OTP, dan kredensial autentikasi tidak diminta.</p>
         </footer>
       </main>
 

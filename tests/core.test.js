@@ -1314,6 +1314,7 @@ test('active CSS rules do not contain repeated declarations that can reintroduce
 test('account catalog and checkout use manual Owner handover without storing account credentials', () => {
   const catalog = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
   const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  const payment = readFileSync(new URL('../backend/controllers/paymentController.js', import.meta.url), 'utf8');
   const delivery = readFileSync(new URL('../backend/services/deliveryService.js', import.meta.url), 'utf8');
   assert.doesNotMatch(catalog, /vault_core_secret_payloads/);
   assert.doesNotMatch(orders, /secureVaultOnly|vault_core_secret_payloads/);
@@ -1421,16 +1422,21 @@ test('mobile shell reserves fixed navigation space once instead of stacking over
   assert.ok(global.includes('padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))'));
 });
 
-test('Joki customer UI no longer requests or submits authentication credentials', () => {
+test('Joki order form accepts safe product-specific identity fields without requesting credentials', () => {
   const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const web = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const controller = readFileSync(new URL('../backend/controllers/secretController.js', import.meta.url), 'utf8');
   const routes = readFileSync(new URL('../backend/routes/orders.js', import.meta.url), 'utf8');
-  assert.ok(mini.includes("item.category === 'Jasa Joki'"));
-  assert.ok(mini.includes('Form data Joki tanpa kredensial belum tersedia.'));
-  assert.doesNotMatch(mini,/joki-login|joki-password|submit-joki-access|customer-access/);
-  assert.ok(web.includes('Form data Joki tanpa kredensial belum tersedia.'));
-  assert.doesNotMatch(web,/accessForm\\.password|type="password".*Kata sandi|customer-access/);
+  const order = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  assert.ok(mini.includes('data-customer-input="1"'));
+  assert.ok(mini.includes('customer_input_fields'));
+  assert.ok(mini.includes('customerInput'));
+  assert.doesNotMatch(mini,/type="password"|joki-password|joki-login|submit-joki-access|customer-access/);
+  assert.ok(web.includes('vc4-customer-inputs'));
+  assert.ok(web.includes('customer_input_fields'));
+  assert.ok(web.includes('customerInput:customerInput||{}'));
+  assert.doesNotMatch(web,/type="password"|accessForm\\.password|customer-access/);
+  assert.ok(order.includes('customer_input_snapshot'));
   assert.ok(controller.includes('JOKI_CUSTOMER_INPUT_NOT_AVAILABLE'));
   assert.doesNotMatch(controller,/encryptSecretPayload/);
   assert.ok(routes.includes("router.post('/:orderNumber/customer-access', submitJokiCustomerAccess)"));
@@ -1449,7 +1455,7 @@ test('Home product cards preserve the selected SKU and display its actual listin
 });
 
 
-test('Joki customer input rejects credential collection until CR-16 safe fields are implemented', async () => {
+test('Legacy Joki credential endpoint remains closed while safe customer fields are enabled', async () => {
   let statusCode = 0;
   let body = null;
   const response = {
@@ -1464,6 +1470,8 @@ test('Joki customer input rejects credential collection until CR-16 safe fields 
   const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   assert.doesNotMatch(web, /accessForm\.password|type="password".*Kata sandi|customer-access/);
   assert.doesNotMatch(mini, /joki-password|joki-login|submit-joki-access|customer-access/);
-  assert.match(web, /Form data Joki tanpa kredensial belum tersedia/);
-  assert.match(mini, /Form data Joki tanpa kredensial belum tersedia/);
+  assert.match(web, /customer_input_fields/);
+  assert.match(mini, /customer_input_fields/);
+  assert.match(web, /vc4-customer-inputs/);
+  assert.match(mini, /data-customer-input/);
 });
