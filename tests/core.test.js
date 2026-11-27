@@ -1592,7 +1592,7 @@ test('active stylesheets have unique selectors within each cascade context', () 
   const miniAppStyles = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   assert.ok(miniAppStyles.includes('--green:#d7ff00'));
   assert.ok(miniAppStyles.includes('--gold:#f3c45a'));
-  assert.ok(miniAppStyles.includes('.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;padding:12px 14px;border:1px solid rgba(211,255,122,.82)'));
+  assert.ok(miniAppStyles.includes('.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;padding:12px 14px;border:1px solid rgba(239,255,122,.9)'));
   assert.ok(miniAppStyles.includes('.nav button.on{background:rgba(215,255,0,.14);color:var(--green)'));
   assert.ok(miniAppStyles.includes('.nav button.on .ic{background:linear-gradient(180deg,#efff72,#d7ff00)'));
   assert.ok(miniAppStyles.includes('.detail-price{margin:10px 0 13px;color:var(--green)'));
