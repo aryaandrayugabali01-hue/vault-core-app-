@@ -12,21 +12,6 @@ const GAME_CARDS = [
 ];
 const ART_BY_CODE = { MLBB:GAME_ART.MLBB, FF:GAME_ART.FREE_FIRE, FREE_FIRE:GAME_ART.FREE_FIRE, ROBLOX:GAME_ART.ROBLOX, GI:GAME_ART.GENSHIN, GENSHIN:GAME_ART.GENSHIN };
 const formatXtr = (value) => Number(value || 0).toLocaleString('id-ID');
-function getHomeProductAvailability(product) {
-  const entries = Object.entries(product?.attributes || {});
-  const normalizeKey = (value) => String(value).toLowerCase().replace(/[^a-z0-9]/g,'');
-  const read = (keys) => {
-    const found = entries.find(([key]) => keys.includes(normalizeKey(key)));
-    return found ? String(found[1] ?? '').trim() : '';
-  };
-  const kind = String(product?.availability_mode || read(['availabilitystatus','availabilitytype','stocktype','ketersediaan'])).toUpperCase();
-  const days = Number(product?.indent_deadline_days || read(['indentdays','indentdaycount','jumlahhariindent','durasiindent']));
-  if (kind === 'INDEN' || kind === 'INDENT') {
-    return Number.isSafeInteger(days) && days > 0 ? 'Inden ' + days + ' hari' : 'Inden';
-  }
-  return product?.is_available === true ? 'Ready' : 'Belum tersedia';
-}
-
 function HomeSkeleton() {
   return (
     <div className="home-skeleton-grid" aria-label="Memuat katalog">
