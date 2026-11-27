@@ -317,7 +317,7 @@ test('test fixtures are never visible through the public catalog policy', () => 
   assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: true, sale_price_xtr: 2 }), false);
 });
 
-test('public catalog endpoints share one active, priced, approved and in-stock backend source', () => {
+test('public catalog endpoints share one active, priced, Owner-selected and in-stock backend source', () => {
   const legacy = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
   const v4 = readFileSync(new URL('../backend/routes/catalogV4.js', import.meta.url), 'utf8');
   const source = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
@@ -326,9 +326,9 @@ test('public catalog endpoints share one active, priced, approved and in-stock b
   assert.match(source, /p\.status='ACTIVE'/);
   assert.match(source, /COALESCE\(p\.is_test,FALSE\)=FALSE/);
   assert.match(source, /p\.sale_price_xtr>1/);
-  assert.match(source, /rr\.review_status='APPROVED'/);
-  assert.match(source, /rr\.owner_attested=TRUE/);
-  assert.match(source, /rr\.valid_until>NOW\(\)/);
+  assert.doesNotMatch(source, /JOIN product_rights_reviews/);
+  assert.match(source, /STANDALONE_PRODUCTS_SQL/);
+  assert.match(source, /variant_id:-Number\(product\.id\)/);
   assert.match(source, /stock\.available_stock>0/);
   assert.doesNotMatch(source, /vault_core_secret_payloads/);
   assert.match(source, /availability_mode/);
@@ -923,7 +923,7 @@ test('Owner SKU lifecycle saves one safe form and publishes eligible stock witho
   const catalog = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
   assert.match(ownerRoute, /router\.post\('\/products'/);
   assert.match(ownerRoute, /OWNER_PRODUCT_SINGLE_FORM_SAVED/);
-  assert.match(ownerRoute, /validateRightsReviewInput/);
+  assert.doesNotMatch(ownerRoute, /validateRightsReviewInput|isRightsReviewUsable/);
   assert.match(ownerRoute, /AUTHENTICATION_DATA_PROHIBITED/);
   assert.match(ownerRoute, /USE_SINGLE_PRODUCT_FORM/);
   assert.doesNotMatch(ownerRoute, /vault_core_secret_payloads|encryptSecretPayload|readJokiCustomerAccess/);
@@ -1247,6 +1247,35 @@ test('active CSS rules do not contain repeated declarations that can reintroduce
     });
     assert.deepEqual(conflicts, [], file + ' contains repeated declarations inside one selector block');
   }
+});
+
+test('Owner controls each SKU with Tersedia, Inden days, and Tidak tersedia states', () => {
+  const adminRoute = readFileSync(new URL('../backend/routes/admin.js', import.meta.url), 'utf8');
+  const ownerPage = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
+  const orderRoute = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  assert.match(adminRoute, /router\.patch\('\/products\/:id\/availability'/);
+  assert.match(adminRoute, /\['AVAILABLE','INDENT','UNAVAILABLE'\]/);
+  assert.match(adminRoute, /indentDays<1\|\|indentDays>365/);
+  assert.match(ownerPage, /Tersedia/);
+  assert.match(ownerPage, /Inden/);
+  assert.match(ownerPage, /Tidak tersedia/);
+  assert.match(ownerPage, /admin-availability-buttons/);
+  assert.match(orderRoute, /product\.availability_mode === 'INDENT'/);
+  assert.doesNotMatch(ownerPage, /rights review|Penerbit/i);
+});
+
+test('publisher and rights-review metadata are not a commercial catalog or checkout gate', () => {
+  const migration = readFileSync(new URL('../database/migrations/030_product_availability_and_account_sales.sql', import.meta.url), 'utf8');
+  const catalog = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
+  const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  const payments = readFileSync(new URL('../backend/controllers/paymentController.js', import.meta.url), 'utf8');
+  const delivery = readFileSync(new URL('../backend/services/deliveryService.js', import.meta.url), 'utf8');
+  assert.match(migration, /CREATE OR REPLACE FUNCTION vault_core_enforce_product_rights_activation/);
+  assert.match(migration, /status='ACTIVE'/);
+  assert.doesNotMatch(catalog, /JOIN product_rights_reviews/);
+  assert.doesNotMatch(orders, /isRightsReviewUsable|JOIN product_rights_reviews/);
+  assert.doesNotMatch(payments, /product_rights_reviews/);
+  assert.doesNotMatch(delivery, /product_rights_reviews|rights_review_id=p\.current_rights_review_id/);
 });
 
 test('account catalog and checkout use manual Owner handover without storing account credentials', () => {
