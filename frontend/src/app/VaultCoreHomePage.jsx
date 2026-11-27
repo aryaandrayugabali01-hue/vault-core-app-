@@ -67,7 +67,7 @@ function VariantCard({ variant }) {
         <span className="vc-home-eyebrow">{variant.game}</span>
         <strong>{variant.name}</strong>
         <small>{isJoki ? (eta ? 'Estimasi: ' + eta : 'Detail dan estimasi mengikuti listing layanan') : 'Periksa spesifikasi dan status akun'}</small>
-        <span className={'vc-home-status' + (ready ? ' is-ready' : '')}>{status}</span>
+        <span className={'vc-home-status' + (available > 0 ? ' is-ready' : '')}>{status}</span>
       </span>
       <span className="vc-home-arrow">↗</span>
     </a>
