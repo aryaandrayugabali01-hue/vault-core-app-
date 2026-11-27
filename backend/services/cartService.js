@@ -40,8 +40,10 @@ export function normalizeCartItems(input = {}, { testMode = false } = {}) {
     if(next>MAX_LINE_QUANTITY)return {ok:false,error:'INVALID_ORDER_INPUT'};
     merged.set(productId,{quantity:next,customerInput});
   }
-  const items=[...merged.entries()].map(([productId,value])=>({productId,quantity:value.quantity,customerInput:value.customerInput}))
-    .sort((a,b)=>a.productId-b.productId);
+  const items=[...merged.entries()].map(([productId,value])=>({
+    productId,quantity:value.quantity,
+    ...(Object.keys(value.customerInput).length ? {customerInput:value.customerInput} : {})
+  })).sort((a,b)=>a.productId-b.productId);
   const totalQuantity = items.reduce((sum,item)=>sum+item.quantity,0);
   if (totalQuantity > MAX_TOTAL_QUANTITY || (testMode && (items.length !== 1 || totalQuantity > 5))) {
     return { ok:false, error:'INVALID_ORDER_INPUT' };

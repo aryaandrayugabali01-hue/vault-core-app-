@@ -946,6 +946,9 @@ test('cart normalization preserves legacy checkout and merges valid product line
   assert.deepEqual(normalizeCartItems({items:[{productId:8,quantity:1},{productId:3,quantity:2},{productId:8,quantity:2}]}).value.items,
     [{productId:3,quantity:2},{productId:8,quantity:3}]);
   assert.equal(normalizeCartItems({items:[{productId:2,quantity:6}]}).ok,false);
+  assert.deepEqual(normalizeCartItems({items:[{productId:9,quantity:1,customerInput:{'Player ID':'123'}}]}).value.items[0].customerInput,{'Player ID':'123'});
+  assert.equal(normalizeCartItems({items:[{productId:9,quantity:1,customerInput:{password:'secret'}}]}).ok,false);
+  assert.equal(normalizeCartItems({items:[{productId:9,quantity:1,customerInput:{'Player ID':'123'}},{productId:9,quantity:1,customerInput:{'Player ID':'456'}}]}).ok,false);
   assert.equal(normalizeCartItems({items:Array.from({length:11},(_,i)=>({productId:i+1,quantity:1}))}).ok,false);
   assert.equal(normalizeCartItems({items:[{productId:2,quantity:2},{productId:3,quantity:2}]},{testMode:true}).ok,false);
 });
@@ -967,7 +970,11 @@ test('Owner SKU lifecycle saves one safe form and publishes eligible stock witho
   assert.match(ownerPage, /READY/);
   assert.match(ownerPage, /INDENT/);
   assert.match(ownerPage, /Player\/User ID/);
+  assert.match(ownerPage, /Gold · Best Value/);
+  assert.match(ownerRoute, /tier=\$2/);
+  assert.match(ownerPage, /Permintaan Pelanggan/);
   assert.match(catalog, /availability_mode/);
+  assert.match(catalog, /customer_input_fields/);
 });test('web storefront and Owner routes retain global chrome while Mini App keeps its separate mobile shell', () => {
   const home = readFileSync(new URL('../frontend/src/app/page.jsx', import.meta.url), 'utf8');
   const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
@@ -1312,6 +1319,11 @@ test('account catalog and checkout use manual Owner handover without storing acc
   assert.doesNotMatch(orders, /secureVaultOnly|vault_core_secret_payloads/);
   assert.match(orders, /availability_mode_snapshot/);
   assert.match(orders, /indent_deadline_days_snapshot/);
+  assert.match(orders, /customer_input_snapshot/);
+  assert.match(orders, /is_account_snapshot/);
+  assert.match(orders, /customerInputSnapshot/);
+  assert.match(payment, /fulfillment_deadline_at=CASE/);
+  assert.match(payment, /NOW\(\)\+INTERVAL '1 hour'/);
   assert.match(orders, /FOR UPDATE SKIP LOCKED/);
   assert.match(delivery, /fulfillment_type === 'GAME_ACCOUNT_TRANSFER'/);
   assert.match(delivery, /OWNER_MANUAL_FULFILLMENT_REQUIRED/);

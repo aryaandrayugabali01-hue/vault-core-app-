@@ -98,10 +98,10 @@ export async function createOrder(req, res, { testMode = false } = {}) {
         : 'READY';
       const indentDays = accountAvailability === 'INDENT' ? Number(product.indent_deadline_days) : null;
       await client.query(
-        \`INSERT INTO order_items
+        `INSERT INTO order_items
           (order_id,product_id,quantity,unit_sale_xtr,unit_cost_xtr,product_name_snapshot,
            availability_mode_snapshot,indent_deadline_days_snapshot,customer_input_snapshot,is_account_snapshot,fulfillment_deadline_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,NULL)\`,
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,NULL)`,
         [order.id,product.id,item.quantity,product.sale_price_xtr,product.cost_price_xtr,product.name,
          accountAvailability,indentDays,JSON.stringify(customerInputSnapshot),product.variant_category === 'Akun']
       );
