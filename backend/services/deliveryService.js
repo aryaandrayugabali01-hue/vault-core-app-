@@ -78,8 +78,6 @@ export async function deliverPaidOrder(orderNumber) {
      JOIN products p ON p.id=i.product_id
      LEFT JOIN vault_core_secret_payloads s
        ON s.inventory_item_id=i.id AND s.secret_scope='PRODUCT_ACCOUNT' AND s.secret_status='ACTIVE'
-     LEFT JOIN product_rights_reviews rr
-       ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
      WHERE d.order_id=$1 AND d.status IN ('PENDING','FAILED')
        AND i.status='RESERVED' AND i.reserved_order_id=$1
        AND (
@@ -87,11 +85,7 @@ export async function deliverPaidOrder(orderNumber) {
          OR (
            p.status='ACTIVE'
            AND p.fulfillment_type IS NOT NULL
-           AND i.rights_review_id=p.current_rights_review_id
-           AND i.source_reference IS NOT NULL
-           AND rr.review_status='APPROVED'
-           AND rr.owner_attested=TRUE
-           AND rr.valid_until>NOW()
+           AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
          )
        )
      ORDER BY d.id`,
