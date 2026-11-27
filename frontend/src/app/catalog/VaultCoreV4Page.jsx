@@ -420,7 +420,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         {notice && <div className="vc4-notice" role="status">{notice}<button type="button" onClick={()=>setNotice('')} aria-label="Tutup">×</button></div>}
         {error && <div className="vc4-error">{error}<button type="button" onClick={loadCatalog}>Coba lagi</button></div>}
         {loading
-          ? <div className="vc4-product-skeleton-grid" aria-label="Memuat produk">{Array.from({length:4},(_,i)=><div className="vc4-product-skeleton" key={i}><span/><i/><i/></div>)}</div>
+          ? <div className="vc4-product-skeleton-grid" aria-label="Memuat produk">{Array.from({length:4},(_,i)=><div className="vc4-product-skeleton" key={i}><b className="vc4-skeleton-art"/><i className="vc4-skeleton-line"/><i className="vc4-skeleton-line short"/></div>)}</div>
           : <section className="vc4-products-section">
               <div className="vc4-products-heading"><div><span>STORE · KATALOG AKTIF</span><h2>{group==='ALL'?'Produk tersedia':group==='Jasa Joki'?'Layanan Joki':'Akun game'}</h2></div><small>{visibleProducts.length} produk</small></div>
               {visibleProducts.length>0
@@ -440,6 +440,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
                           <span className="vc4-product-tile-copy">
                             <small>{product.game} · {product.group}</small>
                             <strong>{product.name}</strong>
+                            {product.display_stock!==null&&product.display_stock!==undefined&&<small>{product.display_stock===1?'STOK TERAKHIR':typeof product.display_stock==='number'?fmt(product.display_stock)+' stok':product.display_stock}</small>}
                             <PriceDisplay product={product} compact/>
                           </span>
                         </button>

@@ -193,7 +193,7 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
   assert.ok(catalogRoute.includes('return <VaultCoreV4Catalog />;'));
   assert.ok(catalog.includes('/assets/01-brand/vaultcore-horizontal.svg'));
   assert.ok(catalog.includes('GAME_ART[MARKET_GAME_CODE[code]]'));
-  assert.ok(catalog.includes('GAME_ART[MARKET_GAME_CODE[variant.game_code]]'));
+  assert.ok(catalog.includes('GAME_ART[MARKET_GAME_CODE[product.game_code]]'));
   assert.ok(owner.includes("from '../../lib/marketplace.js'"));
   assert.ok(ownerV4.includes('OWNER V4'));
   assert.ok(marketplace.includes('export const GAME_ART'));
@@ -1029,6 +1029,7 @@ test('v4 product details wrap long specifications and refresh inventory from the
   assert.ok(page.includes('safeAttrs(selected.product.attributes)'));
   assert.ok(page.includes('image_gallery'));
   assert.ok(page.includes('display_stock'));
+  assert.ok(page.includes('STOK TERAKHIR'));
   assert.ok(page.includes('loadCatalog'));
   assert.ok(styles.includes('overflow-wrap:anywhere'));
   assert.ok(styles.includes('vc4-details'));
@@ -1038,15 +1039,16 @@ test('v4 product detail keeps the approved dark Vault Core catalog palette', () 
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   assert.ok(page.includes('vc4-nav'));
-  assert.ok(page.includes('vc4-card-art'));
-  assert.ok(page.includes('vc4-sku-list'));
+  assert.ok(page.includes('vc4-product-tile-art'));
+  assert.ok(page.includes('vc4-product-grid'));
+  assert.ok(page.includes('vc4-product-gold'));
   assert.ok(page.includes('vc4-dialog'));
   assert.ok(page.includes('vc4-product-terms'));
   assert.ok(page.includes('vc4-security-guide'));
   assert.match(styles, /--vc4-page:#090d14/);
   assert.match(styles, /--vc4-card:#111925/);
   assert.match(styles, /--vc4-gold:#ffc928/);
-  assert.ok(styles.includes('.vc4-grid{grid-template-columns:1fr'));
+  assert.ok(styles.includes('.vc4-product-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))'));
 });
 
 test('MLBB account detail uses the public v4 DTO, last-stock label, and four-step security guide', () => {
@@ -1101,8 +1103,8 @@ test('v4 account catalogue shows MLBB filters only for MLBB accounts', () => {
 test('Apple v4 mobile product detail preserves SKU price, attributes, terms and secure purchase action', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
-  assert.ok(page.includes('vc4-card-foot'));
-  assert.ok(page.includes('vc4-price-large'));
+  assert.ok(page.includes('vc4-detail-buybar'));
+  assert.ok(page.includes('<PriceDisplay product={selected.product}/>'));
   assert.ok(page.includes('vc4-details'));
   assert.ok(page.includes('vc4-product-terms'));
   assert.ok(page.includes('vc4-security-guide'));
@@ -1110,7 +1112,7 @@ test('Apple v4 mobile product detail preserves SKU price, attributes, terms and 
   assert.ok(page.includes('Bayar dengan Telegram Stars'));
   assert.ok(styles.includes('@media(max-width:760px)'));
   assert.ok(styles.includes('grid-template-columns:1fr'));
-  assert.ok(styles.includes('.vc4-dialog{padding:28px 20px}'));
+  assert.ok(styles.includes('.vc4-detail-buybar{position:sticky'));
 });
 
 test('v4 customer catalog footer follows XTR, account-security and Telegram payment rules', () => {

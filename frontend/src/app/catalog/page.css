@@ -477,8 +477,8 @@ border-color:rgba(190,204,224,.25);background:rgba(15,23,36,.78);color:#e8edf5;}
 .vc4-product-tile-actions button:disabled{border-color:rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#777383}
 .vc4-product-skeleton-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
 .vc4-product-skeleton{display:grid;gap:10px;padding:9px;border:1px solid rgba(164,142,255,.1);border-radius:16px;background:#1e1e1e}
-.vc4-product-skeleton span,.vc4-product-skeleton i{display:block;border-radius:9px;background:linear-gradient(90deg,#22222d,#30303d,#22222d);animation:vc4-product-pulse 1.4s ease-in-out infinite}
-.vc4-product-skeleton span{aspect-ratio:1.18}.vc4-product-skeleton i{height:10px}.vc4-product-skeleton i:last-child{width:60%}
+.vc4-skeleton-art,.vc4-skeleton-line{display:block;border-radius:9px;background:linear-gradient(90deg,#22222d,#30303d,#22222d);animation:vc4-product-pulse 1.4s ease-in-out infinite}
+.vc4-skeleton-art{aspect-ratio:1.18}.vc4-skeleton-line{height:10px}.vc4-skeleton-line.short{width:60%}
 @keyframes vc4-product-pulse{0%,100%{opacity:.58}50%{opacity:1}}
 .vc4-detail-dialog{display:flex;flex-direction:column;max-height:min(88dvh,900px);overflow-y:auto}
 .vc4-detail-buybar{position:sticky;bottom:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:14px;margin:18px -20px -20px;padding:13px 20px calc(13px + env(safe-area-inset-bottom,0px));border-top:1px solid rgba(164,142,255,.16);background:rgba(12,12,20,.96);backdrop-filter:blur(16px)}
