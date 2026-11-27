@@ -537,3 +537,113 @@ html { background:#100e08!important; color:#f7f3e7!important; }
 .vco-alert { border-color:rgba(245,197,66,.22)!important;background:rgba(245,197,66,.07)!important;color:#f0dfad!important; }
 .vco-selected-head span,.vco-question>span,.vco-secret-result span,.vco-hero span,.vco-section-head span,.vco-publish span { color:#f5d77d!important; }
 .vco-selected-head>b.good { border-color:rgba(183,255,53,.30)!important;background:rgba(183,255,53,.10)!important;color:#b7ff35!important; }
+
+
+/* Website Home parity with the Telegram Mini App home layout. */
+@media(max-width:767px) {
+  .vc-home { gap:14px!important; }
+  .vc-home-header {
+    position:sticky!important;
+    top:0!important;
+    z-index:70!important;
+    min-height:44px!important;
+    margin:-8px -15px 10px!important;
+    padding:calc(7px + env(safe-area-inset-top,0px)) 14px 8px!important;
+    border-bottom:1px solid rgba(245,197,66,.18)!important;
+    background:rgba(16,14,8,.95)!important;
+    backdrop-filter:blur(18px)!important;
+    -webkit-backdrop-filter:blur(18px)!important;
+  }
+  .vc-home-brand img { width:118px!important; max-height:30px!important; }
+  .vc-home-header-actions { gap:6px!important; }
+  .vc-home-search-shortcut,.vc-home-notification,.vc-home-profile {
+    display:grid!important;
+    place-items:center!important;
+    width:34px!important;
+    height:34px!important;
+    border:1px solid rgba(245,197,66,.22)!important;
+    border-radius:11px!important;
+    background:linear-gradient(145deg,#272112,#171309)!important;
+    color:#f7f3e7!important;
+    box-shadow:none!important;
+  }
+  .vc-home-search-shortcut svg,.vc-home-notification svg,.vc-home-profile svg {
+    width:19px!important;
+    height:19px!important;
+    fill:none!important;
+    stroke:currentColor!important;
+    stroke-width:1.8!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+  }
+  .vc-home-search { 
+    min-height:44px!important;
+    margin:4px 0 13px!important;
+    padding:0 12px!important;
+    border:1px solid rgba(245,197,66,.34)!important;
+    border-radius:12px!important;
+    background:#1d190e!important;
+    color:#f0dfad!important;
+  }
+  .vc-home-search input { padding:12px 0!important; font-size:11px!important; color:#f7f3e7!important; }
+  .vc-home-search button { color:#b7ff35!important; font-size:22px!important; }
+  .vc-home-section { gap:9px!important; }
+  .vc-home-section-heading h2 { font-size:15px!important; line-height:1.25!important; }
+  .vc-home-section-heading>a { font-size:10px!important; }
+  .vc-home-games { gap:9px!important; margin:8px 0 15px!important; }
+  .vc-home-game {
+    display:grid!important;
+    justify-items:center!important;
+    gap:6px!important;
+    min-width:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+  .vc-home-game>span {
+    display:grid!important;
+    place-items:center!important;
+    width:100%!important;
+    max-width:78px!important;
+    aspect-ratio:1!important;
+    overflow:hidden!important;
+    border:1px solid rgba(145,255,174,.34)!important;
+    border-radius:15px!important;
+    background:#171309!important;
+    box-shadow:0 5px 14px rgba(0,0,0,.22)!important;
+  }
+  .vc-home-game img { width:100%!important; height:100%!important; object-fit:cover!important; }
+  .vc-home-game strong { font-size:10px!important; font-weight:850!important; line-height:1.2!important; }
+  .vc-home-game small { display:none!important; }
+  .vc-home-quick-filters.home-group-tabs {
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:5px!important;
+    padding:4px!important;
+    border:1px solid rgba(245,197,66,.2)!important;
+    border-radius:24px!important;
+    background:#171309!important;
+  }
+  .vc-home-quick-filters.home-group-tabs a {
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-width:0!important;
+    min-height:34px!important;
+    padding:8px 10px!important;
+    border:0!important;
+    border-radius:20px!important;
+    background:transparent!important;
+    color:#d8cfb6!important;
+    font-size:10px!important;
+    font-weight:850!important;
+  }
+  .vc-home-quick-filters.home-group-tabs a.is-selected {
+    border:0!important;
+    background:#b7ff35!important;
+    color:#172007!important;
+    box-shadow:0 0 14px rgba(183,255,53,.13)!important;
+  }
+}
