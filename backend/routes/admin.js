@@ -155,6 +155,74 @@ router.post('/products', async (req, res) => {
   res.status(201).json({ product: rows[0] });
 });
 
+router.patch('/products/:id/availability', async (req,res) => {
+  const id=Number(req.params.id);
+  const availabilityStatus=String(req.body?.availabilityStatus||'').toUpperCase();
+  const indentDays=availabilityStatus==='INDENT'?Number(req.body?.indentDays):null;
+  if(!Number.isSafeInteger(id)||id<=0||!['AVAILABLE','INDENT','UNAVAILABLE'].includes(availabilityStatus)
+      ||(availabilityStatus==='INDENT'&&(!Number.isSafeInteger(indentDays)||indentDays<1||indentDays>365))){
+    return res.status(400).json({error:'INVALID_PRODUCT_AVAILABILITY'});
+  }
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const {rows}=await client.query(
+      'SELECT id,sku,is_test,sale_price_xtr,fulfillment_type,status FROM products WHERE id=$1 FOR UPDATE',
+      [id]
+    );
+    const product=rows[0];
+    if(!product){await client.query('ROLLBACK');return res.status(404).json({error:'PRODUCT_NOT_FOUND'});}
+    if(product.is_test===true){await client.query('ROLLBACK');return res.status(409).json({error:'TEST_FIXTURE_AVAILABILITY_LOCKED'});}
+    if(availabilityStatus!=='UNAVAILABLE'&&(!Number.isSafeInteger(Number(product.sale_price_xtr))||Number(product.sale_price_xtr)<=1||!product.fulfillment_type)){
+      await client.query('ROLLBACK');
+      return res.status(409).json({error:'PRODUCT_PRICE_OR_FULFILLMENT_REQUIRED',message:'Tetapkan harga jual dan metode pemenuhan sebelum produk tersedia.'});
+    }
+    const nextStatus=availabilityStatus==='UNAVAILABLE'?'PAUSED':'ACTIVE';
+    const nextMode=availabilityStatus==='INDENT'?'INDENT':'READY';
+    await client.query(
+      'UPDATE products SET status=$2,availability_mode=$3,indent_deadline_days=$4,updated_at=NOW() WHERE id=$1',
+      [id,nextStatus,nextMode,availabilityStatus==='INDENT'?indentDays:null]
+    );
+    if(availabilityStatus==='UNAVAILABLE'){
+      await client.query(
+        `UPDATE inventory_items SET status='UNAVAILABLE'
+         WHERE product_id=$1 AND status='AVAILABLE' AND reserved_order_id IS NULL`,
+        [id]
+      );
+    }else{
+      await client.query(
+        `UPDATE inventory_items SET status='AVAILABLE'
+         WHERE product_id=$1 AND status='UNAVAILABLE' AND reserved_order_id IS NULL
+           AND NULLIF(BTRIM(source_reference),'') IS NOT NULL`,
+        [id]
+      );
+    }
+    const {rows:stock}=await client.query(
+      `SELECT COUNT(*) FILTER(WHERE status='AVAILABLE' AND reserved_order_id IS NULL AND reserved_until IS NULL)::int AS available_stock,
+              COUNT(*) FILTER(WHERE status='RESERVED')::int AS reserved_stock
+       FROM inventory_items WHERE product_id=$1`,
+      [id]
+    );
+    await client.query(
+      `INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata)
+       VALUES($1,'PRODUCT_AVAILABILITY_CHANGED','PRODUCT',$2,$3::jsonb)`,
+      [String(req.telegramUser.id),String(id),JSON.stringify({sku:product.sku,availabilityStatus,indentDays:availabilityStatus==='INDENT'?indentDays:null})]
+    );
+    await client.query('COMMIT');
+    return res.json({
+      ok:true,productId:id,sku:product.sku,availabilityStatus,
+      indentDays:availabilityStatus==='INDENT'?indentDays:null,
+      status:nextStatus,availabilityMode:nextMode,
+      availableStock:Number(stock[0]?.available_stock||0),
+      reservedStock:Number(stock[0]?.reserved_stock||0)
+    });
+  }catch(error){
+    try{await client.query('ROLLBACK');}catch{}
+    console.error('[product-availability-update]',error.message);
+    return res.status(500).json({error:'PRODUCT_AVAILABILITY_UPDATE_FAILED'});
+  }finally{client.release();}
+});
+
 router.patch('/products/:id', async (req, res) => {
   const id = Number(req.params.id);
   const allowed = ['sku','game_category','tier','name','description','fulfillment_type',
@@ -605,10 +673,7 @@ router.get('/inventory', async (_req, res) => {
       COUNT(i.id) FILTER (WHERE i.status='SOLD')::int AS sold,
       COUNT(i.id) FILTER (WHERE i.status='UNAVAILABLE')::int AS unavailable
      FROM products p LEFT JOIN inventory_items i ON i.product_id=p.id
-     JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
-     WHERE COALESCE(p.is_test,FALSE)=FALSE AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER'
-       AND p.game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
-       AND mc.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun')
+     WHERE COALESCE(p.is_test,FALSE)=FALSE
      GROUP BY p.id ORDER BY p.name`
   );
   res.json({ inventory: rows });
@@ -623,38 +688,15 @@ router.post('/products/:id/inventory', async (req, res) => {
   } catch (error) {
     return res.status(400).json({ error: 'INVALID_ASSET_PAYLOAD', message: error.message });
   }
-  if (!Number.isSafeInteger(productId) || payloads.length < 1 || payloads.length > 100) {
-    return res.status(400).json({ error: 'INVALID_INVENTORY_INPUT' });
-  }
-  if (sourceReference.length < 3) {
-    return res.status(400).json({ error:'INVENTORY_SOURCE_REFERENCE_REQUIRED', message:'Isi referensi sumber/vendor atau asal internal Owner untuk batch stok ini.' });
-  }
-
+  if (!Number.isSafeInteger(productId) || payloads.length < 1 || payloads.length > 100) return res.status(400).json({ error: 'INVALID_INVENTORY_INPUT' });
+  if (sourceReference.length < 3) return res.status(400).json({ error:'INVENTORY_SOURCE_REFERENCE_REQUIRED' });
   const { rows: productRows } = await pool.query(
-    `SELECT p.id,p.status,p.is_test,p.current_rights_review_id,p.game_category,p.fulfillment_type,
-            mc.slug AS marketplace_category_slug,
-            rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
-     FROM products p
-     LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
-     LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
-     WHERE p.id=$1`, [productId]
+    'SELECT id,is_test,current_rights_review_id,fulfillment_type FROM products WHERE id=$1',[productId]
   );
   const product = productRows[0];
   if (!product) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
-  const expectedAccountSlug = ({MLBB:'mlbb-akun',FREE_FIRE:'free-fire-akun',ROBLOX:'roblox-akun',GENSHIN:'genshin-akun'})[product.game_category];
-  if (product.is_test === true || product.fulfillment_type !== 'GAME_ACCOUNT_TRANSFER' || !expectedAccountSlug || product.marketplace_category_slug !== expectedAccountSlug) {
-    return res.status(400).json({error:'ACCOUNT_PRODUCT_ONLY',message:'Stok hanya dapat ditambahkan ke produk akun game dengan subkategori Akun yang sesuai.'});
-  }
-  if (!canAddProductInventory(product, {
-    id:product.review_id,review_status:product.review_status,
-    valid_until:product.valid_until,owner_attested:product.owner_attested
-  })) {
-    return res.status(409).json({
-      error: 'PRODUCT_RIGHTS_REVIEW_REQUIRED',
-      message: 'Stok komersial hanya dapat ditambahkan setelah pemeriksaan internal Owner APPROVED dan masih berlaku.'
-    });
-  }
-
+  const supportedFulfillment = ['GAME_ACCOUNT_TRANSFER','SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE'];
+  if (product.is_test === true || !supportedFulfillment.includes(product.fulfillment_type)) return res.status(400).json({error:'PRODUCT_FULFILLMENT_INVALID'});
   const client = await pool.connect();
   const inserted = [];
   try {
@@ -665,8 +707,7 @@ router.post('/products/:id/inventory', async (req, res) => {
         `INSERT INTO inventory_items
           (product_id,payload_ciphertext,payload_nonce,payload_tag,rights_review_id,source_reference)
          VALUES ($1,$2,$3,$4,$5,$6) RETURNING id,status,created_at,rights_review_id,source_reference`,
-        [productId,encrypted.payload_ciphertext,encrypted.payload_nonce,encrypted.payload_tag,
-         product.current_rights_review_id,sourceReference]
+        [productId,encrypted.payload_ciphertext,encrypted.payload_nonce,encrypted.payload_tag,product.current_rights_review_id ?? null,sourceReference]
       );
       inserted.push(rows[0]);
     }
@@ -675,7 +716,7 @@ router.post('/products/:id/inventory', async (req, res) => {
     await client.query('ROLLBACK');
     throw error;
   } finally { client.release(); }
-  await audit(req,'INVENTORY_ADDED','PRODUCT',productId,{ count:inserted.length, sourceReference, rightsReviewId:product.current_rights_review_id });
+  await audit(req,'INVENTORY_ADDED','PRODUCT',productId,{ count:inserted.length, sourceReference });
   res.status(201).json({ inserted:inserted.length, items:inserted });
 });
 
