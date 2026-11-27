@@ -214,9 +214,11 @@ router.patch('/products/:id/availability', async (req,res) => {
        FROM inventory_items WHERE product_id=$1`,
       [id]
     );
-    await audit(req,'PRODUCT_AVAILABILITY_CHANGED','PRODUCT',id,{
-      sku:product.sku,availabilityStatus,indentDays:availabilityStatus==='INDENT'?indentDays:null
-    });
+    await client.query(
+      `INSERT INTO admin_audit_logs(actor_telegram_user_id,action,entity_type,entity_id,metadata)
+       VALUES($1,'PRODUCT_AVAILABILITY_CHANGED','PRODUCT',$2,$3::jsonb)`,
+      [String(req.telegramUser.id),String(id),JSON.stringify({sku:product.sku,availabilityStatus,indentDays:availabilityStatus==='INDENT'?indentDays:null})]
+    );
     await client.query('COMMIT');
     return res.json({
       ok:true,productId:id,sku:product.sku,availabilityStatus,
