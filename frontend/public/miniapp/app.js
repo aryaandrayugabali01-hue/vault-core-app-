@@ -277,7 +277,7 @@ function home() {
   setPage(
     headerHome() +
     '<main class="home-v3">' +
-      '<label class="search home-search">' + icon('search') + '<input id="home-search" type="search" placeholder="Cari akun game atau layanan joki..." autocomplete="off"><button type="button" data-go="/catalog" aria-label="Buka Store">' + icon('next') + '</button></label>' +
+      '<form class="search home-search" id="home-search-form">' + icon('search') + '<input id="home-search" type="search" value="' + esc(state.search || '') + '" placeholder="Cari akun game atau layanan joki..." autocomplete="off"><button type="submit" aria-label="Cari produk">' + icon('next') + '</button></form>' +
       '<section class="home-promo promo-board"><div class="home-promo-copy"><small><i></i>PAPAN PROMO · VAULT CORE</small><h1>Temukan akun game <em>& layanan joki</em></h1><p>Telusuri katalog empat game pilihan.</p><div class="home-promo-tags"><span>AKUN GAME</span><span>JOKI</span><span>4 GAME</span></div><button type="button" data-go="/catalog">Jelajahi Store <b>↗</b></button></div><aside class="home-promo-board-art" aria-hidden="true"><div class="home-promo-board-head"><b>FEATURED</b><small>VAULT CORE / STORE</small></div><div class="home-promo-board-grid">' + promoBoardArt + '</div><div class="home-promo-board-foot"><span>DISCOVER</span><span>PLAY</span></div></aside></section>' +
       '<div class="section-head"><h2>Kategori Game</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
       '<section class="games home-games">' + gameTiles + '</section>' +
@@ -780,11 +780,18 @@ function handleInput(event) {
   }
   if (event.target && event.target.id === 'home-search') {
     state.search = event.target.value || '';
-    state.catalogGroup = 'ALL';
-    state.catalogGame = 'ALL';
-    go('/catalog');
     return;
   }
+}
+function handleSubmit(event) {
+  const form = event.target;
+  if (!form || form.id !== 'home-search-form') return;
+  event.preventDefault();
+  const input = form.querySelector('#home-search');
+  state.search = input ? input.value || '' : state.search || '';
+  state.catalogGroup = 'ALL';
+  state.catalogGame = 'ALL';
+  go('/catalog');
 }
 function init() {
   if (inTelegram) {
@@ -798,6 +805,7 @@ function init() {
   }
   document.addEventListener('click',handleClick);
   document.addEventListener('input',handleInput);
+  document.addEventListener('submit',handleSubmit);
   window.addEventListener('hashchange',render);
   const splash = $('#splash');
   render();

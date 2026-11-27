@@ -210,6 +210,12 @@ test('storefront click targets and Mini App actions resolve to working routes or
   assert.match(navigation, /\/miniapp\/index\.html#\/terms/);
   assert.match(navigation, /\/miniapp\/index\.html#\/refund/);
   assert.match(miniApp, /class="home-activity" data-go="\/orders"/);
+  assert.match(miniApp, /<form class="search home-search" id="home-search-form">/);
+  assert.match(miniApp, /document\.addEventListener\('submit',handleSubmit\)/);
+  const homeSearchInput = miniApp.match(/if \(event\.target && event\.target\.id === 'home-search'\) \{([\s\S]*?)\n  \}/);
+  assert.ok(homeSearchInput, 'Home search input handler is present');
+  assert.doesNotMatch(homeSearchInput[1], /go\('\/catalog'\)/, 'Typing must not navigate before search submission');
+  assert.match(miniApp, /form\.id !== 'home-search-form'[\s\S]*?go\('\/catalog'\)/);
   assert.match(miniApp, /case 'about': case 'terms': case 'privacy': case 'refund': renderInfo\(name\)/);
   const renderedActions = new Set([...miniApp.matchAll(/data-action=["']([^"']+)["']/g)].map((match) => match[1]));
   const handledActions = new Set([...miniApp.matchAll(/action === '([^']+)'/g)].map((match) => match[1]));
