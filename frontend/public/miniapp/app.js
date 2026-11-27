@@ -263,7 +263,6 @@ function home() {
   const gameTiles = GAME_CODES.map((code) => {
     return '<button class="game-tile" type="button" data-go="/game/' + code + '"><span class="game-art"><img src="' + gameOf(code).art + '" alt="" loading="lazy"></span><b>' + esc(gameOf(code).short) + '</b></button>';
   }).join('');
-  const promoBoardArt = GAME_CODES.map((code) => '<span class="home-promo-board-tile"><img src="' + gameOf(code).art + '" alt=""><b>' + esc(gameOf(code).short) + '</b></span>').join('');
   const jokiCard = (variant) => {
     const ready = productsOf(variant).filter(isBuyable).length;
     return '<button class="home-joki-card" type="button" data-go="/variant/' + variant.variant_id + '">' +
