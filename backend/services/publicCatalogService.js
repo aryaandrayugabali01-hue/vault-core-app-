@@ -9,7 +9,7 @@ const PRIVATE_CUSTOMER_ATTRIBUTE_KEYS = new Set([
   'costpricenote','costpricestatus','costpricextr','fulfillmentmode','fulfillmenttype',
   'ownerattestationref','authorizationevidencestatus','authorizationevidencereference',
   'rightsbasis','publisherplatform','officialtermsurl','chainoftitle','reviewstatus','reviewnotes',
-  'reviewertelegramuserid','validuntil','stocksource reference','stocksource'
+  'reviewertelegramuserid','validuntil'
 ]);
 const PRIVATE_CUSTOMER_ATTRIBUTE_PREFIXES = [
   'xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview'
@@ -143,7 +143,6 @@ export function toLegacyCatalogResponse(variants) {
         variant_id:Number(variant.variant_id),
         variant_name:variant.name,
         variant_category:variant.category,
-        fulfillment_type:sku.fulfillment_type ?? (variant.category==='Akun' ? 'GAME_ACCOUNT_TRANSFER' : 'SERVICE_INSTRUCTIONS')
       });
 
       if (sku.marketplace_category_id != null && sku.marketplace_category_slug) {

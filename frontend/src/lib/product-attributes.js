@@ -39,10 +39,10 @@ const HIDDEN_CUSTOMER_PRODUCT_ATTRIBUTE_KEYS = new Set([
   'costpricenote','costpricestatus','costpricextr','fulfillmentmode','fulfillmenttype',
   'ownerattestationref','authorizationevidencestatus','authorizationevidencereference',
   'rightsbasis','publisherplatform','officialtermsurl','chainoftitle','reviewstatus','reviewnotes',
-  'reviewertelegramuserid','validuntil','stocksource','stocksource reference'
+  'reviewertelegramuserid','validuntil'
 ]);
 const HIDDEN_CUSTOMER_ATTRIBUTE_PREFIXES = [
-  'xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview'
+  'xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview','stocksource'
 ];
 export function getCustomerVisibleProductAttributes(attributes) {
   if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) return [];

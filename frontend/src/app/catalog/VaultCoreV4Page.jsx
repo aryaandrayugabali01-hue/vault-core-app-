@@ -265,7 +265,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       const found = current.find((item) => item.productId === product.id);
       if (found) return current.map((item) => item.productId === product.id ? {...item,quantity:Math.min(5,item.quantity+1)} : item);
       if (current.length >= 10) {
-        setNotice('Keranjang maksimal 10 SKU.');
+        setNotice('Keranjang maksimal 10 produk.');
         return current;
       }
       return [...current,{productId:product.id,name:product.name,price:Number(product.sale_price_xtr),quantity:1}];
