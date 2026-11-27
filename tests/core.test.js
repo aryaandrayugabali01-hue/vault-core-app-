@@ -912,7 +912,7 @@ test('public catalog DTO is an allowlist and never exposes SKU, cost, handover i
     attributes:{Rank:'Mythic',kode_produk:'FF-001',price_note:'internal'},
     customer_terms:'Ketentuan pembeli',fulfillment_eta:'Maksimal 1 jam',
     availability_mode:'READY',indent_deadline_days:null,
-    customer_input_fields:[{label:'internal field'}],fulfillment_type:'GAME_ACCOUNT_TRANSFER',
+    customer_input_fields:[{label:'Player ID'}],fulfillment_type:'GAME_ACCOUNT_TRANSFER',
     actual_stock:1,display_stock_mode:'SHOW_COUNT',display_stock_override:1,
     cost_price_xtr:0,stock_source_reference:'internal',owner_attestation_ref:'INTERNAL',
     marketplace_category_slug:'free-fire-akun'
@@ -923,7 +923,7 @@ test('public catalog DTO is an allowlist and never exposes SKU, cost, handover i
     'display_stock','is_purchaseable','is_available'
   ]);
   assert.equal(product.tier,'SERVICE');
-  assert.deepEqual(product.customer_input_fields,[{label:'internal field',type:'text',required:false,maxLength:240}]);
+  assert.deepEqual(product.customer_input_fields,[{label:'Player ID',type:'text',required:false,maxLength:240}]);
   assert.equal(product.display_stock,1);
   assert.equal(product.is_available,true);
   assert.equal(product.is_purchaseable,true);
@@ -1164,7 +1164,7 @@ test('Mini App and React catalog use the same catalog, order, and XTR payment AP
   assert.ok(react.includes("fetch(API + '/api/orders'"));
   assert.ok(mini.includes("api('/api/orders/mine')"));
   assert.ok(react.includes("'/api/orders/mine'"));
-  assert.ok(mini.includes("const body={items:[{productId:Number(product.id),quantity:1,customerInput}]}"));
+  assert.match(mini,/const body = \{items:\[\{productId:Number\(product\.id\),quantity:1,customerInput\}\]\};/);
   assert.ok(react.includes("items:cart.map(({productId,quantity,customerInput})=>({productId,quantity,customerInput:customerInput||{}}))"));
   assert.ok(mini.includes('tg.openInvoice'));
   assert.ok(react.includes('openInvoice(data.invoiceUrl,data.orderNumber)'));
