@@ -9,6 +9,18 @@ const GAME_CATEGORY_BY_CODE = Object.freeze({
   ROBLOX:'ROBLOX',
   GI:'GENSHIN'
 });
+const GAME_LABELS = Object.freeze({
+  MLBB:'Mobile Legends',
+  FREE_FIRE:'Free Fire',
+  ROBLOX:'Roblox',
+  GENSHIN:'Genshin Impact'
+});
+const GAME_CODES = Object.freeze({
+  MLBB:'MLBB',
+  FREE_FIRE:'FF',
+  ROBLOX:'ROBLOX',
+  GENSHIN:'GI'
+});
 
 const PUBLIC_VARIANTS_SQL = `
   SELECT v.variant_id,v.game_code,v.nama_game,v.kategori_produk,v.jenis_varian,
@@ -41,8 +53,6 @@ const PUBLIC_VARIANTS_SQL = `
              'actual_stock',stock.available_stock
            ) ORDER BY p.created_at DESC)
            FROM products p
-           JOIN product_rights_reviews rr
-             ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
            LEFT JOIN marketplace_categories mc
              ON mc.id=p.marketplace_category_id AND mc.is_active=TRUE
            CROSS JOIN LATERAL (
@@ -50,20 +60,15 @@ const PUBLIC_VARIANTS_SQL = `
              FROM inventory_items i
              WHERE i.product_id=p.id AND i.status='AVAILABLE'
                AND i.reserved_order_id IS NULL AND i.reserved_until IS NULL
-               AND i.rights_review_id=p.current_rights_review_id
                AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
-
            ) stock
            WHERE p.variant_id=v.variant_id
              AND p.status='ACTIVE' AND COALESCE(p.is_test,FALSE)=FALSE
              AND p.sale_price_xtr>1
-             AND rr.review_status='APPROVED'
-             AND rr.owner_attested=TRUE
-             AND rr.valid_until>NOW()
              AND (
                (v.kategori_produk='Akun' AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER')
                OR (v.kategori_produk='Jasa Joki' AND p.fulfillment_type='SERVICE_INSTRUCTIONS')
-               OR (v.kategori_produk='Item In-Game' AND p.fulfillment_type='SERVICE_INSTRUCTIONS')
+               OR (v.kategori_produk='Item In-Game' AND p.fulfillment_type IN ('SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE'))
              )
              AND stock.available_stock>0
          ),'[]'::jsonb) AS skus
@@ -71,36 +76,84 @@ const PUBLIC_VARIANTS_SQL = `
   ORDER BY v.variant_id
 `;
 
+const STANDALONE_PRODUCTS_SQL = `
+  SELECT p.id,p.sku,p.name,p.description,p.sale_price_xtr,p.image_url,p.image_gallery,
+         p.attributes,p.customer_terms,p.fulfillment_eta,p.availability_mode,p.indent_deadline_days,
+         p.customer_input_fields,p.variant_subtype,p.game_category,p.fulfillment_type,
+         p.marketplace_category_id,p.display_stock_mode,p.display_stock_override,
+         mc.slug AS marketplace_category_slug,mc.name AS marketplace_category_name,
+         mc.description AS marketplace_category_description,mc.icon AS marketplace_category_icon,
+         mc.purchase_guide,stock.available_stock AS actual_stock
+  FROM products p
+  LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id AND mc.is_active=TRUE
+  CROSS JOIN LATERAL (
+    SELECT COUNT(*)::int AS available_stock
+    FROM inventory_items i
+    WHERE i.product_id=p.id AND i.status='AVAILABLE'
+      AND i.reserved_order_id IS NULL AND i.reserved_until IS NULL
+      AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
+  ) stock
+  WHERE p.variant_id IS NULL AND p.status='ACTIVE'
+    AND COALESCE(p.is_test,FALSE)=FALSE AND p.sale_price_xtr>1
+    AND p.fulfillment_type IN ('SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE')
+    AND stock.available_stock>0
+  ORDER BY p.created_at DESC,p.id DESC
+`;
+
+function formatSku(sku) {
+  const actual = Math.max(0,Number(sku.actual_stock) || 0);
+  const price = Number(sku.sale_price_xtr);
+  return {
+    ...sku,
+    attributes:Object.fromEntries(
+      Object.entries(sku.attributes ?? {}).filter(([key]) =>
+        !SENSITIVE_ATTRIBUTE.test(key)
+        && !String(key).toLowerCase().split(/[^a-z0-9]+/).includes('pass')
+      )
+    ),
+    actual_stock:actual,
+    display_stock:resolveDisplayStock({
+      actualStock:actual,
+      mode:sku.display_stock_mode,
+      override:sku.display_stock_override
+    }),
+    is_purchaseable:Number.isSafeInteger(price) && price>1,
+    is_available:actual>0
+  };
+}
+
 export async function getPublicCatalogVariants(db = pool) {
   await releaseExpiredPendingOrders(db);
-  const { rows } = await db.query(PUBLIC_VARIANTS_SQL);
+  const [{ rows }, { rows: standaloneRows }] = await Promise.all([
+    db.query(PUBLIC_VARIANTS_SQL),
+    db.query(STANDALONE_PRODUCTS_SQL)
+  ]);
 
-  return rows.map((variant) => ({
+  const masterVariants = rows.map((variant) => ({
     variant_id:Number(variant.variant_id),
     game_code:variant.game_code,
     game:variant.nama_game,
     category:variant.kategori_produk,
     name:variant.jenis_varian,
     order_ready:true,
-    skus:(variant.skus ?? []).map((sku) => {
-      const actual = Math.max(0,Number(sku.actual_stock) || 0);
-      const price = Number(sku.sale_price_xtr);
-      return {
-        ...sku,
-        attributes:Object.fromEntries(
-          Object.entries(sku.attributes ?? {}).filter(([key]) => !SENSITIVE_ATTRIBUTE.test(key) && !String(key).toLowerCase().split(/[^a-z0-9]+/).includes('pass'))
-        ),
-        actual_stock:actual,
-        display_stock:resolveDisplayStock({
-          actualStock:actual,
-          mode:sku.display_stock_mode,
-          override:sku.display_stock_override
-        }),
-        is_purchaseable:Number.isSafeInteger(price) && price>1,
-        is_available:actual>0
-      };
-    })
+    skus:(variant.skus ?? []).map(formatSku)
   }));
+
+  const standaloneVariants = standaloneRows.map((product) => {
+    const game = GAME_LABELS[product.game_category] || product.game_category;
+    const gameCode = GAME_CODES[product.game_category] || product.game_category;
+    return {
+      variant_id:-Number(product.id),
+      game_code:gameCode,
+      game,
+      category:'Produk Lainnya',
+      name:product.marketplace_category_name || product.name,
+      order_ready:true,
+      skus:[formatSku(product)]
+    };
+  });
+
+  return [...masterVariants,...standaloneVariants];
 }
 
 export function toLegacyCatalogResponse(variants) {
