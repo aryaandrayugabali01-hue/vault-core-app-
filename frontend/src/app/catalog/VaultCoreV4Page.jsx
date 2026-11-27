@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { getInitData, getTelegramWebApp, openInvoice } from '../../lib/telegram.js';
+import { getInitData, getTelegramWebApp } from '../../lib/telegram.js';
 import './page.css';
 import { GAME_ART } from '../../lib/marketplace.js';
 import { getCustomerVisibleProductAttributes } from '../../lib/product-attributes.js';
@@ -103,7 +103,6 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   const [cart,setCart] = useState([]);
   const [cartRestored,setCartRestored] = useState(false);
   const [cartOpen,setCartOpen] = useState(false);
-  const [buying,setBuying] = useState(false);
   const [notice,setNotice] = useState('');
   const [ordersOpen,setOrdersOpen] = useState(false);
   const [orders,setOrders] = useState([]);
@@ -312,40 +311,9 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       current.map((item) => item.productId === productId ? {...item,quantity:Math.min(5,quantity)} : item));
   };
 
-  const checkout = async () => {
+  const checkout = () => {
     if (!cart.length) return;
-    if (!WEBSITE_QRIS_CHECKOUT_READY) {
-      setNotice('Checkout QRIS website belum aktif. Pembayaran XTR hanya tersedia melalui Telegram Mini App.');
-      return;
-    }
-    let activeCustomer = customer;
-    if (!activeCustomer) activeCustomer = await loadCustomer().catch(() => null);
-    if (!activeCustomer) {
-      setNotice('Masuk dengan Telegram terlebih dahulu untuk menyimpan pesanan atas nama Anda.');
-      window.location.assign('/account?next=%2Fcatalog');
-      return;
-    }
-    setBuying(true);
-    setNotice('Menyiapkan invoice Telegram Stars…');
-    try {
-      const initData = getInitData();
-      const response = await fetch(API + '/api/orders',{
-        method:'POST',
-        headers:{'content-type':'application/json',...(initData ? {'x-telegram-init-data':initData} : {})},
-        credentials:'include',
-        body:JSON.stringify({items:cart.map(({productId,quantity,customerInput})=>({productId,quantity,customerInput:customerInput||{}}))})
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Checkout gagal dibuat.');
-      setCart([]);
-      setCartOpen(false);
-      setNotice('Invoice ' + data.orderNumber + ' siap dibuka. Total ' + fmt(data.totalXtr) + ' XTR.');
-      openInvoice(data.invoiceUrl,data.orderNumber);
-    } catch(e) {
-      setNotice(e.message || 'Checkout gagal dibuat.');
-    } finally {
-      setBuying(false);
-    }
+    setNotice('Checkout QRIS website belum aktif. Katalog dan detail produk dapat dilihat; pembelian website dibuka setelah QRIS merchant serta harga IDR per SKU dikonfigurasi dan diuji.');
   };
 
   const showOrders = useCallback(async () => {
@@ -371,7 +339,6 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     return () => window.removeEventListener('hashchange',openOrdersFromHash);
   },[showOrders]);
 
-  const totalXtr = cart.reduce((sum,item) => sum + item.price * item.quantity,0);
   const activeVariant = selected ? (variants.find((item) => Number(item.variant_id) === selected.variant_id) || {
     game:selected.product?.game,category:selected.product?.group,name:selected.product?.variant_name || selected.product?.name
   }) : null;
@@ -527,7 +494,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             <div><button type="button" onClick={()=>setQuantity(item.productId,item.quantity-1)}>−</button><b>{item.quantity}</b><button type="button" onClick={()=>setQuantity(item.productId,item.quantity+1)}>+</button></div>
           </div>)}
           <div className="vc4-total"><span>Metode pembayaran</span><strong>{WEBSITE_QRIS_CHECKOUT_READY ? 'QRIS (IDR)' : 'QRIS website sedang disiapkan'}</strong></div>
-          <button className="vc4-primary" type="button" disabled={!WEBSITE_QRIS_CHECKOUT_READY||!cart.length||buying} onClick={checkout}>{WEBSITE_QRIS_CHECKOUT_READY ? (buying?'Menyiapkan pembayaran…':'Bayar dengan QRIS') : 'Checkout belum tersedia'}</button>
+          <button className="vc4-primary" type="button" disabled={!WEBSITE_QRIS_CHECKOUT_READY||!cart.length} onClick={checkout}>{WEBSITE_QRIS_CHECKOUT_READY ? 'Bayar dengan QRIS' : 'Checkout belum tersedia'}</button>
         </section>
       </div>}
 
