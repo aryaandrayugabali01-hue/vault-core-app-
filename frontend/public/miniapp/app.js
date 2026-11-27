@@ -134,11 +134,16 @@ function productImage(product, cls) {
 }
 function productCard(product) {
   const gold = String(product.tier || '').toUpperCase() === 'GOLD';
+  const mode = String(product.availability_mode || '').toUpperCase();
+  const available = product.is_available === true;
+  const statusClass = mode === 'INDENT' ? 'is-indent' : available ? 'is-ready' : 'is-unavailable';
+  const statusLabel = mode === 'INDENT' ? 'INDEN' : available ? 'READY' : 'TIDAK TERSEDIA';
   return '<button type="button" class="product-card' + (gold ? ' tier-gold' : '') + '" data-go="/product/' + encodeURIComponent(product.id) + '">' +
     productImage(product,'product-art') +
+    '<span class="product-availability-dot ' + statusClass + '"><i></i>' + statusLabel + '</span>' +
     (gold ? '<span class="tier-gold-label">GOLD · BEST VALUE</span>' : '') +
     '<div class="product-copy"><small>' + esc(gameOf(product.game_category).name) + ' · ' + esc(categoryLabel(product)) + '</small><b>' + esc(product.name) + '</b>' +
-    priceMarkup(product,true) + '<small class="product-status-caption">' + esc(accountAvailability(product)) + ' · ' + esc(stockLabel(product)) + '</small></div></button>';
+    priceMarkup(product,true) + '<small class="product-stock-caption">' + esc(stockLabel(product)) + '</small></div></button>';
 }
 function comingSoonCard(variant) {
   const game = gameOf(variant.game_code);
@@ -205,33 +210,24 @@ function home() {
     'home', false
   );
 }
-function catalogVariantCard(variant) {
-  const products = productsOf(variant);
-  const ready = products.filter(isBuyable).length;
-  const joki = variant.category === 'Jasa Joki';
-  const eta = products.find((product) => product.fulfillment_eta)?.fulfillment_eta;
-  const art = gameOf(variant.game_code).art;
-  return '<button class="store-variant-card" type="button" data-go="/variant/' + variant.variant_id + '">' +
-    '<span class="store-variant-art"><img src="' + esc(art) + '" alt="" loading="lazy"><small>' + (joki?'JOKI':'AKUN') + '</small></span>' +
-    '<span class="store-variant-copy"><small>' + esc(gameOf(variant.game_code).short) + ' · ' + esc(variant.category) + '</small><b>' + esc(variant.name) + '</b>' +
-    '<span class="store-variant-status ' + (ready?'ready':'') + '">' + (ready?'Ready · '+ready+' tersedia':joki?'Layanan belum tersedia':'Belum tersedia') + '</span>' +
-    (eta ? '<small>Estimasi: ' + esc(eta) + '</small>' : '') + '</span><span class="store-variant-arrow">↗</span></button>';
-}
-function paintCatalogVariants() {
-  const target = $('#catalog-variants');
+function paintCatalogProducts() {
+  const target = $('#catalog-products');
   if (!target) return;
   const group = state.catalogGroup || 'ALL';
   const game = state.catalogGame || 'ALL';
   const query = String(state.search || '').trim().toLowerCase();
-  const visible = state.variants.filter((variant) =>
-    ['Akun','Jasa Joki'].includes(variant.category) &&
-    (group==='ALL' || variant.category===group) &&
-    (game==='ALL' || variant.game_code===game) &&
-    (!query || [variant.name,variant.game,variant.category].join(' ').toLowerCase().includes(query))
-  );
+  const visible = state.products.filter((product) => {
+    if (!isBuyable(product)) return false;
+    if (game !== 'ALL' && product.game_category !== game) return false;
+    if (group !== 'ALL' && product.variant_category !== group) return false;
+    const haystack = [product.name,product.description,product.variant_name,gameOf(product.game_category).name,product.variant_category].join(' ').toLowerCase();
+    return !query || haystack.includes(query);
+  });
   target.innerHTML = visible.length
-    ? visible.map(catalogVariantCard).join('')
-    : '<div class="empty">Varian tidak ditemukan pada pilihan ini.</div>';
+    ? visible.map(productCard).join('')
+    : '<div class="empty store-empty">Belum ada produk aktif pada filter ini.</div>';
+  const count = $('#catalog-result-count');
+  if (count) count.textContent = visible.length + ' produk';
 }
 function catalog() {
   const gameTabs = [['ALL','Semua'],['MLBB','MLBB'],['FF','Free Fire'],['ROBLOX','Roblox'],['GI','Genshin']];
@@ -242,14 +238,14 @@ function catalog() {
       '<label class="search store-search">' + icon('search') + '<input id="catalog-search" type="search" placeholder="Cari akun game atau layanan joki..." value="' + esc(state.search || '') + '" autocomplete="off"></label>' +
       '<div class="store-game-tabs">' + gameTabs.map(([code,label]) => '<button type="button" data-filter-game="' + code + '" class="' + ((state.catalogGame||'ALL')===code?'on':'') + '">' + label + '</button>').join('') + '</div>' +
       '<div class="store-group-tabs">' + groupTabs.map(([code,label]) => '<button type="button" data-filter-group="' + code + '" class="' + ((state.catalogGroup||'ALL')===code?'on':'') + '">' + label + '</button>').join('') + '</div>' +
-      '<div class="store-tier-hint"><span>VARIAN KATALOG</span><small>Akun dan Jasa Joki · Empat game</small></div>' +
-      '<div id="catalog-variants" class="store-variant-grid">' + (!state.loaded ? '<i class="vc-skeleton"></i><i class="vc-skeleton"></i><i class="vc-skeleton"></i><i class="vc-skeleton"></i>' : '') + '</div>' +
+      '<div class="store-tier-hint"><span>PRODUK TERSEDIA</span><small id="catalog-result-count">Mengambil data katalog...</small></div>' +
+      '<div id="catalog-products" class="store-product-grid">' + (!state.loaded ? '<i class="vc-skeleton"></i><i class="vc-skeleton"></i><i class="vc-skeleton"></i><i class="vc-skeleton"></i>' : '') + '</div>' +
       (state.loadError ? '<div class="empty">' + esc(state.loadError) + '</div>' : '') +
-      '<div class="store-source-note">Detail produk, harga, stok, dan estimasi mengikuti data katalog VAULT CORE.</div>' +
+      '<div class="store-source-note">Detail, harga XTR, status, dan ketersediaan mengikuti listing backend VAULT CORE.</div>' +
     '</main>',
     'catalog', false
   );
-  if (state.loaded) paintCatalogVariants();
+  if (state.loaded) paintCatalogProducts();
 }
 function gamePage(code) {
   const game = GAMES[code];
@@ -606,14 +602,14 @@ function handleClick(event) {
   if (groupFilter) {
     state.catalogGroup = groupFilter.getAttribute('data-filter-group');
     $('.store-group-tabs button').forEach((button) => button.classList.toggle('on',button === groupFilter));
-    paintCatalogVariants();
+    paintCatalogProducts();
     return;
   }
   const gameFilter = event.target.closest('[data-filter-game]');
   if (gameFilter) {
     state.catalogGame = gameFilter.getAttribute('data-filter-game');
     $('.store-game-tabs button').forEach((button) => button.classList.toggle('on',button === gameFilter));
-    paintCatalogVariants();
+    paintCatalogProducts();
     return;
   }
   const button = event.target.closest('[data-action]');
@@ -648,7 +644,7 @@ function handleInput(event) {
   }
   if (event.target && event.target.id === 'catalog-search') {
     state.search = event.target.value || '';
-    paintCatalogVariants();
+    paintCatalogProducts();
     return;
   }
   if (event.target && event.target.id === 'home-search') {
@@ -664,8 +660,8 @@ function init() {
     try {
       tg.ready();
       tg.expand();
-      tg.setHeaderColor('#070914');
-      tg.setBackgroundColor('#070914');
+      tg.setHeaderColor('#08080f');
+      tg.setBackgroundColor('#08080f');
       if (tg.BackButton) tg.BackButton.onClick(() => { history.length > 1 ? history.back() : go('/home'); });
     } catch (_) {}
   }

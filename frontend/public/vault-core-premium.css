@@ -167,6 +167,30 @@
 }
 
 /* Mini App Home + Store surfaces in the shared premium system. */
+/* Product-first Mini App Store: real, purchasable backend SKUs only. */
+.store-product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch}
+.store-product-grid .product-card{position:relative;display:flex;flex:initial;flex-direction:column;width:100%;height:100%;min-width:0;overflow:hidden;border:1px solid rgba(145,127,172,.26);border-radius:15px;background:linear-gradient(145deg,#211a2d,#121117);box-shadow:0 8px 20px rgba(0,0,0,.24);text-align:left}
+.store-product-grid .product-art{position:relative;width:100%;height:auto;aspect-ratio:1.28;overflow:hidden;background:#171320}
+.store-product-grid .product-art img{width:100%;height:100%;object-fit:cover}
+.store-product-grid .product-copy{display:grid;gap:6px;flex:1;padding:10px;min-width:0}
+.store-product-grid .product-copy>small:first-child{color:#a79bbd;font-size:8px;line-height:1.35}
+.store-product-grid .product-copy>b{display:-webkit-box;min-height:31px;overflow:hidden;color:#f4f1f8;font-size:10px;line-height:1.35;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.store-product-grid .price{margin-top:1px;color:var(--vc-green)!important;font-size:13px}
+.store-product-grid .product-stock-caption{color:#aaa3b2!important;font-size:8px!important;line-height:1.35}
+.product-availability-dot{position:absolute;z-index:2;top:8px;right:8px;display:inline-flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(9,8,14,.78);backdrop-filter:blur(8px);color:#ddd9e8;font-size:8px;font-weight:850;line-height:1}
+.product-availability-dot i{width:6px;height:6px;flex:none;border-radius:50%;background:#9ca3af}
+.product-availability-dot.is-ready{color:#c8f69a}
+.product-availability-dot.is-ready i{background:#a3e635}
+.product-availability-dot.is-indent{color:#c5b7ff}
+.product-availability-dot.is-indent i{background:#a78bfa}
+.product-availability-dot.is-unavailable{color:#b0acba}
+.store-empty{grid-column:1/-1}
+@media(max-width:360px){
+ .store-product-grid{gap:8px}
+ .store-product-grid .product-art{aspect-ratio:1.18}
+ .store-product-grid .product-copy{padding:8px}
+ .product-availability-dot{top:6px;right:6px;padding:4px 6px;font-size:7px}
+}
 .home-v3{display:grid;gap:14px}
 .home-search{margin:0 0 2px!important;min-height:44px;border-radius:13px!important;background:#1a1920!important;border-color:rgba(255,255,255,.07)!important}
 .home-promo{position:relative;isolation:isolate;display:flex;align-items:center;min-height:162px;padding:17px;overflow:hidden;border:1px solid rgba(145,76,255,.72);border-radius:18px;background:linear-gradient(105deg,rgba(9,7,18,.97),rgba(31,12,49,.72)),url('/assets/02-hero/hero-vaultcore-loop.webp') center/cover;box-shadow:0 0 24px rgba(139,60,246,.16)}
