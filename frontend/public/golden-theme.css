@@ -247,3 +247,128 @@ html,body { background:#100e08!important; color:#f7f3e7; }
 @media(prefers-reduced-motion:reduce) {
   .vc-home-promo-visual:before { animation:none; }
 }
+
+
+/* Telegram Mini App Golden Dark theme and foreground hero animation. */
+html { background:#100e08!important; color:#f7f3e7!important; }
+#app {
+  background:
+    radial-gradient(ellipse at 12% 0%,rgba(245,197,66,.11),transparent 34%),
+    radial-gradient(ellipse at 100% 42%,rgba(183,255,53,.035),transparent 35%),
+    linear-gradient(180deg,#100e08 0%,#151107 55%,#100e08 100%)!important;
+  box-shadow:0 0 0 1px rgba(245,197,66,.18)!important;
+}
+.topbar,.pagebar { background:rgba(16,14,8,.95)!important; border-bottom-color:rgba(245,197,66,.18)!important; }
+.icon-btn { border-color:rgba(245,197,66,.22)!important; background:linear-gradient(145deg,#272112,#171309)!important; color:#f7f3e7!important; }
+.back-btn { border-color:rgba(245,197,66,.22)!important; background:#211b0e!important; color:#f7f3e7!important; }
+.hero {
+  display:grid!important;
+  grid-template-columns:minmax(0,1.2fr) minmax(100px,.8fr)!important;
+  align-items:center!important;
+  gap:8px!important;
+  min-height:184px!important;
+  padding:16px 13px!important;
+  border-color:rgba(245,197,66,.72)!important;
+  background:
+    radial-gradient(ellipse at 80% 52%,rgba(245,197,66,.17),transparent 42%),
+    linear-gradient(112deg,#1d190e 0%,#211a0c 58%,#100e08 100%)!important;
+  box-shadow:0 14px 32px rgba(0,0,0,.38),0 0 24px rgba(245,197,66,.12)!important;
+}
+.hero-copy { max-width:none!important; min-width:0; }
+.hero h1 em { color:#b7ff35!important; }
+.hero p { color:#d8cfb6!important; }
+.hero .eyebrow { color:#f5d77d!important; }
+.hero-cta {
+  border-color:#ffe28a!important;
+  background:linear-gradient(180deg,#ffdc70,#f5c542)!important;
+  color:#211807!important;
+  box-shadow:0 6px 18px rgba(245,197,66,.22)!important;
+}
+.vc-miniapp-promo-visual {
+  position:relative;
+  isolation:isolate;
+  display:grid;
+  place-items:center;
+  align-self:stretch;
+  min-width:0;
+  min-height:128px;
+  overflow:hidden;
+  border:1px solid rgba(245,197,66,.42);
+  border-radius:14px;
+  background:radial-gradient(circle,rgba(245,197,66,.14),rgba(29,25,14,.92) 66%);
+  box-shadow:inset 0 0 28px rgba(245,197,66,.10),0 9px 22px rgba(0,0,0,.28);
+}
+.vc-miniapp-promo-visual:before {
+  content:"";
+  position:absolute;
+  z-index:0;
+  width:82%;
+  aspect-ratio:1;
+  border:2px solid rgba(183,255,53,.62);
+  border-top-color:rgba(245,197,66,.98);
+  border-right-color:transparent;
+  border-radius:50%;
+  box-shadow:0 0 18px rgba(183,255,53,.16),inset 0 0 16px rgba(245,197,66,.10);
+  animation:vc-core-orbit 7s linear infinite;
+}
+.vc-miniapp-promo-visual picture { position:relative;z-index:1;display:grid;place-items:center;width:100%;height:100%; }
+.vc-miniapp-promo-visual img {
+  display:block;
+  width:100%;
+  height:100%;
+  max-height:156px;
+  object-fit:contain;
+  filter:drop-shadow(0 0 13px rgba(245,197,66,.30));
+}
+.vc-miniapp-promo-visual>span {
+  position:absolute;
+  z-index:2;
+  inset:auto 4px 5px;
+  color:#f5d77d;
+  font-size:6px;
+  font-weight:950;
+  letter-spacing:.1em;
+  text-align:center;
+  text-shadow:0 2px 6px #100e08;
+}
+.section-head h2 { color:#f7f3e7!important; }
+.section-head button,.chevron { color:#f5c542!important; }
+.game-art,.product-card,.list-card,.box,.order-row,.home-joki-card,.home-activity,.home-benefits article {
+  border-color:rgba(245,197,66,.18)!important;
+  background:linear-gradient(150deg,#211b0e,#171309)!important;
+}
+.game-art,.product-card .product-art { background-color:#171309!important; }
+.product-copy small,.list-copy small,.helptext { color:#b8ad91!important; }
+.price,.detail-price { color:#f5c542!important; }
+.search,.input,.buyer-field input,.buyer-field textarea {
+  border-color:rgba(245,197,66,.24)!important;
+  background:#1d190e!important;
+  color:#f7f3e7!important;
+}
+.search input { color:#f7f3e7!important; }
+.badge { background:#f5c542!important; color:#211807!important; }
+.badge.muted { background:#332a16!important; color:#d8cfb6!important; }
+.home-group-tabs button,.filters button,.chip {
+  border-color:rgba(245,197,66,.2)!important;
+  background:#1d190e!important;
+  color:#d8cfb6!important;
+}
+.home-group-tabs button.on,.filters button.on {
+  border-color:#b7ff35!important;
+  background:#b7ff35!important;
+  color:#172007!important;
+}
+.status.ok,.product-availability-dot.is-ready,.home-joki-status.ready { color:#b7ff35!important; }
+.nav { background:rgba(16,14,8,.97)!important; border-top-color:rgba(245,197,66,.18)!important; }
+.nav button.on { color:#b7ff35!important; background:rgba(183,255,53,.12)!important; }
+.nav button.on .ic { color:#172007!important; background:linear-gradient(180deg,#d5ff75,#b7ff35)!important; }
+.splash { background:radial-gradient(ellipse at 50% 40%,rgba(245,197,66,.20),transparent 45%),#100e08!important; }
+.toast { border-color:rgba(245,197,66,.26)!important; background:#211b0e!important; color:#f7f3e7!important; }
+
+@media(max-width:360px) {
+  .hero { grid-template-columns:minmax(0,1.16fr) minmax(82px,.84fr)!important; min-height:160px!important; padding:13px 10px!important; }
+  .vc-miniapp-promo-visual { min-height:108px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .vc-miniapp-promo-visual:before { animation:none; }
+}
