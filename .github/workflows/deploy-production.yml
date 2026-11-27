@@ -235,7 +235,35 @@ jobs:
           fi
 
       - name: Deploy frontend Worker
-        run: npm --workspace frontend run deploy:vinext
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          import path from "node:path";
+          import { createRequire } from "node:module";
+
+          const frontendRoot = path.resolve("frontend");
+          const require = createRequire(path.join(frontendRoot, "package.json"));
+          const packageJsonPath = require.resolve("cf/package.json");
+          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+          const bin = typeof packageJson.bin === "string" ? packageJson.bin : packageJson.bin?.cf;
+          if (typeof bin !== "string" || !bin) {
+            throw new Error("Cloudflare cf CLI executable was not found.");
+          }
+          const binPath = path.resolve(path.dirname(packageJsonPath), bin);
+          const source = fs.readFileSync(binPath, "utf8");
+          const shebang = "#!/usr/bin/env node";
+          if (!source.startsWith(shebang)) {
+            throw new Error("Unexpected cf CLI entrypoint; refusing to patch an unknown executable.");
+          }
+          const injection = '\nif (process.argv[2] === "deploy" && !process.argv.includes("--force")) process.argv.splice(3, 0, "--force");\n';
+          if (!source.includes('process.argv[2] === "deploy" && !process.argv.includes("--force")')) {
+            fs.writeFileSync(binPath, source.replace(shebang, shebang + injection));
+          }
+          console.log("Enabled cf deploy --force for the existing script-API Worker conflict.");
+          NODE
+          npm --workspace frontend run deploy:vinext
 
       - name: Verify application Workers and database health
         shell: bash
