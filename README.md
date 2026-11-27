@@ -11,7 +11,7 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 ## Project documents
 
 - [Blueprint and Master Operation (MO)](docs/VAULT_CORE_BLUEPRINT_MASTER_OPERATION.md) — complete execution blueprint, operating procedures, QA, deployment, risk register, and go-live gates.
-- [Project Contract](PROJECT_CONTRACT.md) — current project contract v2.0 CR-15; see Section 37 for temporary website QRIS and unchanged Mini App XTR checkout.
+- [Project Contract](PROJECT_CONTRACT.md) — current project contract v2.3 CR-18; Sections 37–40 define website QRIS, Mini App XTR, the single Owner product form, and the approved visual direction.
 - [Deployment Status](DEPLOYMENT_STATUS.md) — infrastructure and production readiness record.
 - [Production Deployment Runbook](PRODUCTION_DEPLOYMENT_RUNBOOK.md) — secrets, workflow, routing, and Telegram webhook procedure.
 
