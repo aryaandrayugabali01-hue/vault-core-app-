@@ -272,17 +272,17 @@ test('website catalog stays browse-only until QRIS is ready; Telegram Mini App r
   const miniApp = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   assert.ok(route.includes("from './VaultCoreV4Page'"));
-  assert.match(page, /api\\/customer-auth\\/session/);
-  assert.match(page, /credentials:'include'/);
-  assert.match(page, /const WEBSITE_QRIS_CHECKOUT_READY = false/);
-  assert.match(page, /Checkout QRIS website belum aktif/);
-  assert.doesNotMatch(page, /openInvoice/);
-  assert.doesNotMatch(page, /fetch\\(API \\+ '\\/api\\/orders',/);
-  assert.match(miniApp, /XTR/);
-  assert.match(miniApp, /openInvoice/);
-  assert.match(navigation, /href="\\/miniapp\\/index\\.html"/);
-  assert.match(navigation, /QRIS · Website/);
-  assert.match(navigation, /Telegram Stars \\(XTR\\)/);
+  assert.ok(page.includes('api/customer-auth/session'));
+  assert.ok(page.includes("credentials:'include'"));
+  assert.ok(page.includes('const WEBSITE_QRIS_CHECKOUT_READY = false'));
+  assert.ok(page.includes('Checkout QRIS website belum aktif'));
+  assert.equal(page.includes('openInvoice'), false);
+  assert.equal(page.includes("fetch(API + '/api/orders'"), false);
+  assert.ok(miniApp.includes('XTR'));
+  assert.ok(miniApp.includes('openInvoice'));
+  assert.ok(navigation.includes('href="/miniapp/index.html"'));
+  assert.ok(navigation.includes('QRIS · Website'));
+  assert.ok(navigation.includes('Telegram Stars (XTR)'));
 });
 
 test('expired pending orders are atomically cancelled, unreserved, and hidden from stock counts', async () => {
