@@ -1160,7 +1160,7 @@ test('Mini App header and bottom navigation do not stack over the product detail
   assert.ok(html.includes('id="nav" aria-label="Navigasi utama" hidden'));
   assert.ok(app.includes("nav.hidden = Boolean(hideNav)"));
   assert.ok(app.includes("headerPage('Detail Produk')"));
-  assert.ok(app.includes("'catalog', true"));
+  assert.ok(app.includes("'catalog', false"));
   assert.ok(css.includes('.nav[hidden]{display:none!important}'));
   assert.ok(css.includes('width:min(calc(100% - 24px),430px)'));
   assert.ok(css.includes('border-radius:26px'));
@@ -1172,11 +1172,32 @@ test('Mini App header and bottom navigation do not stack over the product detail
   assert.ok(css.includes('.pagebar{position:sticky'));
 });
 
+test('Mini App Buy opens the backend-priced Telegram Stars invoice directly', () => {
+  const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  const telegram = readFileSync(new URL('../backend/services/telegramApi.js', import.meta.url), 'utf8');
+  const payment = readFileSync(new URL('../backend/controllers/paymentController.js', import.meta.url), 'utf8');
+  assert.ok(app.includes("if (action === 'buy') { startCheckout(button.getAttribute('data-id')); return; }"));
+  assert.ok(app.includes('return beginCheckout(id);'));
+  assert.ok(app.includes('await createOrder(product.id);'));
+  assert.ok(app.includes("api('/api/orders',{method:'POST',body})"));
+  assert.ok(app.includes('lastInvoice = {number:result.orderNumber,url:result.invoiceUrl};'));
+  assert.ok(app.includes('openInvoice();'));
+  assert.equal(app.includes('function renderCheckout('),false);
+  assert.equal(app.includes("action === 'checkout-next'"),false);
+  assert.equal(app.includes("action === 'pay'"),false);
+  assert.ok(orders.includes('Number(product.sale_price_xtr)*item.quantity'));
+  assert.ok(orders.includes('amount:Number(order.total_xtr)'));
+  assert.ok(telegram.includes("currency: 'XTR'"));
+  assert.ok(telegram.includes('prices: [{ label: title.slice(0, 32), amount }]'));
+  assert.ok(payment.includes('Number(order.total_xtr) === Number(query.total_amount)'));
+});
+
 test('product detail converts escaped backend newlines into readable sections and avoids duplicate generic terms', () => {
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(sw.includes('vault-core-miniapp-v6'));
+  assert.ok(sw.includes('vault-core-miniapp-v7'));
   assert.ok(app.includes(".replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n')"));
   assert.ok(app.includes("renderDetailCopy(product.customer_terms)"));
   assert.ok(app.includes("details.push(renderDetailCopy(product.description))"));
@@ -1223,7 +1244,7 @@ test('mobile app assets are included in the static frontend and service worker n
   assert.ok(manifest.includes('"scope":"/miniapp/"'));
   assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
   for (const asset of ['/game-icons/mlbb.webp','/game-icons/free-fire.webp','/game-icons/roblox.webp','/game-icons/genshin-impact.webp']) assert.ok(sw.includes(asset));
-  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v6'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v7'"));
 });
 
 test('active CSS rules do not contain repeated declarations that can reintroduce same-rule conflicts', () => {
