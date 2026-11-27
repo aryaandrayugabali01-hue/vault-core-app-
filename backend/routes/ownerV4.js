@@ -48,7 +48,19 @@ router.get('/products',async(_req,res)=>{
   `SELECT p.id,p.sku,p.name,p.description,p.status,p.game_category,p.tier,p.fulfillment_type,
    p.variant_id,p.variant_subtype,p.sale_price_xtr,p.cost_price_xtr,p.image_url,p.image_gallery,p.attributes,
    p.customer_terms,p.fulfillment_eta,p.availability_mode,p.indent_deadline_days,p.stock_quantity_declared,
-   p.stock_source_reference,p.customer_input_fields,p.current_rights_review_id,p.created_at,p.updated_at,
+   COALESCE(
+    p.stock_source_reference,
+    CASE
+     WHEN COUNT(DISTINCT NULLIF(BTRIM(i.source_reference),'')) FILTER(
+       WHERE i.status='AVAILABLE' AND i.rights_review_id=p.current_rights_review_id
+     )=1
+     THEN MIN(NULLIF(BTRIM(i.source_reference),'')) FILTER(
+       WHERE i.status='AVAILABLE' AND i.rights_review_id=p.current_rights_review_id
+     )
+     ELSE NULL
+    END
+   ) AS stock_source_reference,
+   p.customer_input_fields,p.current_rights_review_id,p.created_at,p.updated_at,
    mc.slug AS legacy_category_slug,
    CASE mc.slug
     WHEN 'mlbb-akun' THEN 1

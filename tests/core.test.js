@@ -1258,6 +1258,7 @@ test('account catalog and checkout use manual Owner handover without storing acc
   assert.match(ownerRoute, /PRODUCT_VARIANT_ALREADY_ASSIGNED/);
   assert.match(ownerRoute, /status=CASE WHEN status='ACTIVE' THEN 'PAUSED' ELSE status END/);
   assert.match(ownerRoute, /V4_LEGACY_PRODUCT_VARIANT_MAPPED/);
+  assert.match(ownerRoute, /COALESCE\([\s\S]*p\.stock_source_reference[\s\S]*i\.source_reference/);
 });test('legacy multi-step question, inventory and publish endpoints are disabled', () => {
   const ownerRoute = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
   assert.match(ownerRoute, /router\.get\('\/products\/:[^']+\/questions'.*USE_SINGLE_PRODUCT_FORM/);
