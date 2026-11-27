@@ -266,18 +266,23 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
   assert.ok(ownerV4.includes('Pembayaran 1 XTR tetap merupakan potongan Stars sungguhan'));
 });
 
-test('web catalog remains backend-driven while Telegram invoice and Mini App flow stay supported', () => {
+test('website catalog stays browse-only until QRIS is ready; Telegram Mini App retains XTR checkout', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const route = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const miniApp = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   assert.ok(route.includes("from './VaultCoreV4Page'"));
-  assert.match(page, /api\/customer-auth\/session/);
-  assert.match(page, /credentials:'include'/);
-  assert.match(page, /POST/);
-  assert.match(page, /invoice Telegram Stars/);
-  assert.match(page, /Telegram Stars \(XTR\)/);
-  assert.match(page, /let activeCustomer = customer/);
-  assert.match(page, /openInvoice\(data\.invoiceUrl,data\.orderNumber\)/);
-  assert.doesNotMatch(page, /Rekber|Escrow|transfer bank|direct transfer|QRIS|PayLater/i);
+  assert.ok(page.includes('api/customer-auth/session'));
+  assert.ok(page.includes("credentials:'include'"));
+  assert.ok(page.includes('const WEBSITE_QRIS_CHECKOUT_READY = false'));
+  assert.ok(page.includes('Checkout QRIS website belum aktif'));
+  assert.equal(page.includes('openInvoice'), false);
+  assert.equal(page.includes("fetch(API + '/api/orders'"), false);
+  assert.ok(miniApp.includes('XTR'));
+  assert.ok(miniApp.includes('openInvoice'));
+  assert.ok(navigation.includes('href="/miniapp/index.html"'));
+  assert.ok(navigation.includes('QRIS · Website'));
+  assert.ok(navigation.includes('Telegram Stars (XTR)'));
 });
 
 test('expired pending orders are atomically cancelled, unreserved, and hidden from stock counts', async () => {
@@ -420,11 +425,16 @@ test('v4 customer catalog and Owner product routes use the canonical source behi
   assert.match(ownerRoute, /router\.post\('\/products\/:[^']+\/publish'/);
 });
 
-test('v4 customer catalog displays product prices only in Telegram Stars XTR', () => {
+test('website price display is withheld until QRIS configuration is ready', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
-  assert.match(page, /sale_price_xtr\)[^\n]*XTR/);
-  assert.match(page, /openInvoice\(data\.invoiceUrl,data\.orderNumber\)/);
-  assert.doesNotMatch(page, /formatIdrRange|price_min_idr|price_max_idr|Referensi pasar|Rp\s?\d/i);
+  const miniApp = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  assert.ok(page.includes('const WEBSITE_QRIS_CHECKOUT_READY = false'));
+  assert.ok(page.includes('Harga website sedang disiapkan'));
+  assert.ok(page.includes('QRIS website belum aktif'));
+  assert.equal(page.includes('openInvoice'), false);
+  assert.equal(page.includes("fetch(API + '/api/orders'"), false);
+  assert.ok(miniApp.includes('XTR'));
+  assert.ok(miniApp.includes('openInvoice'));
 });
 
 test('test products require the Owner-only test checkout lane', () => {
@@ -1106,7 +1116,7 @@ test('v4 product details wrap long specifications and refresh inventory from the
   assert.ok(styles.includes('vc4-details'));
 });
 
-test('v4 product detail keeps the approved dark Vault Core catalog palette', () => {
+test('v4 product detail uses the approved dark-gold and neon-lime Vault Core palette', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   assert.ok(page.includes('vc4-nav'));
@@ -1116,9 +1126,10 @@ test('v4 product detail keeps the approved dark Vault Core catalog palette', () 
   assert.ok(page.includes('vc4-dialog'));
   assert.ok(page.includes('vc4-product-terms'));
   assert.ok(page.includes('vc4-security-guide'));
-  assert.match(styles, /--vc4-page:#090d14/);
-  assert.match(styles, /--vc4-card:#111925/);
-  assert.match(styles, /--vc4-gold:#ffc928/);
+  assert.match(styles, /--vc4-page:#0d0a04/);
+  assert.match(styles, /--vc4-card:#191407/);
+  assert.match(styles, /--vc4-gold:#f3c45a/);
+  assert.match(styles, /--vc4-green:#d7ff00/);
   assert.ok(styles.includes('.vc4-product-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))'));
 });
 
@@ -1171,7 +1182,7 @@ test('v4 account catalogue shows MLBB filters only for MLBB accounts', () => {
   assert.match(ownerRoutes, /vault_core_pertanyaan_wajib_only/);
 });
 
-test('Apple v4 mobile product detail preserves SKU price, attributes, terms and secure purchase action', () => {
+test('Apple v4 mobile product detail preserves SKU attributes, terms and gated purchase action', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   assert.ok(page.includes('vc4-detail-buybar'));
@@ -1179,22 +1190,28 @@ test('Apple v4 mobile product detail preserves SKU price, attributes, terms and 
   assert.ok(page.includes('vc4-details'));
   assert.ok(page.includes('vc4-product-terms'));
   assert.ok(page.includes('vc4-security-guide'));
-  assert.ok(page.includes('Tambah ke keranjang'));
-  assert.ok(page.includes('Bayar dengan Telegram Stars'));
+  assert.ok(page.includes('QRIS website belum aktif'));
+  assert.ok(page.includes('Checkout belum tersedia'));
+  assert.equal(page.includes('Bayar dengan Telegram Stars'), false);
   assert.ok(styles.includes('@media(max-width:760px)'));
   assert.ok(styles.includes('grid-template-columns:1fr'));
   assert.ok(styles.includes('.vc4-detail-buybar{position:sticky'));
 });
 
-test('v4 customer catalog footer follows XTR, account-security and Telegram payment rules', () => {
+test('v4 customer catalog footer states QRIS website and Mini App XTR separately', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/src/app/catalog/page.css', import.meta.url), 'utf8');
   assert.ok(page.includes('Telegram Mini App'));
   assert.ok(page.includes('Telegram Stars (XTR)'));
   assert.ok(page.includes('Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram'));
   assert.ok(page.includes('Data Joki hanya berupa identitas game dan parameter pengerjaan'));
   assert.equal(page.includes('vault terenkripsi'),false);
-  for (const unsupportedMethod of ['BCA','Mandiri','BNI','Maybank','BRI','Indomaret','Alfamart','QRIS','ShopeePay','PayLater']) assert.equal(page.includes(unsupportedMethod),false);
+  for (const unsupportedMethod of ['BCA','Mandiri','BNI','Maybank','BRI','Indomaret','Alfamart','ShopeePay','PayLater']) assert.equal(page.includes(unsupportedMethod),false);
+  assert.ok(navigation.includes('QRIS · Website'));
+  assert.ok(navigation.includes('Checkout QRIS website sedang disiapkan.'));
+  assert.ok(navigation.includes('Telegram Stars (XTR)'));
+  assert.ok(navigation.includes('href="/miniapp/index.html"'));
   assert.ok(styles.includes('.vc4-footer'));
 });
 
@@ -1225,7 +1242,7 @@ test('the production website opens the React catalog while the Telegram Mini App
   assert.equal(app.includes('window.VAULT_VARIANTS'),false);
 });
 
-test('Mini App and React catalog use the same catalog, order, and XTR payment API contract', () => {
+test('Mini App and React catalog share catalog and order history while checkout remains channel-specific', () => {
   const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const react = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
@@ -1234,13 +1251,13 @@ test('Mini App and React catalog use the same catalog, order, and XTR payment AP
   assert.ok(mini.includes("api('/api/catalog/v4/variants')"));
   assert.ok(react.includes("'/api/catalog/v4/variants'"));
   assert.ok(mini.includes("api('/api/orders'"));
-  assert.ok(react.includes("fetch(API + '/api/orders'"));
   assert.ok(mini.includes("api('/api/orders/mine')"));
   assert.ok(react.includes("'/api/orders/mine'"));
   assert.match(mini,/const body = \{items:\[\{productId:Number\(product\.id\),quantity:1,customerInput\}\]\};/);
-  assert.ok(react.includes("items:cart.map(({productId,quantity,customerInput})=>({productId,quantity,customerInput:customerInput||{}}))"));
   assert.ok(mini.includes('tg.openInvoice'));
-  assert.ok(react.includes('openInvoice(data.invoiceUrl,data.orderNumber)'));
+  assert.ok(react.includes('const WEBSITE_QRIS_CHECKOUT_READY = false'));
+  assert.equal(react.includes("fetch(API + '/api/orders'"), false);
+  assert.equal(react.includes('openInvoice'), false);
   assert.doesNotMatch(mini,/customer-access/);
   assert.doesNotMatch(react,/customer-access/);
   assert.ok(api.includes('requireTelegramUser'));
@@ -1363,7 +1380,7 @@ test('Mini App header and bottom navigation do not stack over the product detail
   assert.ok(css.includes('width:min(calc(100% - 24px),430px)'));
   assert.ok(css.includes('border-radius:26px'));
   assert.ok(css.includes('.nav .ic{box-sizing:border-box;display:block;width:36px;height:36px'));
-  assert.ok(css.includes('linear-gradient(100deg,rgba(92,246,133,.9),rgba(163,245,43,.74) 52%,rgba(92,246,133,.68)'));
+  assert.ok(css.includes('linear-gradient(100deg,rgba(215,255,0,.96),rgba(243,196,90,.82) 52%,rgba(215,255,0,.9)'));
   assert.equal((app.match(/function headerHome\(/g) || []).length,1);
   assert.equal((app.match(/function headerPage\(/g) || []).length,1);
   assert.ok(css.includes('.topbar{position:sticky'));
@@ -1573,13 +1590,13 @@ test('active stylesheets have unique selectors within each cascade context', () 
     assert.deepEqual(duplicates, [], file + ' still contains repeated selectors in one cascade context');
   }
   const miniAppStyles = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
-  assert.ok(miniAppStyles.includes('--green:#a8f06a'));
-  assert.ok(miniAppStyles.includes('--gold:#f2c45a'));
-  assert.ok(miniAppStyles.includes('.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;padding:12px 14px;border:1px solid rgba(211,255,122,.82)'));
-  assert.ok(miniAppStyles.includes('.nav button.on{background:rgba(163,245,43,.12);color:var(--green)'));
-  assert.ok(miniAppStyles.includes('.nav button.on .ic{background:linear-gradient(180deg,#d8ff8b,#a3e635)'));
+  assert.ok(miniAppStyles.includes('--green:#d7ff00'));
+  assert.ok(miniAppStyles.includes('--gold:#f3c45a'));
+  assert.ok(miniAppStyles.includes('.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;padding:12px 14px;border:1px solid rgba(239,255,122,.9)'));
+  assert.ok(miniAppStyles.includes('.nav button.on{background:rgba(215,255,0,.14);color:var(--green)'));
+  assert.ok(miniAppStyles.includes('.nav button.on .ic{background:linear-gradient(180deg,#efff72,#d7ff00)'));
   assert.ok(miniAppStyles.includes('.detail-price{margin:10px 0 13px;color:var(--green)'));
-  assert.ok(miniAppStyles.includes('.filters button.on{border-color:rgba(163,245,43,.7);background:rgba(163,245,43,.13);color:var(--green)'));
+  assert.ok(miniAppStyles.includes('.filters button.on{border-color:rgba(215,255,0,.78);background:rgba(215,255,0,.14);color:var(--green)'));
 });
 
 
@@ -1628,14 +1645,14 @@ test('Joki order form accepts safe product-specific identity fields without requ
   assert.doesNotMatch(mini,/type="password"|joki-password|joki-login|submit-joki-access|customer-access/);
   assert.ok(web.includes('vc4-customer-inputs'));
   assert.ok(web.includes('customer_input_fields'));
-  assert.ok(web.includes('customerInput:customerInput||{}'));
+  assert.ok(web.includes('updateCustomerInput'));
+  assert.equal(web.includes('customerInput:customerInput||{}'), false);
   assert.doesNotMatch(web,/type="password"|accessForm\\.password|customer-access/);
   assert.ok(order.includes('customer_input_snapshot'));
   assert.ok(controller.includes('JOKI_CUSTOMER_INPUT_NOT_AVAILABLE'));
   assert.doesNotMatch(controller,/encryptSecretPayload/);
   assert.ok(routes.includes("router.post('/:orderNumber/customer-access', submitJokiCustomerAccess)"));
 });
-
 
 test('Home product cards preserve the selected SKU and display its actual listing availability', () => {
   const home = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
@@ -1671,19 +1688,22 @@ test('Legacy Joki credential endpoint remains closed while safe customer fields 
 });
 
 
-test('website and Mini App share a green four-game promo board', () => {
+test('website and Mini App share a gold promo panel with a visible rotating feature loop', () => {
   const webHome = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
   const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const premium = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
   const miniCss = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(webHome.includes('vc-home-promo-board-grid'));
+  assert.ok(webHome.includes('vc-home-promo-loop'));
   assert.ok(webHome.includes('PAPAN PROMO'));
-  assert.ok(mini.includes('home-promo-board-grid'));
-  assert.ok(mini.includes('promoBoardArt'));
-  assert.ok(premium.includes('--vc-green:#a8f06a'));
+  assert.ok(mini.includes('home-promo-loop'));
+  assert.ok(!mini.includes('promoBoardArt'));
+  assert.ok(premium.includes('--vc-green:#d7ff00'));
+  assert.ok(premium.includes('@keyframes vc-promo-orbit-spin'));
+  assert.ok(premium.includes('.vc-home-promo-board::before'));
+  assert.ok(premium.includes('.home-promo-board-art::before'));
   assert.ok(premium.includes('.home-promo.promo-board{'));
-  assert.ok(miniCss.includes('--green:#a8f06a'));
+  assert.ok(miniCss.includes('--green:#d7ff00'));
   assert.ok(sw.includes("'/vault-core-premium.css'"));
   assert.doesNotMatch(webHome + mini, /Diskon hingga|Diskon 50%|harga coret/);
 });

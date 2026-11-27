@@ -86,7 +86,7 @@ export function StoreFooter() {
         <section className="store-footer-brand">
           <a href="/" aria-label="VAULT CORE Beranda"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/></a>
           <h2>Lebih Yakin Bersama <span>Vault Core</span></h2>
-          <p>Jelajahi katalog melalui website atau Telegram Mini App. Pembayaran digital menggunakan Telegram Stars.</p>
+          <p>Website menggunakan QRIS merchant setelah checkout diaktifkan. Telegram Mini App menggunakan invoice resmi Telegram Stars (XTR).</p>
           <div className="store-footer-badges"><span>Single Vendor</span><span>Game &amp; Joki</span></div>
         </section>
         <nav className="store-footer-column" aria-label="Navigasi footer">
@@ -98,12 +98,14 @@ export function StoreFooter() {
           <a className="store-footer-help-link" href="https://t.me/vaultcore_support" target="_blank" rel="noopener noreferrer">
             <span className="store-footer-help-icon">✉</span><span><strong>Telegram</strong><small>Hubungi Admin VAULT CORE</small></span><NavigationIcon name="chevron"/>
           </a>
-          <a className="store-footer-help-link store-footer-stars-link" href="/catalog">
-            <span className="store-footer-help-icon">★</span><span><strong>Telegram Stars</strong><small>Bayar menggunakan Stars</small></span><NavigationIcon name="chevron"/>
+          <a className="store-footer-help-link store-footer-stars-link" href="/miniapp/index.html">
+            <span className="store-footer-help-icon">★</span><span><strong>Telegram Mini App</strong><small>Pembayaran Stars (XTR)</small></span><NavigationIcon name="chevron"/>
           </a>
           <h4>Pembayaran</h4>
+          <div className="store-footer-payment"><span>▦</span><strong>QRIS · Website</strong></div>
+          <p className="store-footer-payment-note">Checkout QRIS website sedang disiapkan.</p>
           <div className="store-footer-payment"><span>★</span><strong>Telegram Stars (XTR)</strong></div>
-          <p className="store-footer-payment-note">Pembayaran diproses melalui invoice resmi Telegram.</p>
+          <p className="store-footer-payment-note">Invoice resmi Telegram khusus Mini App.</p>
         </section>
       </div>
       <div className="store-global-footer-copy"><strong>Vault Core</strong><span>•</span>© {new Date().getFullYear()} - All Rights Reserved</div>
