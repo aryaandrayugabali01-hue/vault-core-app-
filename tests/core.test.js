@@ -1327,7 +1327,9 @@ test('account catalog and checkout use manual Owner handover without storing acc
   assert.match(orders, /is_account_snapshot/);
   assert.match(orders, /customerInputSnapshot/);
   assert.match(payment, /fulfillment_deadline_at=CASE/);
-  assert.match(payment, /NOW\(\)\+INTERVAL '1 hour'/);
+  assert.match(payment, /SELECT paid_at FROM orders WHERE id=\$1/);
+  assert.match(payment, /indent_deadline_days_snapshot\*INTERVAL '1 day'/);
+  assert.match(payment, /INTERVAL '1 hour'/);
   assert.match(orders, /FOR UPDATE SKIP LOCKED/);
   assert.match(delivery, /fulfillment_type === 'GAME_ACCOUNT_TRANSFER'/);
   assert.match(delivery, /OWNER_MANUAL_FULFILLMENT_REQUIRED/);
