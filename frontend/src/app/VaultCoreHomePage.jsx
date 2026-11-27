@@ -143,14 +143,21 @@ export default function VaultCoreHomePage() {
         <button type="submit" aria-label="Cari">→</button>
       </form>
 
-      <section className="vc-home-promo" aria-label="Promo VAULT CORE">
+      <section className="vc-home-promo" aria-label="Papan promo VAULT CORE">
         <div className="vc-home-promo-copy">
-          <span>KATALOG VAULT CORE</span>
-          <h1>Distribusi Aset Digital Game</h1>
-          <p>Akun premium dan layanan joki dari empat game pilihan.</p>
+          <span className="vc-promo-kicker"><i/> PAPAN PROMO · VAULT CORE</span>
+          <h1>Temukan akun game <em>& layanan joki</em></h1>
+          <p>Telusuri katalog Mobile Legends, Free Fire, Roblox, dan Genshin Impact.</p>
+          <div className="vc-home-promo-tags"><span>AKUN GAME</span><span>JOKI</span><span>4 GAME</span></div>
           <a href="/catalog">Jelajahi Store <b>↗</b></a>
         </div>
-        <div className="vc-home-promo-orbit" aria-hidden="true"><span>VC</span><i>✦</i></div>
+        <aside className="vc-home-promo-board" aria-hidden="true">
+          <div className="vc-home-promo-board-head"><b>FEATURED</b><small>VAULT CORE / STORE</small></div>
+          <div className="vc-home-promo-board-grid">
+            {GAME_CARDS.map((game) => <span key={game.code}><img src={game.art} alt=""/><i>{game.short}</i></span>)}
+          </div>
+          <div className="vc-home-promo-board-foot"><span>DISCOVER</span><span>PLAY</span></div>
+        </aside>
       </section>
 
       <section className="vc-home-section" id="categories">

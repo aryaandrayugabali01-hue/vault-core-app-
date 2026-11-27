@@ -1858,3 +1858,36 @@ Validasi backend, constraint database, dan trigger aktivasi tidak lagi mensyarat
 
 **Akhir Addendum CR-17 — VAULT CORE Project Contract v2.2 (27 November 2026).**
 
+
+
+# 40. Addendum CR-18 — Green Visual System and Dashboard Promo Board
+
+**Tanggal:** 28 November 2026  
+**Status:** Perubahan visual diperintahkan Owner setelah referensi visual terbaru.  
+**Berlaku:** Memperbarui bagian 38.6 untuk palet dan komposisi hero Dashboard. Ketentuan fungsional, data, harga, stok, checkout, dan fulfillment tetap mengikuti bagian kontrak yang berlaku.
+
+## 40.1 Palet visual
+
+- Background utama near-black dengan bidang surface bernuansa forest green.
+- Hijau menjadi aksen utama untuk CTA, fokus, status READY, navigasi aktif, dan highlight interaksi.
+- Gold hanya menjadi aksen sekunder untuk identitas tier GOLD atau elemen yang memang memiliki dasar data.
+- Teks utama putih, teks sekunder abu-hijau, dan border menggunakan hijau lembut beropasitas rendah.
+- Website dan Telegram Mini App menggunakan token warna, radius, tipografi, dan gaya kartu yang sama.
+
+## 40.2 Dashboard hero sebagai papan promo
+
+- Hero Dashboard wajib berbentuk papan promo yang menonjol, bukan banner generik.
+- Papan menampilkan artwork empat game yang sudah tersedia: Mobile Legends, Free Fire, Roblox, dan Genshin Impact.
+- Copy utama memperkenalkan katalog akun game dan layanan Joki, dengan CTA menuju Store.
+- Artwork dan label game mengambil aset publik yang sudah ada. Komposisi harus responsif untuk Android, dengan lebar konten maksimum 430 px.
+- Tidak boleh membuat nominal promo, diskon, harga coret, rating, angka penjualan, maupun klaim transaksi tanpa sumber backend yang benar.
+- Struktur hero website dan Telegram Mini App harus selaras, termasuk label, hierarchy copy, kolase empat game, dan CTA.
+
+## 40.3 Batas perubahan
+
+- Perubahan ini bersifat visual dan presentasional. API, database, struktur SKU, data produk, harga per kanal, stok, reservasi, order, pembayaran, refund, autentikasi, serta aturan CR-17 tidak diubah.
+- Navigasi yang ada tetap digunakan. CTA hero hanya mengarahkan ke katalog yang sudah tersedia.
+- Service worker Mini App harus menyimpan stylesheet premium bersama aset shell dan menggunakan cache version baru agar versi visual tidak tertahan oleh cache lama.
+- Seluruh kriteria penerimaan data dan transaksi pada bagian 38 tetap berlaku.
+
+**Akhir Addendum CR-18 — VAULT CORE Project Contract v2.3 (28 November 2026).**

@@ -6,7 +6,7 @@ Single-vendor Telegram Mini App store for transferable digital products, voucher
 
 ## Source of truth
 
-Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current baseline: **Project Contract v2.1 (CR-16)**. Section 38 defines the single mobile-first Owner product form, one-action database save, and catalog display flow. Section 37 continues to control temporary website QRIS (IDR), Telegram Mini App XTR, and shared customer/catalog/order/inventory data. Sections 28–37 remain applicable except where CR-16 explicitly amends them.
+Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery behavior. Current baseline: **Project Contract v2.3 (CR-18)**. Section 38 defines the single mobile-first Owner product form, one-action database save, and catalog display flow. Section 37 continues to control temporary website QRIS (IDR), Telegram Mini App XTR, and shared customer/catalog/order/inventory data. Sections 28–37 remain applicable except where CR-16 explicitly amends them.
 
 ## Project documents
 
@@ -35,9 +35,11 @@ Read `PROJECT_CONTRACT.md` before changing product, payment, stock, or delivery 
 
 ## Visual asset source of truth
 
+Latest visual direction: green-forward premium dashboard with a four-game promo board. No discount, sale price, rating, or sales claim is displayed unless backed by current backend data.
+
 - The authoritative visual asset package is `frontend/VAULT_CORE_ASSET_LIBRARY_v1.0.zip`; CI and production build extract it into `frontend/public/assets/`.
 - The dashboard, catalog header/footer, and Owner login/dashboard all use the same supplied brand file: `/assets/01-brand/vaultcore-horizontal.svg`.
-- The website catalog and Telegram Mini App share the same dark navy, violet neon, gold accent, typography, rounded card, and responsive mobile-first visual tokens. Product and game imagery is loaded from the same public assets and backend catalog response.
+- The website catalog and Telegram Mini App share the same near-black and forest-green palette, bright green action accents, restrained gold highlights, typography, rounded cards, and responsive mobile-first visual tokens. The dashboard hero is a four-game promo board built from existing public game artwork. Product and game imagery is loaded from the same public assets and backend catalog response.
 - The four primary game logos use the exact image URLs referenced by the supplied Itemku ZIPs: Mobile Legends, Roblox, Garena Free Fire, and Genshin Impact. Product-specific `image_url` takes precedence over the game-logo fallback.
 - Those logo URLs are hosted by Itemku's CloudFront image domain because the downloaded ZIPs contain the page HTML/URL references, not local binary copies of those remote image files. CI and production deployment check that all four image URLs return HTTP 200.
 - Logo-style category fallbacks render with `object-fit: contain`; seller-provided/product-specific photographs keep `object-fit: cover`.

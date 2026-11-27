@@ -1309,7 +1309,7 @@ test('product detail converts escaped backend newlines into readable sections an
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(sw.includes('vault-core-miniapp-v14'));
+  assert.ok(sw.includes('vault-core-miniapp-v15'));
   assert.ok(app.includes(".replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n')"));
   assert.ok(app.includes("renderDetailCopy(product.customer_terms)"));
   assert.ok(app.includes("details.push(renderDetailCopy(product.description))"));
@@ -1356,7 +1356,7 @@ test('mobile app assets are included in the static frontend and service worker n
   assert.ok(manifest.includes('"scope":"/miniapp/"'));
   assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
   for (const asset of ['/game-icons/mlbb.webp','/game-icons/free-fire.webp','/game-icons/roblox.webp','/game-icons/genshin-impact.webp']) assert.ok(sw.includes(asset));
-  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v14'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v15'"));
 });
 
 test('active CSS rules do not contain repeated declarations that can reintroduce same-rule conflicts', () => {
@@ -1552,4 +1552,22 @@ test('Legacy Joki credential endpoint remains closed while safe customer fields 
   assert.match(mini, /customer_input_fields/);
   assert.match(web, /vc4-customer-inputs/);
   assert.match(mini, /data-customer-input/);
+});
+
+
+test('website and Mini App share a green four-game promo board', () => {
+  const webHome = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
+  const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const premium = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
+  const miniCss = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
+  assert.ok(webHome.includes('vc-home-promo-board-grid'));
+  assert.ok(webHome.includes('PAPAN PROMO'));
+  assert.ok(mini.includes('home-promo-board-grid'));
+  assert.ok(mini.includes('promoBoardArt'));
+  assert.ok(premium.includes('--vc-green:#a8f06a'));
+  assert.ok(premium.includes('.home-promo.promo-board{'));
+  assert.ok(miniCss.includes('--green:#a8f06a'));
+  assert.ok(sw.includes("'/vault-core-premium.css'"));
+  assert.doesNotMatch(webHome + mini, /Diskon hingga|Diskon 50%|harga coret/);
 });
