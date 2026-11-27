@@ -19,7 +19,7 @@ export function validateRightsReviewInput(input, now = new Date()) {
   const transferMethod = clean(input?.transferMethod, 2000);
   const region = clean(input?.region, 240);
   const validUntilInput = clean(input?.validUntil, 40);
-  const normalizedValidUntil = /^\\d{4}-\\d{2}-\\d{2}$/.test(validUntilInput)
+  const normalizedValidUntil = /^\d{4}-\d{2}-\d{2}$/.test(validUntilInput)
     ? validUntilInput + 'T23:59:59.999+07:00'
     : validUntilInput;
   const validUntil = new Date(normalizedValidUntil);
