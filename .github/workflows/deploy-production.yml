@@ -251,7 +251,9 @@ jobs:
           node --input-type=module -e '
             const fs = await import("node:fs");
             const html = fs.readFileSync("/tmp/vault-web-home.html", "utf8");
-            for (const marker of ["Temukan akun game", "Halaman yang Anda cari tidak tersedia.", "class=\\"not-found\\""]) {
+            const quote = String.fromCharCode(34);
+            const markers = ["Temukan akun game", "Halaman yang Anda cari tidak tersedia.", "class=" + quote + "not-found" + quote];
+            for (const marker of markers) {
               const index = html.indexOf(marker);
               console.log(`ROOT_MARKER ${JSON.stringify(marker)} index=${index}${index >= 0 ? " excerpt=" + html.slice(Math.max(0,index-120), index+marker.length+180).replace(/\\s+/g," ") : ""}`);
             }
