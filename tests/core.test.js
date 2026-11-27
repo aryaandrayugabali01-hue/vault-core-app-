@@ -22,6 +22,7 @@ import { parseProductAttributesText, formatProductAttributesText, getCustomerVis
 import { validateMarketplaceCategory, normalizeImageGallery } from '../backend/services/marketplaceCategoryService.js';
 import { normalizeCartItems } from '../backend/services/cartService.js';
 import { releaseExpiredPendingOrders } from '../backend/services/reservationService.js';
+import { sanitizeCustomerProductAttributes, toPublicCatalogProduct, toLegacyCatalogResponse } from '../backend/services/publicCatalogService.js';
 
 test('Owner authorization uses Neon owner_accounts as its sole source of truth', () => {
   const ownerAuth = readFileSync(new URL('../backend/middleware/adminAuth.js', import.meta.url), 'utf8');
@@ -876,26 +877,59 @@ test('Customer web navigation matches the Mini App Home, Katalog, Transaksi and 
   assert.match(catalog, /vault-core-web-cart/);
 });
 
-test('customer catalog hides private price, ownership and XTR conversion metadata', () => {
-  const visible = getCustomerVisibleProductAttributes({
-    kode_produk:'ML-001',
-    subkategori:'Akun Collector',
-    metode_penyerahan:'Transfer resmi',
-    xtr_price:2000,
-    xtr_conversion_reference_date:'2026-11-23',
-    xtr_conversion_rate_idr_per_star:375,
-    xtr_conversion_source:'Internal reference',
-    price_note:'Internal calculation',
+test('customer catalog exposes buyer specs and hides internal product, price, delivery and Owner metadata', () => {
+  const attributes = {
+    Rank:'Mythic',
+    Server:'Asia',
+    kode_produk:'FF-001',
+    subkategori:'Akun Evo Gun',
+    metode_penyerahan:'Handover Google / FB Account',
+    price_note:'Internal conversion note',
+    price_min_idr:560000,
+    price_max_idr:560000,
+    price_currency:'IDR',
+    cost_price_note:'Owner cost note',
     cost_price_status:'OWNER_SET_ZERO',
-    owner_attestation_ref:'INTERNAL-REF',
-    price_min_idr:100000,
-    price_max_idr:200000
+    cost_price_xtr:0,
+    fulfillment_mode:'OWNER_MANUAL',
+    owner_attestation_ref:'VC-OWNER-ATTESTATION-20261123-01',
+    authorization_evidence_status:'OWNER_HELD_NOT_UPLOADED',
+    authorization_evidence_reference:'INTERNAL-REF',
+    xtr_conversion_note:'Reference pricing only',
+    xtr_conversion_source:'Internal source',
+    xtr_conversion_formula:'CEILING(IDR / 375)',
+    xtr_conversion_source_url:'https://example.invalid/internal',
+    xtr_conversion_rate_idr_per_star:375
+  };
+  assert.deepEqual(getCustomerVisibleProductAttributes(attributes),[['Rank','Mythic'],['Server','Asia']]);
+  assert.deepEqual(sanitizeCustomerProductAttributes(attributes),{Rank:'Mythic',Server:'Asia'});
+});
+
+test('public catalog DTO is an allowlist and never exposes SKU, cost, handover internals or stock counts', () => {
+  const product = toPublicCatalogProduct({
+    id:42,sku:'FF-001',name:'Akun Evo Gun',description:'Deskripsi pembeli',
+    sale_price_xtr:1494,image_url:'/assets/example.webp',image_gallery:['/assets/example.webp'],
+    attributes:{Rank:'Mythic',kode_produk:'FF-001',price_note:'internal'},
+    customer_terms:'Ketentuan pembeli',fulfillment_eta:'Maksimal 1 jam',
+    availability_mode:'READY',indent_deadline_days:null,
+    customer_input_fields:[{label:'internal field'}],fulfillment_type:'GAME_ACCOUNT_TRANSFER',
+    actual_stock:1,display_stock_mode:'SHOW_COUNT',display_stock_override:1,
+    cost_price_xtr:0,stock_source_reference:'internal',owner_attestation_ref:'INTERNAL',
+    marketplace_category_slug:'free-fire-akun'
   });
-  assert.deepEqual(visible, [
-    ['kode_produk','ML-001'],
-    ['subkategori','Akun Collector'],
-    ['metode_penyerahan','Transfer resmi']
+  assert.deepEqual(Object.keys(product),[
+    'id','name','description','sale_price_xtr','image_url','image_gallery','attributes',
+    'customer_terms','fulfillment_eta','availability_mode','indent_deadline_days',
+    'display_stock','is_purchaseable','is_available'
   ]);
+  assert.equal(product.display_stock,1);
+  assert.equal(product.is_available,true);
+  assert.equal(product.is_purchaseable,true);
+  assert.equal(JSON.stringify(product).includes('FF-001'),false);
+  assert.equal(JSON.stringify(product).includes('internal'),false);
+  const legacy = toLegacyCatalogResponse([{variant_id:4,game_code:'FF',name:'Akun Evo Gun',category:'Akun',skus:[product]}]);
+  assert.equal(JSON.stringify(legacy).includes('fulfillment_type'),false);
+  assert.equal(JSON.stringify(legacy).includes('FF-001'),false);
 });
 
 test('Owner product attribute editor parses and formats one Key|Value pair per line', () => {
@@ -1022,7 +1056,7 @@ test('MLBB account detail uses the public v4 DTO, last-stock label, and four-ste
   assert.match(page, /metode pemulihan/);
   assert.match(catalogApi, /display_stock:/);
   assert.ok(catalogApi.includes('Object.fromEntries'));
-  assert.ok(catalogApi.includes("Object.entries(sku.attributes ?? {})"));
+  assert.ok(catalogApi.includes('sanitizeCustomerProductAttributes(sku?.attributes)'));
   assert.match(styles, /vc4-mlbb-filters/);
   assert.match(styles, /vc4-mlbb-grid/);
   assert.match(guard, /login\|password\|pass\|sandi\|otp\|session\|recovery\|token/);
@@ -1197,7 +1231,7 @@ test('product detail converts escaped backend newlines into readable sections an
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(sw.includes('vault-core-miniapp-v7'));
+  assert.ok(sw.includes('vault-core-miniapp-v8'));
   assert.ok(app.includes(".replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n')"));
   assert.ok(app.includes("renderDetailCopy(product.customer_terms)"));
   assert.ok(app.includes("details.push(renderDetailCopy(product.description))"));
@@ -1244,7 +1278,7 @@ test('mobile app assets are included in the static frontend and service worker n
   assert.ok(manifest.includes('"scope":"/miniapp/"'));
   assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
   for (const asset of ['/game-icons/mlbb.webp','/game-icons/free-fire.webp','/game-icons/roblox.webp','/game-icons/genshin-impact.webp']) assert.ok(sw.includes(asset));
-  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v7'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v8'"));
 });
 
 test('active CSS rules do not contain repeated declarations that can reintroduce same-rule conflicts', () => {

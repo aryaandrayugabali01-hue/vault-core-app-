@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getInitData, getTelegramWebApp, openInvoice } from '../../lib/telegram.js';
 import './page.css';
 import { GAME_ART } from '../../lib/marketplace.js';
+import { getCustomerVisibleProductAttributes } from '../../lib/product-attributes.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const GROUPS = ['Akun','Jasa Joki'];
@@ -21,9 +22,7 @@ const RANKS = [
   'Mythic','Mythical Honor','Mythical Glory','Mythical Immortal'
 ];
 const PROVIDERS = ['Moonton','Google','Apple','Facebook','TikTok','VK'];
-const safeAttrs = (source = {}) => Object.entries(source || {}).filter(([key]) =>
-  !/(login|password|pass|sandi|otp|session|recovery|token|credential|email|username)/i.test(key)
-);
+const safeAttrs = (source = {}) => getCustomerVisibleProductAttributes(source);
 const fmt = (value) => Number(value || 0).toLocaleString('id-ID');
 const normalize = (value) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g,'');
 function getAttr(product, keys) {
@@ -217,7 +216,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       const restored = Array.isArray(stored) ? stored.slice(0,10).map((entry) => {
         const product = flatProducts.find((item) => item.id === Number(entry.productId) && item.is_available && Number(item.sale_price_xtr) > 0);
         return product ? {
-          productId:product.id, sku:product.sku, name:product.name,
+          productId:product.id, name:product.name,
           price:Number(product.sale_price_xtr),
           quantity:Math.max(1,Math.min(5,Number(entry.quantity) || 1))
         } : null;
@@ -249,7 +248,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   const visibleProducts = useMemo(() => flatProducts.filter((product) => {
     if (game !== 'ALL' && product.game_code !== game) return false;
     if (group !== 'ALL' && product.group !== group) return false;
-    const haystack = [product.name,product.description,product.sku,product.variant_name,product.game].join(' ').toLowerCase();
+    const haystack = [product.name,product.description,product.variant_name,product.game].join(' ').toLowerCase();
     if (search && !haystack.includes(search.toLowerCase())) return false;
     if (product.game_code === 'MLBB' && product.group === 'Akun' && !matchesMlbb(product,filters)) return false;
     return true;
@@ -266,10 +265,10 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       const found = current.find((item) => item.productId === product.id);
       if (found) return current.map((item) => item.productId === product.id ? {...item,quantity:Math.min(5,item.quantity+1)} : item);
       if (current.length >= 10) {
-        setNotice('Keranjang maksimal 10 SKU.');
+        setNotice('Keranjang maksimal 10 produk.');
         return current;
       }
-      return [...current,{productId:product.id,sku:product.sku,name:product.name,price:Number(product.sale_price_xtr),quantity:1}];
+      return [...current,{productId:product.id,name:product.name,price:Number(product.sale_price_xtr),quantity:1}];
     });
     setNotice(product.name + ' ditambahkan ke keranjang.');
     setSelected(null);
@@ -403,7 +402,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           {['ALL',...GROUPS].map((item) => <button type="button" key={item} className={group===item?'active':''} onClick={() => setGroup(item)}>
             {item==='ALL'?'Semua jenis':item}
           </button>)}
-          <input type="search" value={search} onChange={(event)=>setSearch(event.target.value)} placeholder="Cari varian atau SKU…" aria-label="Cari varian atau SKU"/>
+          <input type="search" value={search} onChange={(event)=>setSearch(event.target.value)} placeholder="Cari produk atau varian…" aria-label="Cari produk atau varian"/>
         </section>
 
         {game==='MLBB' && group==='Akun' && <section className="vc4-mlbb-filters">
@@ -431,13 +430,13 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
                 return <article className="vc4-card" key={variant.variant_id}>
                   <button type="button" className="vc4-card-main" onClick={()=>setSelected({variant_id:Number(variant.variant_id)})}>
                     <div className="vc4-card-art"><img src={GAME_ART[MARKET_GAME_CODE[variant.game_code]]} alt="" loading="lazy"/><small>{variant.category}</small></div>
-                    <div className="vc4-card-copy"><span className="vc4-eyebrow">{variant.game}</span><h3>{variant.name}</h3><p>{products.length ? products.length + ' SKU aktif' : 'Produk disiapkan Owner'}</p></div>
+                    <div className="vc4-card-copy"><span className="vc4-eyebrow">{variant.game}</span><h3>{variant.name}</h3><p>{products.length ? products.length + ' produk tersedia' : 'Produk belum tersedia'}</p></div>
                     <div className="vc4-card-foot"><strong>{products.length ? 'Lihat produk' : 'Detail varian'}</strong><span>↗</span></div>
                   </button>
                   {products.length>0 && <div className="vc4-sku-list">{products.map((product)=><div className="vc4-sku" key={product.id}>
                     <button type="button" className="vc4-sku-info" onClick={()=>setSelected({variant_id:Number(variant.variant_id),product})}>
                       {product.image_url ? <img src={product.image_url} alt="" loading="lazy"/> : <span className="vc4-sku-thumb">◇</span>}
-                      <span><strong>{product.name}</strong><small>{product.sku} · {product.display_stock===null?'Stok tersedia':product.display_stock===1?'STOK TERAKHIR':typeof product.display_stock==='number'?fmt(product.display_stock)+' stok':product.display_stock} · {getProductAvailability(product)}</small></span>
+                      <span><strong>{product.name}</strong><small>{product.display_stock===1?'STOK TERAKHIR':getProductAvailability(product)}</small></span>
                     </button>
                     <div className="vc4-sku-buy"><PriceDisplay product={product} compact/><button type="button" onClick={()=>addToCart(product)}>Tambah</button></div>
                   </div>)}</div>}
@@ -448,7 +447,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         })}
 
         {!loading && visibleVariants.length===0 && <div className="vc4-empty"><h2>Varian belum ditemukan.</h2><p>Ubah pilihan game, jenis produk, atau kata pencarian.</p></div>}
-        {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada SKU yang tersedia untuk dipesan. Varian Akun dan Joki tetap ditampilkan dari master katalog.</p>}
+        {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada produk yang tersedia untuk dipesan saat ini.</p>}
         <footer className="vc4-footer">
           <p>VAULT CORE adalah penjual tunggal. Website dan Telegram Mini App menggunakan akun pelanggan dan backend yang sama.</p>
           <p>Telegram Mini App menggunakan invoice resmi Telegram Stars (XTR). Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram. Data akses Joki ditangani melalui vault terenkripsi dan tidak ditampilkan pada katalog.</p>
@@ -481,7 +480,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           <button className="vc4-close" type="button" onClick={()=>setCartOpen(false)}>×</button>
           <span className="vc4-eyebrow">VAULT CORE</span><h2>Keranjang.</h2>
           {cart.length===0 ? <p>Keranjang masih kosong.</p> : cart.map((item)=><div className="vc4-cart-row" key={item.productId}>
-            <div><strong>{item.name}</strong><small>{item.sku} · ★ {fmt(item.price)} XTR</small></div>
+            <div><strong>{item.name}</strong><small>★ {fmt(item.price)} XTR</small></div>
             <div><button type="button" onClick={()=>setQuantity(item.productId,item.quantity-1)}>−</button><b>{item.quantity}</b><button type="button" onClick={()=>setQuantity(item.productId,item.quantity+1)}>+</button></div>
           </div>)}
           <div className="vc4-total"><span>Total</span><strong>★ {fmt(totalXtr)} XTR</strong></div>
