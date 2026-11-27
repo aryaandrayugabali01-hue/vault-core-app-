@@ -234,7 +234,7 @@ export default function VaultCoreHomePage() {
 
       <section className="vc-home-section">
         <SectionHeading title="Aktivitas Pesanan" href="/catalog#transactions" action="My Orders"/>
-        <a className="vc-home-activity home-activity" href="/catalog#transactions" aria-label="Buka My Orders">
+        <a className="vc-home-activity" href="/catalog#transactions" aria-label="Buka My Orders">
           <span className="ic">▤</span>
           <div><b>Riwayat pesanan pribadi</b><small>Status dan detail pesanan tampil pada akun pelanggan terverifikasi.</small></div>
           <span className="home-activity-arrow">›</span>
