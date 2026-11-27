@@ -143,6 +143,15 @@ export async function recordSuccessfulPayment(message) {
           `UPDATE orders SET status='PAID', paid_at=NOW() WHERE id=$1`,
           [order.id]
         );
+        await client.query(
+          `UPDATE order_items SET fulfillment_deadline_at=CASE
+             WHEN is_account_snapshot AND availability_mode_snapshot='INDENT'
+               THEN NOW()+(COALESCE(indent_deadline_days_snapshot,0)*INTERVAL '1 day')
+             WHEN is_account_snapshot AND availability_mode_snapshot='READY' THEN NOW()+INTERVAL '1 hour'
+             ELSE NULL END
+           WHERE order_id=$1`,
+          [order.id]
+        );
       } else {
         await client.query(
           `UPDATE deliveries d

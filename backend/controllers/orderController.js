@@ -46,6 +46,19 @@ export async function createOrder(req, res, { testMode = false } = {}) {
           }))) {
         throw Object.assign(new Error('Produk tidak tersedia atau pemeriksaan internal Owner sudah kedaluwarsa.'),{status:404});
       }
+      const customerFields=Array.isArray(product.customer_input_fields)?product.customer_input_fields:[];
+      const submittedInput=item.customerInput||{};
+      const allowedLabels=new Set(customerFields.map((field)=>String(field?.label||'').trim()));
+      if(Object.keys(submittedInput).some((label)=>!allowedLabels.has(label)))throw Object.assign(new Error('Data pelanggan tidak sesuai dengan field produk.'),{status:400});
+      const customerInputSnapshot={};
+      for(const field of customerFields){
+        const label=String(field?.label||'').trim(),value=String(submittedInput[label]??'').trim();
+        if(field.required===true&&!value)throw Object.assign(new Error('Lengkapi data: '+label+'.'),{status:400});
+        if(value.length>Math.min(240,Number(field.maxLength||240)))throw Object.assign(new Error('Data '+label+' terlalu panjang.'),{status:400});
+        if(value)customerInputSnapshot[label]=value;
+      }
+      const sensitiveLabel=/(login|password|sandi|otp|session|recovery|backup|token|credential|email|username|cookie)/i;
+      if(Object.keys(customerInputSnapshot).some((label)=>sensitiveLabel.test(label)))throw Object.assign(new Error('Field kredensial autentikasi tidak diperbolehkan.'),{status:400});
       const stockParams = testMode
         ? [item.productId,item.quantity]
         : [item.productId,item.quantity,product.current_rights_review_id];
@@ -63,7 +76,7 @@ export async function createOrder(req, res, { testMode = false } = {}) {
       }
       totalXtr += Number(product.sale_price_xtr)*item.quantity;
       totalCostXtr += Number(product.cost_price_xtr)*item.quantity;
-      reservedLines.push({item,product,stockRows});
+      reservedLines.push({item,product,stockRows,customerInputSnapshot});
     }
 
     if (!Number.isSafeInteger(totalXtr) || totalXtr<=0 || totalXtr>2147483647
@@ -79,21 +92,18 @@ export async function createOrder(req, res, { testMode = false } = {}) {
     order=orderRows[0];
 
     for(const line of reservedLines) {
-      const {item,product,stockRows}=line;
+      const {item,product,stockRows,customerInputSnapshot}=line;
       const accountAvailability = product.variant_category === 'Akun'
         ? (product.availability_mode === 'INDENT' ? 'INDENT' : 'READY')
         : 'READY';
       const indentDays = accountAvailability === 'INDENT' ? Number(product.indent_deadline_days) : null;
       await client.query(
-        `INSERT INTO order_items
+        \`INSERT INTO order_items
           (order_id,product_id,quantity,unit_sale_xtr,unit_cost_xtr,product_name_snapshot,
-           availability_mode_snapshot,indent_deadline_days_snapshot,fulfillment_deadline_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,
-           CASE WHEN $9='INDENT' THEN NOW()+($8::int * INTERVAL '1 day')
-                WHEN $9='READY' AND $10=TRUE THEN NOW()+INTERVAL '1 hour'
-                ELSE NULL END)`,
+           availability_mode_snapshot,indent_deadline_days_snapshot,customer_input_snapshot,is_account_snapshot,fulfillment_deadline_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,NULL)\`,
         [order.id,product.id,item.quantity,product.sale_price_xtr,product.cost_price_xtr,product.name,
-         accountAvailability,indentDays,accountAvailability,product.variant_category === 'Akun']
+         accountAvailability,indentDays,JSON.stringify(customerInputSnapshot),product.variant_category === 'Akun']
       );
       for(const stock of stockRows) {
         const reservation=await client.query(
@@ -156,7 +166,11 @@ export async function getMyOrders(req, res) {
     `SELECT o.order_number, o.status, o.total_xtr, o.created_at, o.paid_at, o.fulfilled_at,
             COALESCE(json_agg(json_build_object(
               'orderItemId',oi.id,'name',oi.product_name_snapshot,'quantity',oi.quantity,
-              'category',v.kategori_produk
+              'category',v.kategori_produk,
+              'customerInputs',oi.customer_input_snapshot,
+              'availabilityMode',oi.availability_mode_snapshot,
+              'indentDeadlineDays',oi.indent_deadline_days_snapshot,
+              'fulfillmentDeadlineAt',oi.fulfillment_deadline_at
             )) FILTER (WHERE oi.id IS NOT NULL), '[]') AS items
      FROM orders o
      LEFT JOIN order_items oi ON oi.order_id=o.id

@@ -887,9 +887,17 @@ router.get('/orders', async (_req, res) => {
   const { rows } = await pool.query(
     `SELECT o.order_number,o.status,o.total_xtr,o.total_cost_xtr,o.created_at,o.paid_at,o.fulfilled_at,
       c.telegram_user_id,c.username,
-      COALESCE((SELECT json_agg(json_build_object('name',oi.product_name_snapshot,'quantity',oi.quantity,
-       'unit_cost_xtr',oi.unit_cost_xtr,'unit_sale_xtr',oi.unit_sale_xtr,'is_test',p.is_test))
-       FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE oi.order_id=o.id),'[]') AS items,
+      COALESCE((SELECT json_agg(json_build_object(
+       'name',oi.product_name_snapshot,'quantity',oi.quantity,
+       'unit_cost_xtr',oi.unit_cost_xtr,'unit_sale_xtr',oi.unit_sale_xtr,'is_test',p.is_test,
+       'category',v.kategori_produk,'customer_inputs',oi.customer_input_snapshot,
+       'availability_mode',oi.availability_mode_snapshot,
+       'indent_deadline_days',oi.indent_deadline_days_snapshot,
+       'fulfillment_deadline_at',oi.fulfillment_deadline_at
+      ) ORDER BY oi.id)
+       FROM order_items oi JOIN products p ON p.id=oi.product_id
+       LEFT JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
+       WHERE oi.order_id=o.id),'[]') AS items,
       COALESCE((SELECT json_agg(json_build_object('id',d.id,'status',d.status,'last_error',d.last_error,
        'inventory_item_id',d.inventory_item_id) ORDER BY d.id) FROM deliveries d WHERE d.order_id=o.id),'[]') AS deliveries
      FROM orders o JOIN customers c ON c.id=o.customer_id

@@ -28,6 +28,18 @@ export function sanitizeCustomerProductAttributes(attributes) {
       && !PRIVATE_CUSTOMER_ATTRIBUTE_PREFIXES.some((prefix) => normalized.startsWith(prefix));
   }));
 }
+export function sanitizeCustomerInputFields(fields) {
+  if (!Array.isArray(fields)) return [];
+  const sensitive=/(login|password|sandi|otp|session|recovery|backup|token|credential|email|username|cookie)/i;
+  const seen=new Set();
+  return fields.slice(0,12).flatMap((field)=>{
+    const label=String(field?.label??'').trim().slice(0,80);
+    if(!label||sensitive.test(label)||seen.has(label.toLowerCase()))return [];
+    seen.add(label.toLowerCase());
+    const type=['text','number','textarea'].includes(String(field?.type||'').toLowerCase())?String(field.type).toLowerCase():'text';
+    return [{label,type,required:field?.required===true,maxLength:Math.min(240,Math.max(1,Number(field?.maxLength||240)))}];
+  });
+}
 export function toPublicCatalogProduct(sku) {
   const actual = Math.max(0,Number(sku?.actual_stock) || 0);
   const price = Number(sku?.sale_price_xtr);
@@ -35,6 +47,7 @@ export function toPublicCatalogProduct(sku) {
     id:Number(sku?.id),
     name:sku?.name ?? '',
     description:sku?.description ?? '',
+    tier:sku?.tier ?? 'SERVICE',
     sale_price_xtr:price,
     image_url:sku?.image_url ?? null,
     image_gallery:Array.isArray(sku?.image_gallery) ? sku.image_gallery : [],
@@ -43,6 +56,7 @@ export function toPublicCatalogProduct(sku) {
     fulfillment_eta:sku?.fulfillment_eta ?? '',
     availability_mode:sku?.availability_mode ?? 'READY',
     indent_deadline_days:sku?.indent_deadline_days ?? null,
+    customer_input_fields:sanitizeCustomerInputFields(sku?.customer_input_fields),
     display_stock:resolveDisplayStock({actualStock:actual,mode:sku?.display_stock_mode,override:sku?.display_stock_override}) === 1 ? 1 : null,
     is_purchaseable:Number.isSafeInteger(price) && price>1,
     is_available:actual>0
@@ -64,6 +78,7 @@ const PUBLIC_VARIANTS_SQL = `
              'name',p.name,
              'description',p.description,
              'sale_price_xtr',p.sale_price_xtr,
+             'tier',p.tier,
              'image_url',p.image_url,
              'image_gallery',p.image_gallery,
              'attributes',p.attributes,

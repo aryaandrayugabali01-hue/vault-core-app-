@@ -12,6 +12,7 @@ export function normalizeCartItems(input = {}, { testMode = false } = {}) {
   }
 
   const merged = new Map();
+  const sensitiveLabel = /(login|password|sandi|otp|session|recovery|backup|token|credential|email|username|cookie)/i;
   for (const item of rawItems) {
     const productId = Number(item?.productId);
     const quantity = Number(item?.quantity ?? 1);
@@ -19,12 +20,27 @@ export function normalizeCartItems(input = {}, { testMode = false } = {}) {
         || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > MAX_LINE_QUANTITY) {
       return { ok:false, error:'INVALID_ORDER_INPUT' };
     }
-    const next = (merged.get(productId) || 0) + quantity;
-    if (next > MAX_LINE_QUANTITY) return { ok:false, error:'INVALID_ORDER_INPUT' };
-    merged.set(productId,next);
+    const rawCustomerInput = item?.customerInput ?? {};
+    if (!rawCustomerInput || typeof rawCustomerInput !== 'object' || Array.isArray(rawCustomerInput)
+        || Object.keys(rawCustomerInput).length > 12) return { ok:false, error:'INVALID_CUSTOMER_INPUT' };
+    const customerInput = {};
+    for (const [rawLabel,rawValue] of Object.entries(rawCustomerInput)) {
+      const label = String(rawLabel).trim();
+      const value = String(rawValue ?? '').trim();
+      if (!label || label.length>80 || sensitiveLabel.test(label) || value.length>240) {
+        return { ok:false,error:'INVALID_CUSTOMER_INPUT' };
+      }
+      customerInput[label]=value;
+    }
+    const existing=merged.get(productId);
+    if (existing && JSON.stringify(existing.customerInput)!==JSON.stringify(customerInput)) {
+      return { ok:false,error:'DUPLICATE_PRODUCT_INPUT_MISMATCH' };
+    }
+    const next=(existing?.quantity||0)+quantity;
+    if(next>MAX_LINE_QUANTITY)return {ok:false,error:'INVALID_ORDER_INPUT'};
+    merged.set(productId,{quantity:next,customerInput});
   }
-
-  const items = [...merged.entries()].map(([productId,quantity])=>({productId,quantity}))
+  const items=[...merged.entries()].map(([productId,value])=>({productId,quantity:value.quantity,customerInput:value.customerInput}))
     .sort((a,b)=>a.productId-b.productId);
   const totalQuantity = items.reduce((sum,item)=>sum+item.quantity,0);
   if (totalQuantity > MAX_TOTAL_QUANTITY || (testMode && (items.length !== 1 || totalQuantity > 5))) {
