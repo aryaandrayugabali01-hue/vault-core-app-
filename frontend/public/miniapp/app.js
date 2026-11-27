@@ -289,7 +289,7 @@ function home() {
         (jokiByGame.length ? '<div class="home-joki-grid">' + jokiByGame.map(jokiCard).join('') + '</div>' : '<div class="empty">Kategori layanan Joki belum dapat dimuat.</div>')
       ) +
       '<div class="section-head"><h2>Aktivitas Pesanan</h2><button type="button" data-go="/orders">My Orders ›</button></div>' +
-      '<div class="home-activity"><span>' + icon('receipt') + '</span><div><b>Riwayat pesanan pribadi</b><small>Status dan detail pesanan tampil pada akun pelanggan terverifikasi.</small></div><span class="home-activity-arrow">›</span></div>' +
+      '<button type="button" class="home-activity" data-go="/orders"><span>' + icon('receipt') + '</span><div><b>Riwayat pesanan pribadi</b><small>Status dan detail pesanan tampil pada akun pelanggan terverifikasi.</small></div><span class="home-activity-arrow">›</span></button>' +
       '<div class="section-head"><h2>Keunggulan VAULT CORE</h2></div>' +
       '<div class="home-benefits"><div>' + icon('shield') + '<b>Transaksi Terpantau</b><small>Riwayat dan status pada akun pelanggan.</small></div><div>' + icon('help') + '<b>Pusat Bantuan</b><small>Dukungan melalui kanal resmi VAULT CORE.</small></div></div>' +
     '</main>',
@@ -374,7 +374,7 @@ const PRIVATE_ATTRIBUTE_KEYS = new Set([
   'costpricenote','costpricestatus','costpricextr','fulfillmentmode','fulfillmenttype',
   'ownerattestationref','authorizationevidencestatus','authorizationevidencereference',
   'rightsbasis','publisherplatform','officialtermsurl','chainoftitle','reviewstatus','reviewnotes',
-  'reviewertelegramuserid','validuntil','stocksource'
+  'reviewertelegramuserid','validuntil','stocksource','unbindterms','seasonnote'
 ]);
 function safeAttributes(source) {
   return Object.entries(source || {}).filter(([key]) => {
@@ -613,6 +613,7 @@ function renderProfile() {
         '<button type="button" data-action="support">' + icon('help') + '<span>Bantuan / CS</span><span>›</span></button>' +
         '<button type="button" data-go="/terms">' + icon('info') + '<span>Syarat & Ketentuan</span><span>›</span></button>' +
         '<button type="button" data-go="/privacy">' + icon('shield') + '<span>Kebijakan Privasi</span><span>›</span></button>' +
+        '<button type="button" data-go="/refund">' + icon('receipt') + '<span>Kebijakan Refund</span><span>›</span></button>' +
         '<button type="button" data-go="/about">' + icon('home') + '<span>Tentang VAULT CORE</span><span>›</span></button>' +
       '</div>' +
       '<div class="box info" style="margin-top:14px">' + icon('shield') + '<span>Pembayaran diproses melalui invoice resmi Telegram Stars (XTR). Jangan kirim kata sandi atau kode OTP ke siapa pun.</span></div>' +
@@ -624,7 +625,8 @@ function renderInfo(name) {
   const content = {
     about:['Tentang VAULT CORE',['Marketplace satu penjual untuk akun game dan varian terkait.','Game utama: Mobile Legends, Free Fire, Roblox, dan Genshin Impact.','Harga dan stok mengikuti data backend.']],
     terms:['Syarat & Ketentuan',['Periksa deskripsi, spesifikasi, dan ketentuan setiap produk sebelum membeli.','Pembayaran sah setelah dikonfirmasi sistem Telegram. Tangkapan layar bukan bukti pembayaran.','Pemenuhan pesanan mengikuti metode dan ketentuan pada detail produk.']],
-    privacy:['Kebijakan Privasi',['Identitas Telegram digunakan untuk menghubungkan pesanan ke akun pembeli.','Jangan masukkan kata sandi, OTP, session, atau kode pemulihan ke formulir aplikasi.','Data transaksi ditampilkan pada sesi Telegram pembeli yang terverifikasi.']]
+    privacy:['Kebijakan Privasi',['Identitas Telegram digunakan untuk menghubungkan pesanan ke akun pembeli.','Jangan masukkan kata sandi, OTP, session, atau kode pemulihan ke formulir aplikasi.','Data transaksi ditampilkan pada sesi Telegram pembeli yang terverifikasi.']],
+    refund:['Kebijakan Refund',['Jika tenggat pemenuhan terlewati dan pembeli tidak menyetujui satu tenggat pengganti, refund penuh diproses paling lambat 24 jam setelah status OVERDUE.','Refund Telegram Stars dinyatakan selesai setelah Telegram mengonfirmasi transaksi refund.']]
   }[name] || ['Informasi',['Informasi belum tersedia.']];
   setPage(headerPage(content[0]) + '<main><div class="box">' + content[1].map((item) => '<p>' + esc(item) + '</p>').join('') + '</div></main>', 'profile', false);
 }
@@ -642,7 +644,7 @@ function render() {
     case 'done': renderDone(arg,myRender); break;
     case 'orders': renderOrders(); break;
     case 'profile': renderProfile(); break;
-    case 'about': case 'terms': case 'privacy': renderInfo(name); break;
+    case 'about': case 'terms': case 'privacy': case 'refund': renderInfo(name); break;
     default: home();
   }
 }
@@ -663,6 +665,27 @@ async function api(path, options) {
 }
 function startCheckout(id) {
   return beginCheckout(id);
+}
+function copyText(value) {
+  const fallback = () => {
+    const field = document.createElement('textarea');
+    field.value = value;
+    field.setAttribute('readonly', '');
+    field.style.position = 'fixed';
+    field.style.opacity = '0';
+    document.body.appendChild(field);
+    field.select();
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch (_) {}
+    field.remove();
+    return copied;
+  };
+  try {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      return navigator.clipboard.writeText(value).then(() => true).catch(fallback);
+    }
+  } catch (_) {}
+  return Promise.resolve(fallback());
 }
 function handleClick(event) {
   const storeGroup = event.target.closest('[data-store-group]');
@@ -728,8 +751,8 @@ function handleClick(event) {
   if (action === 'invoice') { openInvoice(); return; }
   if (action === 'copy') {
     const value = button.getAttribute('data-copy') || '';
-    if (navigator.clipboard && value) navigator.clipboard.writeText(value).then(() => toast('Order ID disalin')).catch(() => toast(value));
-    else toast(value);
+    if (!value) return;
+    copyText(value).then((copied) => toast(copied ? 'Order ID disalin' : value));
     return;
   }
   if (action === 'support') {
@@ -737,7 +760,7 @@ function handleClick(event) {
     if (!username) return toast('Kontak bantuan belum tersedia.');
     const url = 'https://t.me/' + username;
     if (inTelegram && tg.openTelegramLink) tg.openTelegramLink(url);
-    else window.open(url,'_blank','noopener,noreferrer');
+    else { const opened=window.open(url,'_blank','noopener,noreferrer'); if(!opened) location.href=url; }
   }
 }
 function handleInput(event) {

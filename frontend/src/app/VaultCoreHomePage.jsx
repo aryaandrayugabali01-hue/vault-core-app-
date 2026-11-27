@@ -128,9 +128,9 @@ export default function VaultCoreHomePage() {
           <img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/>
         </a>
         <div className="vc-home-header-actions">
-          <span className="vc-home-notification" aria-hidden="true">
+          <a href="/catalog#transactions" className="vc-home-notification" aria-label="My Orders">
             <svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
-          </span>
+          </a>
           <a href="/account" className="vc-home-profile" aria-label="Profile">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-3.4 3.2-5.2 7.5-5.2s6.7 1.8 7.5 5.2"/></svg>
           </a>
@@ -206,11 +206,11 @@ export default function VaultCoreHomePage() {
 
       <section className="vc-home-section">
         <SectionHeading eyebrow="PENGELOLAAN PESANAN" title="Aktivitas Pesanan" href="/catalog#transactions" action="My Orders"/>
-        <div className="vc-home-activity">
+        <a className="vc-home-activity" href="/catalog#transactions" aria-label="Buka My Orders">
           <span className="vc-home-activity-icon">▤</span>
           <div><strong>Riwayat pesanan pribadi</strong><small>Status pembayaran dan pemenuhan ditampilkan pada akun pelanggan.</small></div>
-          <a href="/catalog#transactions" aria-label="Buka My Orders">↗</a>
-        </div>
+          <span className="vc-home-activity-arrow" aria-hidden="true">↗</span>
+        </a>
       </section>
 
       <section className="vc-home-section">

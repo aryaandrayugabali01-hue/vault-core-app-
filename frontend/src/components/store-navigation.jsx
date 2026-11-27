@@ -48,7 +48,7 @@ export function StoreBottomNav({ active = 'dashboard', embedded = false }) {
   const ownerItems = [
     { id: 'dashboard', label: 'Beranda', icon: 'home', href: '/' },
     { id: 'catalog', label: 'Produk', icon: 'catalog', href: '/catalog' },
-    { id: 'help', label: 'Bantuan', icon: 'help', href: '/catalog#catalog-footer-support' },
+    { id: 'help', label: 'Bantuan', icon: 'help', href: 'https://t.me/vaultcore_support' },
     { id: 'account', label: 'Akun', icon: 'user', href: '/admin' }
   ];
   const customerItems = [
@@ -69,9 +69,9 @@ export function StoreFooter() {
   const links = [
     { label: 'Katalog', href: '/catalog' },
     { label: 'Kategori', href: '/#categories' },
-    { label: 'Cara Beli', href: '/catalog/mlbb-akun#catalog-footer-buy-guide' },
-    { label: 'Syarat & Ketentuan', href: '/#terms-and-conditions' },
-    { label: 'Kebijakan Refund', href: '/#refund-policy' }
+    { label: 'Cara Beli', href: '/catalog#catalog-footer-buy-guide' },
+    { label: 'Syarat & Ketentuan', href: '/miniapp/index.html#/terms' },
+    { label: 'Kebijakan Refund', href: '/miniapp/index.html#/refund' }
   ];
   return <footer className="store-global-footer" aria-label="Informasi dan navigasi VAULT CORE">
     <div className="store-global-footer-inner">
@@ -95,7 +95,7 @@ export function StoreFooter() {
         </nav>
         <section className="store-footer-column" aria-label="Bantuan dan pembayaran">
           <h3><span/>Bantuan</h3>
-          <a className="store-footer-help-link" href="/catalog#catalog-footer-support">
+          <a className="store-footer-help-link" href="https://t.me/vaultcore_support" target="_blank" rel="noopener noreferrer">
             <span className="store-footer-help-icon">✉</span><span><strong>Telegram</strong><small>Hubungi Admin VAULT CORE</small></span><NavigationIcon name="chevron"/>
           </a>
           <a className="store-footer-help-link store-footer-stars-link" href="/catalog">

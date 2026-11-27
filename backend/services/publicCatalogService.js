@@ -10,7 +10,7 @@ const PRIVATE_CUSTOMER_ATTRIBUTE_KEYS = new Set([
   'costpricenote','costpricestatus','costpricextr','fulfillmentmode','fulfillmenttype',
   'ownerattestationref','authorizationevidencestatus','authorizationevidencereference',
   'rightsbasis','publisherplatform','officialtermsurl','chainoftitle','reviewstatus','reviewnotes',
-  'reviewertelegramuserid','validuntil'
+  'reviewertelegramuserid','validuntil','unbindterms','seasonnote'
 ]);
 const PRIVATE_CUSTOMER_ATTRIBUTE_PREFIXES = [
   'xtrconversion','ownerattestation','authorizationevidence','costprice','rightsreview','stocksource'
@@ -28,6 +28,25 @@ export function sanitizeCustomerProductAttributes(attributes) {
       && !PRIVATE_CUSTOMER_ATTRIBUTE_PREFIXES.some((prefix) => normalized.startsWith(prefix));
   }));
 }
+export function sanitizeCustomerProductCopy(value) {
+  return String(value ?? '')
+    .replace(/\\r\\n|\\n|\\r/g, '\n')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[^.!?\n]*dapat\s+dilepas\s+setelah\s+30\s+hari[^.!?\n]*[.!?]?/gi, ' ')
+    .replace(/[^.!?\n]*rank\s+(?:mythic\s+)?dapat\s+(?:turun|berubah)\s+saat\s+reset\s+season(?:\s+baru)?[^.!?\n]*[.!?]?/gi, ' ')
+    .replace(/[^.!?\n]*100%\s*no\s*minus[^.!?\n]*[.!?]?/gi, ' ')
+    .replace(/,\s*off\s+banned\s+100%\.?/gi, '.')
+    .replace(/(?:penyerahan|pemenuhan)\s+manual\s+oleh\s+(?:owner|vault core)\s+setelah\s+pembayaran(?:\s+telegram stars|\s+xtr)?\s+terverifikasi\.?/gi, ' ')
+    .replace(/produk diserahkan melalui metode yang tercantum untuk sku ini\.?/gi, ' ')
+    .replace(/akun dipastikan aman dari penggunaan script\/bot gacha ekstrem\.?/gi, ' ')
+    .replace(/pembeli tidak boleh melanggar tos game\s*\(no cheat\/toxic\)\s*saat membawa nama squad\.?/gi, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/[ \t]*\n[ \t]*/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/\s+([.,;:])/g, '$1')
+    .trim();
+}
+
 export function sanitizeCustomerInputFields(fields) {
   if (!Array.isArray(fields)) return [];
   const sensitive=/(login|password|sandi|otp|session|recovery|backup|token|credential|email|username|cookie)/i;
@@ -46,14 +65,14 @@ export function toPublicCatalogProduct(sku) {
   return {
     id:Number(sku?.id),
     name:sku?.name ?? '',
-    description:sku?.description ?? '',
+    description:sanitizeCustomerProductCopy(sku?.description),
     tier:sku?.tier ?? 'SERVICE',
     sale_price_xtr:price,
     image_url:sku?.image_url ?? null,
     image_gallery:Array.isArray(sku?.image_gallery) ? sku.image_gallery : [],
     attributes:sanitizeCustomerProductAttributes(sku?.attributes),
-    customer_terms:sku?.customer_terms ?? '',
-    fulfillment_eta:sku?.fulfillment_eta ?? '',
+    customer_terms:sanitizeCustomerProductCopy(sku?.customer_terms),
+    fulfillment_eta:sanitizeCustomerProductCopy(sku?.fulfillment_eta),
     availability_mode:sku?.availability_mode ?? 'READY',
     indent_deadline_days:sku?.indent_deadline_days ?? null,
     customer_input_fields:sanitizeCustomerInputFields(sku?.customer_input_fields),

@@ -22,7 +22,7 @@ import { parseProductAttributesText, formatProductAttributesText, getCustomerVis
 import { validateMarketplaceCategory, normalizeImageGallery } from '../backend/services/marketplaceCategoryService.js';
 import { normalizeCartItems } from '../backend/services/cartService.js';
 import { releaseExpiredPendingOrders } from '../backend/services/reservationService.js';
-import { sanitizeCustomerProductAttributes, toPublicCatalogProduct, toLegacyCatalogResponse } from '../backend/services/publicCatalogService.js';
+import { sanitizeCustomerProductAttributes, sanitizeCustomerProductCopy, toPublicCatalogProduct, toLegacyCatalogResponse } from '../backend/services/publicCatalogService.js';
 
 test('Owner authorization uses Neon owner_accounts as its sole source of truth', () => {
   const ownerAuth = readFileSync(new URL('../backend/middleware/adminAuth.js', import.meta.url), 'utf8');
@@ -175,6 +175,49 @@ function topLevelCssProperty(styles, selector, property) {
 }
 
 
+
+
+test('public catalog copy removes stale buyer-doubt text and keeps core SKU facts', () => {
+  const source = 'Akun MLBB dengan 79 hero dan 130 skin. Email Moonton dan tautan platform sosial disebut dapat dilepas setelah 30 hari. Rank dapat turun saat reset season baru.';
+  const cleaned = sanitizeCustomerProductCopy(source);
+  assert.match(cleaned, /79 hero dan 130 skin/);
+  assert.doesNotMatch(cleaned, /dapat dilepas setelah 30 hari|rank dapat turun saat reset season/i);
+  assert.doesNotMatch(sanitizeCustomerProductCopy('Keterangan “100% No Minus” merupakan klaim pada materi penawaran; pembeli tetap perlu memeriksa ID dan nickname.'), /100%\s*No\s*Minus/i);
+  assert.doesNotMatch(sanitizeCustomerProductCopy('Vault 450+ Item, Off Banned 100%.'), /Off Banned/i);
+  const publicProduct = toPublicCatalogProduct({
+    id:5, sale_price_xtr:25, actual_stock:1,
+    description:source,
+    customer_terms:'Pemenuhan manual oleh Owner setelah pembayaran XTR terverifikasi. Produk diserahkan melalui metode yang tercantum untuk SKU ini.',
+    fulfillment_eta:'Penyerahan manual oleh VAULT CORE setelah pembayaran Telegram Stars terverifikasi.',
+    attributes:{unbind_terms:'Dapat dilepas setelah 30 hari',season_note:'Rank turun saat reset season',linked_platforms:'Google Play, Facebook, TikTok'}
+  });
+  assert.doesNotMatch(publicProduct.description, /30 hari|reset season/i);
+  assert.equal(publicProduct.customer_terms, '');
+  assert.equal(publicProduct.fulfillment_eta, '');
+  assert.deepEqual(publicProduct.attributes, {linked_platforms:'Google Play, Facebook, TikTok'});
+});
+
+test('storefront click targets and Mini App actions resolve to working routes or handlers', () => {
+  const home = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
+  const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  const miniApp = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const premiumCss = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
+  assert.match(home, /<a href="\/catalog#transactions" className="vc-home-notification"/);
+  assert.match(home, /<a className="vc-home-activity" href="\/catalog#transactions"/);
+  assert.match(catalog, /id="catalog-footer-buy-guide"/);
+  assert.match(navigation, /https:\/\/t\.me\/vaultcore_support/);
+  assert.match(navigation, /\/miniapp\/index\.html#\/terms/);
+  assert.match(navigation, /\/miniapp\/index\.html#\/refund/);
+  assert.match(miniApp, /class="home-activity" data-go="\/orders"/);
+  assert.match(miniApp, /case 'about': case 'terms': case 'privacy': case 'refund': renderInfo\(name\)/);
+  const renderedActions = new Set([...miniApp.matchAll(/data-action=["']([^"']+)["']/g)].map((match) => match[1]));
+  const handledActions = new Set([...miniApp.matchAll(/action === '([^']+)'/g)].map((match) => match[1]));
+  for (const action of renderedActions) assert.ok(handledActions.has(action), 'Missing Mini App click handler: ' + action);
+  assert.match(miniApp, /document\.execCommand\('copy'\)/);
+  assert.match(premiumCss, /\.home-activity\{[^}]*cursor:pointer/);
+  assert.match(premiumCss, /\.vc-home-activity\{[^}]*cursor:pointer/);
+});
 
 test('Owner dashboard has no stale product-form effect references', () => {
   const ownerPage = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');

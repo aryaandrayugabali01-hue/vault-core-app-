@@ -382,7 +382,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           </div>
         </section>
 
-        <section className="vc4-purchase-journey" aria-label="Alur pembelian">
+        <section className="vc4-purchase-journey" id="catalog-footer-buy-guide" aria-label="Alur pembelian">
           <div className="vc4-journey-heading"><span>MUDAH & TERARAH</span><strong>Alur pembelian</strong></div>
           <ol>
             <li><span>01</span><div><strong>Pilih game</strong><small>Tentukan kategori dan akun</small></div></li>
