@@ -372,3 +372,49 @@ html { background:#100e08!important; color:#f7f3e7!important; }
 @media(prefers-reduced-motion:reduce) {
   .vc-miniapp-promo-visual:before { animation:none; }
 }
+
+
+/* The current static Mini App home uses .home-promo.promo-board as its primary hero. */
+:root {
+  --bg:#100e08;
+  --surface:#1d190e;
+  --surface-2:#272112;
+  --surface-3:#352a13;
+  --line:rgba(245,197,66,.19);
+  --line-soft:rgba(245,197,66,.10);
+  --text:#f7f3e7;
+  --muted:#b8ad91;
+  --gold:#f5c542;
+  --gold-2:#d7a922;
+  --green:#b7ff35;
+  --violet:#b78a2e;
+  --cyan:#f1d98d;
+}
+.home-promo.promo-board {
+  display:grid!important;
+  grid-template-columns:minmax(0,1.16fr) minmax(100px,.84fr)!important;
+  align-items:stretch!important;
+  min-height:174px!important;
+  gap:9px!important;
+  padding:13px!important;
+  border-color:rgba(245,197,66,.72)!important;
+  background:
+    radial-gradient(ellipse at 84% 50%,rgba(245,197,66,.16),transparent 42%),
+    linear-gradient(112deg,#1d190e 0%,#211a0c 58%,#100e08 100%)!important;
+  box-shadow:0 14px 32px rgba(0,0,0,.38),0 0 24px rgba(245,197,66,.12)!important;
+}
+.home-promo-copy { position:relative;z-index:2;max-width:none!important;min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px; }
+.home-promo-copy>small { color:#f5d77d!important; }
+.home-promo-copy>small i { background:#b7ff35!important;box-shadow:0 0 9px rgba(183,255,53,.7)!important; }
+.home-promo-copy h1 { margin:0;color:#f7f3e7;font-size:clamp(19px,5vw,23px);line-height:1.12;font-weight:950;letter-spacing:-.04em; }
+.home-promo-copy h1 em { color:#b7ff35!important;font-style:normal; }
+.home-promo-copy p { color:#d8cfb6!important;font-size:9px;line-height:1.5; }
+.home-promo-tags span { border-color:rgba(245,197,66,.27)!important;background:rgba(245,197,66,.08)!important;color:#f0dfad!important; }
+.home-promo-copy>button {
+  display:inline-flex;align-items:center;gap:8px;width:max-content;margin-top:4px;padding:8px 11px;
+  border:1px solid #ffe28a;border-radius:10px;background:linear-gradient(180deg,#ffdc70,#f5c542);
+  color:#211807;font-size:10px;font-weight:950;box-shadow:0 6px 18px rgba(245,197,66,.22);
+}
+@media(max-width:360px) {
+  .home-promo.promo-board { min-height:155px!important;grid-template-columns:minmax(0,1.16fr) minmax(82px,.84fr)!important;padding:11px!important; }
+}
