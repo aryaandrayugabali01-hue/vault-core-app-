@@ -1,5 +1,5 @@
-.customer-account-page{min-height:calc(100vh - 190px);display:grid;place-items:center;padding:38px 18px 64px;background:radial-gradient(ellipse at 12% 0%,rgba(88,40,180,.24),transparent 34%),radial-gradient(ellipse at 100% 42%,rgba(26,61,125,.12),transparent 35%),linear-gradient(180deg,#080b17 0%,#080d18 55%,#070914 100%)}
-.customer-account-card{width:min(100%,430px);display:flex;flex-direction:column;align-items:stretch;gap:16px;padding:clamp(24px,5vw,38px);border:1px solid rgba(164,105,255,.38);border-radius:25px;background:linear-gradient(150deg,#151f31,#0d1421);box-shadow:0 24px 70px rgba(0,0,0,.34),0 0 24px rgba(116,55,255,.12);color:#f5f6fa}
+.customer-account-page{min-height:calc(100vh - 190px);display:grid;place-items:center;padding:38px 18px 64px;background:radial-gradient(ellipse at 12% 0%,rgba(255,201,40,.08),transparent 34%),radial-gradient(ellipse at 100% 42%,rgba(117,186,255,.045),transparent 35%),linear-gradient(180deg,#080b12 0%,#0b111b 55%,#080b12 100%)}
+.customer-account-card{width:min(100%,430px);display:flex;flex-direction:column;align-items:stretch;gap:16px;padding:clamp(24px,5vw,38px);border:1px solid rgba(186,199,219,.20);border-radius:25px;background:linear-gradient(150deg,#182232,#101722);box-shadow:0 24px 70px rgba(0,0,0,.34),0 0 24px rgba(255,201,40,.055);color:#f5f6fa}
 .customer-account-brand{display:flex;justify-content:center;margin-bottom:10px}
 .customer-account-brand img{width:190px;max-height:42px;object-fit:contain}
 .customer-account-kicker{color:#ffc928;font-size:10px;font-weight:900;letter-spacing:.18em;text-align:center}
@@ -9,7 +9,7 @@
 .customer-account-status.is-success{border-color:rgba(52,211,153,.25);background:rgba(52,211,153,.07);color:#9ce9ca}
 .customer-account-primary{display:flex;min-height:52px;align-items:center;justify-content:center;padding:12px 18px;border-radius:13px;background:linear-gradient(180deg,#ffe16a,#ffbd16);color:#17131a;text-decoration:none;font-size:14px;font-weight:950;box-shadow:0 8px 22px rgba(255,190,23,.19)}
 .customer-account-primary:hover{filter:brightness(1.06)}
-.customer-account-secondary{display:flex;justify-content:center;color:#ffc928;text-decoration:none;font-size:12px;font-weight:800}
+.customer-account-secondary{display:flex;justify-content:center;color:#ffdf82;text-decoration:none;font-size:12px;font-weight:800}
 .customer-account-logout{min-height:44px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:transparent;color:#bbc5d5;font-size:12px;font-weight:800;cursor:pointer}
 .customer-account-logout:disabled{opacity:.55;cursor:wait}
 .customer-account-identity{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:rgba(255,255,255,.035)}
