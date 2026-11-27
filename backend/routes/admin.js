@@ -118,9 +118,9 @@ router.post('/products', async (req, res) => {
       || !gallery.ok || !productAttributes.ok
       || !/^[A-Z0-9][A-Z0-9_-]{1,79}$/.test(normalizedSku)
       || !['MLBB','ROBLOX','FREE_FIRE','GENSHIN'].includes(gameCategory)
-      || tier !== 'GOLD'
+      || !['SERVICE','SILVER','GOLD','PLATINUM'].includes(tier)
       || String(name ?? '').trim().length < 2 || String(name).trim().length > 160
-      || fulfillmentType !== 'GAME_ACCOUNT_TRANSFER'
+      || !['GAME_ACCOUNT_TRANSFER','SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE'].includes(fulfillmentType)
       || !Number.isSafeInteger(Number(salePriceXtr)) || Number(salePriceXtr) <= 1
       || !Number.isSafeInteger(Number(costPriceXtr)) || Number(costPriceXtr) < 0
       || String(description ?? '').length > 5000
@@ -129,11 +129,9 @@ router.post('/products', async (req, res) => {
       || !isSafeProductImageUrl(normalizedImageUrl)) {
     return res.status(400).json({ error: 'INVALID_PRODUCT_INPUT' });
   }
-  const expectedCategorySlug = ({MLBB:'mlbb-akun',FREE_FIRE:'free-fire-akun',ROBLOX:'roblox-akun',GENSHIN:'genshin-akun'})[gameCategory];
-  if (normalizedCategoryId === null) return res.status(400).json({error:'MARKETPLACE_CATEGORY_INVALID'});
-  const category = await pool.query('SELECT id,slug FROM marketplace_categories WHERE id=$1 AND is_active=TRUE',[normalizedCategoryId]);
-  if (!category.rows[0] || category.rows[0].slug !== expectedCategorySlug) {
-    return res.status(400).json({error:'MARKETPLACE_CATEGORY_INVALID',message:'Setiap game wajib menggunakan subkategori Akun yang sesuai.'});
+  if (normalizedCategoryId !== null) {
+    const category = await pool.query('SELECT id FROM marketplace_categories WHERE id=$1 AND is_active=TRUE',[normalizedCategoryId]);
+    if (!category.rows[0]) return res.status(400).json({error:'MARKETPLACE_CATEGORY_INVALID'});
   }
   let rows;
   try {
@@ -248,9 +246,9 @@ router.patch('/products/:id', async (req, res) => {
       if (!/^[A-Z0-9][A-Z0-9_-]{1,79}$/.test(value)) return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
     } else if (key === 'gameCategory' && !['MLBB','ROBLOX','FREE_FIRE','GENSHIN'].includes(value)) {
       return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
-    } else if (key === 'tier' && value !== 'GOLD') {
+    } else if (key === 'tier' && !['SERVICE','SILVER','GOLD','PLATINUM'].includes(value)) {
       return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
-    } else if (key === 'fulfillmentType' && value !== 'GAME_ACCOUNT_TRANSFER') {
+    } else if (key === 'fulfillmentType' && !['GAME_ACCOUNT_TRANSFER','SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE'].includes(value)) {
       return res.status(400).json({ error:'INVALID_PRODUCT_UPDATE' });
     } else if (key === 'name') {
       value = String(value ?? '').trim();
