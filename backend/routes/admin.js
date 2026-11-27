@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { pool } from '../db/pool.js';
 import { encryptPayload, assertAllowedDigitalPayload } from '../utils/encryption.js';
-import { validateRightsReviewInput, isRightsReviewUsable, canAddProductInventory } from '../services/rightsReviewService.js';
+import { validateRightsReviewInput } from '../services/rightsReviewService.js';
 import { isSafeProductImageUrl, normalizeProductText, normalizeProductAttributes } from '../services/productDetailsService.js';
 import { validateMarketplaceCategory, normalizeImageGallery } from '../services/marketplaceCategoryService.js';
 import { refundStarPayment } from '../services/telegramApi.js';
@@ -306,11 +306,8 @@ router.patch('/products/:id', async (req, res) => {
 
   if (req.body.status === 'ACTIVE') {
     const { rows } = await pool.query(
-      `SELECT p.id,p.is_test,p.fulfillment_type,p.sale_price_xtr,p.current_rights_review_id,
-              rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
-       FROM products p LEFT JOIN product_rights_reviews rr
-         ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
-       WHERE p.id=$1`,
+      `SELECT p.id,p.is_test,p.fulfillment_type,p.sale_price_xtr
+       FROM products p WHERE p.id=$1`,
       [id]
     );
     const product = rows[0];
@@ -327,15 +324,7 @@ router.patch('/products/:id', async (req, res) => {
         message:'Harga checkout komersial harus ditetapkan di atas 1 XTR sebelum aktivasi.'
       });
     }
-    if (!product.fulfillment_type || !isRightsReviewUsable({
-      id: product.review_id, review_status: product.review_status,
-      valid_until: product.valid_until, owner_attested: product.owner_attested
-    })) {
-      return res.status(409).json({
-        error: 'PRODUCT_RIGHTS_REVIEW_REQUIRED',
-        message: 'Aktivasi memerlukan pemeriksaan internal Owner berstatus APPROVED yang lengkap dan masih berlaku.'
-      });
-    }
+    if (!product.fulfillment_type) return res.status(409).json({error:'PRODUCT_FULFILLMENT_REQUIRED'});
   }
 
   const client = await pool.connect();
@@ -367,13 +356,6 @@ router.patch('/products/:id', async (req, res) => {
       const existingValue = key === 'attributes' ? JSON.stringify(normalizeProductAttributes(existing[column]).value) : existing[column];
       return String(nextValue ?? '') !== String(existingValue ?? '');
     });
-    if (productReviewReset && req.body.status === 'ACTIVE') {
-      await client.query('ROLLBACK');
-      return res.status(409).json({
-        error:'PRODUCT_REVIEW_REQUIRED_AFTER_DETAIL_CHANGE',
-        message:'Perubahan identitas atau ketentuan SKU memerlukan pemeriksaan CR-05 baru sebelum SKU dapat diaktifkan.'
-      });
-    }
     if (productReviewReset) {
       const openOrders = await client.query(
         `SELECT COUNT(DISTINCT o.id)::int AS count
@@ -394,18 +376,16 @@ router.patch('/products/:id', async (req, res) => {
     const mergedGame = pairs.some(([key])=>key==='gameCategory') ? req.body.gameCategory : existing.game_category;
     const mergedFulfillment = pairs.some(([key])=>key==='fulfillmentType') ? req.body.fulfillmentType : existing.fulfillment_type;
     const mergedCategoryId = pairs.some(([key])=>key==='marketplaceCategoryId') ? (req.body.marketplaceCategoryId==null||req.body.marketplaceCategoryId===''?null:Number(req.body.marketplaceCategoryId)) : existing.marketplace_category_id;
-    const expectedSlug = ({MLBB:'mlbb-akun',FREE_FIRE:'free-fire-akun',ROBLOX:'roblox-akun',GENSHIN:'genshin-akun'})[mergedGame];
-    const linkedCategory = mergedCategoryId ? await client.query('SELECT slug FROM marketplace_categories WHERE id=$1 AND is_active=TRUE',[mergedCategoryId]) : {rows:[]};
-    if (!expectedSlug || mergedFulfillment !== 'GAME_ACCOUNT_TRANSFER' || linkedCategory.rows[0]?.slug !== expectedSlug) {
+    const supportedFulfillment = ['GAME_ACCOUNT_TRANSFER','SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE'];
+    if (!['MLBB','FREE_FIRE','ROBLOX','GENSHIN'].includes(mergedGame) || !supportedFulfillment.includes(mergedFulfillment)) {
       await client.query('ROLLBACK');
-      return res.status(400).json({error:'ACCOUNT_PRODUCT_ONLY',message:'Produk harus berupa akun game dengan kategori Akun yang sesuai.'});
+      return res.status(400).json({error:'PRODUCT_FIELDS_INVALID'});
+    }
+    if (mergedCategoryId) {
+      const linkedCategory = await client.query('SELECT id FROM marketplace_categories WHERE id=$1 AND is_active=TRUE',[mergedCategoryId]);
+      if (!linkedCategory.rows[0]) { await client.query('ROLLBACK'); return res.status(400).json({error:'MARKETPLACE_CATEGORY_INVALID'}); }
     }
     const assignments = columns.map((column, index) => `${column}=${index + 1}${['image_gallery','attributes'].includes(column) ? '::jsonb' : ''}`);
-    if (productReviewReset && current.rows[0].is_test !== true) {
-      assignments.push("current_rights_review_id=NULL");
-      assignments.push("status=CASE WHEN status='ACTIVE' THEN 'PAUSED' ELSE status END");
-      await client.query("UPDATE inventory_items SET status='UNAVAILABLE' WHERE product_id=$1 AND status='AVAILABLE'",[id]);
-    }
     values.push(id);
     const result = await client.query(
       `UPDATE products SET ${assignments.join(', ')}, updated_at=NOW() WHERE id=$${values.length} RETURNING *`, values
@@ -452,8 +432,6 @@ router.get('/products/:id/rights-review', async (req, res) => {
            VALUES ($1,$2,'REVIEW_EXPIRED','APPROVED','EXPIRED',$3,$4)`,
           [productId, expired[0].id, String(req.telegramUser.id), JSON.stringify({ reason:'VALID_UNTIL_REACHED' })]
         );
-        await client.query("UPDATE products SET status='PAUSED',updated_at=NOW() WHERE id=$1 AND status='ACTIVE'", [productId]);
-        await client.query("UPDATE inventory_items SET status='UNAVAILABLE' WHERE product_id=$1 AND status='AVAILABLE'", [productId]);
         await audit(req, 'PRODUCT_RIGHTS_REVIEW_EXPIRED', 'PRODUCT', productId, { reviewId: expired[0].id });
       }
     }
@@ -504,31 +482,8 @@ router.post('/products/:id/rights-review', async (req, res) => {
     );
     const created = rows[0];
     await client.query(
-      `UPDATE products SET current_rights_review_id=$2,updated_at=NOW(),
-       status=CASE
-         WHEN $3='APPROVED' AND status IN ('DRAFT','PAUSED')
-           AND sale_price_xtr>1
-           AND fulfillment_type='GAME_ACCOUNT_TRANSFER'
-           AND variant_id IS NULL
-           AND game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
-           AND EXISTS (
-             SELECT 1 FROM marketplace_categories mc
-             WHERE mc.id=products.marketplace_category_id AND mc.is_active=TRUE
-               AND mc.slug=CASE products.game_category
-                 WHEN 'MLBB' THEN 'mlbb-akun'
-                 WHEN 'FREE_FIRE' THEN 'free-fire-akun'
-                 WHEN 'ROBLOX' THEN 'roblox-akun'
-                 WHEN 'GENSHIN' THEN 'genshin-akun'
-               END
-           ) THEN 'ACTIVE'
-         WHEN $3<>'APPROVED' AND status='ACTIVE' THEN 'PAUSED'
-         ELSE status END
-       WHERE id=$1`,
-      [productId,created.id,created.review_status]
-    );
-    if (created.review_status !== 'APPROVED') {
-      await client.query("UPDATE inventory_items SET status='UNAVAILABLE' WHERE product_id=$1 AND status='AVAILABLE'",[productId]);
-    }
+      `UPDATE products SET current_rights_review_id=$2,updated_at=NOW() WHERE id=$1`,
+
     await client.query(
       `INSERT INTO product_rights_review_events
        (product_id,rights_review_id,event_type,previous_status,new_status,actor_telegram_user_id,metadata)
@@ -747,38 +702,15 @@ router.post('/products/:id/inventory', async (req, res) => {
   } catch (error) {
     return res.status(400).json({ error: 'INVALID_ASSET_PAYLOAD', message: error.message });
   }
-  if (!Number.isSafeInteger(productId) || payloads.length < 1 || payloads.length > 100) {
-    return res.status(400).json({ error: 'INVALID_INVENTORY_INPUT' });
-  }
-  if (sourceReference.length < 3) {
-    return res.status(400).json({ error:'INVENTORY_SOURCE_REFERENCE_REQUIRED', message:'Isi referensi sumber/vendor atau asal internal Owner untuk batch stok ini.' });
-  }
-
+  if (!Number.isSafeInteger(productId) || payloads.length < 1 || payloads.length > 100) return res.status(400).json({ error: 'INVALID_INVENTORY_INPUT' });
+  if (sourceReference.length < 3) return res.status(400).json({ error:'INVENTORY_SOURCE_REFERENCE_REQUIRED' });
   const { rows: productRows } = await pool.query(
-    `SELECT p.id,p.status,p.is_test,p.current_rights_review_id,p.game_category,p.fulfillment_type,
-            mc.slug AS marketplace_category_slug,
-            rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
-     FROM products p
-     LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
-     LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
-     WHERE p.id=$1`, [productId]
+    'SELECT id,is_test,current_rights_review_id,fulfillment_type FROM products WHERE id=$1',[productId]
   );
   const product = productRows[0];
   if (!product) return res.status(404).json({ error: 'PRODUCT_NOT_FOUND' });
-  const expectedAccountSlug = ({MLBB:'mlbb-akun',FREE_FIRE:'free-fire-akun',ROBLOX:'roblox-akun',GENSHIN:'genshin-akun'})[product.game_category];
-  if (product.is_test === true || product.fulfillment_type !== 'GAME_ACCOUNT_TRANSFER' || !expectedAccountSlug || product.marketplace_category_slug !== expectedAccountSlug) {
-    return res.status(400).json({error:'ACCOUNT_PRODUCT_ONLY',message:'Stok hanya dapat ditambahkan ke produk akun game dengan subkategori Akun yang sesuai.'});
-  }
-  if (!canAddProductInventory(product, {
-    id:product.review_id,review_status:product.review_status,
-    valid_until:product.valid_until,owner_attested:product.owner_attested
-  })) {
-    return res.status(409).json({
-      error: 'PRODUCT_RIGHTS_REVIEW_REQUIRED',
-      message: 'Stok komersial hanya dapat ditambahkan setelah pemeriksaan internal Owner APPROVED dan masih berlaku.'
-    });
-  }
-
+  const supportedFulfillment = ['GAME_ACCOUNT_TRANSFER','SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE'];
+  if (product.is_test === true || !supportedFulfillment.includes(product.fulfillment_type)) return res.status(400).json({error:'PRODUCT_FULFILLMENT_INVALID'});
   const client = await pool.connect();
   const inserted = [];
   try {
@@ -789,8 +721,7 @@ router.post('/products/:id/inventory', async (req, res) => {
         `INSERT INTO inventory_items
           (product_id,payload_ciphertext,payload_nonce,payload_tag,rights_review_id,source_reference)
          VALUES ($1,$2,$3,$4,$5,$6) RETURNING id,status,created_at,rights_review_id,source_reference`,
-        [productId,encrypted.payload_ciphertext,encrypted.payload_nonce,encrypted.payload_tag,
-         product.current_rights_review_id,sourceReference]
+        [productId,encrypted.payload_ciphertext,encrypted.payload_nonce,encrypted.payload_tag,product.current_rights_review_id ?? null,sourceReference]
       );
       inserted.push(rows[0]);
     }
@@ -799,7 +730,7 @@ router.post('/products/:id/inventory', async (req, res) => {
     await client.query('ROLLBACK');
     throw error;
   } finally { client.release(); }
-  await audit(req,'INVENTORY_ADDED','PRODUCT',productId,{ count:inserted.length, sourceReference, rightsReviewId:product.current_rights_review_id });
+  await audit(req,'INVENTORY_ADDED','PRODUCT',productId,{ count:inserted.length, sourceReference });
   res.status(201).json({ inserted:inserted.length, items:inserted });
 });
 
