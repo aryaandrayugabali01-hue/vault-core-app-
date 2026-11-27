@@ -7,7 +7,7 @@ import { GAME_ART } from '../../lib/marketplace.js';
 import { getCustomerVisibleProductAttributes } from '../../lib/product-attributes.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-const GROUPS = ['Akun','Jasa Joki'];
+const GROUPS = ['Akun','Jasa Joki','Item In-Game','Produk Lainnya'];
 const GAME_NAMES = { MLBB:'Mobile Legends', FF:'Free Fire', ROBLOX:'Roblox', GI:'Genshin Impact' };
 const MARKET_GAME_CODE = { MLBB:'MLBB', FF:'FREE_FIRE', ROBLOX:'ROBLOX', GI:'GENSHIN' };
 const STATUS = {
@@ -154,7 +154,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     const queryGroup = params.get('group');
     const query = params.get('q');
     if (queryGame && ['MLBB','FF','ROBLOX','GI'].includes(queryGame)) setGame(queryGame);
-    if (queryGroup && ['Akun','Jasa Joki'].includes(queryGroup)) setGroup(queryGroup);
+    if (queryGroup && GROUPS.includes(queryGroup)) setGroup(queryGroup);
     if (query) setSearch(query);
   },[]);
 
@@ -335,7 +335,9 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   },[showOrders]);
 
   const totalXtr = cart.reduce((sum,item) => sum + item.price * item.quantity,0);
-  const activeVariant = selected ? variants.find((item) => Number(item.variant_id) === selected.variant_id) : null;
+  const activeVariant = selected ? (variants.find((item) => Number(item.variant_id) === selected.variant_id) || {
+    game:selected.product?.game,category:selected.product?.group,name:selected.product?.variant_name || selected.product?.name
+  }) : null;
   const noActiveSku = visibleProducts.length === 0;
 
   return (
@@ -359,8 +361,8 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         <section className="vc4-page-head">
           <h1>Katalog<span>.</span></h1>
           <div>
-            <h2>Akun game premium dan layanan joki pilihan.</h2>
-            <p>Pilih game, Akun atau Joki. Harga, ketersediaan, dan estimasi mengikuti listing backend.</p>
+            <h2>Produk game dan layanan digital pilihan.</h2>
+            <p>Pilih game dan jenis produk. Harga, ketersediaan, dan estimasi mengikuti listing backend.</p>
           </div>
         </section>
 
@@ -368,7 +370,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           <div className="vc4-featured-copy">
             <div className="vc4-featured-kicker"><span>VAULT CORE PICKS</span><span className="vc4-featured-live">KATALOG AKTIF</span></div>
             <h2>{featuredProduct ? featuredProduct.name : 'Temukan akun game pilihanmu.'}</h2>
-            <p>{featuredProduct ? `${featuredProduct.game} · ${featuredProduct.variant_name} · Detail dan stok diperbarui dari katalog.` : 'Jelajahi akun game dengan detail produk dan status ketersediaan yang bersumber dari katalog.'}</p>
+            <p>{featuredProduct ? `${featuredProduct.game} · ${featuredProduct.variant_name} · Detail dan stok diperbarui dari katalog.` : 'Jelajahi produk game dengan detail dan status ketersediaan yang bersumber dari katalog.'}</p>
             {featuredProduct && <div className="vc4-featured-price"><small>HARGA SAAT INI</small><PriceDisplay product={featuredProduct}/></div>}
             <div className="vc4-featured-actions">
               {featuredProduct && <button type="button" onClick={() => setSelected({variant_id:featuredProduct.variant_id,product:featuredProduct})}>Lihat detail produk <span>↗</span></button>}
@@ -422,13 +424,13 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         {loading
           ? <div className="vc4-product-skeleton-grid" aria-label="Memuat produk">{Array.from({length:4},(_,i)=><div className="vc4-product-skeleton" key={i}><b className="vc4-skeleton-art"/><i className="vc4-skeleton-line"/><i className="vc4-skeleton-line short"/></div>)}</div>
           : <section className="vc4-products-section">
-              <div className="vc4-products-heading"><div><span>STORE · KATALOG AKTIF</span><h2>{group==='ALL'?'Produk tersedia':group==='Jasa Joki'?'Layanan Joki':'Akun game'}</h2></div><small>{visibleProducts.length} produk</small></div>
+              <div className="vc4-products-heading"><div><span>STORE · KATALOG AKTIF</span><h2>{group==='ALL'?'Produk tersedia':group==='Jasa Joki'?'Layanan Joki':group==='Item In-Game'?'Item In-Game':group==='Produk Lainnya'?'Produk Lainnya':'Akun game'}</h2></div><small>{visibleProducts.length} produk</small></div>
               {visibleProducts.length>0
                 ? <div className="vc4-product-grid">
                     {visibleProducts.map((product)=>{
                       const isIndent=String(product.availability_mode||'').toUpperCase()==='INDENT';
                       const available=product.is_available===true && product.is_purchaseable===true;
-                      const statusLabel=isIndent?'Pending':available?'Ready':'Habis';
+                      const statusLabel=isIndent?'Inden':available?'Ready':'Habis';
                       const statusClass=isIndent?'is-pending':available?'is-ready':'is-unavailable';
                       return <article className="vc4-product-tile" key={product.id}>
                         <button type="button" className="vc4-product-tile-main" onClick={()=>setSelected({variant_id:Number(product.variant_id),product})} aria-label={'Detail '+product.name}>
@@ -475,7 +477,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             <section className="vc4-listing-specs"><h4>Spesifikasi Produk</h4><div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ').replace(/\b[a-z]/g,letter=>letter.toUpperCase())}</span><strong>{String(value)}</strong></div>)}</div></section>
             {Array.isArray(selected.product.customer_input_fields)&&selected.product.customer_input_fields.length>0&&<section className="vc4-customer-inputs"><h4>Data untuk Pesanan</h4><p>Isi data game dan target pengerjaan sesuai petunjuk produk.</p>{selected.product.customer_input_fields.map((field)=>{const values=customerInputs[selected.product.id]||{};return <label key={field.label}>{field.label}{field.required&&<span> · Wajib</span>}{field.type==='textarea'?<textarea maxLength={field.maxLength||240} value={values[field.label]||''} onChange={(event)=>setCustomerInputs((current)=>({...current,[selected.product.id]:{...(current[selected.product.id]||{}),[field.label]:event.target.value}}))}/>:<input type={field.type==='number'?'number':'text'} inputMode={field.type==='number'?'numeric':'text'} maxLength={field.type==='number'?undefined:(field.maxLength||240)} value={values[field.label]||''} onChange={(event)=>setCustomerInputs((current)=>({...current,[selected.product.id]:{...(current[selected.product.id]||{}),[field.label]:event.target.value}}))}/>}</label>})}</section>}
             <div className="vc4-detail-buybar"><PriceDisplay product={selected.product}/><button className="vc4-primary" type="button" disabled={!selected.product.is_available||!selected.product.is_purchaseable} onClick={()=>addToCart(selected.product)}>{selected.product.is_available&&selected.product.is_purchaseable?'Tambah ke keranjang':'Tidak tersedia'}</button></div>
-          </> : <p>Produk pada varian ini akan tampil setelah Owner menyelesaikan SKU, harga, stok, dan verifikasi yang diwajibkan.</p>}
+          </> : <p>Produk belum tersedia pada varian ini.</p>}
         </section>
       </div>}
 
