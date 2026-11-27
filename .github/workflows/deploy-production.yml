@@ -247,7 +247,9 @@ jobs:
             const h = JSON.parse(fs.readFileSync("/tmp/vault-api-health.json", "utf8"));
             if (h.status !== "ok" || h.database !== "connected") throw new Error("API health/database check failed");
           '
-          curl --fail --silent --show-error --retry 10 --retry-delay 5 --retry-all-errors "$WEB_ORIGIN/" -o /dev/null
+          curl --fail --silent --show-error --retry 10 --retry-delay 5 --retry-all-errors "$WEB_ORIGIN/" -o /tmp/vault-web-home.html
+          grep -Fq "Temukan akun game" /tmp/vault-web-home.html || { echo "::error::Frontend Worker root did not render the VAULT CORE homepage."; exit 1; }
+          if grep -Fq "Halaman yang Anda cari tidak tersedia." /tmp/vault-web-home.html; then echo "::error::Frontend Worker root returned the Not Found page."; exit 1; fi
           for path in /miniapp/index.html /miniapp/app.css /miniapp/app.js /miniapp/manifest.webmanifest; do
             curl --fail --silent --show-error --retry 3 --retry-delay 2 --retry-all-errors "$WEB_ORIGIN$path" -o /dev/null
           done
@@ -314,7 +316,11 @@ jobs:
             const h = JSON.parse(fs.readFileSync("/tmp/vault-public-api-health.json", "utf8"));
             if (h.status !== "ok" || h.database !== "connected") throw new Error("Public API health/database check failed");
           '
-          curl --fail --silent --show-error --retry 20 --retry-delay 6 --retry-all-errors https://vaultcore.biz.id/ -o /dev/null
+          curl --fail --silent --show-error --retry 20 --retry-delay 6 --retry-all-errors https://vaultcore.biz.id/ -o /tmp/vault-public-home.html
+          grep -Fq "Temukan akun game" /tmp/vault-public-home.html || { echo "::error::Public root did not render the VAULT CORE homepage."; exit 1; }
+          if grep -Fq "Halaman yang Anda cari tidak tersedia." /tmp/vault-public-home.html; then echo "::error::Public root returned the Not Found page."; exit 1; fi
+          curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-all-errors "https://vaultcore.biz.id/?utm_source=chatgpt.com" -o /tmp/vault-public-utm-home.html
+          grep -Fq "Temukan akun game" /tmp/vault-public-utm-home.html || { echo "::error::UTM homepage URL did not render the VAULT CORE homepage."; exit 1; }
           curl --fail --silent --show-error --retry 20 --retry-delay 6 --retry-all-errors https://www.vaultcore.biz.id/ -o /dev/null
           miniapp_entry="$(curl --fail --silent --show-error --location --retry 10 --retry-delay 3 --retry-all-errors --output /dev/null --write-out '%{http_code}|%{url_effective}' https://vaultcore.biz.id/miniapp)"
           if [[ "$miniapp_entry" != "200|https://vaultcore.biz.id/miniapp/index.html" ]]; then
