@@ -22,7 +22,7 @@ import { parseProductAttributesText, formatProductAttributesText, getCustomerVis
 import { validateMarketplaceCategory, normalizeImageGallery } from '../backend/services/marketplaceCategoryService.js';
 import { normalizeCartItems } from '../backend/services/cartService.js';
 import { releaseExpiredPendingOrders } from '../backend/services/reservationService.js';
-import { sanitizeCustomerProductAttributes, toPublicCatalogProduct } from '../backend/services/publicCatalogService.js';
+import { sanitizeCustomerProductAttributes, toPublicCatalogProduct, toLegacyCatalogResponse } from '../backend/services/publicCatalogService.js';
 
 test('Owner authorization uses Neon owner_accounts as its sole source of truth', () => {
   const ownerAuth = readFileSync(new URL('../backend/middleware/adminAuth.js', import.meta.url), 'utf8');
@@ -927,6 +927,9 @@ test('public catalog DTO is an allowlist and never exposes SKU, cost, handover i
   assert.equal(product.is_purchaseable,true);
   assert.equal(JSON.stringify(product).includes('FF-001'),false);
   assert.equal(JSON.stringify(product).includes('internal'),false);
+  const legacy = toLegacyCatalogResponse([{variant_id:4,game_code:'FF',name:'Akun Evo Gun',category:'Akun',skus:[product]}]);
+  assert.equal(JSON.stringify(legacy).includes('fulfillment_type'),false);
+  assert.equal(JSON.stringify(legacy).includes('FF-001'),false);
 });
 
 test('Owner product attribute editor parses and formats one Key|Value pair per line', () => {
@@ -1053,7 +1056,7 @@ test('MLBB account detail uses the public v4 DTO, last-stock label, and four-ste
   assert.match(page, /metode pemulihan/);
   assert.match(catalogApi, /display_stock:/);
   assert.ok(catalogApi.includes('Object.fromEntries'));
-  assert.ok(catalogApi.includes("Object.entries(sku.attributes ?? {})"));
+  assert.ok(catalogApi.includes('sanitizeCustomerProductAttributes(sku?.attributes)'));
   assert.match(styles, /vc4-mlbb-filters/);
   assert.match(styles, /vc4-mlbb-grid/);
   assert.match(guard, /login\|password\|pass\|sandi\|otp\|session\|recovery\|token/);
