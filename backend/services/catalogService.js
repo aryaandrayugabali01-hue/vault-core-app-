@@ -8,7 +8,8 @@ const ACCOUNT_CATEGORY_SLUGS = Object.freeze({
 const V4_FULFILLMENT_BY_GROUP = Object.freeze({
   'Akun': new Set(['GAME_ACCOUNT_TRANSFER']),
   'Jasa Joki': new Set(['SERVICE_INSTRUCTIONS']),
-  'Item In-Game': new Set(['SERVICE_INSTRUCTIONS'])
+  'Item In-Game': new Set(['SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE']),
+  'Produk Lainnya': new Set(['GAME_ACCOUNT_TRANSFER','SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE'])
 });
 
 function isGameAccount(product) {
@@ -22,8 +23,13 @@ function isV4VariantProduct(product) {
     && V4_FULFILLMENT_BY_GROUP[product?.variant_category]?.has(product?.fulfillment_type) === true;
 }
 
+function isStandaloneCatalogProduct(product) {
+  return product?.variant_category === 'Produk Lainnya'
+    && V4_FULFILLMENT_BY_GROUP['Produk Lainnya'].has(product?.fulfillment_type) === true;
+}
+
 function isCheckoutableProduct(product) {
-  return isGameAccount(product) || isV4VariantProduct(product);
+  return isGameAccount(product) || isV4VariantProduct(product) || isStandaloneCatalogProduct(product);
 }
 
 export function resolveDisplayStock({ actualStock, mode = 'EXACT_COUNT', override = null }) {

@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 import { pool } from '../db/pool.js';
 import { sendStarsInvoice } from '../services/telegramApi.js';
 import { isEligibleCheckoutProduct } from '../services/catalogService.js';
-import { isRightsReviewUsable } from '../services/rightsReviewService.js';
 import { normalizeCartItems } from '../services/cartService.js';
 import { releaseExpiredPendingOrders } from '../services/reservationService.js';
 
@@ -19,11 +18,10 @@ export async function createOrder(req, res, { testMode = false } = {}) {
 
     const ids = cartItems.map((item) => item.productId);
     const { rows: products } = await client.query(
-      `SELECT p.*,mc.slug AS marketplace_category_slug,v.kategori_produk AS variant_category,rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
+      `SELECT p.*,mc.slug AS marketplace_category_slug,CASE WHEN p.variant_id IS NULL THEN 'Produk Lainnya' ELSE v.kategori_produk END AS variant_category
        FROM products p
        LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
        LEFT JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
-       LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
        WHERE p.id=ANY($1::bigint[]) AND p.status='ACTIVE'
          AND ${testMode ? 'p.is_test=TRUE' : 'COALESCE(p.is_test,FALSE)=FALSE'}
        ORDER BY p.id FOR UPDATE OF p`,
@@ -39,12 +37,8 @@ export async function createOrder(req, res, { testMode = false } = {}) {
 
     for (const item of cartItems) {
       const product = productById.get(item.productId);
-      if (!isEligibleCheckoutProduct(product,{testMode,ownerAuthorized:testMode})
-          || (!testMode && !isRightsReviewUsable({
-            id:product?.review_id,review_status:product?.review_status,
-            valid_until:product?.valid_until,owner_attested:product?.owner_attested
-          }))) {
-        throw Object.assign(new Error('Produk tidak tersedia atau pemeriksaan internal Owner sudah kedaluwarsa.'),{status:404});
+      if (!isEligibleCheckoutProduct(product,{testMode,ownerAuthorized:testMode})) {
+        throw Object.assign(new Error('Produk tidak tersedia.'),{status:404});
       }
       const customerFields=Array.isArray(product.customer_input_fields)?product.customer_input_fields:[];
       const submittedInput=item.customerInput||{};
@@ -59,14 +53,12 @@ export async function createOrder(req, res, { testMode = false } = {}) {
       }
       const sensitiveLabel=/(login|password|sandi|otp|session|recovery|backup|token|credential|email|username|cookie)/i;
       if(Object.keys(customerInputSnapshot).some((label)=>sensitiveLabel.test(label)))throw Object.assign(new Error('Field kredensial autentikasi tidak diperbolehkan.'),{status:400});
-      const stockParams = testMode
-        ? [item.productId,item.quantity]
-        : [item.productId,item.quantity,product.current_rights_review_id];
+      const stockParams = [item.productId,item.quantity];
       const {rows:stockRows}=await client.query(
         `SELECT i.id FROM inventory_items i
          WHERE i.product_id=$1 AND i.status='AVAILABLE'
            AND i.reserved_order_id IS NULL AND i.reserved_until IS NULL
-           AND ${testMode ? 'TRUE' : 'i.rights_review_id=$3 AND i.source_reference IS NOT NULL'}
+           AND ${testMode ? 'TRUE' : "NULLIF(BTRIM(i.source_reference),'') IS NOT NULL"}
 
          ORDER BY i.id LIMIT $2 FOR UPDATE SKIP LOCKED`,
         stockParams
@@ -93,17 +85,15 @@ export async function createOrder(req, res, { testMode = false } = {}) {
 
     for(const line of reservedLines) {
       const {item,product,stockRows,customerInputSnapshot}=line;
-      const accountAvailability = product.variant_category === 'Akun'
-        ? (product.availability_mode === 'INDENT' ? 'INDENT' : 'READY')
-        : 'READY';
-      const indentDays = accountAvailability === 'INDENT' ? Number(product.indent_deadline_days) : null;
+      const itemAvailability = product.availability_mode === 'INDENT' ? 'INDENT' : 'READY';
+      const indentDays = itemAvailability === 'INDENT' ? Number(product.indent_deadline_days) : null;
       await client.query(
         `INSERT INTO order_items
           (order_id,product_id,quantity,unit_sale_xtr,unit_cost_xtr,product_name_snapshot,
            availability_mode_snapshot,indent_deadline_days_snapshot,customer_input_snapshot,is_account_snapshot,fulfillment_deadline_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,NULL)`,
         [order.id,product.id,item.quantity,product.sale_price_xtr,product.cost_price_xtr,product.name,
-         accountAvailability,indentDays,JSON.stringify(customerInputSnapshot),product.variant_category === 'Akun']
+         itemAvailability,indentDays,JSON.stringify(customerInputSnapshot),product.variant_category === 'Akun']
       );
       for(const stock of stockRows) {
         const reservation=await client.query(

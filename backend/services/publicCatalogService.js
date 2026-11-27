@@ -101,8 +101,6 @@ const PUBLIC_VARIANTS_SQL = `
              'actual_stock',stock.available_stock
            ) ORDER BY p.created_at DESC)
            FROM products p
-           JOIN product_rights_reviews rr
-             ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
            LEFT JOIN marketplace_categories mc
              ON mc.id=p.marketplace_category_id AND mc.is_active=TRUE
            CROSS JOIN LATERAL (
@@ -110,20 +108,16 @@ const PUBLIC_VARIANTS_SQL = `
              FROM inventory_items i
              WHERE i.product_id=p.id AND i.status='AVAILABLE'
                AND i.reserved_order_id IS NULL AND i.reserved_until IS NULL
-               AND i.rights_review_id=p.current_rights_review_id
                AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
 
            ) stock
            WHERE p.variant_id=v.variant_id
              AND p.status='ACTIVE' AND COALESCE(p.is_test,FALSE)=FALSE
              AND p.sale_price_xtr>1
-             AND rr.review_status='APPROVED'
-             AND rr.owner_attested=TRUE
-             AND rr.valid_until>NOW()
              AND (
                (v.kategori_produk='Akun' AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER')
                OR (v.kategori_produk='Jasa Joki' AND p.fulfillment_type='SERVICE_INSTRUCTIONS')
-               OR (v.kategori_produk='Item In-Game' AND p.fulfillment_type='SERVICE_INSTRUCTIONS')
+               OR (v.kategori_produk='Item In-Game' AND p.fulfillment_type IN ('SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE'))
              )
              AND stock.available_stock>0
          ),'[]'::jsonb) AS skus
@@ -131,11 +125,34 @@ const PUBLIC_VARIANTS_SQL = `
   ORDER BY v.variant_id
 `;
 
+const STANDALONE_PRODUCTS_SQL = `
+  SELECT p.id,p.game_category,p.name,p.description,p.tier,p.sale_price_xtr,p.image_url,p.image_gallery,
+         p.attributes,p.customer_terms,p.fulfillment_eta,p.availability_mode,p.indent_deadline_days,
+         p.customer_input_fields,p.display_stock_mode,p.display_stock_override,
+         stock.available_stock AS actual_stock
+  FROM products p
+  CROSS JOIN LATERAL (
+    SELECT COUNT(*)::int AS available_stock
+    FROM inventory_items i
+    WHERE i.product_id=p.id AND i.status='AVAILABLE'
+      AND i.reserved_order_id IS NULL AND i.reserved_until IS NULL
+      AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
+  ) stock
+  WHERE p.variant_id IS NULL AND p.status='ACTIVE'
+    AND COALESCE(p.is_test,FALSE)=FALSE AND p.sale_price_xtr>1
+    AND p.fulfillment_type IN ('GAME_ACCOUNT_TRANSFER','SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE')
+    AND stock.available_stock>0
+  ORDER BY p.created_at DESC,p.id DESC
+`;
+
 export async function getPublicCatalogVariants(db = pool) {
   await releaseExpiredPendingOrders(db);
-  const { rows } = await db.query(PUBLIC_VARIANTS_SQL);
+  const [{ rows }, { rows:standaloneRows }] = await Promise.all([
+    db.query(PUBLIC_VARIANTS_SQL),
+    db.query(STANDALONE_PRODUCTS_SQL)
+  ]);
 
-  return rows.map((variant) => ({
+  const masterVariants = rows.map((variant) => ({
     variant_id:Number(variant.variant_id),
     game_code:variant.game_code,
     game:variant.nama_game,
@@ -144,6 +161,20 @@ export async function getPublicCatalogVariants(db = pool) {
     order_ready:true,
     skus:(variant.skus ?? []).map(toPublicCatalogProduct)
   }));
+
+  const gameLabels = {MLBB:'Mobile Legends',FREE_FIRE:'Free Fire',ROBLOX:'Roblox',GENSHIN:'Genshin Impact'};
+  const gameCodes = {MLBB:'MLBB',FREE_FIRE:'FF',ROBLOX:'ROBLOX',GENSHIN:'GI'};
+  const standaloneVariants = standaloneRows.map((product) => ({
+    variant_id:-Number(product.id),
+    game_code:gameCodes[product.game_category] || product.game_category,
+    game:gameLabels[product.game_category] || product.game_category,
+    category:'Produk Lainnya',
+    name:product.name,
+    order_ready:true,
+    skus:[toPublicCatalogProduct(product)]
+  }));
+
+  return [...masterVariants,...standaloneVariants];
 }
 
 export function toLegacyCatalogResponse(variants) {

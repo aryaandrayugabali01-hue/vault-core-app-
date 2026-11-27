@@ -312,13 +312,14 @@ test('display stock override caps but cannot inflate actual inventory', () => {
 
 test('test fixtures are never visible through the public catalog policy', () => {
   assert.equal(isPublicCatalogProduct({ status:'ACTIVE',is_test:false,sale_price_xtr:2,game_category:'MLBB',fulfillment_type:'GAME_ACCOUNT_TRANSFER',marketplace_category_slug:'mlbb-akun' }),true);
+  assert.equal(isPublicCatalogProduct({ status:'ACTIVE',is_test:false,sale_price_xtr:2,variant_category:'Produk Lainnya',fulfillment_type:'GIFT_CODE' }),true);
   assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false, sale_price_xtr: 1 }), false);
   assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: false }), false);
   assert.equal(isPublicCatalogProduct({ status: 'DRAFT', is_test: false, sale_price_xtr: 2 }), false);
   assert.equal(isPublicCatalogProduct({ status: 'ACTIVE', is_test: true, sale_price_xtr: 2 }), false);
 });
 
-test('public catalog endpoints share one active, priced, approved and in-stock backend source', () => {
+test('public catalog endpoints share one active, priced, Owner-selected and in-stock backend source', () => {
   const legacy = readFileSync(new URL('../backend/routes/catalog.js', import.meta.url), 'utf8');
   const v4 = readFileSync(new URL('../backend/routes/catalogV4.js', import.meta.url), 'utf8');
   const source = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
@@ -327,9 +328,9 @@ test('public catalog endpoints share one active, priced, approved and in-stock b
   assert.match(source, /p\.status='ACTIVE'/);
   assert.match(source, /COALESCE\(p\.is_test,FALSE\)=FALSE/);
   assert.match(source, /p\.sale_price_xtr>1/);
-  assert.match(source, /rr\.review_status='APPROVED'/);
-  assert.match(source, /rr\.owner_attested=TRUE/);
-  assert.match(source, /rr\.valid_until>NOW\(\)/);
+  assert.doesNotMatch(source, /JOIN product_rights_reviews/);
+  assert.match(source, /STANDALONE_PRODUCTS_SQL/);
+  assert.match(source, /variant_id:-Number\(product\.id\)/);
   assert.match(source, /stock\.available_stock>0/);
   assert.doesNotMatch(source, /vault_core_secret_payloads/);
   assert.match(source, /availability_mode/);
@@ -962,7 +963,7 @@ test('Owner SKU lifecycle saves one safe form and publishes eligible stock witho
   const catalog = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
   assert.match(ownerRoute, /router\.post\('\/products'/);
   assert.match(ownerRoute, /OWNER_PRODUCT_SINGLE_FORM_SAVED/);
-  assert.match(ownerRoute, /validateRightsReviewInput/);
+  assert.doesNotMatch(ownerRoute, /validateRightsReviewInput|isRightsReviewUsable/);
   assert.match(ownerRoute, /AUTHENTICATION_DATA_PROHIBITED/);
   assert.match(ownerRoute, /USE_SINGLE_PRODUCT_FORM/);
   assert.doesNotMatch(ownerRoute, /vault_core_secret_payloads|encryptSecretPayload|readJokiCustomerAccess/);
@@ -1382,6 +1383,36 @@ test('active CSS rules do not contain repeated declarations that can reintroduce
   }
 });
 
+test('Owner controls each SKU with Tersedia, Inden days, and Tidak tersedia states', () => {
+  const adminRoute = readFileSync(new URL('../backend/routes/admin.js', import.meta.url), 'utf8');
+  const ownerPage = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
+  const orderRoute = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  assert.match(adminRoute, /router\.patch\('\/products\/:id\/availability'/);
+  assert.match(adminRoute, /\['AVAILABLE','INDENT','UNAVAILABLE'\]/);
+  assert.match(adminRoute, /indentDays<1\|\|indentDays>365/);
+  assert.match(ownerPage, /Tersedia/);
+  assert.match(ownerPage, /Inden/);
+  assert.match(ownerPage, /Tidak tersedia/);
+  assert.match(ownerPage, /admin-availability-buttons/);
+  assert.match(orderRoute, /product\.availability_mode === 'INDENT'/);
+});
+
+test('publisher and rights-review metadata cannot block commercial listing or fulfillment', () => {
+  const migration = readFileSync(new URL('../database/migrations/030_product_availability_and_account_sales.sql', import.meta.url), 'utf8');
+  const catalog = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
+  const admin = readFileSync(new URL('../backend/routes/admin.js', import.meta.url), 'utf8');
+  const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
+  const payments = readFileSync(new URL('../backend/controllers/paymentController.js', import.meta.url), 'utf8');
+  const delivery = readFileSync(new URL('../backend/services/deliveryService.js', import.meta.url), 'utf8');
+  assert.match(migration, /DROP TRIGGER IF EXISTS trg_products_rights_activation/);
+  assert.match(migration, /DROP TRIGGER IF EXISTS trg_inventory_rights_source/);
+  assert.doesNotMatch(catalog, /JOIN product_rights_reviews/);
+  assert.doesNotMatch(admin, /PRODUCT_RIGHTS_REVIEW_REQUIRED|ACCOUNT_PRODUCT_ONLY|isRightsReviewUsable|canAddProductInventory/);
+  assert.doesNotMatch(orders, /isRightsReviewUsable|JOIN product_rights_reviews/);
+  assert.doesNotMatch(payments, /product_rights_reviews/);
+  assert.doesNotMatch(delivery, /product_rights_reviews|rights_review_id=p\.current_rights_review_id/);
+});
+
 test('account catalog and checkout use manual Owner handover without storing account credentials', () => {
   const catalog = readFileSync(new URL('../backend/services/publicCatalogService.js', import.meta.url), 'utf8');
   const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
@@ -1401,14 +1432,14 @@ test('account catalog and checkout use manual Owner handover without storing acc
   assert.match(orders, /FOR UPDATE SKIP LOCKED/);
   assert.match(delivery, /fulfillment_type === 'GAME_ACCOUNT_TRANSFER'/);
   assert.match(delivery, /OWNER_MANUAL_FULFILLMENT_REQUIRED/);
-});test('legacy SKU mapping remains category-bound and pauses the SKU for unified-form review', () => {
+});test('legacy SKU mapping remains category-bound and preserves its availability', () => {
   const ownerRoute = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
   assert.match(ownerRoute, /router\.put\('\/products\/:[^']+\/variant'/);
   for (const slug of ['mlbb-akun','free-fire-akun','roblox-akun','genshin-akun','roblox-blox-fruits','roblox-adopt-me','roblox-murder-mystery-2']) assert.ok(ownerRoute.includes("'" + slug + "'"));
   assert.match(ownerRoute, /LEGACY_CATEGORY_HAS_NO_V4_VARIANT/);
   assert.match(ownerRoute, /VARIANT_MAPPING_DOES_NOT_MATCH_LEGACY_PRODUCT/);
   assert.match(ownerRoute, /PRODUCT_VARIANT_ALREADY_ASSIGNED/);
-  assert.match(ownerRoute, /status=CASE WHEN status='ACTIVE' THEN 'PAUSED' ELSE status END/);
+  assert.doesNotMatch(ownerRoute, /status=CASE WHEN status='ACTIVE' THEN 'PAUSED' ELSE status END/);
   assert.match(ownerRoute, /V4_LEGACY_PRODUCT_VARIANT_MAPPED/);
   assert.match(ownerRoute, /COALESCE\([\s\S]*p\.stock_source_reference[\s\S]*i\.source_reference/);
 });test('legacy multi-step question, inventory and publish endpoints are disabled', () => {

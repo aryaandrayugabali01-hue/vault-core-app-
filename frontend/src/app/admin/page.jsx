@@ -46,6 +46,8 @@ export default function AdminPage() {
   const [authState, setAuthState] = useState('checking');
   const [oidcReady, setOidcReady] = useState(false);
   const [loginMessage, setLoginMessage] = useState('');
+  const [availabilityBusyId, setAvailabilityBusyId] = useState(null);
+  const [indentDays, setIndentDays] = useState({});
 
   const headers = () => ({
     'content-type':'application/json',
@@ -118,6 +120,37 @@ export default function AdminPage() {
     initializeAccess();
     return () => { alive = false; };
   }, []);
+
+  async function setProductAvailability(product, availabilityStatus) {
+    const days = Number(indentDays[product.id] ?? product.indent_deadline_days ?? 7);
+    if (availabilityStatus === 'INDENT' && (!Number.isSafeInteger(days) || days < 1 || days > 365)) {
+      setNotice('Jumlah hari Inden harus 1 sampai 365 hari.');
+      return;
+    }
+    setAvailabilityBusyId(product.id);
+    setNotice('');
+    try {
+      const response = await fetch(`${API}/api/admin/products/${product.id}/availability`, {
+        method:'PATCH',
+        headers:headers(),
+        credentials:'include',
+        body:JSON.stringify({
+          availabilityStatus,
+          ...(availabilityStatus === 'INDENT' ? {indentDays:days} : {})
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || data.error || 'Status ketersediaan gagal diperbarui.');
+      await refresh();
+      const label = availabilityStatus === 'AVAILABLE' ? 'Tersedia'
+        : availabilityStatus === 'INDENT' ? `Inden ${days} hari` : 'Tidak tersedia';
+      setNotice(product.sku + ' berhasil diubah menjadi ' + label + '.');
+    } catch (error) {
+      setNotice(error.message || 'Status ketersediaan gagal diperbarui.');
+    } finally {
+      setAvailabilityBusyId(null);
+    }
+  }
 
   async function logoutOwner() {
     await fetch(`${API}/api/owner-auth/logout`, {
@@ -208,65 +241,51 @@ export default function AdminPage() {
         </label>
       </div>
 
-      <div className="admin-table-wrap">
+      <div className="admin-table-wrap admin-products-only">
         <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Produk</th>
-              <th>Game / kategori</th>
-              <th>Harga jual</th>
-              <th>Stok tersedia</th>
-              <th>Ketersediaan</th>
-              <th>Status</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Data Produk</th></tr></thead>
           <tbody>
-            {filteredProducts.map((product) => (
-              <tr key={product.id}>
+            {filteredProducts.map((product) => {
+              const availability = product.availability_status
+                || (product.status !== 'ACTIVE' ? 'UNAVAILABLE' : product.availability_mode === 'INDENT' ? 'INDENT' : 'AVAILABLE');
+              const busy = availabilityBusyId === product.id;
+              return <tr key={product.id}>
                 <td>
-                  <strong>{product.sku}</strong>
-                  <small>{product.name}</small>
-                  {product.description && <details className="admin-product-details">
-                    <summary>Spesifikasi produk</summary>
-                    <div>
-                      <p>{product.description}</p>
-                      {Object.entries(product.attributes || {}).length > 0 && (
-                        <small>
-                          {Object.entries(product.attributes).map(([key,value]) => key + ': ' + String(value)).join(' · ')}
-                        </small>
-                      )}
+                  <div className="admin-product-entry">
+                    <div className="admin-product-entry-main">
+                      <strong>{product.name}</strong>
+                      <small>{product.sku} · {GAME_LABELS[product.game_category] || product.game_category || '—'} · {categoryLabel(product)}</small>
+                      <small>Harga jual: {xtr(product.sale_price_xtr)} · Slot tersedia: {Number(product.actual_stock || 0).toLocaleString('id-ID')}</small>
+                      <span className={`admin-status ${availability.toLowerCase()}`}>
+                        {availability === 'AVAILABLE' ? 'TERSEDIA' : availability === 'INDENT' ? `INDEN · ${product.indent_deadline_days || '—'} HARI` : 'TIDAK TERSEDIA'}
+                      </span>
+                      {product.description && <details className="admin-product-details">
+                        <summary>Spesifikasi produk</summary>
+                        <div>
+                          <p>{product.description}</p>
+                          {Object.entries(product.attributes || {}).length > 0 && <small>
+                            {Object.entries(product.attributes).map(([key,value]) => key + ': ' + String(value)).join(' · ')}
+                          </small>}
+                        </div>
+                      </details>}
                     </div>
-                  </details>}
+                    <div className="admin-product-availability">
+                      <div className="admin-availability-buttons">
+                        <button type="button" className="admin-secondary-link" aria-pressed={availability === 'AVAILABLE'} disabled={busy} onClick={() => setProductAvailability(product,'AVAILABLE')}>Tersedia</button>
+                        <button type="button" className="admin-secondary-link" aria-pressed={availability === 'INDENT'} disabled={busy} onClick={() => setProductAvailability(product,'INDENT')}>Inden</button>
+                        <button type="button" className="admin-secondary-link" aria-pressed={availability === 'UNAVAILABLE'} disabled={busy} onClick={() => setProductAvailability(product,'UNAVAILABLE')}>Tidak tersedia</button>
+                      </div>
+                      <label className="admin-indent-days">Jumlah hari Inden
+                        <input type="number" min="1" max="365" value={indentDays[product.id] ?? product.indent_deadline_days ?? 7}
+                          onChange={(event) => setIndentDays((current) => ({...current,[product.id]:event.target.value}))}/>
+                      </label>
+                      <a className="admin-secondary-link" href="/admin/v4">Edit detail SKU</a>
+                    </div>
+                  </div>
                 </td>
-                <td>
-                  <strong>{GAME_LABELS[product.game_category] || product.game_category || '—'}</strong>
-                  <small>{categoryLabel(product)}</small>
-                </td>
-                <td>
-                  <strong>{xtr(product.sale_price_xtr)}</strong>
-                  {priceRange(product.attributes) && <small>{priceRange(product.attributes)}</small>}
-                </td>
-                <td>{Number(product.actual_stock || 0).toLocaleString('id-ID')}</td>
-                <td>
-                  <strong>{product.availability_mode === 'INDENT' ? 'INDENT' : 'READY'}</strong>
-                  {product.availability_mode === 'INDENT' && <small>{product.indent_deadline_days || '—'} hari kalender</small>}
-                </td>
-                <td>
-                  <span className={`admin-status ${String(product.status || '').toLowerCase()}`}>
-                    {statusLabel(product.status)}
-                  </span>
-                </td>
-                <td>
-                  <a className="admin-secondary-link" href="/admin/v4">Kelola produk</a>
-                </td>
-              </tr>
-            ))}
-            {!filteredProducts.length && <tr>
-              <td colSpan="7" className="table-empty">
-                {loading ? 'Memuat data produk…' : 'Produk tidak ditemukan.'}
-              </td>
-            </tr>}
+              </tr>;
+            })}
+            {!filteredProducts.length && <tr><td className="table-empty">{loading ? 'Memuat data produk…' : 'Produk tidak ditemukan.'}</td></tr>}
           </tbody>
         </table>
       </div>
