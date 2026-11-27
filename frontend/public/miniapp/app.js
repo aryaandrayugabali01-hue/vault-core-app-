@@ -263,7 +263,6 @@ function home() {
   const gameTiles = GAME_CODES.map((code) => {
     return '<button class="game-tile" type="button" data-go="/game/' + code + '"><span class="game-art"><img src="' + gameOf(code).art + '" alt="" loading="lazy"></span><b>' + esc(gameOf(code).short) + '</b></button>';
   }).join('');
-  const promoBoardArt = GAME_CODES.map((code) => '<span class="home-promo-board-tile"><img src="' + gameOf(code).art + '" alt=""><b>' + esc(gameOf(code).short) + '</b></span>').join('');
   const jokiCard = (variant) => {
     const ready = productsOf(variant).filter(isBuyable).length;
     return '<button class="home-joki-card" type="button" data-go="/variant/' + variant.variant_id + '">' +
@@ -278,7 +277,7 @@ function home() {
     headerHome() +
     '<main class="home-v3">' +
       '<form class="search home-search" id="home-search-form">' + icon('search') + '<input id="home-search" type="search" value="' + esc(state.search || '') + '" placeholder="Cari akun game atau layanan joki..." autocomplete="off"><button type="submit" aria-label="Cari produk">' + icon('next') + '</button></form>' +
-      '<section class="home-promo promo-board"><div class="home-promo-copy"><small><i></i>PAPAN PROMO · VAULT CORE</small><h1>Temukan akun game <em>& layanan joki</em></h1><p>Telusuri katalog empat game pilihan.</p><div class="home-promo-tags"><span>AKUN GAME</span><span>JOKI</span><span>4 GAME</span></div><button type="button" data-go="/catalog">Jelajahi Store <b>↗</b></button></div><aside class="home-promo-board-art" aria-hidden="true"><div class="home-promo-board-head"><b>FEATURED</b><small>VAULT CORE / STORE</small></div><div class="home-promo-board-grid">' + promoBoardArt + '</div><div class="home-promo-board-foot"><span>DISCOVER</span><span>PLAY</span></div></aside></section>' +
+      '<section class="home-promo promo-board"><div class="home-promo-copy"><small><i></i>PAPAN PROMO · VAULT CORE</small><h1>Temukan akun game <em>& layanan joki</em></h1><p>Telusuri katalog empat game pilihan.</p><div class="home-promo-tags"><span>AKUN GAME</span><span>JOKI</span><span>4 GAME</span></div><button type="button" data-go="/catalog">Jelajahi Store <b>↗</b></button></div><aside class="home-promo-board-art" aria-hidden="true"><img class="home-promo-loop" src="/assets/02-hero/hero-vaultcore-loop.webp" alt=""></aside></section>' +
       '<div class="section-head"><h2>Kategori Game</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
       '<section class="games home-games">' + gameTiles + '</section>' +
       '<div class="home-group-tabs"><button type="button" class="on" data-store-group="ALL">Semua</button><button type="button" data-store-group="Akun">Akun</button><button type="button" data-store-group="Jasa Joki">Joki</button></div>' +
