@@ -1694,3 +1694,9 @@ test('website and Mini App share a green four-game promo board', () => {
   assert.ok(sw.includes("'/vault-core-premium.css'"));
   assert.doesNotMatch(webHome + mini, /Diskon hingga|Diskon 50%|harga coret/);
 });
+
+
+test('Cloudflare static assets send the exact homepage path through the Vinext Worker', () => {
+  const config = readFileSync(new URL('../frontend/cloudflare.config.ts', import.meta.url), 'utf8');
+  assert.match(config, /runWorkerFirst:\s*\[\s*"\/"\s*,/);
+});
