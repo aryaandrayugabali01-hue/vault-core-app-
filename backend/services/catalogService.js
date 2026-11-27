@@ -1,19 +1,13 @@
-const ACCOUNT_CATEGORY_SLUGS = Object.freeze({
-  MLBB:'mlbb-akun',
-  FREE_FIRE:'free-fire-akun',
-  ROBLOX:'roblox-akun',
-  GENSHIN:'genshin-akun'
-});
-
 const V4_FULFILLMENT_BY_GROUP = Object.freeze({
   'Akun': new Set(['GAME_ACCOUNT_TRANSFER']),
   'Jasa Joki': new Set(['SERVICE_INSTRUCTIONS']),
-  'Item In-Game': new Set(['SERVICE_INSTRUCTIONS'])
+  'Item In-Game': new Set(['SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE']),
+  'Produk Lainnya': new Set(['SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE'])
 });
 
 function isGameAccount(product) {
   return product?.fulfillment_type === 'GAME_ACCOUNT_TRANSFER'
-    && ACCOUNT_CATEGORY_SLUGS[product?.game_category] === product?.marketplace_category_slug;
+    && product?.variant_category === 'Akun';
 }
 
 function isV4VariantProduct(product) {
@@ -22,8 +16,15 @@ function isV4VariantProduct(product) {
     && V4_FULFILLMENT_BY_GROUP[product?.variant_category]?.has(product?.fulfillment_type) === true;
 }
 
+function isStandaloneCatalogProduct(product) {
+  return product?.variant_category === 'Produk Lainnya'
+    && Number.isSafeInteger(Number(product?.variant_id))
+    && Number(product.variant_id) < 0
+    && V4_FULFILLMENT_BY_GROUP['Produk Lainnya'].has(product?.fulfillment_type) === true;
+}
+
 function isCheckoutableProduct(product) {
-  return isGameAccount(product) || isV4VariantProduct(product);
+  return isGameAccount(product) || isV4VariantProduct(product) || isStandaloneCatalogProduct(product);
 }
 
 export function resolveDisplayStock({ actualStock, mode = 'EXACT_COUNT', override = null }) {
