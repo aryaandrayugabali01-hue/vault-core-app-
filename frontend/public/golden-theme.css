@@ -418,3 +418,122 @@ html { background:#100e08!important; color:#f7f3e7!important; }
 @media(max-width:360px) {
   .home-promo.promo-board { min-height:155px!important;grid-template-columns:minmax(0,1.16fr) minmax(82px,.84fr)!important;padding:11px!important; }
 }
+
+
+/* Owner Dashboard and unified product editor follow the same Golden Dark system. */
+.admin-shell,.owner-login-screen {
+  color:#f7f3e7!important;
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(245,197,66,.11),transparent 42%),
+    #100e08!important;
+}
+.admin-title h1,.admin-section-head h2,.admin-product-entry-main>b { color:#f7f3e7!important; }
+.admin-title p,.admin-section-head p,.admin-footnote { color:#b8ad91!important; }
+.admin-panel {
+  border-color:rgba(245,197,66,.20)!important;
+  background:linear-gradient(150deg,#211b0e,#171309)!important;
+  box-shadow:0 12px 32px rgba(0,0,0,.30),0 0 20px rgba(245,197,66,.035)!important;
+}
+.admin-stats>div {
+  border-color:rgba(245,197,66,.19)!important;
+  background:linear-gradient(145deg,#272112,#1d190e)!important;
+}
+.admin-stats small { color:#b8ad91!important; }
+.admin-stats strong { color:#f7f3e7!important; }
+.admin-stats .profit,.profit { color:#b7ff35!important; }
+.admin-form label,.admin-check,.admin-indent-days { color:#d8cfb6!important; }
+.admin-form input,.admin-form textarea,.admin-form select,.cap-input,.admin-indent-days input {
+  border-color:rgba(245,197,66,.25)!important;
+  background:#100e08!important;
+  color:#f7f3e7!important;
+}
+.admin-form input::placeholder,.admin-form textarea::placeholder { color:#8f8469!important; }
+.admin-form input:focus,.admin-form textarea:focus,.admin-form select:focus {
+  border-color:#f5c542!important;
+  box-shadow:0 0 0 3px rgba(245,197,66,.10)!important;
+}
+.admin-table-wrap { border-color:rgba(245,197,66,.18)!important;background:#171309!important; }
+.admin-table { color:#e7dfca!important; }
+.admin-table th { border-bottom-color:rgba(245,197,66,.23)!important;background:#272112!important;color:#f5d77d!important; }
+.admin-table td { color:#e7dfca!important; }
+.admin-table td strong { color:#f7f3e7!important; }
+.admin-table tbody tr:hover td { background:rgba(245,197,66,.045)!important; }
+.admin-product-availability { border-color:rgba(245,197,66,.13)!important; }
+.admin-primary,.admin-product-entry-link {
+  border-color:#ffe28a!important;
+  background:linear-gradient(180deg,#ffdc70,#f5c542)!important;
+  color:#211807!important;
+  box-shadow:0 6px 18px rgba(245,197,66,.20)!important;
+}
+.admin-primary:hover,.admin-product-entry-link:hover { background:#ffda68!important; }
+.admin-secondary-link,.admin-logout {
+  border-color:rgba(245,197,66,.24)!important;
+  background:#272112!important;
+  color:#f0dfad!important;
+}
+.admin-availability-buttons button[aria-pressed="true"] {
+  border-color:rgba(183,255,53,.55)!important;
+  background:rgba(183,255,53,.13)!important;
+  color:#dfffad!important;
+}
+.admin-notice {
+  border-color:rgba(245,197,66,.24)!important;
+  background:rgba(245,197,66,.08)!important;
+  color:#f0dfad!important;
+}
+.owner-login-card {
+  border-color:rgba(245,197,66,.22)!important;
+  background:linear-gradient(150deg,#211b0e,#171309)!important;
+  box-shadow:0 18px 50px rgba(0,0,0,.40),0 0 24px rgba(245,197,66,.07)!important;
+}
+.owner-login-card h1 { color:#f7f3e7!important; }
+.owner-login-card p,.owner-login-card small { color:#b8ad91!important; }
+.telegram-login-oidc-button {
+  border-color:rgba(245,197,66,.55)!important;
+  background:linear-gradient(180deg,#ffdc70,#f5c542)!important;
+  color:#211807!important;
+  box-shadow:0 7px 20px rgba(245,197,66,.18)!important;
+}
+
+/* Owner V4 single-page product editor. */
+.vco-shell {
+  background:radial-gradient(ellipse at 16% 0%,rgba(245,197,66,.11),transparent 38%),#100e08!important;
+  color:#f7f3e7!important;
+}
+.vco-header {
+  border-bottom-color:rgba(245,197,66,.18)!important;
+  background:rgba(16,14,8,.95)!important;
+}
+.vco-header a,.vco-header-brand span { color:#f5d77d!important; }
+.vco-card,.vco-selected,.vco-secret-result,.vco-empty,.vco-order-item {
+  border-color:rgba(245,197,66,.18)!important;
+  background:linear-gradient(150deg,#211b0e,#171309)!important;
+  color:#f7f3e7!important;
+}
+.vco-section-head h2,.vco-selected-head h3,.vco-order-item>header,.vco-metrics b,.vco-secret-result { color:#f7f3e7!important; }
+.vco-section-head small,.vco-publish p,.vco-grid label,.vco-question label,.vco-selected-head p,.vco-grid small { color:#b8ad91!important; }
+.vco-grid input,.vco-grid select,.vco-grid textarea,.vco-question textarea,.vco-question input,.vco-question select,
+.vco-secret-password input,.vco-customer-field select {
+  border-color:rgba(245,197,66,.25)!important;
+  background:#100e08!important;
+  color:#f7f3e7!important;
+}
+.vco-grid input:focus,.vco-grid select:focus,.vco-grid textarea:focus,.vco-question textarea:focus,.vco-question input:focus {
+  border-color:#f5c542!important;
+  outline:2px solid rgba(245,197,66,.14)!important;
+}
+.vco-form-actions button,.vco-questions>button,.vco-publish>button,.vco-map-legacy button {
+  border-color:#ffe28a!important;
+  background:linear-gradient(180deg,#ffdc70,#f5c542)!important;
+  color:#211807!important;
+  box-shadow:0 6px 18px rgba(245,197,66,.18)!important;
+}
+.vco-product-list button,.vco-secret-password button,.vco-map-legacy,.vco-map-legacy select {
+  border-color:rgba(245,197,66,.20)!important;
+  background:#1d190e!important;
+  color:#f7f3e7!important;
+}
+.vco-product-list button.active { border-color:#f5c542!important;background:rgba(245,197,66,.10)!important; }
+.vco-alert { border-color:rgba(245,197,66,.22)!important;background:rgba(245,197,66,.07)!important;color:#f0dfad!important; }
+.vco-selected-head span,.vco-question>span,.vco-secret-result span,.vco-hero span,.vco-section-head span,.vco-publish span { color:#f5d77d!important; }
+.vco-selected-head>b.good { border-color:rgba(183,255,53,.30)!important;background:rgba(183,255,53,.10)!important;color:#b7ff35!important; }
