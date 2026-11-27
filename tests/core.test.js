@@ -1290,7 +1290,7 @@ test('account catalog and checkout use manual Owner handover without storing acc
   assert.match(orders, /FOR UPDATE SKIP LOCKED/);
   assert.match(delivery, /fulfillment_type === 'GAME_ACCOUNT_TRANSFER'/);
   assert.match(delivery, /OWNER_MANUAL_FULFILLMENT_REQUIRED/);
-});test('legacy SKU mapping remains category-bound and pauses the SKU for unified-form review', () => {
+});test('legacy SKU mapping preserves availability and keeps canonical category mapping', () => {
   const ownerRoute = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');
   assert.match(ownerRoute, /router\.put\('\/products\/:[^']+\/variant'/);
   for (const slug of ['mlbb-akun','free-fire-akun','roblox-akun','genshin-akun','roblox-blox-fruits','roblox-adopt-me','roblox-murder-mystery-2']) assert.ok(ownerRoute.includes("'" + slug + "'"));
