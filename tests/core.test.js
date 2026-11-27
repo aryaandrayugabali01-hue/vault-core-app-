@@ -931,12 +931,14 @@ test('Customer web navigation matches the Mini App Home, Katalog, Transaksi and 
   assert.match(catalog, /vault-core-web-cart/);
 });
 
-test('store footer avoids unverified safety, warranty and founding-year claims', () => {
+test('store footer keeps the requested compact navigation and removes the Help/Payment section', () => {
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   assert.match(navigation, /Info Produk/);
   assert.match(navigation, /Status Pesanan/);
-  assert.match(navigation, /Bantuan Telegram/);
   assert.match(navigation, /Single Vendor/);
+  assert.match(navigation, /aria-label="Navigasi footer"/);
+  assert.match(navigation, /store-global-footer-copy/);
+  assert.doesNotMatch(navigation, /Bantuan Telegram|Hubungi Admin VAULT CORE|Bayar menggunakan Stars|Telegram Stars \\(XTR\\)|Pembayaran diproses melalui invoice resmi Telegram\\./);
   assert.doesNotMatch(navigation, /Anti-Hackback|Akun Dicek Manual|Garansi Refund|Terverifikasi|Sejak 2024|EST 2024/);
 });
 
