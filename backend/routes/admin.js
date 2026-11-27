@@ -33,22 +33,13 @@ router.get('/dashboard', async (_req, res) => {
     pool.query(`SELECT COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE)::int AS total_products,
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='ACTIVE')::int AS active_products,
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status='ACTIVE'
-        AND sale_price_xtr>1 AND fulfillment_type='GAME_ACCOUNT_TRANSFER'
-        AND game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
-        AND EXISTS (SELECT 1 FROM marketplace_categories mc WHERE mc.id=products.marketplace_category_id AND mc.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun'))
-        AND EXISTS (SELECT 1 FROM product_rights_reviews r
-          WHERE r.id=products.current_rights_review_id AND r.product_id=products.id
-            AND r.review_status='APPROVED' AND r.owner_attested=TRUE AND r.valid_until>NOW())
-        AND EXISTS (SELECT 1 FROM inventory_items i
-          WHERE i.product_id=products.id AND i.status='AVAILABLE'
-            AND i.rights_review_id=products.current_rights_review_id
-            AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL))::int AS buyable_products,
+        AND sale_price_xtr>1 AND fulfillment_type IS NOT NULL
+        AND EXISTS (SELECT 1 FROM inventory_items i WHERE i.product_id=products.id AND i.status='AVAILABLE'
+          AND i.reserved_order_id IS NULL AND i.reserved_until IS NULL
+          AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL))::int AS buyable_products,
       COUNT(*) FILTER (WHERE COALESCE(is_test,FALSE)=FALSE AND status IN ('DRAFT','PAUSED'))::int AS paused_or_draft_products
       FROM products
-      WHERE COALESCE(is_test,FALSE)=FALSE
-        AND fulfillment_type='GAME_ACCOUNT_TRANSFER'
-        AND game_category IN ('MLBB','FREE_FIRE','ROBLOX','GENSHIN')
-        AND EXISTS (SELECT 1 FROM marketplace_categories mc WHERE mc.id=products.marketplace_category_id AND mc.slug IN ('mlbb-akun','free-fire-akun','roblox-akun','genshin-akun'))`)
+      WHERE COALESCE(is_test,FALSE)=FALSE`)
   ]);
   const expensesXtr = Number(expenses.rows[0].expenses_xtr);
   const grossXtr = Number(sales.rows[0].gross_xtr);
