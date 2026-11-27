@@ -1700,7 +1700,9 @@ test('Golden Dark storefront theme keeps the animated loop visible in the hero',
   const theme = readFileSync(new URL('../frontend/public/golden-theme.css', import.meta.url), 'utf8');
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   assert.match(home, /className="vc-home-promo-visual"/);
-  assert.ok(home.includes('src="/assets/02-hero/hero-vaultcore-loop.webp"'));
+  assert.ok(home.includes('srcSet="/assets/02-hero/hero-vaultcore-loop.webp"'));
+  assert.ok(home.includes('src="/assets/02-hero/hero-vaultcore.jpg"'));
+  assert.ok(home.includes('prefers-reduced-motion: no-preference'));
   assert.doesNotMatch(home, /vc-home-promo-board/);
   assert.match(theme, /--vc-bg:\s*#100e08/i);
   assert.match(theme, /--vc-green:\s*#b7ff35/i);
