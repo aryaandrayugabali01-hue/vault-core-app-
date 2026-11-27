@@ -79,8 +79,6 @@ export function StoreFooter() {
         <div className="store-trust-item"><span className="store-trust-icon trust-green" aria-hidden="true">◇</span><span>Info Produk</span></div>
         <span className="store-trust-divider" aria-hidden="true"/>
         <div className="store-trust-item"><span className="store-trust-icon trust-blue" aria-hidden="true">◎</span><span>Status Pesanan</span></div>
-        <span className="store-trust-divider" aria-hidden="true"/>
-        <div className="store-trust-item"><span className="store-trust-icon trust-purple" aria-hidden="true">✉</span><span>Bantuan Telegram</span></div>
       </div>
       <div className="store-footer-columns">
         <section className="store-footer-brand">
@@ -93,18 +91,7 @@ export function StoreFooter() {
           <h3><span/>Navigasi</h3>
           <ul>{links.map(item=><li key={item.label}><a href={item.href}>{item.label}<NavigationIcon name="chevron"/></a></li>)}</ul>
         </nav>
-        <section className="store-footer-column" aria-label="Bantuan dan pembayaran">
-          <h3><span/>Bantuan</h3>
-          <a className="store-footer-help-link" href="https://t.me/vaultcore_support" target="_blank" rel="noopener noreferrer">
-            <span className="store-footer-help-icon">✉</span><span><strong>Telegram</strong><small>Hubungi Admin VAULT CORE</small></span><NavigationIcon name="chevron"/>
-          </a>
-          <a className="store-footer-help-link store-footer-stars-link" href="/catalog">
-            <span className="store-footer-help-icon">★</span><span><strong>Telegram Stars</strong><small>Bayar menggunakan Stars</small></span><NavigationIcon name="chevron"/>
-          </a>
-          <h4>Pembayaran</h4>
-          <div className="store-footer-payment"><span>★</span><strong>Telegram Stars (XTR)</strong></div>
-          <p className="store-footer-payment-note">Pembayaran diproses melalui invoice resmi Telegram.</p>
-        </section>
+
       </div>
       <div className="store-global-footer-copy"><strong>Vault Core</strong><span>•</span>© {new Date().getFullYear()} - All Rights Reserved</div>
     </div>
