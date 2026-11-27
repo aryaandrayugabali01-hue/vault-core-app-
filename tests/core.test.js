@@ -160,6 +160,8 @@ test('Public website serves the backend-owned customer catalog and Telegram acco
   assert.match(account, /throw new Error\(data\.message/);
   assert.match(account, /nextPath \? '\?next=' \+ encodeURIComponent\(nextPath\)/);
   assert.match(account, /href=\{destination\}/);
+  assert.match(account, /href="\/catalog#transactions">Lihat Riwayat Pesanan<\/a>/);
+  assert.match(account, /Profil dan riwayat pesanan terhubung ke sistem VAULT CORE yang sama/);
   assert.match(catalog, /api\/customer-auth\/session/);
   assert.match(catalog, /credentials:'include'/);
   assert.match(catalog, /window\.location\.assign\('\/account\?next=%2Fcatalog'\)/);
