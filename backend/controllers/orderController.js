@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 import { pool } from '../db/pool.js';
 import { sendStarsInvoice } from '../services/telegramApi.js';
 import { isEligibleCheckoutProduct } from '../services/catalogService.js';
-import { isRightsReviewUsable } from '../services/rightsReviewService.js';
 import { normalizeCartItems } from '../services/cartService.js';
 import { releaseExpiredPendingOrders } from '../services/reservationService.js';
 
@@ -19,11 +18,10 @@ export async function createOrder(req, res, { testMode = false } = {}) {
 
     const ids = cartItems.map((item) => item.productId);
     const { rows: products } = await client.query(
-      `SELECT p.*,mc.slug AS marketplace_category_slug,v.kategori_produk AS variant_category,rr.id AS review_id,rr.review_status,rr.valid_until,rr.owner_attested
+      `SELECT p.*,mc.slug AS marketplace_category_slug,CASE WHEN p.variant_id IS NULL THEN 'Produk Lainnya' ELSE v.kategori_produk END AS variant_category
        FROM products p
        LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
        LEFT JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
-       LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
        WHERE p.id=ANY($1::bigint[]) AND p.status='ACTIVE'
          AND ${testMode ? 'p.is_test=TRUE' : 'COALESCE(p.is_test,FALSE)=FALSE'}
        ORDER BY p.id FOR UPDATE OF p`,
@@ -39,21 +37,15 @@ export async function createOrder(req, res, { testMode = false } = {}) {
 
     for (const item of cartItems) {
       const product = productById.get(item.productId);
-      if (!isEligibleCheckoutProduct(product,{testMode,ownerAuthorized:testMode})
-          || (!testMode && !isRightsReviewUsable({
-            id:product?.review_id,review_status:product?.review_status,
-            valid_until:product?.valid_until,owner_attested:product?.owner_attested
-          }))) {
-        throw Object.assign(new Error('Produk tidak tersedia atau pemeriksaan internal Owner sudah kedaluwarsa.'),{status:404});
+      if (!isEligibleCheckoutProduct(product,{testMode,ownerAuthorized:testMode})) {
+        throw Object.assign(new Error('Produk tidak tersedia.'),{status:404});
       }
-      const stockParams = testMode
-        ? [item.productId,item.quantity]
-        : [item.productId,item.quantity,product.current_rights_review_id];
+      const stockParams = [item.productId,item.quantity];
       const {rows:stockRows}=await client.query(
         `SELECT i.id FROM inventory_items i
          WHERE i.product_id=$1 AND i.status='AVAILABLE'
            AND i.reserved_order_id IS NULL AND i.reserved_until IS NULL
-           AND ${testMode ? 'TRUE' : 'i.rights_review_id=$3 AND i.source_reference IS NOT NULL'}
+           AND ${testMode ? 'TRUE' : "NULLIF(BTRIM(i.source_reference),'') IS NOT NULL"}
 
          ORDER BY i.id LIMIT $2 FOR UPDATE SKIP LOCKED`,
         stockParams
