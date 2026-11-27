@@ -18,8 +18,6 @@ function isV4VariantProduct(product) {
 
 function isStandaloneCatalogProduct(product) {
   return product?.variant_category === 'Produk Lainnya'
-    && Number.isSafeInteger(Number(product?.variant_id))
-    && Number(product.variant_id) < 0
     && V4_FULFILLMENT_BY_GROUP['Produk Lainnya'].has(product?.fulfillment_type) === true;
 }
 
