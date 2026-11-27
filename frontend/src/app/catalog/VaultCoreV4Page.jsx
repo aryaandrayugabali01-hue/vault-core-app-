@@ -255,11 +255,9 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     return true;
   }),[flatProducts,game,group,search,filters]);
 
-  const visibleVariants = useMemo(() => variants.filter((variant) =>
-    (game === 'ALL' || variant.game_code === game) &&
-    (group === 'ALL' || variant.category === group) &&
-    (!search || [variant.name,variant.game,variant.category].join(' ').toLowerCase().includes(search.toLowerCase()))
-  ),[variants,game,group,search]);
+  const availableGroups = useMemo(() => GROUPS.filter((category) =>
+    flatProducts.some((product) => product.group === category)
+  ),[flatProducts]);
 
   const addToCart = (product) => {
     const fields=Array.isArray(product.customer_input_fields)?product.customer_input_fields:[];
@@ -401,8 +399,8 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         </section>
 
         <section className="vc4-filter-bar" aria-label="Jenis produk">
-          {['ALL',...GROUPS].map((item) => <button type="button" key={item} className={group===item?'active':''} onClick={() => setGroup(item)}>
-            {item==='ALL'?'Semua jenis':item}
+          {['ALL',...availableGroups].map((item) => <button type="button" key={item} className={group===item?'active':''} onClick={() => setGroup(item)}>
+            {item==='ALL'?'Semua jenis':item==='Jasa Joki'?'Joki':item}
           </button>)}
           <input type="search" value={search} onChange={(event)=>setSearch(event.target.value)} placeholder="Cari produk atau varian…" aria-label="Cari produk atau varian"/>
         </section>
@@ -421,35 +419,38 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
 
         {notice && <div className="vc4-notice" role="status">{notice}<button type="button" onClick={()=>setNotice('')} aria-label="Tutup">×</button></div>}
         {error && <div className="vc4-error">{error}<button type="button" onClick={loadCatalog}>Coba lagi</button></div>}
-        {loading ? <div className="vc4-loading"><span/><span/><span/></div> : GROUPS.filter((category)=>group==='ALL'||group===category).map((category) => {
-          const list = visibleVariants.filter((variant)=>variant.category===category);
-          if (!list.length) return null;
-          return <section className="vc4-shelf" key={category}>
-            <div className="vc4-shelf-head"><div><span>VAULT CORE · {category.toUpperCase()}</span><h2>{category}.</h2></div><p>{category==='Akun'?'Akun game dengan spesifikasi dan status ketersediaan pada listing.':'Layanan joki dengan jenis pekerjaan dan estimasi sesuai listing.'}</p></div>
-            <div className="vc4-grid">
-              {list.map((variant) => {
-                const products = visibleProducts.filter((product)=>product.variant_id===Number(variant.variant_id));
-                return <article className="vc4-card" key={variant.variant_id}>
-                  <button type="button" className="vc4-card-main" onClick={()=>setSelected({variant_id:Number(variant.variant_id)})}>
-                    <div className="vc4-card-art"><img src={GAME_ART[MARKET_GAME_CODE[variant.game_code]]} alt="" loading="lazy"/><small>{variant.category}</small></div>
-                    <div className="vc4-card-copy"><span className="vc4-eyebrow">{variant.game}</span><h3>{variant.name}</h3><p>{products.length ? products.length + ' produk tersedia' : 'Produk belum tersedia'}</p></div>
-                    <div className="vc4-card-foot"><strong>{products.length ? 'Lihat produk' : 'Detail varian'}</strong><span>↗</span></div>
-                  </button>
-                  {products.length>0 && <div className="vc4-sku-list">{products.map((product)=><div className="vc4-sku" key={product.id}>
-                    <button type="button" className="vc4-sku-info" onClick={()=>setSelected({variant_id:Number(variant.variant_id),product})}>
-                      {product.image_url ? <img src={product.image_url} alt="" loading="lazy"/> : <span className="vc4-sku-thumb">◇</span>}
-                      <span><strong>{product.name}</strong><small>{product.display_stock===1?'STOK TERAKHIR':getProductAvailability(product)}</small></span>
-                    </button>
-                    <div className="vc4-sku-buy"><PriceDisplay product={product} compact/><button type="button" onClick={()=>addToCart(product)}>Tambah</button></div>
-                  </div>)}</div>}
-                </article>;
-              })}
-            </div>
-          </section>;
-        })}
-
-        {!loading && visibleVariants.length===0 && <div className="vc4-empty"><h2>Varian belum ditemukan.</h2><p>Ubah pilihan game, jenis produk, atau kata pencarian.</p></div>}
-        {!loading && flatProducts.length===0 && <p className="vc4-owner-note">Belum ada produk yang tersedia untuk dipesan saat ini.</p>}
+        {loading
+          ? <div className="vc4-product-skeleton-grid" aria-label="Memuat produk">{Array.from({length:4},(_,i)=><div className="vc4-product-skeleton" key={i}><span/><i/><i/></div>)}</div>
+          : <section className="vc4-products-section">
+              <div className="vc4-products-heading"><div><span>STORE · KATALOG AKTIF</span><h2>{group==='ALL'?'Produk tersedia':group==='Jasa Joki'?'Layanan Joki':'Akun game'}</h2></div><small>{visibleProducts.length} produk</small></div>
+              {visibleProducts.length>0
+                ? <div className="vc4-product-grid">
+                    {visibleProducts.map((product)=>{
+                      const isIndent=String(product.availability_mode||'').toUpperCase()==='INDENT';
+                      const available=product.is_available===true && product.is_purchaseable===true;
+                      const statusLabel=isIndent?'Pending':available?'Ready':'Habis';
+                      const statusClass=isIndent?'is-pending':available?'is-ready':'is-unavailable';
+                      return <article className="vc4-product-tile" key={product.id}>
+                        <button type="button" className="vc4-product-tile-main" onClick={()=>setSelected({variant_id:Number(product.variant_id),product})} aria-label={'Detail '+product.name}>
+                          <span className="vc4-product-tile-art">
+                            <img src={product.image_url||GAME_ART[MARKET_GAME_CODE[product.game_code]]||GAME_ART.MLBB} alt="" loading="lazy"/>
+                            <span className={'vc4-stock-indicator '+statusClass}><i/>{statusLabel}</span>
+                            {String(product.tier||'').toUpperCase()==='GOLD'&&<span className="vc4-product-gold">GOLD · BEST VALUE</span>}
+                          </span>
+                          <span className="vc4-product-tile-copy">
+                            <small>{product.game} · {product.group}</small>
+                            <strong>{product.name}</strong>
+                            <PriceDisplay product={product} compact/>
+                          </span>
+                        </button>
+                        <div className="vc4-product-tile-actions">
+                          <button type="button" disabled={!available} onClick={()=>addToCart(product)}>{available?'Tambah':'Tidak tersedia'}</button>
+                        </div>
+                      </article>;
+                    })}
+                  </div>
+                : <div className="vc4-empty"><h2>Produk tidak ditemukan.</h2><p>Ubah game, jenis produk, atau kata pencarian.</p></div>}
+            </section>}
         <footer className="vc4-footer">
           <p>VAULT CORE adalah penjual tunggal. Website dan Telegram Mini App menggunakan akun pelanggan dan backend yang sama.</p>
           <p>Telegram Mini App menggunakan invoice resmi Telegram Stars (XTR). Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram. Data Joki hanya berupa identitas game dan parameter pengerjaan; password, OTP, dan kredensial autentikasi tidak diminta.</p>
@@ -457,7 +458,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
       </main>
 
       {selected && <div className="vc4-overlay" role="presentation" onClick={()=>setSelected(null)}>
-        <section className="vc4-dialog" role="dialog" aria-modal="true" aria-label="Detail produk" onClick={(e)=>e.stopPropagation()}>
+        <section className="vc4-dialog vc4-detail-dialog" role="dialog" aria-modal="true" aria-label="Detail produk" onClick={(e)=>e.stopPropagation()}>
           <button className="vc4-close" type="button" onClick={()=>setSelected(null)}>×</button>
           <span className="vc4-eyebrow">{activeVariant?.game} · {activeVariant?.category}</span>
           <h2>{activeVariant?.name}</h2>
@@ -472,8 +473,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             {selected.product.group === 'Akun' && <section className="vc4-security-guide"><h3>Keamanan Akun</h3><ol><li>Periksa detail akun dan kesesuaian spesifikasi sebelum konfirmasi.</li><li>Ganti kata sandi setelah menerima akses akun.</li><li>Aktifkan verifikasi dua langkah pada akun yang mendukung.</li><li>Pastikan email dan metode pemulihan berada dalam kendali pembeli.</li></ol><p>Garansi mengikuti ketentuan yang ditetapkan pada detail produk.</p></section>}
             <section className="vc4-listing-specs"><h4>Spesifikasi Produk</h4><div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ').replace(/\b[a-z]/g,letter=>letter.toUpperCase())}</span><strong>{String(value)}</strong></div>)}</div></section>
             {Array.isArray(selected.product.customer_input_fields)&&selected.product.customer_input_fields.length>0&&<section className="vc4-customer-inputs"><h4>Data untuk Pesanan</h4><p>Isi data game dan target pengerjaan sesuai petunjuk produk.</p>{selected.product.customer_input_fields.map((field)=>{const values=customerInputs[selected.product.id]||{};return <label key={field.label}>{field.label}{field.required&&<span> · Wajib</span>}{field.type==='textarea'?<textarea maxLength={field.maxLength||240} value={values[field.label]||''} onChange={(event)=>setCustomerInputs((current)=>({...current,[selected.product.id]:{...(current[selected.product.id]||{}),[field.label]:event.target.value}}))}/>:<input type={field.type==='number'?'number':'text'} inputMode={field.type==='number'?'numeric':'text'} maxLength={field.type==='number'?undefined:(field.maxLength||240)} value={values[field.label]||''} onChange={(event)=>setCustomerInputs((current)=>({...current,[selected.product.id]:{...(current[selected.product.id]||{}),[field.label]:event.target.value}}))}/>}</label>})}</section>}
-            <div className="vc4-price-large"><PriceDisplay product={selected.product}/></div>
-            <button className="vc4-primary" type="button" onClick={()=>addToCart(selected.product)}>Tambah ke keranjang</button>
+            <div className="vc4-detail-buybar"><PriceDisplay product={selected.product}/><button className="vc4-primary" type="button" disabled={!selected.product.is_available||!selected.product.is_purchaseable} onClick={()=>addToCart(selected.product)}>{selected.product.is_available&&selected.product.is_purchaseable?'Tambah ke keranjang':'Tidak tersedia'}</button></div>
           </> : <p>Produk pada varian ini akan tampil setelah Owner menyelesaikan SKU, harga, stok, dan verifikasi yang diwajibkan.</p>}
         </section>
       </div>}

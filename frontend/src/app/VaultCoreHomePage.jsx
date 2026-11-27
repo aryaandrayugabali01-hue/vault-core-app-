@@ -75,18 +75,19 @@ function VariantCard({ variant }) {
 function ProductCard({ product }) {
   const price = Number(product.sale_price_xtr || 0);
   const availability = getHomeProductAvailability(product);
-  const statusClass = availability === 'Ready' ? 'is-ready' : availability.startsWith('Inden') ? 'is-indent' : '';
+  const statusClass = availability === 'Ready' ? 'is-ready' : availability.startsWith('Inden') ? 'is-indent' : 'is-unavailable';
+  const statusLabel = availability === 'Ready' ? 'Ready' : availability.startsWith('Inden') ? 'Pending' : 'Habis';
   return (
     <a href={'/catalog?game=' + encodeURIComponent(product.game_code) + '&group=' + encodeURIComponent(product.group || 'Akun') + '&product=' + encodeURIComponent(product.id)} className={'vc-home-product-card' + (String(product.tier || '').toUpperCase()==='GOLD' ? ' vc-tier-gold' : '')}>
       <div className="vc-home-product-art">
         <img src={product.image_url || ART_BY_CODE[product.game_code] || GAME_ART.MLBB} alt="" loading="lazy"/>
+        <span className={'vc-home-stock-dot '+statusClass}><i/>{statusLabel}</span>
         {String(product.tier || '').toUpperCase()==='GOLD' && <span className="vc-home-best-value">GOLD · BEST VALUE</span>}
       </div>
       <div className="vc-home-product-copy">
         <small>{product.game} · {product.group}</small>
         <strong>{product.name}</strong>
         <span className="vc-home-price">{formatXtr(price)} XTR</span>
-        <span className={'vc-home-status ' + statusClass}>{availability}</span>
       </div>
     </a>
   );
@@ -111,8 +112,9 @@ export default function VaultCoreHomePage() {
     return () => { alive = false; };
   },[]);
 
-  const accountVariants = useMemo(() => variants.filter((variant) => variant.category === 'Akun'),[variants]);
-  const jokiVariants = useMemo(() => variants.filter((variant) => variant.category === 'Jasa Joki'),[variants]);
+  const accountVariants = useMemo(() => variants.filter((variant) => variant.category === 'Akun' && (variant.skus || []).length>0),[variants]);
+  const jokiVariants = useMemo(() => variants.filter((variant) => variant.category === 'Jasa Joki' && (variant.skus || []).length>0),[variants]);
+  const availableGroups = useMemo(() => ['Akun','Jasa Joki'].filter((category) => variants.some((variant) => variant.category===category && (variant.skus||[]).length>0)),[variants]);
   const availableProducts = useMemo(() => variants.flatMap((variant) =>
     (variant.skus || [])
       .filter((product) => product.is_available === true && product.is_purchaseable === true)
@@ -143,7 +145,7 @@ export default function VaultCoreHomePage() {
 
       <section className="vc-home-promo" aria-label="Promo VAULT CORE">
         <div className="vc-home-promo-copy">
-          <span>PROMO AKUN GAME</span>
+          <span>KATALOG VAULT CORE</span>
           <h1>Distribusi Aset Digital Game</h1>
           <p>Akun premium dan layanan joki dari empat game pilihan.</p>
           <a href="/catalog">Jelajahi Store <b>↗</b></a>
@@ -166,8 +168,7 @@ export default function VaultCoreHomePage() {
 
       <section className="vc-home-quick-filters" aria-label="Jenis produk">
         <a className="is-selected" href="/catalog">Semua</a>
-        <a href="/catalog?group=Akun">Akun</a>
-        <a href="/catalog?group=Jasa%20Joki">Joki</a>
+        {availableGroups.map((category)=><a href={'/catalog?group='+encodeURIComponent(category)} key={category}>{category==='Jasa Joki'?'Joki':category}</a>)}
       </section>
 
       {loading ? <HomeSkeleton/> : (
@@ -187,13 +188,12 @@ export default function VaultCoreHomePage() {
             </div>
           </section>
 
-          <section className="vc-home-section">
+          {jokiVariants.length>0&&<section className="vc-home-section">
             <SectionHeading eyebrow="LAYANAN GAME" title="Layanan Joki" href="/catalog?group=Jasa%20Joki"/>
             <div className="vc-home-variant-list">
               {jokiVariants.map((variant) => <VariantCard variant={variant} key={variant.variant_id}/>)}
-              {!jokiVariants.length && <div className="vc-home-empty"><strong>Varian Joki belum dapat dimuat</strong><span>{error || 'Informasi layanan akan mengikuti katalog backend.'}</span></div>}
             </div>
-          </section>
+          </section>}
         </>
       )}
 
