@@ -49,12 +49,14 @@ function SectionHeading({ eyebrow, title, href = '/catalog', action = 'Lihat sem
 function VariantCard({ variant }) {
   const gameCode = variant.game_code;
   const products = Array.isArray(variant.skus) ? variant.skus : [];
-  const ready = products.some((product) => product.is_available === true);
-  const available = products.filter((product) => product.is_available === true).length;
+  const readyProducts = products.filter((product) => product.is_available === true);
+  const indentProducts = products.filter((product) => ['INDEN','INDENT'].includes(String(product.availability_mode || '').toUpperCase()));
+  const available = readyProducts.length;
   const eta = products.find((product) => product.fulfillment_eta)?.fulfillment_eta;
+  const indentDays = indentProducts.find((product) => Number(product.indent_deadline_days) > 0)?.indent_deadline_days;
   const isJoki = variant.category === 'Jasa Joki';
   const query = new URLSearchParams({ game:gameCode, group:variant.category }).toString();
-  const status = ready ? 'Ready · ' + available + ' tersedia' : 'Belum tersedia';
+  const status = available ? 'Ready · ' + available + ' tersedia' : indentProducts.length ? 'Inden' + (indentDays ? ' · ' + indentDays + ' hari' : '') : 'Belum tersedia';
   return (
     <a className={'vc-home-variant-card' + (isJoki ? ' is-service' : '')} href={'/catalog?' + query}>
       <span className="vc-home-variant-art">
