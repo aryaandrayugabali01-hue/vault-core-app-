@@ -160,7 +160,7 @@ function setPage(markup, active, hideNav) {
     ['catalog','Store','grid'],
     ['orders','My Orders','receipt'],
     ['profile','Profile','user']
-  ].map(([key,label,symbol]) => '<button type="button" data-go="/' + key + '" class="' + (active === key ? 'on' : '') + '" aria-current="' + (active === key ? 'page' : 'false') + '">' + icon(symbol) + '<span>' + label + '</span></button>').join('');
+  ].map(([key,label,symbol]) => '<a href="#/' + key + '" class="' + (active === key ? 'on' : '') + '" aria-current="' + (active === key ? 'page' : 'false') + '">' + icon(symbol) + '<span>' + label + '</span></a>').join('');
   if (inTelegram && tg.BackButton) {
     if (hideNav || active === 'home' || active === 'catalog' || active === 'orders' || active === 'profile') tg.BackButton.hide();
     else tg.BackButton.show();
@@ -261,11 +261,11 @@ function home() {
   const recommendedAccounts = available.filter((product) => product.variant_category === 'Akun').slice(0,2);
   const jokiByGame = GAME_CODES.map((code) => services.find((variant) => variant.game_code === code)).filter(Boolean);
   const gameTiles = GAME_CODES.map((code) => {
-    return '<button class="game-tile" type="button" data-go="/game/' + code + '"><span class="game-art"><img src="' + gameOf(code).art + '" alt="" loading="lazy"></span><b>' + esc(gameOf(code).short) + '</b></button>';
+    return '<button class="game-tile" type="button" data-store-game="' + code + '"><span class="game-art"><img src="' + gameOf(code).art + '" alt="" loading="lazy"></span><b>' + esc(gameOf(code).short) + '</b></button>';
   }).join('');
   const jokiCard = (variant) => {
     const ready = productsOf(variant).filter(isBuyable).length;
-    return '<button class="home-joki-card" type="button" data-go="/variant/' + variant.variant_id + '">' +
+    return '<button class="home-joki-card" type="button" data-store-game="' + esc(variant.game_code) + '" data-store-group="Jasa Joki">' +
       '<span class="home-joki-art"><img src="' + gameOf(variant.game_code).art + '" alt="" loading="lazy"><small>JOKI</small></span>' +
       '<span class="home-joki-copy"><small>' + esc(gameOf(variant.game_code).short) + ' · LAYANAN</small><b>' + esc(variant.name) + '</b>' +
       '<span class="home-joki-status ' + (ready?'ready':'') + '">' + (ready?'Ready · '+ready+' layanan':'Belum tersedia') + '</span></span></button>';
@@ -695,6 +695,14 @@ function copyText(value) {
   return Promise.resolve(fallback());
 }
 function handleClick(event) {
+  const storeGame = event.target.closest('[data-store-game]');
+  if (storeGame) {
+    state.catalogGame = storeGame.getAttribute('data-store-game') || 'ALL';
+    state.catalogGroup = storeGame.getAttribute('data-store-group') || 'ALL';
+    state.search = '';
+    go('/catalog');
+    return;
+  }
   const storeGroup = event.target.closest('[data-store-group]');
   if (storeGroup) {
     state.catalogGroup = storeGroup.getAttribute('data-store-group') || 'ALL';
