@@ -189,6 +189,27 @@ function productImage(product, cls) {
   const name = product.name || gameOf(product.game_category).name;
   return '<div class="' + (cls || 'product-art') + '"><img src="' + esc(url) + '" alt="' + esc(name) + '" loading="lazy"></div>';
 }
+function productGalleryImages(product) {
+  const raw = [product && product.image_url,...(Array.isArray(product && product.image_gallery) ? product.image_gallery : [])];
+  const urls = [...new Set(raw.map((value) => String(value || '').trim()).filter((value) =>
+    /^https:\/\//i.test(value) || /^\/assets\/[A-Za-z0-9_./-]+$/.test(value)
+  ))].slice(0,8);
+  return urls.length ? urls : [gameOf(product && product.game_category).art];
+}
+function productGallery(product) {
+  const images = productGalleryImages(product);
+  const thumbnails = images.length > 1
+    ? '<div class="detail-gallery-thumbs" role="group" aria-label="Pilih gambar produk">' + images.map((url,index) =>
+        '<button type="button" class="detail-gallery-thumb' + (index===0?' is-active':'') + '" data-detail-gallery-index="' + index + '" data-image-src="' + esc(url) + '" aria-label="Gambar ' + (index+1) + '" aria-pressed="' + (index===0) + '">' +
+          '<img src="' + esc(url) + '" alt="" loading="lazy"></button>'
+      ).join('') + '</div>'
+    : '';
+  return '<section class="detail-gallery" aria-label="Galeri produk">' +
+    '<div class="detail-art detail-gallery-main"><img src="' + esc(images[0]) + '" data-detail-gallery-main alt="' + esc(product.name || 'Gambar produk') + '" loading="eager">' +
+      '<span class="detail-gallery-position" aria-live="polite">1 / ' + images.length + '</span></div>' +
+    thumbnails +
+  '</section>';
+}
 function productCard(product) {
   const gold = String(product.tier || '').toUpperCase() === 'GOLD';
   const mode = String(product.availability_mode || '').toUpperCase();
@@ -410,7 +431,7 @@ function productPage(id) {
       }).join('') + '</section>' : '';
   setPage(
     productDetailHeader(product) +
-    '<main>' + productImage(product,'detail-art') +
+    '<main>' + productGallery(product) +
     '<h2 class="detail-title">' + esc(product.name) + '</h2>' +
     '<div class="chips"><span class="chip">' + esc(gameOf(product.game_category).short) + '</span><span class="chip">' + esc(categoryLabel(product)) + '</span></div>' +
     (String(product.tier || '').toUpperCase() === 'GOLD' ? '<div class="detail-gold">✦ GOLD · BEST VALUE</div>' : '') +
@@ -668,6 +689,25 @@ function handleClick(event) {
     state.catalogGroup = groupFilter.getAttribute('data-filter-group');
     $('.store-group-tabs button').forEach((button) => button.classList.toggle('on',button === groupFilter));
     paintCatalogProducts();
+    return;
+  }
+  const galleryThumb = event.target.closest('[data-detail-gallery-index]');
+  if (galleryThumb) {
+    const gallery = galleryThumb.closest('.detail-gallery');
+    const mainImage = gallery && gallery.querySelector('[data-detail-gallery-main]');
+    const position = gallery && gallery.querySelector('.detail-gallery-position');
+    const thumbs = gallery ? Array.from(gallery.querySelectorAll('[data-detail-gallery-index]')) : [];
+    const index = Number(galleryThumb.getAttribute('data-detail-gallery-index'));
+    const imageUrl = galleryThumb.getAttribute('data-image-src');
+    if (mainImage && imageUrl && Number.isInteger(index) && index >= 0 && index < thumbs.length) {
+      mainImage.src = imageUrl;
+      if (position) position.textContent = (index+1) + ' / ' + thumbs.length;
+      thumbs.forEach((thumb,thumbIndex) => {
+        const active = thumbIndex === index;
+        thumb.classList.toggle('is-active',active);
+        thumb.setAttribute('aria-pressed',String(active));
+      });
+    }
     return;
   }
   const gameFilter = event.target.closest('[data-filter-game]');

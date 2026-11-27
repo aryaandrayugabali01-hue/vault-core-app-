@@ -1,5 +1,5 @@
 // Shell-only cache. API requests and dynamic product data always use the network.
-const CACHE_NAME = 'vault-core-miniapp-v12';
+const CACHE_NAME = 'vault-core-miniapp-v13';
 const SHELL = [
   '/miniapp/index.html',
   '/miniapp/app.css',

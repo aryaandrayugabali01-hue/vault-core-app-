@@ -295,6 +295,21 @@
 .detail-art{border-color:rgba(156,92,255,.42)!important;box-shadow:0 0 18px rgba(139,60,246,.1)}
 .detail-title{font-size:21px!important}
 
+/* Product image gallery sourced only from the public SKU image fields. */
+.detail-gallery{display:grid;gap:8px;margin:2px 0 13px}
+.detail-gallery-main{position:relative;width:100%;height:auto;aspect-ratio:1.52;min-height:178px;max-height:340px;margin:0;overflow:hidden;border:1px solid rgba(156,92,255,.42);border-radius:17px;background:#111018;box-shadow:0 0 18px rgba(139,60,246,.1)}
+.detail-gallery-main img{display:block;width:100%;height:100%;object-fit:cover}
+.detail-gallery-position{position:absolute;right:10px;bottom:10px;padding:5px 8px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(8,8,13,.72);backdrop-filter:blur(8px);color:#f6f3fb;font-size:9px;font-weight:800}
+.detail-gallery-thumbs{display:flex;gap:7px;overflow-x:auto;padding:1px 1px 4px;scrollbar-width:none;overscroll-behavior-x:contain}
+.detail-gallery-thumbs::-webkit-scrollbar{display:none}
+.detail-gallery-thumb{flex:0 0 68px;width:68px;height:54px;padding:0;overflow:hidden;border:1px solid rgba(164,151,190,.22);border-radius:9px;background:#171320;opacity:.72}
+.detail-gallery-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.detail-gallery-thumb.is-active{border-color:var(--vc-green);box-shadow:0 0 13px rgba(163,245,43,.22);opacity:1}
+@media(max-width:360px){
+ .detail-gallery-main{min-height:158px;aspect-ratio:1.4}
+ .detail-gallery-thumb{flex-basis:60px;width:60px;height:48px}
+}
+
 /* Product detail header actions, saved favorites and backend-related items. */
 .product-detail-header{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:38px minmax(0,1fr) 84px;align-items:center;gap:9px;min-height:54px;margin:-8px -15px 13px;padding:calc(7px + var(--sat)) 14px 8px;border-bottom:1px solid rgba(164,151,190,.16);background:rgba(8,8,13,.94);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .product-detail-header>strong{overflow:hidden;color:#f8f7fb;text-align:center;font-size:12px;font-weight:950;letter-spacing:.1em;white-space:nowrap}
