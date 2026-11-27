@@ -12,6 +12,14 @@ const GAME_CARDS = [
 ];
 const ART_BY_CODE = { MLBB:GAME_ART.MLBB, FF:GAME_ART.FREE_FIRE, FREE_FIRE:GAME_ART.FREE_FIRE, ROBLOX:GAME_ART.ROBLOX, GI:GAME_ART.GENSHIN, GENSHIN:GAME_ART.GENSHIN };
 const formatXtr = (value) => Number(value || 0).toLocaleString('id-ID');
+function getHomeProductAvailability(product) {
+  const mode = String(product?.availability_mode || '').toUpperCase();
+  const days = Number(product?.indent_deadline_days || 0);
+  if (mode === 'INDEN' || mode === 'INDENT') {
+    return Number.isSafeInteger(days) && days > 0 ? 'Inden ' + days + ' hari' : 'Inden';
+  }
+  return product?.is_available === true && product?.is_purchaseable === true ? 'Ready' : 'Belum tersedia';
+}
 function HomeSkeleton() {
   return (
     <div className="home-skeleton-grid" aria-label="Memuat katalog">
@@ -34,25 +42,26 @@ function ProductCard({ product }) {
   const original = Number(product.compare_at_price_xtr || product.original_price_xtr || 0);
   const hasComparePrice = Number.isSafeInteger(original) && Number.isSafeInteger(price) && original > price && price > 0;
   const discount = hasComparePrice ? Math.round(((original - price) / original) * 100) : 0;
-  const mode = String(product.availability_mode || "").toUpperCase();
-  const availabilityClass = mode === "INDENT" ? "is-indent" : "is-ready";
-  const availabilityLabel = mode === "INDENT" ? "INDEN" : "READY";
+  const availability = getHomeProductAvailability(product);
+  const available = product.is_available === true && product.is_purchaseable === true ? 1 : 0;
+  const statusLabel = availability.startsWith('Inden') ? 'INDEN' : available > 0 ? 'READY' : 'TIDAK TERSEDIA';
+  const availabilityClass = (available > 0 ? ' is-ready' : '') + (availability.startsWith('Inden') ? ' is-indent' : '');
   const stockLabel = product.display_stock === 1
     ? "STOK TERAKHIR"
     : typeof product.display_stock === "number" && product.display_stock > 1
       ? formatXtr(product.display_stock) + " stok"
       : "Stok tersedia";
   const gold = String(product.tier || "").toUpperCase() === "GOLD";
-  const href = "/catalog?game=" + encodeURIComponent(product.game_code) +
-    "&group=" + encodeURIComponent(product.group || "Akun") +
-    "&product=" + encodeURIComponent(product.id);
+  const productQuery = '&product=' + encodeURIComponent(product.id);
+  const href = '/catalog?game=' + encodeURIComponent(product.game_code) +
+    '&group=' + encodeURIComponent(product.group || 'Akun') + productQuery;
 
   return (
     <a href={href} className={"product-card" + (gold ? " tier-gold" : "")}>
       <div className="product-art">
         <img src={product.image_url || ART_BY_CODE[product.game_code] || GAME_ART.MLBB} alt="" loading="lazy"/>
       </div>
-      <span className={"product-availability-dot " + availabilityClass}><i/>{availabilityLabel}</span>
+      <span className={"product-availability-dot" + availabilityClass}><i/>{statusLabel}</span>
       {gold && <span className="tier-gold-label">GOLD · BEST VALUE</span>}
       <div className="product-copy">
         <small>{product.game} · {product.group}</small>
@@ -68,7 +77,7 @@ function ProductCard({ product }) {
 }
 
 function JokiCard({ variant }) {
-  const ready = (Array.isArray(variant.skus) ? variant.skus : [])
+  const readyCount = (Array.isArray(variant.skus) ? variant.skus : [])
     .filter((product) => product.is_available === true && product.is_purchaseable === true).length;
   const art = ART_BY_CODE[variant.game_code] || GAME_ART.MLBB;
   const href = "/catalog?game=" + encodeURIComponent(variant.game_code) + "&group=" + encodeURIComponent("Jasa Joki");
@@ -82,8 +91,8 @@ function JokiCard({ variant }) {
       <span className="home-joki-copy">
         <small>{variant.game} · LAYANAN</small>
         <b>{variant.name}</b>
-        <span className={"home-joki-status" + (ready ? " ready" : "")}>
-          {ready ? "Ready · " + ready + " layanan" : "Belum tersedia"}
+        <span className={"home-joki-status" + (readyCount ? " ready" : "")}>
+          {readyCount ? "Ready · " + readyCount + " layanan" : "Belum tersedia"}
         </span>
       </span>
     </a>
@@ -151,7 +160,7 @@ export default function VaultCoreHomePage() {
       </form>
 
       <section className="home-promo promo-board" aria-label="Papan promo VAULT CORE">
-        <div className="home-promo-copy">
+        <div className="home-promo-copy vc-home-promo-copy">
           <small><i/>PAPAN PROMO · VAULT CORE</small>
           <h1>Temukan akun game <em>&amp; layanan joki</em></h1>
           <p>Telusuri katalog empat game pilihan.</p>
@@ -225,7 +234,7 @@ export default function VaultCoreHomePage() {
 
       <section className="vc-home-section">
         <SectionHeading title="Aktivitas Pesanan" href="/catalog#transactions" action="My Orders"/>
-        <a className="home-activity" href="/catalog#transactions" aria-label="Buka My Orders">
+        <a className="vc-home-activity home-activity" href="/catalog#transactions" aria-label="Buka My Orders">
           <span className="ic">▤</span>
           <div><b>Riwayat pesanan pribadi</b><small>Status dan detail pesanan tampil pada akun pelanggan terverifikasi.</small></div>
           <span className="home-activity-arrow">›</span>
