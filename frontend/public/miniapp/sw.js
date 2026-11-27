@@ -1,15 +1,17 @@
 // Shell-only cache. API requests and dynamic product data always use the network.
-const CACHE_NAME = 'vault-core-miniapp-v16';
+const CACHE_NAME = 'vault-core-miniapp-v17';
 const SHELL = [
   '/miniapp/index.html',
   '/miniapp/app.css',
   '/vault-core-premium.css',
+  '/golden-theme.css',
   '/miniapp/app.js',
   '/miniapp/config.js',
   '/miniapp/manifest.webmanifest',
   '/assets/01-brand/vaultcore-mark.svg',
   '/assets/01-brand/vaultcore-horizontal.svg',
   '/assets/02-hero/hero-vaultcore-loop.webp',
+  '/assets/02-hero/hero-vaultcore.jpg',
   '/game-icons/mlbb.webp',
   '/game-icons/free-fire.webp',
   '/game-icons/roblox.webp',
