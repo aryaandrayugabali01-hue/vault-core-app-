@@ -1595,14 +1595,17 @@ test('clean /miniapp route and Telegram bot still open the canonical static Mini
   assert.ok(config.includes('"TELEGRAM_MINI_APP_URL": "https://vaultcore.biz.id/miniapp/index.html"'));
 });
 
-test('Owner shared header has responsive styling and does not render customer footer links', () => {
+test('shared storefront chrome hides the global footer on Owner and customer account pages', () => {
   const styles = readFileSync(new URL('../frontend/src/app/globals.css', import.meta.url), 'utf8');
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   for (const selector of ['.dashboard-topbar{','.dashboard-brand{','.dashboard-header-label{','.dashboard-header-actions{','.dashboard-search{']) {
     assert.ok(styles.includes(selector), 'Missing shared header style: ' + selector);
   }
   assert.ok(styles.includes('@media(max-width:380px){'));
-  assert.ok(navigation.includes("{!isOwnerPage && <StoreFooter/>}"));
+  assert.ok(navigation.includes("const isOwnerPage = pathname.startsWith('/admin');"));
+  assert.ok(navigation.includes("const isAccountPage = pathname === '/account' || pathname.startsWith('/account/');"));
+  assert.ok(navigation.includes("{!isOwnerPage && !isAccountPage && <StoreFooter/>}"));
+  assert.ok(navigation.includes('<StoreBottomNav active={active}/>'));
 });
 
 test('mobile shell reserves fixed navigation space once instead of stacking oversized page padding', () => {
