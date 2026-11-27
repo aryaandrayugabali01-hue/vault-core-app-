@@ -408,7 +408,14 @@ function renderDetailCopy(value) {
 
 function productPage(id) {
   const product = state.products.find((item) => String(item.id) === String(id));
-  if (!product) return go('/catalog');
+  if (!product && !state.loaded) {
+    setPage('<main><div class="loading" role="status">Memuat detail produk…<br>Menyiapkan informasi dan ketersediaan terbaru.</div></main>', 'catalog', true);
+    return;
+  }
+  if (!product) {
+    setPage('<main><div class="empty"><b>Produk tidak ditemukan</b><br>Produk ini mungkin sudah tidak tersedia di katalog.</div><button class="cta alt" type="button" data-go="/catalog">Kembali ke katalog</button></main>', 'catalog', true);
+    return;
+  }
   const attrs = safeAttributes(product.attributes);
   const details = [];
   if (product.description) details.push(renderDetailCopy(product.description));
