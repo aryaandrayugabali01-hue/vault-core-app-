@@ -1,16 +1,22 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { GAME_ART } from '../lib/marketplace.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const GAME_CARDS = [
-  { code:'MLBB', label:'Mobile Legends', short:'MLBB', art:GAME_ART.MLBB },
-  { code:'FF', label:'Free Fire', short:'Free Fire', art:GAME_ART.FREE_FIRE },
-  { code:'ROBLOX', label:'Roblox', short:'Roblox', art:GAME_ART.ROBLOX },
-  { code:'GI', label:'Genshin Impact', short:'Genshin', art:GAME_ART.GENSHIN }
+  { code:'MLBB', label:'Mobile Legends', short:'MLBB', art:'/game-icons/mlbb.webp' },
+  { code:'FF', label:'Free Fire', short:'Free Fire', art:'/game-icons/free-fire.webp' },
+  { code:'ROBLOX', label:'Roblox', short:'Roblox', art:'/game-icons/roblox.webp' },
+  { code:'GI', label:'Genshin Impact', short:'Genshin', art:'/game-icons/genshin-impact.webp' }
 ];
-const ART_BY_CODE = { MLBB:GAME_ART.MLBB, FF:GAME_ART.FREE_FIRE, FREE_FIRE:GAME_ART.FREE_FIRE, ROBLOX:GAME_ART.ROBLOX, GI:GAME_ART.GENSHIN, GENSHIN:GAME_ART.GENSHIN };
+const ART_BY_CODE = {
+  MLBB:'/game-icons/mlbb.webp',
+  FF:'/game-icons/free-fire.webp',
+  FREE_FIRE:'/game-icons/free-fire.webp',
+  ROBLOX:'/game-icons/roblox.webp',
+  GI:'/game-icons/genshin-impact.webp',
+  GENSHIN:'/game-icons/genshin-impact.webp'
+};
 const formatXtr = (value) => Number(value || 0).toLocaleString('id-ID');
 function getHomeProductAvailability(product) {
   const mode = String(product?.availability_mode || '').toUpperCase();
@@ -59,7 +65,7 @@ function ProductCard({ product }) {
   return (
     <a href={href} className={"product-card" + (gold ? " tier-gold" : "")}>
       <div className="product-art">
-        <img src={product.image_url || ART_BY_CODE[product.game_code] || GAME_ART.MLBB} alt="" loading="lazy"/>
+        <img src={product.image_url || ART_BY_CODE[product.game_code] || '/game-icons/mlbb.webp'} alt="" loading="lazy"/>
       </div>
       <span className={"product-availability-dot" + availabilityClass}><i/>{statusLabel}</span>
       {gold && <span className="tier-gold-label">GOLD · BEST VALUE</span>}
@@ -79,7 +85,7 @@ function ProductCard({ product }) {
 function JokiCard({ variant }) {
   const readyCount = (Array.isArray(variant.skus) ? variant.skus : [])
     .filter((product) => product.is_available === true && product.is_purchaseable === true).length;
-  const art = ART_BY_CODE[variant.game_code] || GAME_ART.MLBB;
+  const art = ART_BY_CODE[variant.game_code] || '/game-icons/mlbb.webp';
   const href = "/catalog?game=" + encodeURIComponent(variant.game_code) + "&group=" + encodeURIComponent("Jasa Joki");
 
   return (
