@@ -36,6 +36,8 @@ const ICONS = {
   info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
   help:'<path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l1.8-2.4A7.5 7.5 0 1 1 20 11.5Z"/><path d="M9 10a3 3 0 0 1 6 0c0 1.5-3 2-3 4M12 16.8h.01"/>',
   shield:'<path d="M12 3 20 6v5c0 5-3.3 8-8 10-4.7-2-8-5-8-10V6z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
+  share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.4M8.7 13.3l6.6 4.4"/>',
+  heart:'<path d="M20.8 8.8c0 5.1-8.8 11-8.8 11s-8.8-5.9-8.8-11a4.7 4.7 0 0 1 8.8-2.2 4.7 4.7 0 0 1 8.8 2.2Z"/>',
   telegram:'<path d="m21 4-18 7 5 2 2 6 3-4 5 4zM8 13l9-6"/>'
 };
 const icon = (name) => '<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[name] || ICONS.info) + '</svg></span>';
@@ -86,6 +88,57 @@ function normalizeCatalogVariants(variants) {
   );
 }
 
+function getFavoriteProductIds() {
+  try {
+    const ids = JSON.parse(localStorage.getItem('vaultcore.favoriteProducts') || '[]');
+    return Array.isArray(ids) ? ids.map(String) : [];
+  } catch (_) {
+    return [];
+  }
+}
+function isProductFavorite(id) {
+  return getFavoriteProductIds().includes(String(id));
+}
+function toggleProductFavorite(id) {
+  const productId = String(id || '');
+  if (!productId) return;
+  const ids = getFavoriteProductIds();
+  const favorite = !ids.includes(productId);
+  const next = favorite ? [...ids,productId] : ids.filter((value) => value !== productId);
+  try {
+    localStorage.setItem('vaultcore.favoriteProducts',JSON.stringify(next));
+  } catch (_) {
+    return toast('Favorit belum dapat disimpan pada perangkat ini.');
+  }
+  const button = $('[data-action="favorite"][data-id="' + productId + '"]');
+  if (button) {
+    button.classList.toggle('is-favorite',favorite);
+    button.setAttribute('aria-pressed',String(favorite));
+    button.setAttribute('aria-label',favorite?'Hapus dari favorit':'Tambahkan ke favorit');
+  }
+  toast(favorite?'Produk ditambahkan ke favorit.':'Produk dihapus dari favorit.');
+}
+function shareProduct(id) {
+  const product = state.products.find((item) => String(item.id) === String(id));
+  if (!product) return;
+  const url = location.origin + '/miniapp/index.html#/product/' + encodeURIComponent(product.id);
+  const text = product.name + ' · ' + fmt(product.sale_price_xtr) + ' XTR di VAULT CORE';
+  if (inTelegram && tg.openTelegramLink) {
+    tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text));
+    return;
+  }
+  if (navigator.share) {
+    navigator.share({title:'VAULT CORE',text,url}).catch((error) => {
+      if (!error || error.name !== 'AbortError') toast('Produk belum dapat dibagikan.');
+    });
+    return;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => toast('Tautan produk disalin.')).catch(() => toast(url));
+    return;
+  }
+  toast(url);
+}
 function toast(message) {
   const old = $('.toast');
   if (old) old.remove();
@@ -120,6 +173,10 @@ function headerHome() {
 function headerPage(title) {
   return '<header class="pagebar"><button class="back-btn" type="button" data-action="back" aria-label="Kembali">' + icon('back') + '</button><h1>' + esc(title) + '</h1><span class="spacer"></span></header>';
 }
+function productDetailHeader(product) {
+  const favorite = isProductFavorite(product.id);
+  return '<header class="product-detail-header"><button class="detail-header-action" type="button" data-action="back" aria-label="Kembali">' + icon('back') + '</button><strong>VAULT CORE</strong><div class="detail-header-actions"><button class="detail-header-action" type="button" data-action="share" data-id="' + esc(product.id) + '" aria-label="Bagikan produk">' + icon('share') + '</button><button class="detail-header-action favorite-action' + (favorite?' is-favorite':'') + '" type="button" data-action="favorite" data-id="' + esc(product.id) + '" aria-label="' + (favorite?'Hapus dari favorit':'Tambahkan ke favorit') + '" aria-pressed="' + favorite + '">' + icon('heart') + '</button></div></header>';
+}
 function priceMarkup(product, compact) {
   const compare = comparePrice(product);
   const small = compact ? ' class="small"' : '';
@@ -144,6 +201,20 @@ function productCard(product) {
     (gold ? '<span class="tier-gold-label">GOLD · BEST VALUE</span>' : '') +
     '<div class="product-copy"><small>' + esc(gameOf(product.game_category).name) + ' · ' + esc(categoryLabel(product)) + '</small><b>' + esc(product.name) + '</b>' +
     priceMarkup(product,true) + '<small class="product-stock-caption">' + esc(stockLabel(product)) + '</small></div></button>';
+}
+function relatedProducts(product) {
+  const related = state.products
+    .filter((item) => isBuyable(item) && String(item.id) !== String(product.id))
+    .map((item,index) => ({
+      item,
+      index,
+      score:(item.game_category === product.game_category ? 2 : 0) + (item.variant_category === product.variant_category ? 1 : 0)
+    }))
+    .sort((a,b) => b.score-a.score || a.index-b.index)
+    .slice(0,2)
+    .map((entry) => entry.item);
+  if (!related.length) return '';
+  return '<section class="related-products"><div class="section-head"><h2>Produk Terkait</h2><small>Pilihan lain dari katalog</small></div><div class="related-product-grid">' + related.map(productCard).join('') + '</div></section>';
 }
 function comingSoonCard(variant) {
   const game = gameOf(variant.game_code);
@@ -345,7 +416,7 @@ function productPage(id) {
         return '<label class="buyer-field">' + label + (field.required ? ' <small>Wajib</small>' : '') + control + '</label>';
       }).join('') + '</section>' : '';
   setPage(
-    headerPage('Detail Produk') +
+    productDetailHeader(product) +
     '<main>' + productImage(product,'detail-art') +
     '<h2 class="detail-title">' + esc(product.name) + '</h2>' +
     '<div class="chips"><span class="chip">' + esc(gameOf(product.game_category).short) + '</span><span class="chip">' + esc(categoryLabel(product)) + '</span></div>' +
@@ -358,6 +429,7 @@ function productPage(id) {
       : product.variant_category === 'Jasa Joki'
         ? '<div class="box info">' + icon('info') + '<span>Isi hanya identitas game dan parameter pengerjaan. Password, OTP, serta kode autentikasi tidak diminta.</span></div>'
         : '<div class="box info">' + icon('info') + '<span>Metode pengiriman item mengikuti petunjuk dan ketentuan pada detail produk.</span></div>') +
+    relatedProducts(product) +
     customerForm +
     '<div class="dock"><button class="cta" type="button" data-action="buy" data-id="' + esc(product.id) + '" ' + (isBuyable(product) ? '' : 'disabled') + '>' + (isBuyable(product) ? 'Beli Sekarang →' : 'Stok tidak tersedia') + '</button></div>' +
     '</main>',
@@ -616,6 +688,8 @@ function handleClick(event) {
   if (!button) return;
   const action = button.getAttribute('data-action');
   if (action === 'back') { history.length > 1 ? history.back() : go('/home'); return; }
+  if (action === 'share') { shareProduct(button.getAttribute('data-id')); return; }
+  if (action === 'favorite') { toggleProductFavorite(button.getAttribute('data-id')); return; }
   if (action === 'buy') { startCheckout(button.getAttribute('data-id')); return; }
   if (action === 'invoice') { openInvoice(); return; }
   if (action === 'copy') {

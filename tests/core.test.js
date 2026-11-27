@@ -1213,6 +1213,23 @@ test('Mini App Store presents purchasable backend products in a responsive two-c
   assert.ok(styles.includes('.store-product-grid .price{margin-top:1px;color:var(--vc-green)!important'));
 });
 
+test('Mini App product detail provides working Share, persistent Favorite and two backend-related products', () => {
+  const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
+  assert.match(app, /function productDetailHeader\(product\)/);
+  assert.ok(app.includes('data-action="share"'));
+  assert.ok(app.includes('data-action="favorite"'));
+  assert.ok(app.includes("localStorage.getItem('vaultcore.favoriteProducts')"));
+  assert.ok(app.includes("localStorage.setItem('vaultcore.favoriteProducts'"));
+  assert.ok(app.includes("tg.openTelegramLink('https://t.me/share/url?url='"));
+  assert.ok(app.includes('function relatedProducts(product)'));
+  assert.ok(app.includes("related.map(productCard).join('')"));
+  assert.ok(app.includes('relatedProducts(product) +'));
+  assert.ok(styles.includes('.product-detail-header{'));
+  assert.ok(styles.includes('.detail-header-action.is-favorite'));
+  assert.ok(styles.includes('.related-product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'));
+});
+
 test('Mini App header and bottom navigation do not stack over the product detail CTA', () => {
   const html = readFileSync(new URL('../frontend/public/miniapp/index.html', import.meta.url), 'utf8');
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
@@ -1220,7 +1237,8 @@ test('Mini App header and bottom navigation do not stack over the product detail
   assert.equal((html.match(/<nav\b/g) || []).length,1);
   assert.ok(html.includes('id="nav" aria-label="Navigasi utama" hidden'));
   assert.ok(app.includes("nav.hidden = Boolean(hideNav)"));
-  assert.ok(app.includes("headerPage('Detail Produk')"));
+  assert.ok(app.includes('function productDetailHeader(product)'));
+  assert.ok(app.includes('productDetailHeader(product) +'));
   assert.ok(app.includes("'catalog', false"));
   assert.ok(css.includes('.nav[hidden]{display:none!important}'));
   assert.ok(css.includes('width:min(calc(100% - 24px),430px)'));
@@ -1258,7 +1276,7 @@ test('product detail converts escaped backend newlines into readable sections an
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(sw.includes('vault-core-miniapp-v10'));
+  assert.ok(sw.includes('vault-core-miniapp-v11'));
   assert.ok(app.includes(".replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n')"));
   assert.ok(app.includes("renderDetailCopy(product.customer_terms)"));
   assert.ok(app.includes("details.push(renderDetailCopy(product.description))"));
@@ -1305,7 +1323,7 @@ test('mobile app assets are included in the static frontend and service worker n
   assert.ok(manifest.includes('"scope":"/miniapp/"'));
   assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
   for (const asset of ['/game-icons/mlbb.webp','/game-icons/free-fire.webp','/game-icons/roblox.webp','/game-icons/genshin-impact.webp']) assert.ok(sw.includes(asset));
-  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v10'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v11'"));
 });
 
 test('active CSS rules do not contain repeated declarations that can reintroduce same-rule conflicts', () => {
