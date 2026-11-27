@@ -149,9 +149,10 @@ export function StoreChrome() {
       : activeOverride || (pathname.startsWith('/catalog') ? 'catalog' : 'dashboard');
 
   const isOwnerPage = pathname.startsWith('/admin');
+  const isAccountPage = pathname === '/account' || pathname.startsWith('/account/');
 
   return <>
-    {!isOwnerPage && <StoreFooter/>}
+    {!isOwnerPage && !isAccountPage && <StoreFooter/>}
     <div className="store-bottom-nav-shell">
       <StoreBottomNav active={active}/>
     </div>
