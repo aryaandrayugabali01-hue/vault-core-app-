@@ -7,6 +7,9 @@ import { GAME_ART } from '../../lib/marketplace.js';
 import { getCustomerVisibleProductAttributes } from '../../lib/product-attributes.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+// Website QRIS is not yet configured. Keep browser checkout closed until merchant QRIS,
+// approved per-SKU IDR prices, and server-side settlement verification are ready.
+const WEBSITE_QRIS_CHECKOUT_READY = false;
 const GROUPS = ['Akun','Jasa Joki','Item In-Game','Produk Lainnya'];
 const GAME_NAMES = { MLBB:'Mobile Legends', FF:'Free Fire', ROBLOX:'Roblox', GI:'Genshin Impact' };
 const MARKET_GAME_CODE = { MLBB:'MLBB', FF:'FREE_FIRE', ROBLOX:'ROBLOX', GI:'GENSHIN' };
@@ -51,6 +54,9 @@ function getComparePrice(product) {
 }
 
 function PriceDisplay({ product, compact = false }) {
+  if (!WEBSITE_QRIS_CHECKOUT_READY) {
+    return <span className={`vc4-price-stack${compact ? ' is-compact' : ''}`}><strong>Harga website sedang disiapkan</strong></span>;
+  }
   const sale = Number(product?.sale_price_xtr);
   const compare = getComparePrice(product);
   const discount = compare ? Math.round(((compare - sale) / compare) * 100) : 0;
@@ -273,6 +279,10 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   ),[flatProducts]);
 
   const addToCart = (product) => {
+    if (!WEBSITE_QRIS_CHECKOUT_READY) {
+      setNotice('Checkout QRIS website belum aktif. Katalog dan detail produk tetap dapat dilihat.');
+      return;
+    }
     const fields=Array.isArray(product.customer_input_fields)?product.customer_input_fields:[];
     const values=customerInputs[product.id]||{};
     const missing=fields.find((field)=>field.required&&!String(values[field.label]||'').trim());
@@ -304,6 +314,10 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
 
   const checkout = async () => {
     if (!cart.length) return;
+    if (!WEBSITE_QRIS_CHECKOUT_READY) {
+      setNotice('Checkout QRIS website belum aktif. Pembayaran XTR hanya tersedia melalui Telegram Mini App.');
+      return;
+    }
     let activeCustomer = customer;
     if (!activeCustomer) activeCustomer = await loadCustomer().catch(() => null);
     if (!activeCustomer) {
@@ -394,7 +408,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             <div className="vc4-featured-kicker"><span>VAULT CORE PICKS</span><span className="vc4-featured-live">KATALOG AKTIF</span></div>
             <h2>{featuredProduct ? featuredProduct.name : 'Temukan akun game pilihanmu.'}</h2>
             <p>{featuredProduct ? `${featuredProduct.game} · ${featuredProduct.variant_name} · Detail dan stok diperbarui dari katalog.` : 'Jelajahi produk game dengan detail dan status ketersediaan yang bersumber dari katalog.'}</p>
-            {featuredProduct && <div className="vc4-featured-price"><small>HARGA SAAT INI</small><PriceDisplay product={featuredProduct}/></div>}
+            {WEBSITE_QRIS_CHECKOUT_READY && featuredProduct && <div className="vc4-featured-price"><small>HARGA SAAT INI</small><PriceDisplay product={featuredProduct}/></div>}
             <div className="vc4-featured-actions">
               {featuredProduct && <button type="button" onClick={() => setSelected({variant_id:featuredProduct.variant_id,product:featuredProduct})}>Lihat detail produk <span>↗</span></button>}
               <a href="#game-catalog">Jelajahi semua game <span>↓</span></a>
@@ -410,7 +424,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           <ol>
             <li><span>01</span><div><strong>Pilih game</strong><small>Tentukan kategori dan akun</small></div></li>
             <li><span>02</span><div><strong>Periksa detail</strong><small>Cek spesifikasi dan ketentuan</small></div></li>
-            <li><span>03</span><div><strong>Bayar dengan XTR</strong><small>Lanjutkan invoice di Telegram</small></div></li>
+            <li><span>03</span><div><strong>Pembayaran website</strong><small>QRIS merchant sedang disiapkan</small></div></li>
           </ol>
         </section>
 
@@ -499,7 +513,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             {selected.product.group === 'Akun' && <section className="vc4-security-guide"><h3>Keamanan Akun</h3><ol><li>Periksa detail akun dan kesesuaian spesifikasi sebelum konfirmasi.</li><li>Ganti kata sandi setelah menerima akses akun.</li><li>Aktifkan verifikasi dua langkah pada akun yang mendukung.</li><li>Pastikan email dan metode pemulihan berada dalam kendali pembeli.</li></ol><p>Garansi mengikuti ketentuan yang ditetapkan pada detail produk.</p></section>}
             <section className="vc4-listing-specs"><h4>Spesifikasi Produk</h4><div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ').replace(/\b[a-z]/g,letter=>letter.toUpperCase())}</span><strong>{String(value)}</strong></div>)}</div></section>
             {Array.isArray(selected.product.customer_input_fields)&&selected.product.customer_input_fields.length>0&&<section className="vc4-customer-inputs"><h4>Data untuk Pesanan</h4><p>Isi data game dan target pengerjaan sesuai petunjuk produk.</p>{selected.product.customer_input_fields.map((field)=>{const values=customerInputs[selected.product.id]||{};return <label key={field.label}>{field.label}{field.required&&<span> · Wajib</span>}{field.type==='textarea'?<textarea maxLength={field.maxLength||240} value={values[field.label]||''} onChange={(event)=>updateCustomerInput(selected.product.id,field.label,event.target.value)}/>:<input type={field.type==='number'?'number':'text'} inputMode={field.type==='number'?'numeric':'text'} maxLength={field.type==='number'?undefined:(field.maxLength||240)} value={values[field.label]||''} onChange={(event)=>updateCustomerInput(selected.product.id,field.label,event.target.value)}/>}</label>})}</section>}
-            <div className="vc4-detail-buybar"><PriceDisplay product={selected.product}/><button className="vc4-primary" type="button" disabled={!selected.product.is_available||!selected.product.is_purchaseable} onClick={()=>addToCart(selected.product)}>{selected.product.is_available&&selected.product.is_purchaseable?'Tambah ke keranjang':'Tidak tersedia'}</button></div>
+            <div className="vc4-detail-buybar"><PriceDisplay product={selected.product}/><button className="vc4-primary" type="button" disabled={!WEBSITE_QRIS_CHECKOUT_READY||!selected.product.is_available||!selected.product.is_purchaseable} onClick={()=>addToCart(selected.product)}>{!WEBSITE_QRIS_CHECKOUT_READY?'QRIS website belum aktif':selected.product.is_available&&selected.product.is_purchaseable?'Tambah ke keranjang':'Tidak tersedia'}</button></div>
           </> : <p>Produk belum tersedia pada varian ini.</p>}
         </section>
       </div>}
@@ -509,11 +523,11 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           <button className="vc4-close" type="button" onClick={()=>setCartOpen(false)}>×</button>
           <span className="vc4-eyebrow">VAULT CORE</span><h2>Keranjang.</h2>
           {cart.length===0 ? <p>Keranjang masih kosong.</p> : cart.map((item)=><div className="vc4-cart-row" key={item.productId}>
-            <div><strong>{item.name}</strong><small>★ {fmt(item.price)} XTR</small></div>
+            <div><strong>{item.name}</strong><small>{WEBSITE_QRIS_CHECKOUT_READY ? '★ ' + fmt(item.price) + ' IDR' : 'Harga IDR ditampilkan setelah QRIS aktif'}</small></div>
             <div><button type="button" onClick={()=>setQuantity(item.productId,item.quantity-1)}>−</button><b>{item.quantity}</b><button type="button" onClick={()=>setQuantity(item.productId,item.quantity+1)}>+</button></div>
           </div>)}
-          <div className="vc4-total"><span>Total</span><strong>★ {fmt(totalXtr)} XTR</strong></div>
-          <button className="vc4-primary" type="button" disabled={!cart.length||buying} onClick={checkout}>{buying?'Menyiapkan invoice…':'Bayar dengan Telegram Stars'}</button>
+          <div className="vc4-total"><span>Metode pembayaran</span><strong>{WEBSITE_QRIS_CHECKOUT_READY ? 'QRIS (IDR)' : 'QRIS website sedang disiapkan'}</strong></div>
+          <button className="vc4-primary" type="button" disabled={!WEBSITE_QRIS_CHECKOUT_READY||!cart.length||buying} onClick={checkout}>{WEBSITE_QRIS_CHECKOUT_READY ? (buying?'Menyiapkan pembayaran…':'Bayar dengan QRIS') : 'Checkout belum tersedia'}</button>
         </section>
       </div>}
 
