@@ -92,7 +92,6 @@ router.get('/products', async (_req, res) => {
               WHERE i.status='AVAILABLE'
                 AND i.reserved_order_id IS NULL
                 AND i.reserved_until IS NULL
-                AND i.rights_review_id=p.current_rights_review_id
                 AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
             )::int AS actual_stock
      FROM products p
@@ -162,6 +161,72 @@ router.post('/products', async (req, res) => {
   }
   await audit(req, 'PRODUCT_CREATED', 'PRODUCT', rows[0].id, { sku:normalizedSku });
   res.status(201).json({ product: rows[0] });
+});
+
+router.patch('/products/:id/availability', async (req,res) => {
+  const id=Number(req.params.id);
+  const availabilityStatus=String(req.body?.availabilityStatus||'').toUpperCase();
+  const indentDays=availabilityStatus==='INDENT'?Number(req.body?.indentDays):null;
+  if(!Number.isSafeInteger(id)||id<=0||!['AVAILABLE','INDENT','UNAVAILABLE'].includes(availabilityStatus)
+      ||(availabilityStatus==='INDENT'&&(!Number.isSafeInteger(indentDays)||indentDays<1||indentDays>365))){
+    return res.status(400).json({error:'INVALID_PRODUCT_AVAILABILITY'});
+  }
+  const client=await pool.connect();
+  try{
+    await client.query('BEGIN');
+    const {rows}=await client.query(
+      'SELECT id,sku,is_test,sale_price_xtr,fulfillment_type,status FROM products WHERE id=$1 FOR UPDATE',
+      [id]
+    );
+    const product=rows[0];
+    if(!product){await client.query('ROLLBACK');return res.status(404).json({error:'PRODUCT_NOT_FOUND'});}
+    if(product.is_test===true){await client.query('ROLLBACK');return res.status(409).json({error:'TEST_FIXTURE_AVAILABILITY_LOCKED'});}
+    if(availabilityStatus!=='UNAVAILABLE'&&(!Number.isSafeInteger(Number(product.sale_price_xtr))||Number(product.sale_price_xtr)<=1||!product.fulfillment_type)){
+      await client.query('ROLLBACK');
+      return res.status(409).json({error:'PRODUCT_PRICE_OR_FULFILLMENT_REQUIRED',message:'Tetapkan harga jual dan metode pemenuhan sebelum produk tersedia.'});
+    }
+    const nextStatus=availabilityStatus==='UNAVAILABLE'?'PAUSED':'ACTIVE';
+    const nextMode=availabilityStatus==='INDENT'?'INDENT':'READY';
+    await client.query(
+      'UPDATE products SET status=$2,availability_mode=$3,indent_deadline_days=$4,updated_at=NOW() WHERE id=$1',
+      [id,nextStatus,nextMode,availabilityStatus==='INDENT'?indentDays:null]
+    );
+    if(availabilityStatus==='UNAVAILABLE'){
+      await client.query(
+        `UPDATE inventory_items SET status='UNAVAILABLE'
+         WHERE product_id=$1 AND status='AVAILABLE' AND reserved_order_id IS NULL`,
+        [id]
+      );
+    }else{
+      await client.query(
+        `UPDATE inventory_items SET status='AVAILABLE'
+         WHERE product_id=$1 AND status='UNAVAILABLE' AND reserved_order_id IS NULL
+           AND NULLIF(BTRIM(source_reference),'') IS NOT NULL`,
+        [id]
+      );
+    }
+    const {rows:stock}=await client.query(
+      `SELECT COUNT(*) FILTER(WHERE status='AVAILABLE' AND reserved_order_id IS NULL AND reserved_until IS NULL)::int AS available_stock,
+              COUNT(*) FILTER(WHERE status='RESERVED')::int AS reserved_stock
+       FROM inventory_items WHERE product_id=$1`,
+      [id]
+    );
+    await audit(req,'PRODUCT_AVAILABILITY_CHANGED','PRODUCT',id,{
+      sku:product.sku,availabilityStatus,indentDays:availabilityStatus==='INDENT'?indentDays:null
+    });
+    await client.query('COMMIT');
+    return res.json({
+      ok:true,productId:id,sku:product.sku,availabilityStatus,
+      indentDays:availabilityStatus==='INDENT'?indentDays:null,
+      status:nextStatus,availabilityMode:nextMode,
+      availableStock:Number(stock[0]?.available_stock||0),
+      reservedStock:Number(stock[0]?.reserved_stock||0)
+    });
+  }catch(error){
+    try{await client.query('ROLLBACK');}catch{}
+    console.error('[product-availability-update]',error.message);
+    return res.status(500).json({error:'PRODUCT_AVAILABILITY_UPDATE_FAILED'});
+  }finally{client.release();}
 });
 
 router.patch('/products/:id', async (req, res) => {
