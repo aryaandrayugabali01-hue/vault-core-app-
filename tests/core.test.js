@@ -1317,9 +1317,13 @@ test('Mini App exposes all backend product groups and game routes with a retryab
   assert.ok(app.includes('data-action="retry-catalog"'));
   assert.ok(app.includes("if (action === 'retry-catalog') { loadCatalog(true); return; }"));
   assert.ok(app.includes("async function loadCatalog(showLoading = false)"));
+  assert.ok(app.includes("data-store-game="));
+  assert.ok(app.includes("data-store-group=\\"Jasa Joki\\""));
+  assert.ok(app.includes("state.catalogGame = storeGame.getAttribute('data-store-game')"));
+  assert.ok(app.includes("'<a href=\\"#/' + key"));
   assert.ok(styles.includes('.store-group-tabs{display:flex;gap:5px;overflow-x:auto;'));
   assert.ok(styles.includes('.store-group-tabs button{flex:1 0 auto;min-width:66px;'));
-  assert.ok(sw.includes("vault-core-miniapp-v17"));
+  assert.ok(sw.includes("vault-core-miniapp-v18"));
 });
 
 test('Mini App product detail provides working Share, persistent Favorite and two backend-related products', () => {
@@ -1401,7 +1405,7 @@ test('product detail converts escaped backend newlines into readable sections an
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(sw.includes('vault-core-miniapp-v17'));
+  assert.ok(sw.includes('vault-core-miniapp-v18'));
   assert.ok(app.includes(".replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n')"));
   assert.ok(app.includes("renderDetailCopy(product.customer_terms)"));
   assert.ok(app.includes("details.push(renderDetailCopy(product.description))"));
@@ -1448,7 +1452,7 @@ test('mobile app assets are included in the static frontend and service worker n
   assert.ok(manifest.includes('"scope":"/miniapp/"'));
   assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
   for (const asset of ['/game-icons/mlbb.webp','/game-icons/free-fire.webp','/game-icons/roblox.webp','/game-icons/genshin-impact.webp']) assert.ok(sw.includes(asset));
-  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v17'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v18'"));
 });
 
 test('active CSS rules do not contain repeated declarations that can reintroduce same-rule conflicts', () => {
@@ -1582,8 +1586,8 @@ test('active stylesheets have unique selectors within each cascade context', () 
   assert.ok(miniAppStyles.includes('--green:#a8f06a'));
   assert.ok(miniAppStyles.includes('--gold:#f2c45a'));
   assert.ok(miniAppStyles.includes('.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;padding:12px 14px;border:1px solid rgba(211,255,122,.82)'));
-  assert.ok(miniAppStyles.includes('.nav button.on{background:rgba(163,245,43,.12);color:var(--green)'));
-  assert.ok(miniAppStyles.includes('.nav button.on .ic{background:linear-gradient(180deg,#d8ff8b,#a3e635)'));
+  assert.ok(miniAppStyles.includes('.nav a.on{background:rgba(163,245,43,.12);color:var(--green)'));
+  assert.ok(miniAppStyles.includes('.nav a.on .ic{background:linear-gradient(180deg,#d8ff8b,#a3e635)'));
   assert.ok(miniAppStyles.includes('.detail-price{margin:10px 0 13px;color:var(--green)'));
   assert.ok(miniAppStyles.includes('.filters button.on{border-color:rgba(163,245,43,.7);background:rgba(163,245,43,.13);color:var(--green)'));
 });
@@ -1738,6 +1742,6 @@ test('Telegram Mini App loads the Golden Dark theme and accessible animated hero
   assert.ok(theme.includes('--bg:#100e08'));
   assert.ok(theme.includes('--green:#b7ff35'));
   assert.ok(theme.includes('.hero {'));
-  assert.ok(sw.includes("vault-core-miniapp-v17"));
+  assert.ok(sw.includes("vault-core-miniapp-v18"));
   assert.ok(sw.includes("'/assets/02-hero/hero-vaultcore.jpg'"));
 });
