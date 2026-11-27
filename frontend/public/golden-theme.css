@@ -1,0 +1,249 @@
+/* VAULT CORE approved Golden Dark theme.
+   Shared storefront surfaces use charcoal-gold; neon green is reserved for live status and success. */
+:root {
+  --bg:#100e08;
+  --surface:#1d190e;
+  --surface-2:#272112;
+  --surface-3:#352a13;
+  --panel2:#211b0e;
+  --line:rgba(245,197,66,.19);
+  --line-soft:rgba(245,197,66,.10);
+  --text:#f7f3e7;
+  --muted:#b8ad91;
+  --subtle:#8f8469;
+  --gold:#f5c542;
+  --green:#b7ff35;
+  --vc-bg:#100e08;
+  --vc-surface:#1d190e;
+  --vc-card:#211b0e;
+  --vc-line:rgba(245,197,66,.19);
+  --vc-muted:#b8ad91;
+  --vc-text:#f7f3e7;
+  --vc-green:#b7ff35;
+  --vc-green-2:#d5ff75;
+  --vc-gold:#f5c542;
+  --vc-color-canvas:#100e08;
+  --vc-color-detail:#100e08;
+  --vc-color-surface:#1d190e;
+  --vc-color-surface-raised:#272112;
+  --vc-color-text:#f7f3e7;
+  --vc-color-muted:#b8ad91;
+  --vc-color-border:rgba(245,197,66,.19);
+  --vc-color-brand:#f5c542;
+  --vc-color-brand-hover:#ffda68;
+  --vc-color-brand-active:#d7a922;
+  --vc-color-brand-foreground:#211807;
+  --vc-color-brand-soft:rgba(245,197,66,.13);
+  --vc-color-brand-border:rgba(245,197,66,.55);
+  --vc-color-success:#b7ff35;
+  --vc-color-danger:#ff8f9b;
+  --vc-color-info:#b7ff35;
+  --vc-cta-border:#ffe28a;
+  --vc-cta-shadow:0 4px 16px rgba(245,197,66,.20);
+  --vc-cta-shadow-hover:0 8px 24px rgba(245,197,66,.28);
+  --vc4-page:#100e08;
+  --vc4-card:#1d190e;
+  --vc4-ink:#f7f3e7;
+  --vc4-muted:#b8ad91;
+  --vc4-line:rgba(245,197,66,.19);
+  --vc4-soft:rgba(245,197,66,.10);
+  --vc4-green:#b7ff35;
+  --vc4-gold:#f5c542;
+  --vc4-gold-hover:#ffda68;
+}
+
+html,body { background:#100e08!important; color:#f7f3e7; }
+.vc-mobile-app { background:#100e08!important; color:#f7f3e7; }
+.vc-home {
+  background:linear-gradient(180deg,#100e08 0%,#141006 100%)!important;
+  color:#f7f3e7!important;
+}
+.vc-home-search {
+  border-color:rgba(245,197,66,.24)!important;
+  background:#1d190e!important;
+  color:#f0d98e!important;
+}
+.vc-home-search input { color:#f7f3e7!important; }
+.vc-home-search button { color:#b7ff35!important; }
+.vc-home-profile { border-color:#f5c542!important; color:#b7ff35!important; box-shadow:0 0 18px rgba(245,197,66,.16)!important; }
+
+.vc-home-promo {
+  border-color:rgba(245,197,66,.72)!important;
+  background:
+    radial-gradient(ellipse at 84% 50%,rgba(245,197,66,.16),transparent 42%),
+    linear-gradient(112deg,#1d190e 0%,#211a0c 58%,#100e08 100%)!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.38),0 0 26px rgba(245,197,66,.12)!important;
+}
+.vc-home-promo:after {
+  border-color:rgba(245,197,66,.32)!important;
+  box-shadow:0 0 36px rgba(245,197,66,.12),inset 0 0 30px rgba(245,197,66,.07)!important;
+}
+.vc-home-promo-copy>.vc-promo-kicker { color:#f5d77d!important; }
+.vc-home-promo-copy>.vc-promo-kicker i { background:#b7ff35!important; box-shadow:0 0 10px rgba(183,255,53,.75)!important; }
+.vc-home-promo-copy h1 em { color:#b7ff35!important; }
+.vc-home-promo-copy p { color:#d8cfb6!important; }
+.vc-home-promo-tags span {
+  border-color:rgba(245,197,66,.27)!important;
+  background:rgba(245,197,66,.08)!important;
+  color:#f0dfad!important;
+}
+.vc-home-promo-copy>a {
+  border-color:#ffe28a!important;
+  background:linear-gradient(180deg,#ffdc70,#f5c542)!important;
+  color:#211807!important;
+  box-shadow:0 6px 18px rgba(245,197,66,.22)!important;
+}
+
+/* The existing animated loop is now a foreground trust/brand visual, not a darkened background texture. */
+.vc-home-promo-visual {
+  position:relative;
+  isolation:isolate;
+  display:grid;
+  place-items:center;
+  align-self:stretch;
+  min-width:0;
+  min-height:132px;
+  overflow:hidden;
+  border:1px solid rgba(245,197,66,.42);
+  border-radius:14px;
+  background:radial-gradient(circle,rgba(245,197,66,.13),rgba(29,25,14,.92) 66%);
+  box-shadow:inset 0 0 28px rgba(245,197,66,.10),0 9px 22px rgba(0,0,0,.28);
+}
+.vc-home-promo-visual:before {
+  content:"";
+  position:absolute;
+  z-index:0;
+  width:82%;
+  aspect-ratio:1;
+  border:2px solid rgba(183,255,53,.62);
+  border-top-color:rgba(245,197,66,.98);
+  border-right-color:transparent;
+  border-radius:50%;
+  box-shadow:0 0 18px rgba(183,255,53,.16),inset 0 0 16px rgba(245,197,66,.10);
+  animation:vc-core-orbit 7s linear infinite;
+}
+.vc-home-promo-visual img {
+  position:relative;
+  z-index:1;
+  display:block;
+  width:100%;
+  height:100%;
+  max-height:166px;
+  object-fit:contain;
+  filter:drop-shadow(0 0 13px rgba(245,197,66,.30));
+}
+.vc-home-promo-visual>span {
+  position:absolute;
+  z-index:2;
+  inset:auto 5px 6px;
+  color:#f5d77d;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.12em;
+  text-align:center;
+  text-shadow:0 2px 6px #100e08;
+}
+@keyframes vc-core-orbit { to { transform:rotate(360deg); } }
+
+.vc-home-section-heading>div>span { color:#b7ff35!important; }
+.vc-home-section-heading h2 { color:#f7f3e7!important; }
+.vc-home-section-heading>a,.vc-home-arrow,.vc-home-activity-arrow { color:#f5c542!important; }
+.vc-home-game,.vc-home-variant-card,.vc-home-product-card,.vc-home-activity,.vc-home-benefits article {
+  border-color:rgba(245,197,66,.17)!important;
+  background:linear-gradient(150deg,#211b0e,#171309)!important;
+}
+.vc-home-game>span,.vc-home-variant-art,.vc-home-product-art { background:#171309!important; }
+.vc-home-game strong,.vc-home-product-copy>strong,.vc-home-variant-copy>strong { color:#f7f3e7!important; }
+.vc-home-game small,.vc-home-product-copy>small,.vc-home-variant-copy>small { color:#b8ad91!important; }
+.vc-home-quick-filters a {
+  border-color:rgba(245,197,66,.22)!important;
+  background:#1d190e!important;
+  color:#d8cfb6!important;
+}
+.vc-home-quick-filters a.is-selected {
+  border-color:#b7ff35!important;
+  background:#b7ff35!important;
+  color:#172007!important;
+  box-shadow:0 0 18px rgba(183,255,53,.20)!important;
+}
+.vc-home-price { color:#f5c542!important; }
+.vc-home-status.is-ready { color:#b7ff35!important; }
+.vc-home-empty { border-color:rgba(245,197,66,.34)!important; background:#1d190e!important; }
+.vc-home-empty a { color:#b7ff35!important; }
+.vc-home-benefits article>span,.vc-home-activity-icon {
+  background:rgba(183,255,53,.14)!important;
+  color:#b7ff35!important;
+}
+
+.vc4-shell {
+  background:radial-gradient(ellipse at 50% -15%,rgba(245,197,66,.11),transparent 55%),#100e08!important;
+  color:#f7f3e7!important;
+}
+.vc4-nav { background:rgba(16,14,8,.94)!important; border-bottom-color:rgba(245,197,66,.18)!important; }
+.vc4-nav-links button.active,.vc4-nav-actions button:hover { color:#b7ff35!important; }
+.vc4-page-head h1 span,.vc4-price-stack strong,.vc4-card-foot,.vc4-total strong { color:#f5c542!important; }
+.vc4-page-head h2,.vc4-card-copy h3,.vc4-dialog h2 { color:#f7f3e7!important; }
+.vc4-page-head p,.vc4-card-copy p,.vc4-card-copy .vc4-eyebrow { color:#b8ad91!important; }
+.vc4-featured-hero {
+  border-color:rgba(245,197,66,.58)!important;
+  background:radial-gradient(circle at 84% 42%,rgba(245,197,66,.17),transparent 34%),linear-gradient(110deg,#1d190e,#211a0c 58%,#100e08)!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.38),0 0 25px rgba(245,197,66,.12)!important;
+}
+.vc4-featured-kicker { color:#f5d77d!important; }
+.vc4-featured-live,.vc4-status-ready { color:#b7ff35!important; }
+.vc4-featured-actions button,.vc4-primary,.vc4-sku-buy button,.vc4-detail-buybar .vc4-primary {
+  border-color:#ffe28a!important;
+  background:linear-gradient(180deg,#ffdc70,#f5c542)!important;
+  color:#211807!important;
+  box-shadow:0 6px 18px rgba(245,197,66,.20)!important;
+}
+.vc4-featured-actions button:hover,.vc4-primary:hover,.vc4-sku-buy button:hover { background:#ffda68!important; }
+.vc4-featured-actions a,.vc4-reset,.vc4-mlbb-head button { color:#b7ff35!important; }
+.vc4-filter-bar button.active {
+  border-color:#b7ff35!important;
+  background:#b7ff35!important;
+  color:#172007!important;
+}
+.vc4-filter-bar button,.vc4-filter-bar input,.vc4-mlbb-filters {
+  border-color:rgba(245,197,66,.20)!important;
+  background:#1d190e!important;
+  color:#f7f3e7!important;
+}
+.vc4-card,.vc4-dialog,.vc4-cart-row,.vc4-order,.vc4-purchase-journey {
+  border-color:rgba(245,197,66,.18)!important;
+  background:linear-gradient(150deg,#211b0e,#171309)!important;
+}
+.vc4-card-art,.vc4-game-tile { background-color:#171309!important; }
+.vc4-sku-list,.vc4-sku,.vc4-order-item,.vc4-details>div { border-color:rgba(245,197,66,.12)!important; }
+.vc4-dialog label input,.vc4-mlbb-grid input,.vc4-mlbb-grid select {
+  border-color:rgba(245,197,66,.25)!important;
+  background:#100e08!important;
+  color:#f7f3e7!important;
+}
+.vc4-notice { border-color:rgba(183,255,53,.32)!important; background:rgba(183,255,53,.08)!important; color:#dfffad!important; }
+.vc4-product-tile-actions button { border-color:rgba(245,197,66,.46)!important; background:rgba(245,197,66,.12)!important; color:#ffe49a!important; }
+.store-global-footer { background:#100e08!important; color:#d8cfb6!important; }
+.store-bottom-nav-shell { background:rgba(16,14,8,.97)!important; border-color:rgba(245,197,66,.18)!important; }
+
+.dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded) {
+  background:linear-gradient(180deg,rgba(29,25,14,.98),rgba(16,14,8,.99)) padding-box,
+    linear-gradient(100deg,rgba(245,197,66,.95),rgba(183,255,53,.72),rgba(245,197,66,.82)) border-box!important;
+}
+.dashboard-bottom-nav:not(.dashboard-bottom-nav-embedded) a.active {
+  color:#b7ff35!important;
+  background:linear-gradient(135deg,rgba(183,255,53,.17),rgba(245,197,66,.10))!important;
+  box-shadow:inset 0 0 0 1px rgba(183,255,53,.24),0 0 18px rgba(183,255,53,.08)!important;
+}
+.dashboard-bottom-nav a.active .dashboard-bottom-nav-icon {
+  color:#172007!important;
+  background:linear-gradient(145deg,#d5ff75,#b7ff35)!important;
+  border-color:rgba(213,255,117,.78)!important;
+}
+
+@media(max-width:380px) {
+  .vc-home-promo-visual { min-height:112px; }
+  .vc-home-promo-visual img { max-height:136px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .vc-home-promo-visual:before { animation:none; }
+}
