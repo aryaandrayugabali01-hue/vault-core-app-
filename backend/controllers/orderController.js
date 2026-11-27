@@ -72,9 +72,7 @@ export async function createOrder(req, res, { testMode = false } = {}) {
 
     for(const line of reservedLines) {
       const {item,product,stockRows}=line;
-      const accountAvailability = product.variant_category === 'Akun'
-        ? (product.availability_mode === 'INDENT' ? 'INDENT' : 'READY')
-        : 'READY';
+      const accountAvailability = product.availability_mode === 'INDENT' ? 'INDENT' : 'READY';
       const indentDays = accountAvailability === 'INDENT' ? Number(product.indent_deadline_days) : null;
       await client.query(
         `INSERT INTO order_items
