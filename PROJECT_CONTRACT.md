@@ -5,9 +5,9 @@
 |---|---|
 | Nama proyek | VAULT CORE |
 | Jenis dokumen | Kontrak spesifikasi dan acuan pelaksanaan proyek |
-| Versi | 2.2 — CR-17 Removal of Publisher Sales Gate |
-| Tanggal dokumen | 27 November 2026 |
-| Status | CR-17 menghapus pemeriksaan ketentuan penerbit sebagai filter penjualan internal; CR-16 dan ketentuan lain tetap berlaku sejauh tidak diubah CR-17 |
+| Versi | 2.3 — CR-18 Green Visual System and Dashboard Promo Board |
+| Tanggal dokumen | 28 November 2026 |
+| Status | CR-18 menetapkan sistem visual hijau dan papan promo Dashboard; CR-17 menghapus filter penerbit dari aktivasi/penjualan internal; CR-15 tetap mengatur QRIS website dan XTR Telegram Mini App |
 | Model usaha | Single-Vendor Store |
 | Kanal utama | Website, Telegram Bot, dan Telegram Mini App |
 | Domain rencana | `vaultcore.biz.id` (belum dikonfirmasi kepemilikannya dan konfigurasi DNS-nya) |
