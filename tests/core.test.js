@@ -266,18 +266,23 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
   assert.ok(ownerV4.includes('Pembayaran 1 XTR tetap merupakan potongan Stars sungguhan'));
 });
 
-test('web catalog remains backend-driven while Telegram invoice and Mini App flow stay supported', () => {
+test('website catalog stays browse-only until QRIS is ready; Telegram Mini App retains XTR checkout', () => {
   const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
   const route = readFileSync(new URL('../frontend/src/app/catalog/page.jsx', import.meta.url), 'utf8');
+  const miniApp = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   assert.ok(route.includes("from './VaultCoreV4Page'"));
-  assert.match(page, /api\/customer-auth\/session/);
+  assert.match(page, /api\\/customer-auth\\/session/);
   assert.match(page, /credentials:'include'/);
-  assert.match(page, /POST/);
-  assert.match(page, /invoice Telegram Stars/);
-  assert.match(page, /Telegram Stars \(XTR\)/);
-  assert.match(page, /let activeCustomer = customer/);
-  assert.match(page, /openInvoice\(data\.invoiceUrl,data\.orderNumber\)/);
-  assert.doesNotMatch(page, /Rekber|Escrow|transfer bank|direct transfer|QRIS|PayLater/i);
+  assert.match(page, /const WEBSITE_QRIS_CHECKOUT_READY = false/);
+  assert.match(page, /Checkout QRIS website belum aktif/);
+  assert.doesNotMatch(page, /openInvoice/);
+  assert.doesNotMatch(page, /fetch\\(API \\+ '\\/api\\/orders',/);
+  assert.match(miniApp, /XTR/);
+  assert.match(miniApp, /openInvoice/);
+  assert.match(navigation, /href="\\/miniapp\\/index\\.html"/);
+  assert.match(navigation, /QRIS · Website/);
+  assert.match(navigation, /Telegram Stars \\(XTR\\)/);
 });
 
 test('expired pending orders are atomically cancelled, unreserved, and hidden from stock counts', async () => {
