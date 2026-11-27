@@ -1270,7 +1270,8 @@ test('publisher and rights-review metadata are not a commercial catalog or check
   const orders = readFileSync(new URL('../backend/controllers/orderController.js', import.meta.url), 'utf8');
   const payments = readFileSync(new URL('../backend/controllers/paymentController.js', import.meta.url), 'utf8');
   const delivery = readFileSync(new URL('../backend/services/deliveryService.js', import.meta.url), 'utf8');
-  assert.match(migration, /CREATE OR REPLACE FUNCTION vault_core_enforce_product_rights_activation/);
+  assert.match(migration, /DROP TRIGGER IF EXISTS trg_products_rights_activation/);
+  assert.match(migration, /DROP TRIGGER IF EXISTS trg_inventory_rights_source/);
   assert.match(migration, /status='ACTIVE'/);
   assert.doesNotMatch(catalog, /JOIN product_rights_reviews/);
   assert.doesNotMatch(orders, /isRightsReviewUsable|JOIN product_rights_reviews/);
@@ -1296,7 +1297,7 @@ test('account catalog and checkout use manual Owner handover without storing acc
   assert.match(ownerRoute, /LEGACY_CATEGORY_HAS_NO_V4_VARIANT/);
   assert.match(ownerRoute, /VARIANT_MAPPING_DOES_NOT_MATCH_LEGACY_PRODUCT/);
   assert.match(ownerRoute, /PRODUCT_VARIANT_ALREADY_ASSIGNED/);
-  assert.match(ownerRoute, /status=CASE WHEN status='ACTIVE' THEN 'PAUSED' ELSE status END/);
+  assert.doesNotMatch(ownerRoute, /status=CASE WHEN status='ACTIVE' THEN 'PAUSED' ELSE status END/);
   assert.match(ownerRoute, /V4_LEGACY_PRODUCT_VARIANT_MAPPED/);
   assert.match(ownerRoute, /COALESCE\([\s\S]*p\.stock_source_reference[\s\S]*i\.source_reference/);
 });test('legacy multi-step question, inventory and publish endpoints are disabled', () => {
