@@ -262,6 +262,7 @@ test('v5 Mini App brand artwork and existing v4 catalog/Owner assets remain avai
   assert.ok(miniApp.includes('function comingSoonCard(variant)'));
   assert.ok(miniApp.includes('Akan Tersedia'));
   const miniCss = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
+  const golden = readFileSync(new URL('../frontend/public/golden-theme.css', import.meta.url), 'utf8');
   assert.ok(miniCss.includes('.product-card-soon'));
   assert.ok(ownerV4.includes('/api/admin/test-fixtures'));
   assert.ok(ownerV4.includes('/api/orders/test'));
@@ -1678,7 +1679,7 @@ test('Legacy Joki credential endpoint remains closed while safe customer fields 
 });
 
 
-test('website and Mini App share a green four-game promo board', () => {
+test('website and Mini App expose the approved animated promotional hero', () => {
   const webHome = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
   const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const premium = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
@@ -1689,10 +1690,13 @@ test('website and Mini App share a green four-game promo board', () => {
   assert.ok(mini.includes('vc-miniapp-promo-visual'));
   assert.ok(mini.includes('hero-vaultcore-loop.webp'));
   assert.ok(mini.includes('hero-vaultcore.jpg'));
-  assert.ok(mini.includes('promoBoardArt'));
+  assert.doesNotMatch(mini, /promoBoardArt|home-promo-board-grid/);
   assert.ok(premium.includes('--vc-green:#a8f06a'));
   assert.ok(premium.includes('.home-promo.promo-board{'));
-  assert.ok(miniCss.includes('--green:#a8f06a'));
+  assert.ok(golden.includes('--green:#b7ff35'));
+  assert.ok(golden.includes('.home-promo.promo-board'));
+  assert.ok(golden.includes('.admin-shell'));
+  assert.ok(golden.includes('.vco-shell'));
   assert.ok(sw.includes("'/vault-core-premium.css'"));
   assert.ok(sw.includes("'/golden-theme.css'"));
   assert.ok(sw.includes("'/assets/02-hero/hero-vaultcore.jpg'"));
