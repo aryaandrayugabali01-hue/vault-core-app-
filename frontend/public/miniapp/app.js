@@ -317,7 +317,8 @@ function paintCatalogProducts() {
 }
 function catalog() {
   const gameTabs = [['ALL','Semua'],['MLBB','MLBB'],['FF','Free Fire'],['ROBLOX','Roblox'],['GI','Genshin']];
-  const groupTabs = [['ALL','Semua'],['Akun','Akun'],['Jasa Joki','Joki']];
+  const groupOptions = [['Akun','Akun'],['Jasa Joki','Joki'],['Item In-Game','Item'],['Produk Lainnya','Lainnya']];
+  const groupTabs = [['ALL','Semua'],...groupOptions.filter(([code]) => state.products.some((product) => product.variant_category === code))];
   setPage(
     headerPage('Store') +
     '<main class="store-v3">' +
@@ -326,7 +327,7 @@ function catalog() {
       '<div class="store-group-tabs">' + groupTabs.map(([code,label]) => '<button type="button" data-filter-group="' + code + '" class="' + ((state.catalogGroup||'ALL')===code?'on':'') + '">' + label + '</button>').join('') + '</div>' +
       '<div class="store-tier-hint"><span>PRODUK TERSEDIA</span><small id="catalog-result-count">Mengambil data katalog...</small></div>' +
       '<div id="catalog-products" class="store-product-grid">' + (!state.loaded ? '<i class="vc-skeleton"></i><i class="vc-skeleton"></i><i class="vc-skeleton"></i><i class="vc-skeleton"></i>' : '') + '</div>' +
-      (state.loadError ? '<div class="empty">' + esc(state.loadError) + '</div>' : '') +
+      (state.loadError ? '<div class="empty">' + esc(state.loadError) + '<button class="store-retry-button" type="button" data-action="retry-catalog">Coba lagi</button></div>' : '') +
       '<div class="store-source-note">Detail, harga XTR, status, dan ketersediaan mengikuti listing backend VAULT CORE.</div>' +
     '</main>',
     'catalog', false
@@ -336,7 +337,7 @@ function catalog() {
 function gamePage(code) {
   const game = GAMES[code];
   if (!game) return go('/catalog');
-  const variants = state.variants.filter((variant) => variant.game_code === code && ['Akun','Jasa Joki'].includes(variant.category));
+  const variants = state.variants.filter((variant) => variant.game_code === code && ['Akun','Jasa Joki','Item In-Game','Produk Lainnya'].includes(variant.category));
   const activeCount = state.products.filter((product) => product.game_category === code && isBuyable(product)).length;
   setPage(
     headerPage(game.name) +
@@ -744,6 +745,7 @@ function handleClick(event) {
   const button = event.target.closest('[data-action]');
   if (!button) return;
   const action = button.getAttribute('data-action');
+  if (action === 'retry-catalog') { loadCatalog(true); return; }
   if (action === 'back') { history.length > 1 ? history.back() : go('/home'); return; }
   if (action === 'share') { shareProduct(button.getAttribute('data-id')); return; }
   if (action === 'favorite') { toggleProductFavorite(button.getAttribute('data-id')); return; }
@@ -793,6 +795,24 @@ function handleSubmit(event) {
   state.catalogGame = 'ALL';
   go('/catalog');
 }
+async function loadCatalog(showLoading = false) {
+  if (showLoading) {
+    state.loaded = false;
+    state.loadError = '';
+    render();
+  }
+  try {
+    const result = await api('/api/catalog/v4/variants');
+    normalizeCatalogVariants(result.variants);
+    state.loadError = '';
+  } catch (error) {
+    state.loadError = error.message || 'Katalog belum dapat dimuat.';
+  } finally {
+    state.loaded = true;
+    render();
+  }
+}
+
 function init() {
   if (inTelegram) {
     try {
@@ -813,15 +833,7 @@ function init() {
     if (splash) splash.classList.add('out');
     window.setTimeout(() => splash && splash.remove(),380);
   },320);
-  api('/api/catalog/v4/variants').then((result) => {
-    normalizeCatalogVariants(result.variants);
-    state.loaded = true;
-  }).catch((error) => {
-    state.loaded = true;
-    state.loadError = error.message || 'Katalog belum dapat dimuat.';
-  }).finally(() => {
-    render();
-  });
+  loadCatalog();
   if ('serviceWorker' in navigator && !inTelegram) navigator.serviceWorker.register('./sw.js',{scope:'/miniapp/'}).catch(() => {});
 }
 init();

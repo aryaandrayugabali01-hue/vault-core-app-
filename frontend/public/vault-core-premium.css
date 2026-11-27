@@ -386,3 +386,10 @@
 .vc-home-stock-dot.is-unavailable{color:#b0acba}
 
 @media(max-width:360px){.vc-home-promo{grid-template-columns:minmax(0,1.12fr) 108px;gap:7px;padding:11px;min-height:180px}.vc-home-promo-copy h1{font-size:19px}.vc-home-promo-board{padding:6px}}
+
+
+/* Mini App Store category chips: keep every backend product group reachable on narrow screens. */
+.store-group-tabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}
+.store-group-tabs::-webkit-scrollbar{display:none}
+.store-group-tabs button{flex:1 0 auto;min-width:66px;padding:8px 12px;white-space:nowrap}
+.store-retry-button{display:block;margin:12px auto 0;padding:9px 16px;border:1px solid rgba(92,245,133,.45);border-radius:18px;background:#14271a;color:#d9ffe2;font-size:11px;font-weight:800;cursor:pointer}

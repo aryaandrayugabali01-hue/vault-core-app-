@@ -1280,6 +1280,21 @@ test('Mini App Store presents purchasable backend products in a responsive two-c
   assert.ok(styles.includes('.store-product-grid .price{margin-top:1px;color:var(--vc-green)!important'));
 });
 
+test('Mini App exposes all backend product groups and game routes with a retryable catalog load', () => {
+  const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  const styles = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
+  assert.ok(app.includes("const groupOptions = [['Akun','Akun'],['Jasa Joki','Joki'],['Item In-Game','Item'],['Produk Lainnya','Lainnya']];"));
+  assert.ok(app.includes("const groupTabs = [['ALL','Semua'],...groupOptions.filter(([code]) => state.products.some((product) => product.variant_category === code))];"));
+  assert.ok(app.includes("['Akun','Jasa Joki','Item In-Game','Produk Lainnya'].includes(variant.category)"));
+  assert.ok(app.includes('data-action="retry-catalog"'));
+  assert.ok(app.includes("if (action === 'retry-catalog') { loadCatalog(true); return; }"));
+  assert.ok(app.includes("async function loadCatalog(showLoading = false)"));
+  assert.ok(styles.includes('.store-group-tabs{display:flex;gap:5px;overflow-x:auto;'));
+  assert.ok(styles.includes('.store-group-tabs button{flex:1 0 auto;min-width:66px;'));
+  assert.ok(sw.includes("vault-core-miniapp-v16"));
+});
+
 test('Mini App product detail provides working Share, persistent Favorite and two backend-related products', () => {
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const styles = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
@@ -1359,7 +1374,7 @@ test('product detail converts escaped backend newlines into readable sections an
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(sw.includes('vault-core-miniapp-v15'));
+  assert.ok(sw.includes('vault-core-miniapp-v16'));
   assert.ok(app.includes(".replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n')"));
   assert.ok(app.includes("renderDetailCopy(product.customer_terms)"));
   assert.ok(app.includes("details.push(renderDetailCopy(product.description))"));
@@ -1406,7 +1421,7 @@ test('mobile app assets are included in the static frontend and service worker n
   assert.ok(manifest.includes('"scope":"/miniapp/"'));
   assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
   for (const asset of ['/game-icons/mlbb.webp','/game-icons/free-fire.webp','/game-icons/roblox.webp','/game-icons/genshin-impact.webp']) assert.ok(sw.includes(asset));
-  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v15'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v16'"));
 });
 
 test('active CSS rules do not contain repeated declarations that can reintroduce same-rule conflicts', () => {
