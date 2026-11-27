@@ -1727,6 +1727,9 @@ test('Telegram Mini App loads the Golden Dark theme and accessible animated hero
   assert.ok(mini.includes('srcset="/assets/02-hero/hero-vaultcore-loop.webp"'));
   assert.ok(mini.includes('src="/assets/02-hero/hero-vaultcore.jpg"'));
   assert.ok(theme.includes('.vc-miniapp-promo-visual'));
+  assert.ok(theme.includes('.home-promo.promo-board'));
+  assert.ok(theme.includes('--bg:#100e08'));
+  assert.ok(theme.includes('--green:#b7ff35'));
   assert.ok(theme.includes('.hero {'));
   assert.ok(sw.includes("vault-core-miniapp-v17"));
   assert.ok(sw.includes("'/assets/02-hero/hero-vaultcore.jpg'"));
