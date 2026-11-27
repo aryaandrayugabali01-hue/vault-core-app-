@@ -85,6 +85,7 @@ function matchesMlbb(product, filters) {
 export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   const [variants,setVariants] = useState([]);
   const [customer,setCustomer] = useState(null);
+  const [customerInputs,setCustomerInputs] = useState({});
   const [game,setGame] = useState(initialCategory === 'ALL' ? 'ALL' : initialCategory);
   const [group,setGroup] = useState('ALL');
   const [search,setSearch] = useState('');
@@ -261,16 +262,17 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   ),[variants,game,group,search]);
 
   const addToCart = (product) => {
-    setCart((current) => {
-      const found = current.find((item) => item.productId === product.id);
-      if (found) return current.map((item) => item.productId === product.id ? {...item,quantity:Math.min(5,item.quantity+1)} : item);
-      if (current.length >= 10) {
-        setNotice('Keranjang maksimal 10 produk.');
-        return current;
-      }
-      return [...current,{productId:product.id,name:product.name,price:Number(product.sale_price_xtr),quantity:1}];
+    const fields=Array.isArray(product.customer_input_fields)?product.customer_input_fields:[];
+    const values=customerInputs[product.id]||{};
+    const missing=fields.find((field)=>field.required&&!String(values[field.label]||'').trim());
+    if(missing){setSelected({variant_id:Number(product.variant_id),product});setNotice('Lengkapi data "'+missing.label+'" sebelum melanjutkan.');return;}
+    setCart((current)=>{
+      const found=current.find((item)=>item.productId===product.id);
+      if(found)return current.map((item)=>item.productId===product.id?{...item,quantity:Math.min(5,item.quantity+1),customerInput:values}:item);
+      if(current.length>=10){setNotice('Keranjang maksimal 10 produk.');return current;}
+      return [...current,{productId:product.id,name:product.name,price:Number(product.sale_price_xtr),quantity:1,customerInput:values}];
     });
-    setNotice(product.name + ' ditambahkan ke keranjang.');
+    setNotice(product.name+' ditambahkan ke keranjang.');
     setSelected(null);
   };
 
@@ -296,7 +298,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
         method:'POST',
         headers:{'content-type':'application/json',...(initData ? {'x-telegram-init-data':initData} : {})},
         credentials:'include',
-        body:JSON.stringify({items:cart.map(({productId,quantity}) => ({productId,quantity}))})
+        body:JSON.stringify({items:cart.map(({productId,quantity,customerInput})=>({productId,quantity,customerInput:customerInput||{}}))})
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Checkout gagal dibuat.');
@@ -469,6 +471,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             {selected.product.availability_mode === 'INDENT' && <p className="vc4-eta">Tenggat INDENT: maksimal {selected.product.indent_deadline_days} hari kalender setelah pembayaran.</p>}{selected.product.fulfillment_eta && <p className="vc4-eta">Estimasi pemenuhan: {selected.product.fulfillment_eta}</p>}
             {selected.product.group === 'Akun' && <section className="vc4-security-guide"><h3>Keamanan Akun</h3><ol><li>Periksa detail akun dan kesesuaian spesifikasi sebelum konfirmasi.</li><li>Ganti kata sandi setelah menerima akses akun.</li><li>Aktifkan verifikasi dua langkah pada akun yang mendukung.</li><li>Pastikan email dan metode pemulihan berada dalam kendali pembeli.</li></ol><p>Garansi mengikuti ketentuan yang ditetapkan pada detail produk.</p></section>}
             <section className="vc4-listing-specs"><h4>Spesifikasi Produk</h4><div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ').replace(/\b[a-z]/g,letter=>letter.toUpperCase())}</span><strong>{String(value)}</strong></div>)}</div></section>
+            {Array.isArray(selected.product.customer_input_fields)&&selected.product.customer_input_fields.length>0&&<section className="vc4-customer-inputs"><h4>Data untuk Pesanan</h4><p>Isi data game dan target pengerjaan sesuai petunjuk produk.</p>{selected.product.customer_input_fields.map((field)=>{const values=customerInputs[selected.product.id]||{};return <label key={field.label}>{field.label}{field.required&&<span> · Wajib</span>}{field.type==='textarea'?<textarea maxLength={field.maxLength||240} value={values[field.label]||''} onChange={(event)=>setCustomerInputs((current)=>({...current,[selected.product.id]:{...(current[selected.product.id]||{}),[field.label]:event.target.value}}))}/>:<input type={field.type==='number'?'number':'text'} inputMode={field.type==='number'?'numeric':'text'} maxLength={field.type==='number'?undefined:(field.maxLength||240)} value={values[field.label]||''} onChange={(event)=>setCustomerInputs((current)=>({...current,[selected.product.id]:{...(current[selected.product.id]||{}),[field.label]:event.target.value}}))}/>}</label>})}</section>}
             <div className="vc4-price-large"><PriceDisplay product={selected.product}/></div>
             <button className="vc4-primary" type="button" onClick={()=>addToCart(selected.product)}>Tambah ke keranjang</button>
           </> : <p>Produk pada varian ini akan tampil setelah Owner menyelesaikan SKU, harga, stok, dan verifikasi yang diwajibkan.</p>}
@@ -495,7 +498,9 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           {ordersLoading ? <p>Memuat pesanan…</p> : ordersError ? <p className="vc4-error-text">{ordersError}</p> : orders.length===0 ? <p>Belum ada pesanan.</p> : orders.map((order)=><article className="vc4-order" key={order.order_number}>
             <header><strong>{order.order_number}</strong><span>{STATUS[order.status]||order.status}</span></header>
             {(order.items||[]).map((item)=><div className="vc4-order-item" key={item.orderItemId||item.name}><span>{item.name} × {item.quantity}</span>
-{item.category==='Jasa Joki' && <small className="vc4-joki-input-note">Form data Joki tanpa kredensial belum tersedia. Jangan kirim password, OTP, atau kode autentikasi.</small>}
+{item.customerInputs&&Object.keys(item.customerInputs).length>0&&<dl className="vc4-order-inputs">{Object.entries(item.customerInputs).map(([label,value])=><div key={label}><dt>{label}</dt><dd>{String(value)}</dd></div>)}</dl>}
+            {item.fulfillmentDeadlineAt&&<small className="vc4-joki-input-note">Tenggat pemenuhan: {new Date(item.fulfillmentDeadlineAt).toLocaleString('id-ID')}</small>}
+            {item.category==='Jasa Joki'&&!item.customerInputs&&<small className="vc4-joki-input-note">Data pesanan Joki ditampilkan setelah dilengkapi.</small>}
             </div>)}
             <footer>★ {fmt(order.total_xtr)} XTR · {new Date(order.created_at).toLocaleString('id-ID')}</footer>
           </article>)}

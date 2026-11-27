@@ -439,3 +439,13 @@ border-color:rgba(190,204,224,.25);background:rgba(15,23,36,.78);color:#e8edf5;}
 
 .vc4-listing-specs{margin:18px 0 0}
 .vc4-listing-specs h4{margin:0 0 10px;color:#f4d36f;font-size:12px;font-weight:850;letter-spacing:.04em}
+
+.vc4-customer-inputs{display:grid;gap:11px;margin:16px 0;padding:14px;border:1px solid rgba(131,92,255,.2);border-radius:13px;background:#10101b}
+.vc4-customer-inputs h4{margin:0;color:#f4f2ff;font-size:13px}
+.vc4-customer-inputs p{margin:0;color:#aaa8bd;font-size:11px;line-height:1.5}
+.vc4-customer-inputs label{display:grid;gap:6px;color:#ded8ff;font-size:11px;font-weight:700}
+.vc4-customer-inputs label span{color:#a69acb;font-weight:500}
+.vc4-customer-inputs input,.vc4-customer-inputs textarea{box-sizing:border-box;width:100%;padding:11px 12px;border:1px solid rgba(171,151,255,.22);border-radius:9px;background:#08080f;color:#fff;font:inherit}
+.vc4-order-inputs{display:grid;gap:5px;margin:7px 0 0;padding:9px;border-radius:9px;background:#10101b}
+.vc4-order-inputs>div{display:flex;justify-content:space-between;gap:10px;font-size:10px}
+.vc4-order-inputs dt{color:#aaa8bd}.vc4-order-inputs dd{margin:0;color:#f4f2ff;overflow-wrap:anywhere}
