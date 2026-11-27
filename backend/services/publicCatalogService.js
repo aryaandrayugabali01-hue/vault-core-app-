@@ -68,7 +68,7 @@ const PUBLIC_VARIANTS_SQL = `
              AND (
                (v.kategori_produk='Akun' AND p.fulfillment_type='GAME_ACCOUNT_TRANSFER')
                OR (v.kategori_produk='Jasa Joki' AND p.fulfillment_type='SERVICE_INSTRUCTIONS')
-               OR (v.kategori_produk='Item In-Game' AND p.fulfillment_type IN ('SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE'))
+               OR (v.kategori_produk='Item In-Game' AND p.fulfillment_type IN ('GAME_ACCOUNT_TRANSFER','SERVICE_INSTRUCTIONS','GIFT_CODE','REDEEM_CODE','VOUCHER_CODE','LICENSE_KEY','DIGITAL_FILE'))
              )
              AND stock.available_stock>0
          ),'[]'::jsonb) AS skus
