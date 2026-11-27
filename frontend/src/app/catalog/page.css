@@ -188,7 +188,7 @@ overflow:hidden;background-color:#172131;color:#f3f6fc;border:1px solid var(--vc
 .vc4-game-row button.selected .vc4-game-tile{
 box-shadow:0 0 0 2px var(--vc4-gold),0 0 0 5px var(--vc4-page);}
 .vc4-filter-bar button{border:1px solid var(--vc4-line);border-radius:24px;padding:9px 15px;font-size:12px;cursor:pointer;
-border-color:var(--vc4-line);background:#111925;color:#c4cede;}
+border-color:var(--vc4-line);background:#191407;color:#f0e4c0;}
 .vc4-filter-bar button.active{
 border-color:var(--vc4-gold);background:rgba(255,201,40,.12);color:var(--vc4-gold);}
 .vc4-filter-bar input{margin-left:auto;min-width:180px;max-width:260px;padding:10px 13px;border:1px solid var(--vc4-line);border-radius:22px;font:13px Inter;
@@ -338,7 +338,7 @@ border-color:var(--vc4-line);}
 color:#b3bfd0;}
 .vc4-eta{font-size:12px!important;
 color:#9ec7ff!important;}
-.store-global-footer{background:#090d14!important;color:#dce3ed!important}
+.store-global-footer{background:#0d0a04!important;color:#fcf7e9!important}
 .store-bottom-nav-shell{background:rgba(9,13,20,.96)!important}
 .vc4-footer{padding:60px 0 20px;text-align:center;font-size:11px;line-height:1.65;
 color:var(--vc4-muted);
