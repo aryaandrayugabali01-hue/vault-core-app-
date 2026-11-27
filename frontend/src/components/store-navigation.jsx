@@ -75,19 +75,19 @@ export function StoreFooter() {
   ];
   return <footer className="store-global-footer" aria-label="Informasi dan navigasi VAULT CORE">
     <div className="store-global-footer-inner">
-      <div className="store-trust-strip" aria-label="Perlindungan pembeli">
-        <div className="store-trust-item"><span className="store-trust-icon trust-green" aria-hidden="true">⬡</span><span>Anti-Hackback</span></div>
+      <div className="store-trust-strip" aria-label="Informasi layanan">
+        <div className="store-trust-item"><span className="store-trust-icon trust-green" aria-hidden="true">◇</span><span>Info Produk</span></div>
         <span className="store-trust-divider" aria-hidden="true"/>
-        <div className="store-trust-item"><span className="store-trust-icon trust-blue" aria-hidden="true">◎</span><span>Akun Dicek Manual</span></div>
+        <div className="store-trust-item"><span className="store-trust-icon trust-blue" aria-hidden="true">◎</span><span>Status Pesanan</span></div>
         <span className="store-trust-divider" aria-hidden="true"/>
-        <div className="store-trust-item"><span className="store-trust-icon trust-purple" aria-hidden="true">↻</span><span>Garansi Refund</span></div>
+        <div className="store-trust-item"><span className="store-trust-icon trust-purple" aria-hidden="true">✉</span><span>Bantuan Telegram</span></div>
       </div>
       <div className="store-footer-columns">
         <section className="store-footer-brand">
           <a href="/" aria-label="VAULT CORE Beranda"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/></a>
           <h2>Lebih Yakin Bersama <span>Vault Core</span></h2>
           <p>Jelajahi katalog melalui website atau Telegram Mini App. Pembayaran digital menggunakan Telegram Stars.</p>
-          <div className="store-footer-badges"><span>✓ Terverifikasi</span><span>✦ Sejak 2024</span></div>
+          <div className="store-footer-badges"><span>Single Vendor</span><span>Game &amp; Joki</span></div>
         </section>
         <nav className="store-footer-column" aria-label="Navigasi footer">
           <h3><span/>Navigasi</h3>
@@ -106,7 +106,7 @@ export function StoreFooter() {
           <p className="store-footer-payment-note">Pembayaran diproses melalui invoice resmi Telegram.</p>
         </section>
       </div>
-      <div className="store-global-footer-copy"><strong>Vault Core</strong><span>•</span>EST 2024<span>•</span>© {new Date().getFullYear()} - All Rights Reserved</div>
+      <div className="store-global-footer-copy"><strong>Vault Core</strong><span>•</span>© {new Date().getFullYear()} - All Rights Reserved</div>
     </div>
   </footer>;
 }

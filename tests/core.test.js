@@ -927,6 +927,15 @@ test('Customer web navigation matches the Mini App Home, Katalog, Transaksi and 
   assert.match(catalog, /vault-core-web-cart/);
 });
 
+test('store footer avoids unverified safety, warranty and founding-year claims', () => {
+  const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  assert.match(navigation, /Info Produk/);
+  assert.match(navigation, /Status Pesanan/);
+  assert.match(navigation, /Bantuan Telegram/);
+  assert.match(navigation, /Single Vendor/);
+  assert.doesNotMatch(navigation, /Anti-Hackback|Akun Dicek Manual|Garansi Refund|Terverifikasi|Sejak 2024|EST 2024/);
+});
+
 test('customer catalog exposes buyer specs and hides internal product, price, delivery and Owner metadata', () => {
   const attributes = {
     Rank:'Mythic',
@@ -1005,6 +1014,18 @@ test('cart normalization preserves legacy checkout and merges valid product line
   assert.equal(normalizeCartItems({items:[{productId:2,quantity:2},{productId:3,quantity:2}]},{testMode:true}).ok,false);
 });
 
+
+test('web catalog cart preserves safe Joki customer inputs across reloads', () => {
+  const page = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
+  assert.ok(page.includes('entry?.customerInput'));
+  assert.ok(page.includes('product?.customer_input_fields'));
+  assert.ok(page.includes('allowedLabels.has(label)'));
+  assert.ok(page.includes('value.slice(0,240)'));
+  assert.ok(page.includes('setCustomerInputs(Object.fromEntries(restored.map'));
+  assert.ok(page.includes('JSON.stringify(cart.map(({productId,quantity,customerInput})'));
+  assert.ok(page.includes('customerInput:customerInput || {}'));
+  assert.equal((page.match(/updateCustomerInput\(selected\.product\.id,field\.label,event\.target\.value\)/g) || []).length, 2);
+});
 
 test('Owner SKU lifecycle saves one safe form and publishes eligible stock without a separate publish step', () => {
   const ownerRoute = readFileSync(new URL('../backend/routes/ownerV4.js', import.meta.url), 'utf8');

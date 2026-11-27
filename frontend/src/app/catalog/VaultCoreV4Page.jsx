@@ -215,14 +215,25 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     try {
       const stored = JSON.parse(sessionStorage.getItem('vault-core-web-cart') || '[]');
       const restored = Array.isArray(stored) ? stored.slice(0,10).map((entry) => {
-        const product = flatProducts.find((item) => item.id === Number(entry.productId) && item.is_available && Number(item.sale_price_xtr) > 0);
+        const product = flatProducts.find((item) => item.id === Number(entry?.productId)
+          && item.is_available === true && item.is_purchaseable === true && Number(item.sale_price_xtr) > 1);
+        const allowedLabels = new Set((product?.customer_input_fields || [])
+          .map((field) => String(field?.label || '').trim()).filter(Boolean));
+        const rawCustomerInput = entry?.customerInput;
+        const customerInput = rawCustomerInput && typeof rawCustomerInput === 'object' && !Array.isArray(rawCustomerInput)
+          ? Object.fromEntries(Object.entries(rawCustomerInput)
+            .filter(([label,value]) => allowedLabels.has(label) && typeof value === 'string')
+            .map(([label,value]) => [label,value.slice(0,240)]))
+          : {};
         return product ? {
           productId:product.id, name:product.name,
           price:Number(product.sale_price_xtr),
-          quantity:Math.max(1,Math.min(5,Number(entry.quantity) || 1))
+          quantity:Math.max(1,Math.min(5,Number(entry?.quantity) || 1)),
+          customerInput
         } : null;
       }).filter(Boolean) : [];
       setCart(restored);
+      setCustomerInputs(Object.fromEntries(restored.map((item) => [item.productId,item.customerInput || {}])));
     } catch {
       setCart([]);
     }
@@ -232,7 +243,9 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   useEffect(() => {
     if (!cartRestored) return;
     if (cart.length) {
-      sessionStorage.setItem('vault-core-web-cart',JSON.stringify(cart.map(({productId,quantity}) => ({productId,quantity}))));
+      sessionStorage.setItem('vault-core-web-cart',JSON.stringify(cart.map(({productId,quantity,customerInput}) => ({
+        productId,quantity,customerInput:customerInput || {}
+      }))));
     } else {
       sessionStorage.removeItem('vault-core-web-cart');
     }
@@ -272,6 +285,16 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     });
     setNotice(product.name+' ditambahkan ke keranjang.');
     setSelected(null);
+  };
+
+  const updateCustomerInput = (productId,label,value) => {
+    setCustomerInputs((current) => ({
+      ...current,
+      [productId]:{...(current[productId] || {}),[label]:value}
+    }));
+    setCart((current) => current.map((item) => item.productId === productId
+      ? {...item,customerInput:{...(item.customerInput || {}),[label]:value}}
+      : item));
   };
 
   const setQuantity = (productId,quantity) => {
@@ -475,7 +498,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
             {selected.product.availability_mode === 'INDENT' && <p className="vc4-eta">Tenggat INDENT: maksimal {selected.product.indent_deadline_days} hari kalender setelah pembayaran.</p>}{selected.product.fulfillment_eta && <p className="vc4-eta">Estimasi pemenuhan: {selected.product.fulfillment_eta}</p>}
             {selected.product.group === 'Akun' && <section className="vc4-security-guide"><h3>Keamanan Akun</h3><ol><li>Periksa detail akun dan kesesuaian spesifikasi sebelum konfirmasi.</li><li>Ganti kata sandi setelah menerima akses akun.</li><li>Aktifkan verifikasi dua langkah pada akun yang mendukung.</li><li>Pastikan email dan metode pemulihan berada dalam kendali pembeli.</li></ol><p>Garansi mengikuti ketentuan yang ditetapkan pada detail produk.</p></section>}
             <section className="vc4-listing-specs"><h4>Spesifikasi Produk</h4><div className="vc4-details">{safeAttrs(selected.product.attributes).map(([key,value])=><div key={key}><span>{key.replaceAll('_',' ').replace(/\b[a-z]/g,letter=>letter.toUpperCase())}</span><strong>{String(value)}</strong></div>)}</div></section>
-            {Array.isArray(selected.product.customer_input_fields)&&selected.product.customer_input_fields.length>0&&<section className="vc4-customer-inputs"><h4>Data untuk Pesanan</h4><p>Isi data game dan target pengerjaan sesuai petunjuk produk.</p>{selected.product.customer_input_fields.map((field)=>{const values=customerInputs[selected.product.id]||{};return <label key={field.label}>{field.label}{field.required&&<span> · Wajib</span>}{field.type==='textarea'?<textarea maxLength={field.maxLength||240} value={values[field.label]||''} onChange={(event)=>setCustomerInputs((current)=>({...current,[selected.product.id]:{...(current[selected.product.id]||{}),[field.label]:event.target.value}}))}/>:<input type={field.type==='number'?'number':'text'} inputMode={field.type==='number'?'numeric':'text'} maxLength={field.type==='number'?undefined:(field.maxLength||240)} value={values[field.label]||''} onChange={(event)=>setCustomerInputs((current)=>({...current,[selected.product.id]:{...(current[selected.product.id]||{}),[field.label]:event.target.value}}))}/>}</label>})}</section>}
+            {Array.isArray(selected.product.customer_input_fields)&&selected.product.customer_input_fields.length>0&&<section className="vc4-customer-inputs"><h4>Data untuk Pesanan</h4><p>Isi data game dan target pengerjaan sesuai petunjuk produk.</p>{selected.product.customer_input_fields.map((field)=>{const values=customerInputs[selected.product.id]||{};return <label key={field.label}>{field.label}{field.required&&<span> · Wajib</span>}{field.type==='textarea'?<textarea maxLength={field.maxLength||240} value={values[field.label]||''} onChange={(event)=>updateCustomerInput(selected.product.id,field.label,event.target.value)}/>:<input type={field.type==='number'?'number':'text'} inputMode={field.type==='number'?'numeric':'text'} maxLength={field.type==='number'?undefined:(field.maxLength||240)} value={values[field.label]||''} onChange={(event)=>updateCustomerInput(selected.product.id,field.label,event.target.value)}/>}</label>})}</section>}
             <div className="vc4-detail-buybar"><PriceDisplay product={selected.product}/><button className="vc4-primary" type="button" disabled={!selected.product.is_available||!selected.product.is_purchaseable} onClick={()=>addToCart(selected.product)}>{selected.product.is_available&&selected.product.is_purchaseable?'Tambah ke keranjang':'Tidak tersedia'}</button></div>
           </> : <p>Produk belum tersedia pada varian ini.</p>}
         </section>
