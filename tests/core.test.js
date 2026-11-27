@@ -918,10 +918,12 @@ test('public catalog DTO is an allowlist and never exposes SKU, cost, handover i
     marketplace_category_slug:'free-fire-akun'
   });
   assert.deepEqual(Object.keys(product),[
-    'id','name','description','sale_price_xtr','image_url','image_gallery','attributes',
-    'customer_terms','fulfillment_eta','availability_mode','indent_deadline_days',
+    'id','name','description','tier','sale_price_xtr','image_url','image_gallery','attributes',
+    'customer_terms','fulfillment_eta','availability_mode','indent_deadline_days','customer_input_fields',
     'display_stock','is_purchaseable','is_available'
   ]);
+  assert.equal(product.tier,'SERVICE');
+  assert.deepEqual(product.customer_input_fields,[{label:'internal field',type:'text',required:false,maxLength:240}]);
   assert.equal(product.display_stock,1);
   assert.equal(product.is_available,true);
   assert.equal(product.is_purchaseable,true);
@@ -1117,7 +1119,8 @@ test('v4 customer catalog footer follows XTR, account-security and Telegram paym
   assert.ok(page.includes('Telegram Mini App'));
   assert.ok(page.includes('Telegram Stars (XTR)'));
   assert.ok(page.includes('Status pembayaran hanya ditetapkan setelah konfirmasi webhook Telegram'));
-  assert.ok(page.includes('vault terenkripsi'));
+  assert.ok(page.includes('Data Joki hanya berupa identitas game dan parameter pengerjaan'));
+  assert.equal(page.includes('vault terenkripsi'),false);
   for (const unsupportedMethod of ['BCA','Mandiri','BNI','Maybank','BRI','Indomaret','Alfamart','QRIS','ShopeePay','PayLater']) assert.equal(page.includes(unsupportedMethod),false);
   assert.ok(styles.includes('.vc4-footer'));
 });
@@ -1161,8 +1164,8 @@ test('Mini App and React catalog use the same catalog, order, and XTR payment AP
   assert.ok(react.includes("fetch(API + '/api/orders'"));
   assert.ok(mini.includes("api('/api/orders/mine')"));
   assert.ok(react.includes("'/api/orders/mine'"));
-  assert.ok(mini.includes("const body = {items:[{productId:Number(product.id),quantity:1}]}"));
-  assert.ok(react.includes("items:cart.map(({productId,quantity}) => ({productId,quantity}))"));
+  assert.ok(mini.includes("const body={items:[{productId:Number(product.id),quantity:1,customerInput}]}"));
+  assert.ok(react.includes("items:cart.map(({productId,quantity,customerInput})=>({productId,quantity,customerInput:customerInput||{}}))"));
   assert.ok(mini.includes('tg.openInvoice'));
   assert.ok(react.includes('openInvoice(data.invoiceUrl,data.orderNumber)'));
   assert.doesNotMatch(mini,/customer-access/);
