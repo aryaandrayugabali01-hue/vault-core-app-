@@ -76,7 +76,7 @@ router.get('/products',async(_req,res)=>{
    rr.authorization_evidence_reference,rr.chain_of_title,rr.transfer_method,rr.region,rr.review_notes,
    COUNT(DISTINCT q.pertanyaan_id)::int AS required_questions,
    COUNT(DISTINCT q.pertanyaan_id) FILTER(WHERE r.response_status='ANSWERED')::int AS completed_questions,
-   COUNT(DISTINCT i.id) FILTER(WHERE i.status='AVAILABLE' AND i.rights_review_id=p.current_rights_review_id)::int AS available_stock
+   COUNT(DISTINCT i.id) FILTER(WHERE i.status='AVAILABLE' AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL AND i.reserved_order_id IS NULL AND i.reserved_until IS NULL)::int AS available_stock
    FROM products p LEFT JOIN vault_core_varian_wajib v ON v.variant_id=p.variant_id
    LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
    LEFT JOIN product_rights_reviews rr ON rr.id=p.current_rights_review_id AND rr.product_id=p.id
@@ -211,7 +211,7 @@ router.post('/products',async(req,res)=>{
    const {rows:reserved}=await client.query("SELECT COUNT(*)::int AS n FROM inventory_items WHERE product_id=$1 AND status='RESERVED'",[productId]);
    if(reserved[0].n){await client.query('ROLLBACK');return res.status(409).json({error:'SKU_HAS_RESERVED_ORDERS'});}
    await client.query(`UPDATE products SET tier=$2 WHERE id=$1`,[productId,tier]);
-   await client.query(`UPDATE products SET name=$2,description=$3,sale_price_xtr=$4,cost_price_xtr=$5,variant_subtype=$6,image_url=$7,image_gallery=$8::jsonb,attributes=$9::jsonb,customer_terms=$10,fulfillment_eta=$11,availability_mode=$12,indent_deadline_days=$13,stock_quantity_declared=$14,stock_source_reference=$15,customer_input_fields=$16::jsonb,status='PAUSED',updated_at=NOW() WHERE id=$1`,
+   await client.query(`UPDATE products SET name=$2,description=$3,sale_price_xtr=$4,cost_price_xtr=$5,variant_subtype=$6,image_url=$7,image_gallery=$8::jsonb,attributes=$9::jsonb,customer_terms=$10,fulfillment_eta=$11,availability_mode=$12,indent_deadline_days=$13,stock_quantity_declared=$14,stock_source_reference=$15,customer_input_fields=$16::jsonb,status=status,updated_at=NOW() WHERE id=$1`,
     [productId,name,description,sale,cost,normalizeProductText(b.variantSubtype,120)||null,gallery.value[0],JSON.stringify(gallery.value),JSON.stringify(attrs.value),normalizeProductText(b.customerTerms,4000),eta,account?mode:'READY',indent,qty,source,JSON.stringify(safeCustomer)]);
   }else{
    const {rows:dups}=await client.query('SELECT id FROM products WHERE sku=$1 AND COALESCE(is_test,FALSE)=FALSE',[sku]);
