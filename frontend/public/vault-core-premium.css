@@ -338,7 +338,7 @@
 
 /* Final Gold tier and home filter states. */
 .product-card.tier-gold{position:relative;border-color:rgba(247,185,46,.88)!important;box-shadow:0 0 20px rgba(247,185,46,.18),0 10px 26px rgba(0,0,0,.34)}
-.tier-gold-label{position:absolute;z-index:3;top:7px;right:7px;padding:4px 7px;border:1px solid rgba(247,185,46,.75);border-radius:8px;background:linear-gradient(135deg,#ffd96c,#b47b18);color:#251800;font-size:7px;font-weight:950;box-shadow:0 0 13px rgba(247,185,46,.2)}
+.tier-gold-label{position:absolute;z-index:3;top:7px;left:7px;right:auto;padding:4px 7px;border:1px solid rgba(247,185,46,.75);border-radius:8px;background:linear-gradient(135deg,#ffd96c,#b47b18);color:#251800;font-size:7px;font-weight:950;box-shadow:0 0 13px rgba(247,185,46,.2)}
 .vc-home-promo-copy>a:active,.home-promo button:active,.store-variant-card:active{transform:scale(.98)}
 
 .vc-home-stock-dot{position:absolute;top:9px;left:9px;display:inline-flex;align-items:center;gap:5px;max-width:calc(100% - 18px);padding:5px 7px;border:1px solid rgba(255,255,255,.1);border-radius:999px;background:rgba(12,12,18,.76);backdrop-filter:blur(8px);color:#ddd9e8;font-size:9px;font-weight:800;line-height:1}

@@ -1226,6 +1226,7 @@ test('Mini App Store presents purchasable backend products in a responsive two-c
   assert.ok(styles.includes('.store-product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'));
   assert.ok(styles.includes('.product-availability-dot.is-ready'));
   assert.ok(styles.includes('.product-availability-dot.is-indent'));
+  assert.ok(styles.includes('.tier-gold-label{position:absolute;z-index:3;top:7px;left:7px;right:auto;'));
   assert.ok(styles.includes('.store-product-grid .price{margin-top:1px;color:var(--vc-green)!important'));
 });
 
@@ -1308,7 +1309,7 @@ test('product detail converts escaped backend newlines into readable sections an
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(sw.includes('vault-core-miniapp-v13'));
+  assert.ok(sw.includes('vault-core-miniapp-v14'));
   assert.ok(app.includes(".replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n')"));
   assert.ok(app.includes("renderDetailCopy(product.customer_terms)"));
   assert.ok(app.includes("details.push(renderDetailCopy(product.description))"));
@@ -1355,7 +1356,7 @@ test('mobile app assets are included in the static frontend and service worker n
   assert.ok(manifest.includes('"scope":"/miniapp/"'));
   assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
   for (const asset of ['/game-icons/mlbb.webp','/game-icons/free-fire.webp','/game-icons/roblox.webp','/game-icons/genshin-impact.webp']) assert.ok(sw.includes(asset));
-  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v13'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v14'"));
 });
 
 test('active CSS rules do not contain repeated declarations that can reintroduce same-rule conflicts', () => {
