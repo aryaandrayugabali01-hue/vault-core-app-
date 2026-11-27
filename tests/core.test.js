@@ -1277,7 +1277,7 @@ test('Mini App header and bottom navigation do not stack over the product detail
   assert.ok(css.includes('width:min(calc(100% - 24px),430px)'));
   assert.ok(css.includes('border-radius:26px'));
   assert.ok(css.includes('.nav .ic{box-sizing:border-box;display:block;width:36px;height:36px'));
-  assert.ok(css.includes('linear-gradient(100deg,rgba(139,92,246,.9),rgba(163,245,43,.74) 52%,rgba(139,92,246,.68)'));
+  assert.ok(css.includes('linear-gradient(100deg,rgba(92,246,133,.9),rgba(163,245,43,.74) 52%,rgba(92,246,133,.68)'));
   assert.equal((app.match(/function headerHome\(/g) || []).length,1);
   assert.equal((app.match(/function headerPage\(/g) || []).length,1);
   assert.ok(css.includes('.topbar{position:sticky'));
@@ -1457,7 +1457,7 @@ test('active stylesheets have unique selectors within each cascade context', () 
     assert.deepEqual(duplicates, [], file + ' still contains repeated selectors in one cascade context');
   }
   const miniAppStyles = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
-  assert.ok(miniAppStyles.includes('--green:#a3e635'));
+  assert.ok(miniAppStyles.includes('--green:#a8f06a'));
   assert.ok(miniAppStyles.includes('--gold:#ffc928'));
   assert.ok(miniAppStyles.includes('.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;padding:12px 14px;border:1px solid rgba(211,255,122,.82)'));
   assert.ok(miniAppStyles.includes('.nav button.on{background:rgba(163,245,43,.12);color:var(--green)'));
