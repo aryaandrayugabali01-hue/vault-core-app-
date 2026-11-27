@@ -93,7 +93,10 @@ router.get('/products', async (_req, res) => {
                 AND i.reserved_order_id IS NULL
                 AND i.reserved_until IS NULL
                 AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
-            )::int AS actual_stock
+            )::int AS actual_stock,
+            CASE WHEN p.status<>'ACTIVE' THEN 'UNAVAILABLE'
+                 WHEN p.availability_mode='INDENT' THEN 'INDENT'
+                 ELSE 'AVAILABLE' END AS availability_status
      FROM products p
      LEFT JOIN marketplace_categories mc ON mc.id=p.marketplace_category_id
      LEFT JOIN inventory_items i ON i.product_id=p.id
