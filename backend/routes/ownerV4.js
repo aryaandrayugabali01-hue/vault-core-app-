@@ -51,10 +51,10 @@ router.get('/products',async(_req,res)=>{
     p.stock_source_reference,
     CASE
      WHEN COUNT(DISTINCT NULLIF(BTRIM(i.source_reference),'')) FILTER(
-       WHERE i.status='AVAILABLE' AND i.rights_review_id=p.current_rights_review_id
+       WHERE i.status='AVAILABLE' AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
      )=1
      THEN MIN(NULLIF(BTRIM(i.source_reference),'')) FILTER(
-       WHERE i.status='AVAILABLE' AND i.rights_review_id=p.current_rights_review_id
+       WHERE i.status='AVAILABLE' AND NULLIF(BTRIM(i.source_reference),'') IS NOT NULL
      )
      ELSE NULL
     END
@@ -140,7 +140,7 @@ router.put('/products/:productId/variant', async (req,res) => {
       return res.status(409).json({error:'MASTER_VARIANT_MISMATCH'});
     }
     const {rows:updated}=await client.query(
-      `UPDATE products SET variant_id=$2,variant_subtype=COALESCE($3,variant_subtype),status=CASE WHEN status='ACTIVE' THEN 'PAUSED' ELSE status END,updated_at=NOW()
+      `UPDATE products SET variant_id=$2,variant_subtype=COALESCE($3,variant_subtype),updated_at=NOW()
        WHERE id=$1 AND variant_id IS NULL
        RETURNING id,sku,game_category,fulfillment_type,variant_id,variant_subtype,status`,
       [productId,variantId,subtype]
@@ -151,7 +151,7 @@ router.put('/products/:productId/variant', async (req,res) => {
       [String(req.telegramUser.id),String(productId),JSON.stringify({sku:product.sku,legacyCategory:product.legacy_category_slug,variantId,variantName:variant.jenis_varian})]
     );
     await client.query('COMMIT');
-    return res.json({product:updated[0],publication:'OWNER_REVIEW_AND_VAULT_REQUIRED'});
+    return res.json({product:updated[0],publication:updated[0]?.status||'PAUSED'});
   }catch(error){
     try{await client.query('ROLLBACK');}catch{}
     console.error('[v4-legacy-variant-map]',error.message);
