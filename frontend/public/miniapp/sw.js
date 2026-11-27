@@ -1,5 +1,5 @@
 // Shell-only cache. API requests and dynamic product data always use the network.
-const CACHE_NAME = 'vault-core-miniapp-v17';
+const CACHE_NAME = 'vault-core-miniapp-v18';
 const SHELL = [
   '/miniapp/index.html',
   '/miniapp/app.css',
@@ -28,8 +28,14 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
   if (!SHELL.includes(url.pathname)) return;
-  event.respondWith(caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-    if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
+  const networkFirst = new Set(['/miniapp/index.html','/miniapp/app.js','/miniapp/app.css','/miniapp/config.js']);
+  const updateCache = (response) => {
+    if (response && response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
     return response;
-  })));
+  };
+  event.respondWith(
+    networkFirst.has(url.pathname)
+      ? fetch(request).then(updateCache).catch(() => caches.match(request))
+      : caches.match(request).then((cached) => cached || fetch(request).then(updateCache))
+  );
 });
