@@ -177,7 +177,7 @@ function setPage(markup, active, hideNav) {
   window.scrollTo(0,0);
 }
 function headerHome() {
-  return '<header class="topbar"><a class="brand" href="' + APP_ROUTES.home + '" aria-label="VAULT CORE Home"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"></a><div class="top-actions"><button class="icon-btn" type="button" data-go="/catalog" aria-label="Cari produk">' + icon('search') + '</button><button class="icon-btn" type="button" data-go="/orders" aria-label="Status pesanan">' + icon('bell') + '</button><button class="icon-btn" type="button" data-go="/profile" aria-label="Profil">' + icon('user') + '</button></div></header>';
+  return '<header class="topbar"><a class="brand" href="' + APP_ROUTES.home + '" aria-label="VAULT CORE Home"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"></a><div class="top-actions"><button class="icon-btn" type="button" data-go="' + APP_ROUTES.catalog + '" aria-label="Cari produk">' + icon('search') + '</button><button class="icon-btn" type="button" data-go="' + APP_ROUTES.orders + '" aria-label="Status pesanan">' + icon('bell') + '</button><button class="icon-btn" type="button" data-go="' + APP_ROUTES.profile + '" aria-label="Profil">' + icon('user') + '</button></div></header>';
 }
 function headerPage(title) {
   return '<header class="pagebar"><button class="back-btn" type="button" data-action="back" aria-label="Kembali">' + icon('back') + '</button><h1>' + esc(title) + '</h1><span class="spacer"></span></header>';
@@ -286,18 +286,18 @@ function home() {
     headerHome() +
     '<main class="home-v3">' +
       '<form class="search home-search" id="home-search-form">' + icon('search') + '<input id="home-search" type="search" value="' + esc(state.search || '') + '" placeholder="Cari akun game atau layanan joki..." autocomplete="off"><button type="submit" aria-label="Cari produk">' + icon('next') + '</button></form>' +
-      '<section class="home-promo promo-board"><div class="home-promo-copy"><small><i></i>PAPAN PROMO · VAULT CORE</small><h1>Temukan akun game <em>& layanan joki</em></h1><p>Telusuri katalog empat game pilihan.</p><div class="home-promo-tags"><span>AKUN GAME</span><span>JOKI</span><span>4 GAME</span></div><button type="button" data-go="/catalog">Jelajahi Store <b>↗</b></button></div><div class="vc-miniapp-promo-visual" aria-hidden="true"><picture><source media="(prefers-reduced-motion: no-preference)" srcset="/assets/02-hero/hero-vaultcore-loop.webp" type="image/webp"><img src="/assets/02-hero/hero-vaultcore.jpg" alt=""></picture><span>VAULT CORE · DIGITAL STORE</span></div></section>' +
-      '<div class="section-head"><h2>Kategori Game</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
+      '<section class="home-promo promo-board"><div class="home-promo-copy"><small><i></i>PAPAN PROMO · VAULT CORE</small><h1>Temukan akun game <em>& layanan joki</em></h1><p>Telusuri katalog empat game pilihan.</p><div class="home-promo-tags"><span>AKUN GAME</span><span>JOKI</span><span>4 GAME</span></div><button type="button" data-go="' + APP_ROUTES.catalog + '">Jelajahi Store <b>↗</b></button></div><div class="vc-miniapp-promo-visual" aria-hidden="true"><picture><source media="(prefers-reduced-motion: no-preference)" srcset="/assets/02-hero/hero-vaultcore-loop.webp" type="image/webp"><img src="/assets/02-hero/hero-vaultcore.jpg" alt=""></picture><span>VAULT CORE · DIGITAL STORE</span></div></section>' +
+      '<div class="section-head"><h2>Kategori Game</h2><button type="button" data-go="' + APP_ROUTES.catalog + '">Lihat Semua ›</button></div>' +
       '<section class="games home-games">' + gameTiles + '</section>' +
       '<div class="home-group-tabs"><button type="button" class="on" data-store-group="ALL">Semua</button><button type="button" data-store-group="Akun">Akun</button><button type="button" data-store-group="Jasa Joki">Joki</button></div>' +
       (skeleton ? skeleton :
-        '<div class="section-head"><h2>Pilihan Akun</h2><button type="button" data-go="/catalog">Lihat Semua ›</button></div>' +
+        '<div class="section-head"><h2>Pilihan Akun</h2><button type="button" data-go="' + APP_ROUTES.catalog + '">Lihat Semua ›</button></div>' +
         (recommendedAccounts.length ? '<div class="home-featured-grid">' + recommendedAccounts.map(productCard).join('') + '</div>' : '<div class="empty">Belum ada akun yang siap dipesan pada katalog publik.</div>') +
         '<div class="section-head"><h2>Layanan Joki</h2><button type="button" data-store-group="Jasa Joki">Lihat Kategori ›</button></div>' +
         (jokiByGame.length ? '<div class="home-joki-grid">' + jokiByGame.map(jokiCard).join('') + '</div>' : '<div class="empty">Kategori layanan Joki belum dapat dimuat.</div>')
       ) +
-      '<div class="section-head"><h2>Aktivitas Pesanan</h2><button type="button" data-go="/orders">My Orders ›</button></div>' +
-      '<button type="button" class="home-activity" data-go="/orders"><span>' + icon('receipt') + '</span><div><b>Riwayat pesanan pribadi</b><small>Status dan detail pesanan tampil pada akun pelanggan terverifikasi.</small></div><span class="home-activity-arrow">›</span></button>' +
+      '<div class="section-head"><h2>Aktivitas Pesanan</h2><button type="button" data-go="' + APP_ROUTES.orders + '">My Orders ›</button></div>' +
+      '<button type="button" class="home-activity" data-go="' + APP_ROUTES.orders + '"><span>' + icon('receipt') + '</span><div><b>Riwayat pesanan pribadi</b><small>Status dan detail pesanan tampil pada akun pelanggan terverifikasi.</small></div><span class="home-activity-arrow">›</span></button>' +
       '<div class="section-head"><h2>Keunggulan VAULT CORE</h2></div>' +
       '<div class="home-benefits"><div>' + icon('shield') + '<b>Transaksi Terpantau</b><small>Riwayat dan status pada akun pelanggan.</small></div><div>' + icon('help') + '<b>Pusat Bantuan</b><small>Dukungan melalui kanal resmi VAULT CORE.</small></div></div>' +
     '</main>',
@@ -422,7 +422,7 @@ function productPage(id) {
     return;
   }
   if (!product) {
-    setPage('<main><div class="empty"><b>Produk tidak ditemukan</b><br>Produk ini mungkin sudah tidak tersedia di katalog.</div><button class="cta alt" type="button" data-go="/catalog">Kembali ke katalog</button></main>', 'catalog', true);
+    setPage('<main><div class="empty"><b>Produk tidak ditemukan</b><br>Produk ini mungkin sudah tidak tersedia di katalog.</div><button class="cta alt" type="button" data-go="' + APP_ROUTES.catalog + '">Kembali ke katalog</button></main>', 'catalog', true);
     return;
   }
   const attrs = safeAttributes(product.attributes);
@@ -544,7 +544,7 @@ function renderDone(orderNumber, myRender) {
     '<main><div class="stepper"><div class="step done"><i>✓</i>Data</div><div class="step done"><i>✓</i>Pembayaran</div><div class="step on"><i>3</i>Selesai</div></div>' +
     '<div id="done-status"><div class="success-mark pending">★</div><div class="center"><h2>Pesanan Dibuat</h2><p>Menunggu konfirmasi Telegram. Status akan diperbarui otomatis.</p></div></div>' +
     '<div class="order-id"><span><small>Order ID</small><b>' + esc(orderNumber) + '</b></span><button class="icon-btn" type="button" data-action="copy" data-copy="' + esc(orderNumber) + '">' + icon('copy') + '</button></div>' +
-    '<button class="cta" type="button" data-action="invoice">Buka Invoice Telegram</button><button class="cta alt" type="button" data-go="/orders">Lihat Detail Pesanan</button><button class="cta alt" type="button" data-go="/home">Kembali ke Beranda</button></main>',
+    '<button class="cta" type="button" data-action="invoice">Buka Invoice Telegram</button><button class="cta alt" type="button" data-go="' + APP_ROUTES.orders + '">Lihat Detail Pesanan</button><button class="cta alt" type="button" data-go="' + APP_ROUTES.home + '">Kembali ke Beranda</button></main>',
     'orders', true
   );
   if (!inTelegram) return;
@@ -625,12 +625,12 @@ function renderProfile() {
     '<main>' +
       '<div class="who"><span class="avatar">' + esc(name.slice(0,1).toUpperCase()) + '</span><span><b>' + esc(name) + '</b><small style="display:block;color:var(--muted);font-size:9px;margin-top:3px">' + (user && user.id ? 'ID: ' + esc(user.id) : 'Buka Mini App melalui Telegram') + '</small></span></div>' +
       '<div class="menu">' +
-        '<button type="button" data-go="/orders">' + icon('receipt') + '<span>Riwayat Transaksi</span><span>›</span></button>' +
+        '<button type="button" data-go="' + APP_ROUTES.orders + '">' + icon('receipt') + '<span>Riwayat Transaksi</span><span>›</span></button>' +
         '<button type="button" data-action="support">' + icon('help') + '<span>Bantuan / CS</span><span>›</span></button>' +
-        '<button type="button" data-go="/terms">' + icon('info') + '<span>Syarat & Ketentuan</span><span>›</span></button>' +
-        '<button type="button" data-go="/privacy">' + icon('shield') + '<span>Kebijakan Privasi</span><span>›</span></button>' +
-        '<button type="button" data-go="/refund">' + icon('receipt') + '<span>Kebijakan Refund</span><span>›</span></button>' +
-        '<button type="button" data-go="/about">' + icon('home') + '<span>Tentang VAULT CORE</span><span>›</span></button>' +
+        '<button type="button" data-go="' + APP_ROUTES.terms + '">' + icon('info') + '<span>Syarat & Ketentuan</span><span>›</span></button>' +
+        '<button type="button" data-go="' + APP_ROUTES.privacy + '">' + icon('shield') + '<span>Kebijakan Privasi</span><span>›</span></button>' +
+        '<button type="button" data-go="' + APP_ROUTES.refund + '">' + icon('receipt') + '<span>Kebijakan Refund</span><span>›</span></button>' +
+        '<button type="button" data-go="' + APP_ROUTES.about + '">' + icon('home') + '<span>Tentang VAULT CORE</span><span>›</span></button>' +
       '</div>' +
       '<div class="box info" style="margin-top:14px">' + icon('shield') + '<span>Pembayaran diproses melalui invoice resmi Telegram Stars (XTR). Jangan kirim kata sandi atau kode OTP ke siapa pun.</span></div>' +
     '</main>',

@@ -1,5 +1,7 @@
 'use client';
 
+import { WEB_ROUTES } from '../../../lib/routes.js';
+
 import { useEffect, useState } from 'react';
 import { getInitData } from '../../../lib/telegram';
 import { StoreHeader } from '../../../components/store-navigation.jsx';
@@ -17,7 +19,7 @@ export default function MarketplaceCategoriesPage(){
     async function load(){
       try{
         const session=await fetch(API+'/api/owner-auth/session',{headers:headers(),credentials:'include',cache:'no-store'});
-        if(!session.ok){window.location.replace('/admin');return;}
+        if(!session.ok){window.location.replace(WEB_ROUTES.owner);return;}
         const response=await fetch(API+'/api/admin/marketplace-categories',{headers:headers(),credentials:'include',cache:'no-store'});
         const data=await response.json();
         if(!response.ok)throw new Error(data.message||'Kategori tidak dapat dimuat.');
@@ -29,10 +31,10 @@ export default function MarketplaceCategoriesPage(){
   },[]);
 
   return <main className="admin-shell">
-    <StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="admin-logout" href="/admin">Dashboard</a>}/>
+    <StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="admin-logout" href={WEB_ROUTES.owner}>Dashboard</a>}/>
     <header className="admin-header">
       <div><span className="eyebrow muted">VAULT CORE / OWNER</span><h1>Struktur katalog</h1><p>Struktur kategori dikunci agar katalog pelanggan selalu konsisten.</p></div>
-      <div className="admin-head-actions"><a className="admin-secondary-link" href="/admin">Kembali ke Dashboard Owner</a></div>
+      <div className="admin-head-actions"><a className="admin-secondary-link" href={WEB_ROUTES.owner}>Kembali ke Dashboard Owner</a></div>
     </header>
     <section className="admin-panel">
       <div className="admin-section-head"><div><span className="eyebrow muted">ATURAN KATALOG</span><h2>4 game · 1 subkategori per game</h2></div><span className="section-count">{ready?categories.length:'—'} KATEGORI</span></div>

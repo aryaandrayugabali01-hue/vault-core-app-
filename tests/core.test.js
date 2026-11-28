@@ -66,6 +66,12 @@ test('all website and Owner navigation uses the canonical route registry', () =>
   assert.ok(nav.includes('WEB_ROUTES.orders') && nav.includes('WEB_ROUTES.account'));
   assert.ok(home.includes('catalogHref({ game: game.code })') && home.includes('WEB_ROUTES.orders'));
   assert.ok(account.includes('WEB_ROUTES.owner') && account.includes('WEB_ROUTES.orders'));
+  const ownerV4 = readFileSync(new URL('../frontend/src/app/admin/v4/page.jsx', import.meta.url), 'utf8');
+  const ownerCategories = readFileSync(new URL('../frontend/src/app/admin/categories/page.jsx', import.meta.url), 'utf8');
+  const ownerNewProduct = readFileSync(new URL('../frontend/src/app/admin/products/new/page.jsx', import.meta.url), 'utf8');
+  assert.ok(ownerV4.includes('WEB_ROUTES.owner'));
+  assert.ok(ownerCategories.includes('WEB_ROUTES.owner'));
+  assert.ok(ownerNewProduct.includes('WEB_ROUTES.owner'));
   assert.ok(owner.includes('WEB_ROUTES.ownerProducts'));
 });
 test('Mini App pages use one internal hash-route registry and the same entry URL', () => {
@@ -246,7 +252,7 @@ test('storefront click targets and Mini App actions resolve to working routes or
   assert.match(navigation, /WEB_ROUTES\.support/);
   assert.match(navigation, /WEB_ROUTES\.terms/);
   assert.match(navigation, /WEB_ROUTES\.refund/);
-  assert.match(miniApp, /class="home-activity" data-go="\/orders"/);
+  assert.match(miniApp, /class="home-activity" data-go="' \+ APP_ROUTES\.orders \+ '"/);
   assert.match(miniApp, /<form class="search home-search" id="home-search-form">/);
   assert.match(miniApp, /document\.addEventListener\('submit',handleSubmit\)/);
   const homeSearchInput = miniApp.match(/if \(event\.target && event\.target\.id === 'home-search'\) \{([\s\S]*?)\n  \}/);
@@ -255,7 +261,7 @@ test('storefront click targets and Mini App actions resolve to working routes or
   assert.match(miniApp, /form\.id !== 'home-search-form'[\s\S]*?go\(APP_ROUTES\.catalog\)/);
   assert.match(miniApp, /case 'about': case 'terms': case 'privacy': case 'refund': renderInfo\(name\)/);
   assert.match(miniApp, /if \(!product && !state\.loaded\)[\s\S]*?Memuat detail produk/);
-  assert.match(miniApp, /if \(!product\)[\s\S]*?Produk tidak ditemukan[\s\S]*?data-go="\/catalog"/);
+  assert.match(miniApp, /if \(!product\)[\s\S]*?Produk tidak ditemukan[\s\S]*?data-go="' \+ APP_ROUTES\.catalog \+ '"/);
   const renderedActions = new Set([...miniApp.matchAll(/data-action=["']([^"']+)["']/g)].map((match) => match[1]));
   const handledActions = new Set([...miniApp.matchAll(/action === '([^']+)'/g)].map((match) => match[1]));
   for (const action of renderedActions) assert.ok(handledActions.has(action), 'Missing Mini App click handler: ' + action);
@@ -1260,7 +1266,7 @@ test('the production website opens the React catalog while the Telegram Mini App
   assert.ok(styles.includes('.games{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))'));
   assert.ok(styles.includes('.nav{position:fixed'));
   assert.ok(styles.includes('.hero{'));
-  assert.ok(app.includes('data-go="/catalog"'));
+  assert.match(app, /data-go="' \+ APP_ROUTES\.catalog \+ '"/);
   assert.ok(app.includes("api('/api/catalog/v4/variants')"));
   assert.ok(route.includes('getPublicCatalogVariants'));
   assert.equal(app.includes('window.VAULT_VARIANTS'),false);
@@ -1320,7 +1326,7 @@ test('Mini App Home uses live account recommendations and a truthful 2x2 Joki ca
   assert.ok(app.includes("class=\"home-joki-grid\""));
   assert.ok(app.includes("'Belum tersedia'"));
   assert.ok(app.includes("data-store-group=\"Jasa Joki\""));
-  assert.ok(app.includes("data-go=\"/orders\" aria-label=\"Status pesanan\""));
+  assert.match(app, /data-go="' \+ APP_ROUTES\.orders \+ '" aria-label="Status pesanan"/);
   assert.ok(!app.includes("★ ' + fmt(product.sale_price_xtr)"));
   assert.ok(styles.includes('.home-featured-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'));
   assert.ok(styles.includes('.home-joki-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'));

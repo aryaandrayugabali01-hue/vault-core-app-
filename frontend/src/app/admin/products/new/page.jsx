@@ -1,5 +1,7 @@
 'use client';
 
+import { WEB_ROUTES } from '../../../../lib/routes.js';
+
 import { useEffect, useMemo, useState } from 'react';
 import { getInitData } from '../../../../lib/telegram';
 import { splitInventoryPayloads } from '../../../../lib/inventory';
@@ -60,7 +62,7 @@ export default function NewProductPage() {
           fetch(API + '/api/admin/products', { headers:{ 'x-telegram-init-data':getInitData() }, credentials:'include', cache:'no-store' }),
           fetch(API + '/api/admin/marketplace-categories', { headers:{ 'x-telegram-init-data':getInitData() }, credentials:'include', cache:'no-store' })
         ]);
-        if (!session.ok || !response.ok || !categoryResponse.ok) { window.location.replace('/admin'); return; }
+        if (!session.ok || !response.ok || !categoryResponse.ok) { window.location.replace(WEB_ROUTES.owner); return; }
         const data = await response.json();
         const categoryData = await categoryResponse.json();
         if (!active) return;
@@ -194,10 +196,10 @@ export default function NewProductPage() {
     }
   }
 
-  if (!ready) return <main className="admin-shell"><StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="admin-logout" href="/admin">Dashboard</a>}/><div className="admin-notice">{error || 'Memverifikasi akses Owner…'}</div></main>;
+  if (!ready) return <main className="admin-shell"><StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="admin-logout" href={WEB_ROUTES.owner}>Dashboard</a>}/><div className="admin-notice">{error || 'Memverifikasi akses Owner…'}</div></main>;
 
   return <main className="admin-shell">
-    <StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="admin-logout" href="/admin">Dashboard</a>}/>
+    <StoreHeader centerLabel="PANEL PEMILIK" rightSlot={<a className="admin-logout" href={WEB_ROUTES.owner}>Dashboard</a>}/>
     <section className="admin-title">
       <span className="eyebrow muted">KATALOG / PRODUK BARU</span>
       <h1>Input produk</h1>
