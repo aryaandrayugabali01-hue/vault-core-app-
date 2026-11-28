@@ -333,9 +333,9 @@
 .detail-availability{margin:-7px 0 12px;color:rgba(194,255,132,.68);font-size:9px;font-weight:650;letter-spacing:.02em}
 .product-status-caption{color:rgba(194,255,132,.66)!important;font-size:8px!important}
 .nav{border:1px solid transparent!important;background:linear-gradient(180deg,rgba(17,25,19,.98),rgba(9,15,11,.99)) padding-box,linear-gradient(100deg,rgba(60,246,110,.9),rgba(163,245,43,.7),rgba(60,246,110,.85)) border-box!important;box-shadow:0 10px 36px rgba(0,0,0,.55),0 0 26px rgba(60,246,110,.14)!important}
-.nav button.on{background:rgba(163,245,43,.13)!important;color:var(--vc-green)!important;box-shadow:inset 0 0 0 1px rgba(163,245,43,.42),0 0 19px rgba(163,245,43,.1)!important}
+.nav a.on{background:rgba(163,245,43,.13)!important;color:var(--vc-green)!important;box-shadow:inset 0 0 0 1px rgba(163,245,43,.42),0 0 19px rgba(163,245,43,.1)!important}
 .nav .ic{background:linear-gradient(145deg,#1b3a23,#101c13)!important;color:#a7ffbe!important;box-shadow:0 4px 12px rgba(0,0,0,.42)!important}
-.nav button.on .ic{background:linear-gradient(180deg,#d2ff79,#9eea2a)!important;color:#18200b!important;box-shadow:0 0 14px rgba(163,245,43,.22)!important}
+.nav a.on .ic{background:linear-gradient(180deg,#d2ff79,#9eea2a)!important;color:#18200b!important;box-shadow:0 0 14px rgba(163,245,43,.22)!important}
 .detail-art{border-color:rgba(92,255,135,.42)!important;box-shadow:0 0 18px rgba(60,246,110,.1)}
 .detail-title{font-size:21px!important}
 
@@ -1001,8 +1001,8 @@ html { background:#100e08!important; color:#f7f3e7!important; }
 }
 .status.ok,.product-availability-dot.is-ready,.home-joki-status.ready { color:#b7ff35!important; }
 .nav { background:rgba(16,14,8,.97)!important; border-top-color:rgba(245,197,66,.18)!important; }
-.nav button.on { color:#b7ff35!important; background:rgba(183,255,53,.12)!important; }
-.nav button.on .ic { color:#172007!important; background:linear-gradient(180deg,#d5ff75,#b7ff35)!important; }
+.nav a.on { color:#b7ff35!important; background:rgba(183,255,53,.12)!important; }
+.nav a.on .ic { color:#172007!important; background:linear-gradient(180deg,#d5ff75,#b7ff35)!important; }
 .splash { background:radial-gradient(ellipse at 50% 40%,rgba(245,197,66,.20),transparent 45%),#100e08!important; }
 .toast { border-color:rgba(245,197,66,.26)!important; background:#211b0e!important; color:#f7f3e7!important; }
 

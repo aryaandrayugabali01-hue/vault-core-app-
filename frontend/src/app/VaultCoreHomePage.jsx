@@ -35,7 +35,7 @@ function HomeSkeleton() {
   );
 }
 
-function SectionHeading({ eyebrow, title, href = {WEB_ROUTES.catalog}, action = 'Lihat semua' }) {
+function SectionHeading({ eyebrow, title, href = WEB_ROUTES.catalog, action = 'Lihat semua' }) {
   return (
     <div className="vc-home-section-heading">
       <div>{eyebrow && <span>{eyebrow}</span>}<h2>{title}</h2></div>

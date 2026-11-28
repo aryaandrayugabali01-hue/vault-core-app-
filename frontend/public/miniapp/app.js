@@ -169,7 +169,7 @@ function setPage(markup, active, hideNav) {
     ['catalog','Store','grid'],
     ['orders','My Orders','receipt'],
     ['profile','Profile','user']
-  ].map(([key,label,symbol]) => '<a href="#/' + key + '" class="' + (active === key ? 'on' : '') + '" aria-current="' + (active === key ? 'page' : 'false') + '">' + icon(symbol) + '<span>' + label + '</span></a>').join('');
+  ].map(([key,label,symbol]) => '<a href="#' + APP_ROUTES[key] + '" class="' + (active === key ? 'on' : '') + '" aria-current="' + (active === key ? 'page' : 'false') + '">' + icon(symbol) + '<span>' + label + '</span></a>').join('');
   if (inTelegram && tg.BackButton) {
     if (hideNav || active === 'home' || active === 'catalog' || active === 'orders' || active === 'profile') tg.BackButton.hide();
     else tg.BackButton.show();
