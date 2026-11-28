@@ -225,7 +225,7 @@ function productCard(product) {
   const available = product.is_available === true;
   const statusClass = mode === 'INDENT' ? 'is-indent' : available ? 'is-ready' : 'is-unavailable';
   const statusLabel = mode === 'INDENT' ? 'INDEN' : available ? 'READY' : 'TIDAK TERSEDIA';
-  return '<button type="button" class="product-card' + (gold ? ' tier-gold' : '') + '" data-go="/product/' + encodeURIComponent(product.id) + '">' +
+  return '<button type="button" class="product-card' + (gold ? ' tier-gold' : '') + '" data-go="' + APP_ROUTES.product(product.id) + '">' +
     productImage(product,'product-art') +
     '<span class="product-availability-dot ' + statusClass + '"><i></i>' + statusLabel + '</span>' +
     (gold ? '<span class="tier-gold-label">GOLD · BEST VALUE</span>' : '') +
@@ -256,7 +256,7 @@ function comingSoonCard(variant) {
     '<small>Kartu otomatis diganti ketika produk lolos pemeriksaan dan stok aktual tersedia.</small></div></article>';
 }
 function productRow(product) {
-  return '<button type="button" class="list-card" data-go="/product/' + encodeURIComponent(product.id) + '">' +
+  return '<button type="button" class="list-card" data-go="' + APP_ROUTES.product(product.id) + '">' +
     productImage(product,'list-art') +
     '<span class="list-copy"><b>' + esc(product.name) + '</b><small>' + esc(gameOf(product.game_category).name) + ' · ' + esc(categoryLabel(product)) + ' · ' + esc(stockLabel(product)) + '</small>' + priceMarkup(product,true) + '</span>' +
     '<span class="chevron">›</span></button>';
@@ -355,7 +355,7 @@ function gamePage(code) {
       const products = productsOf(variant);
       const count = products.filter(isBuyable).length;
       const canOpen = count > 0;
-      return '<button class="list-card" type="button" data-go="/variant/' + variant.variant_id + '">' +
+      return '<button class="list-card" type="button" data-go="' + APP_ROUTES.variant(variant.variant_id) + '">' +
         productImage({game_category:code},'list-art') +
         '<span class="list-copy"><b>' + esc(variant.name) + '</b><small>' + esc(variant.category) + '</small><span class="badge ' + (canOpen ? '' : 'muted') + '">' + (canOpen ? count + ' Produk tersedia' : 'Segera hadir') + '</span></span><span class="chevron">›</span></button>';
     }).join('') +
