@@ -198,7 +198,7 @@ test('Public website serves the backend-owned customer catalog and Telegram acco
   assert.match(account, /Profil dan riwayat pesanan terhubung ke sistem VAULT CORE yang sama/);
   assert.match(catalog, /api\/customer-auth\/session/);
   assert.match(catalog, /credentials:'include'/);
-  assert.match(catalog, /window\.location\.assign\('\/account\?next=%2Fcatalog'\)/);
+  assert.match(catalog, /window\.location\.assign\(customerLoginHref\(\)\)/);
 });
 
 function topLevelCssProperty(styles, selector, property) {
@@ -239,19 +239,19 @@ test('storefront click targets and Mini App actions resolve to working routes or
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const miniApp = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const premiumCss = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
-  assert.match(home, /<a href="\/catalog#transactions" className="vc-home-notification"/);
-  assert.match(home, /<a className="vc-home-activity" href="\/catalog#transactions"/);
+  assert.match(home, /href=\{WEB_ROUTES\.orders\} className="vc-home-notification"/);
+  assert.match(home, /className="vc-home-activity" href=\{WEB_ROUTES\.orders\}/);
   assert.match(catalog, /id="catalog-footer-buy-guide"/);
-  assert.match(navigation, /https:\/\/t\.me\/vaultcore_support/);
-  assert.match(navigation, /\/miniapp\/index\.html#\/terms/);
-  assert.match(navigation, /\/miniapp\/index\.html#\/refund/);
+  assert.match(navigation, /WEB_ROUTES\.support/);
+  assert.match(navigation, /WEB_ROUTES\.terms/);
+  assert.match(navigation, /WEB_ROUTES\.refund/);
   assert.match(miniApp, /class="home-activity" data-go="\/orders"/);
   assert.match(miniApp, /<form class="search home-search" id="home-search-form">/);
   assert.match(miniApp, /document\.addEventListener\('submit',handleSubmit\)/);
   const homeSearchInput = miniApp.match(/if \(event\.target && event\.target\.id === 'home-search'\) \{([\s\S]*?)\n  \}/);
   assert.ok(homeSearchInput, 'Home search input handler is present');
   assert.doesNotMatch(homeSearchInput[1], /go\('\/catalog'\)/, 'Typing must not navigate before search submission');
-  assert.match(miniApp, /form\.id !== 'home-search-form'[\s\S]*?go\('\/catalog'\)/);
+  assert.match(miniApp, /form\.id !== 'home-search-form'[\s\S]*?go\(APP_ROUTES\.catalog\)/);
   assert.match(miniApp, /case 'about': case 'terms': case 'privacy': case 'refund': renderInfo\(name\)/);
   assert.match(miniApp, /if \(!product && !state\.loaded\)[\s\S]*?Memuat detail produk/);
   assert.match(miniApp, /if \(!product\)[\s\S]*?Produk tidak ditemukan[\s\S]*?data-go="\/catalog"/);
@@ -957,10 +957,10 @@ test('Owner product attributes are normalized and bounded for marketplace filter
 test('Customer web navigation matches the Mini App Home, Katalog, Transaksi and Profil journey', () => {
   const navigation = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
   const catalog = readFileSync(new URL('../frontend/src/app/catalog/VaultCoreV4Page.jsx', import.meta.url), 'utf8');
-  assert.match(navigation, /label: 'Home'.*href: '\/'/);
-  assert.match(navigation, /label: 'Store'.*href: '\/catalog'/);
-  assert.match(navigation, /label: 'My Orders'.*href: '\/catalog#transactions'/);
-  assert.match(navigation, /label: 'Profile'.*href: '\/account'/);
+  assert.match(navigation, /label: 'Home'.*href: WEB_ROUTES\.home/);
+  assert.match(navigation, /label: 'Store'.*href: WEB_ROUTES\.catalog/);
+  assert.match(navigation, /label: 'My Orders'.*href: WEB_ROUTES\.orders/);
+  assert.match(navigation, /label: 'Profile'.*href: WEB_ROUTES\.account/);
   assert.match(catalog, /window\.location\.hash === '#transactions'/);
   assert.match(catalog, /vault-core-web-cart/);
 });
@@ -1099,7 +1099,7 @@ test('Owner SKU lifecycle saves one safe form and publishes eligible stock witho
   assert.ok(home.includes("VaultCoreHomePage"));
   assert.ok(home.includes("return <VaultCoreHomePage />"));
   assert.ok(owner.includes('StoreHeader'));
-  assert.ok(owner.includes('/admin/v4'));
+  assert.ok(owner.includes('WEB_ROUTES.ownerProducts'));
   assert.ok(ownerV4.includes('Dashboard Owner'));
   assert.ok(layout.includes('<StoreChrome />'));
   for (const label of ['Beranda','Produk','Bantuan','Akun']) assert.ok(navigation.includes(label));
@@ -1690,7 +1690,7 @@ test('Home product cards preserve the selected SKU and display its actual listin
   assert.match(home, /available > 0 \? ' is-ready' : ''/);
   assert.doesNotMatch(home, /\bready\s*\?/);
   assert.match(home, /availability\.startsWith\('Inden'\)/);
-  assert.match(home, /&product=' \+ encodeURIComponent\(product\.id\)/);
+  assert.match(home, /catalogHref\(\{ game: product\.game_code, group: product\.group \|\| 'Akun', product: product\.id \}\)/);
   assert.match(home, /getHomeProductAvailability\(product\)/);
   assert.match(catalog, /params\.get\('product'\)/);
   assert.match(catalog, /setSelected\(\{variant_id:Number\(product\.variant_id\),product\}\)/);
