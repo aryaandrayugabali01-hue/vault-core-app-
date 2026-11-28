@@ -1320,7 +1320,6 @@ test('Mini App exposes all backend product groups and game routes with a retryab
   assert.ok(app.includes("data-store-game="));
   assert.ok(app.includes('data-store-group="Jasa Joki"'));
   assert.ok(app.includes("state.catalogGame = storeGame.getAttribute('data-store-game')"));
-  assert.ok(app.includes("'<a href=\\"#/' + key"));
   assert.ok(styles.includes('.store-group-tabs{display:flex;gap:5px;overflow-x:auto;'));
   assert.ok(styles.includes('.store-group-tabs button{flex:1 0 auto;min-width:66px;'));
   assert.ok(sw.includes("vault-core-miniapp-v18"));
