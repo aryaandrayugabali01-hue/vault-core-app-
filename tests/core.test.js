@@ -81,8 +81,8 @@ test('Mini App pages use one internal hash-route registry and the same entry URL
   }
   assert.ok(app.includes("location.origin + MINI_APP_ENTRY + '#' + APP_ROUTES.product(product.id)"));
   assert.ok(app.includes("go(APP_ROUTES.catalog)"));
-  assert.match(app, /data-go="' \\+ APP_ROUTES\\.product\\(product\\.id\\) \\+ '"/);
-  assert.match(app, /data-go="' \\+ APP_ROUTES\\.variant\\(variant\\.variant_id\\) \\+ '"/);
+  assert.match(app, /data-go="' \+ APP_ROUTES\.product\(product\.id\) \+ '"/);
+  assert.match(app, /data-go="' \+ APP_ROUTES\.variant\(variant\.variant_id\) \+ '"/);
   assert.ok(app.includes("'<a href=\"#' + APP_ROUTES[key]"));
 });
 
