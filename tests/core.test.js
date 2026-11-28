@@ -1356,7 +1356,7 @@ test('Mini App exposes all backend product groups and game routes with a retryab
   assert.ok(app.includes("state.catalogGame = storeGame.getAttribute('data-store-game')"));
   assert.ok(styles.includes('.store-group-tabs{display:flex;gap:5px;overflow-x:auto;'));
   assert.ok(styles.includes('.store-group-tabs button{flex:1 0 auto;min-width:66px;'));
-  assert.ok(sw.includes("vault-core-miniapp-v18"));
+  assert.ok(sw.includes("vault-core-miniapp-v19"));
 });
 
 test('Mini App product detail provides working Share, persistent Favorite and two backend-related products', () => {
@@ -1438,7 +1438,7 @@ test('product detail converts escaped backend newlines into readable sections an
   const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../frontend/public/miniapp/app.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(sw.includes('vault-core-miniapp-v18'));
+  assert.ok(sw.includes('vault-core-miniapp-v19'));
   assert.ok(app.includes(".replace(/\\\\r\\\\n|\\\\n|\\\\r/g, '\\n')"));
   assert.ok(app.includes("renderDetailCopy(product.customer_terms)"));
   assert.ok(app.includes("details.push(renderDetailCopy(product.description))"));
@@ -1485,7 +1485,7 @@ test('mobile app assets are included in the static frontend and service worker n
   assert.ok(manifest.includes('"scope":"/miniapp/"'));
   assert.ok(sw.includes("url.pathname.startsWith('/api/')"));
   for (const asset of ['/game-icons/mlbb.webp','/game-icons/free-fire.webp','/game-icons/roblox.webp','/game-icons/genshin-impact.webp']) assert.ok(sw.includes(asset));
-  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v18'"));
+  assert.ok(sw.includes("const CACHE_NAME = 'vault-core-miniapp-v19'"));
 });
 
 test('active CSS rules do not contain repeated declarations that can reintroduce same-rule conflicts', () => {
@@ -1720,7 +1720,7 @@ test('Legacy Joki credential endpoint remains closed while safe customer fields 
 
 
 test('website and Mini App expose the approved animated promotional hero', () => {
-  const golden = readFileSync(new URL('../frontend/public/golden-theme.css', import.meta.url), 'utf8');
+  const golden = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
   const webHome = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
   const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
   const premium = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
@@ -1738,14 +1738,14 @@ test('website and Mini App expose the approved animated promotional hero', () =>
   assert.ok(golden.includes('.admin-shell'));
   assert.ok(golden.includes('.vco-shell'));
   assert.ok(sw.includes("'/vault-core-premium.css'"));
-  assert.ok(sw.includes("'/golden-theme.css'"));
+  assert.doesNotMatch(sw, /golden-theme\.css/);
   assert.ok(sw.includes("'/assets/02-hero/hero-vaultcore.jpg'"));
   assert.doesNotMatch(webHome + mini, /Diskon hingga|Diskon 50%|harga coret/);
 });
 
 test('Golden Dark storefront theme keeps the animated loop visible in the hero', () => {
   const home = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
-  const theme = readFileSync(new URL('../frontend/public/golden-theme.css', import.meta.url), 'utf8');
+  const theme = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
   const layout = readFileSync(new URL('../frontend/src/app/layout.jsx', import.meta.url), 'utf8');
   assert.match(home, /className="vc-home-promo-visual"/);
   assert.ok(home.includes('srcSet="/assets/02-hero/hero-vaultcore-loop.webp"'));
@@ -1756,16 +1756,18 @@ test('Golden Dark storefront theme keeps the animated loop visible in the hero',
   assert.match(theme, /--vc-green:\s*#b7ff35/i);
   assert.match(theme, /--vc-gold:\s*#f5c542/i);
   assert.match(theme, /@keyframes vc-core-orbit/);
-  assert.ok(layout.includes('href="/golden-theme.css"'));
+  assert.ok(layout.includes('href="/vault-core-premium.css"'));
+  assert.doesNotMatch(layout, /golden-theme\.css/);
 });
 
 
 test('Telegram Mini App loads the Golden Dark theme and accessible animated hero assets', () => {
   const html = readFileSync(new URL('../frontend/public/miniapp/index.html', import.meta.url), 'utf8');
   const mini = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
-  const theme = readFileSync(new URL('../frontend/public/golden-theme.css', import.meta.url), 'utf8');
+  const theme = readFileSync(new URL('../frontend/public/vault-core-premium.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../frontend/public/miniapp/sw.js', import.meta.url), 'utf8');
-  assert.ok(html.includes('href="/golden-theme.css"'));
+  assert.ok(html.includes('href="/vault-core-premium.css"'));
+  assert.doesNotMatch(html, /golden-theme\.css/);
   assert.ok(html.includes('content="#100e08"'));
   assert.ok(mini.includes('class="vc-miniapp-promo-visual"'));
   assert.ok(mini.includes('srcset="/assets/02-hero/hero-vaultcore-loop.webp"'));
@@ -1775,6 +1777,6 @@ test('Telegram Mini App loads the Golden Dark theme and accessible animated hero
   assert.ok(theme.includes('--bg:#100e08'));
   assert.ok(theme.includes('--green:#b7ff35'));
   assert.ok(theme.includes('.hero {'));
-  assert.ok(sw.includes("vault-core-miniapp-v18"));
+  assert.ok(sw.includes("vault-core-miniapp-v19"));
   assert.ok(sw.includes("'/assets/02-hero/hero-vaultcore.jpg'"));
 });
