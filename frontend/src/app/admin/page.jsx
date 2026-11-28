@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getInitData } from '../../lib/telegram';
 import { GAME_LABELS } from '../../lib/marketplace.js';
+import { WEB_ROUTES } from '../lib/routes.js';
 import { StoreHeader } from '../../components/store-navigation.jsx';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
@@ -183,7 +184,7 @@ export default function AdminPage() {
 
   if (authState !== 'authenticated') {
     return <main className="owner-login-screen">
-      <StoreHeader centerLabel="DATA PRODUK" rightSlot={<a className="dashboard-icon-button" href="/" aria-label="Kembali ke katalog">⌂</a>} />
+      <StoreHeader centerLabel="DATA PRODUK" rightSlot={<a className="dashboard-icon-button" href={WEB_ROUTES.home} aria-label="Kembali ke katalog">⌂</a>} />
       <section className="owner-login-card">
         <span className="eyebrow muted">ADMIN SECURE ACCESS</span>
         <h1>Masuk dengan Telegram</h1>
@@ -196,7 +197,7 @@ export default function AdminPage() {
                 : <div className="owner-login-loading">Menyiapkan login Telegram…</div>}
               {loginMessage && <div className="owner-login-message" role="alert">{loginMessage}</div>}
             </>}
-        <a className="owner-login-back" href="/">Kembali ke katalog</a>
+        <a className="owner-login-back" href={WEB_ROUTES.home}>Kembali ke katalog</a>
       </section>
     </main>;
   }
@@ -279,7 +280,7 @@ export default function AdminPage() {
                         <input type="number" min="1" max="365" value={indentDays[product.id] ?? product.indent_deadline_days ?? 7}
                           onChange={(event) => setIndentDays((current) => ({...current,[product.id]:event.target.value}))}/>
                       </label>
-                      <a className="admin-secondary-link" href="/admin/v4">Edit detail SKU</a>
+                      <a className="admin-secondary-link" href={WEB_ROUTES.ownerProducts}>Edit detail SKU</a>
                     </div>
                   </div>
                 </td>
@@ -292,7 +293,7 @@ export default function AdminPage() {
 
       <p className="admin-footnote">Data yang ditampilkan berasal dari database produk VAULT CORE.</p>
       <div className="admin-entry-actions" style={{marginTop:'18px'}}>
-        <a className="admin-primary admin-product-entry-link" href="/admin/v4">Buka form produk</a>
+        <a className="admin-primary admin-product-entry-link" href={WEB_ROUTES.ownerProducts}>Buka form produk</a>
         <button type="button" className="admin-secondary-link" onClick={refresh} disabled={loading}>
           {loading ? 'Memuat…' : 'Muat ulang data'}
         </button>

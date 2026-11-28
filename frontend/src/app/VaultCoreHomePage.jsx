@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { WEB_ROUTES, catalogHref } from '../lib/routes.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const GAME_CARDS = [
@@ -34,7 +35,7 @@ function HomeSkeleton() {
   );
 }
 
-function SectionHeading({ eyebrow, title, href = '/catalog', action = 'Lihat semua' }) {
+function SectionHeading({ eyebrow, title, href = {WEB_ROUTES.catalog}, action = 'Lihat semua' }) {
   return (
     <div className="vc-home-section-heading">
       <div>{eyebrow && <span>{eyebrow}</span>}<h2>{title}</h2></div>
@@ -58,9 +59,7 @@ function ProductCard({ product }) {
       ? formatXtr(product.display_stock) + " stok"
       : "Stok tersedia";
   const gold = String(product.tier || "").toUpperCase() === "GOLD";
-  const productQuery = '&product=' + encodeURIComponent(product.id);
-  const href = '/catalog?game=' + encodeURIComponent(product.game_code) +
-    '&group=' + encodeURIComponent(product.group || 'Akun') + productQuery;
+  const href = catalogHref({ game: product.game_code, group: product.group || 'Akun', product: product.id });
 
   return (
     <a href={href} className={"product-card" + (gold ? " tier-gold" : "")}>
@@ -86,7 +85,7 @@ function JokiCard({ variant }) {
   const readyCount = (Array.isArray(variant.skus) ? variant.skus : [])
     .filter((product) => product.is_available === true && product.is_purchaseable === true).length;
   const art = ART_BY_CODE[variant.game_code] || '/game-icons/mlbb.webp';
-  const href = "/catalog?game=" + encodeURIComponent(variant.game_code) + "&group=" + encodeURIComponent("Jasa Joki");
+  const href = catalogHref({ game: variant.game_code, group: 'Jasa Joki' });
 
   return (
     <a className="home-joki-card" href={href}>
@@ -143,23 +142,23 @@ export default function VaultCoreHomePage() {
   return (
     <main className="vc-home home-v3">
       <header className="vc-home-header">
-        <a href="/" className="vc-home-brand" aria-label="VAULT CORE Home">
+        <a href={WEB_ROUTES.home} className="vc-home-brand" aria-label="VAULT CORE Home">
           <img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/>
         </a>
         <div className="vc-home-header-actions">
-          <a href="/catalog" className="vc-home-search-shortcut" aria-label="Cari produk">
+          <a href={WEB_ROUTES.catalog} className="vc-home-search-shortcut" aria-label="Cari produk">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
           </a>
-          <a href="/catalog#transactions" className="vc-home-notification" aria-label="My Orders">
+          <a href={WEB_ROUTES.orders} className="vc-home-notification" aria-label="My Orders">
             <svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
           </a>
-          <a href="/account" className="vc-home-profile" aria-label="Profile">
+          <a href={WEB_ROUTES.account} className="vc-home-profile" aria-label="Profile">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-3.4 3.2-5.2 7.5-5.2s6.7 1.8 7.5 5.2"/></svg>
           </a>
         </div>
       </header>
 
-      <form className="vc-home-search home-search" action="/catalog" method="get" role="search">
+      <form className="vc-home-search home-search" action={WEB_ROUTES.catalog} method="get" role="search">
         <span aria-hidden="true">⌕</span>
         <input type="search" name="q" placeholder="Cari akun game atau layanan joki..." aria-label="Cari produk" autoComplete="off"/>
         <button type="submit" aria-label="Cari">›</button>
@@ -173,7 +172,7 @@ export default function VaultCoreHomePage() {
           <div className="home-promo-tags">
             <span>AKUN GAME</span><span>JOKI</span><span>4 GAME</span>
           </div>
-          <a href="/catalog">Jelajahi Store <b>↗</b></a>
+          <a href={WEB_ROUTES.catalog}>Jelajahi Store <b>↗</b></a>
         </div>
         <div className="vc-home-promo-visual" aria-hidden="true">
           <picture>
@@ -185,10 +184,10 @@ export default function VaultCoreHomePage() {
       </section>
 
       <section className="vc-home-section" id="categories">
-        <SectionHeading title="Kategori Game" href="/catalog" action="Lihat Semua"/>
+        <SectionHeading title="Kategori Game" href={WEB_ROUTES.catalog} action="Lihat Semua"/>
         <div className="vc-home-games">
           {GAME_CARDS.map((game) => (
-            <a className="vc-home-game" href={"/catalog?game=" + game.code} key={game.code}>
+            <a className="vc-home-game" href={catalogHref({ game: game.code })} key={game.code}>
               <span><img src={game.art} alt="" loading="lazy"/></span>
               <strong>{game.short}</strong>
               <small>{game.label}</small>
@@ -198,9 +197,9 @@ export default function VaultCoreHomePage() {
       </section>
 
       <div className="vc-home-quick-filters home-group-tabs" aria-label="Jenis produk">
-        <a className="is-selected" href="/catalog">Semua</a>
-        <a href="/catalog?group=Akun">Akun</a>
-        <a href="/catalog?group=Jasa%20Joki">Joki</a>
+        <a className="is-selected" href={WEB_ROUTES.catalog}>Semua</a>
+        <a href={catalogHref({ group: "Akun" })}>Akun</a>
+        <a href={catalogHref({ group: "Jasa Joki" })}>Joki</a>
       </div>
 
       {loading ? (
@@ -208,7 +207,7 @@ export default function VaultCoreHomePage() {
       ) : (
         <>
           <section className="vc-home-section">
-            <SectionHeading title="Pilihan Akun" href="/catalog?group=Akun" action="Lihat Semua"/>
+            <SectionHeading title="Pilihan Akun" href={catalogHref({ group: "Akun" })} action="Lihat Semua"/>
             {recommendedAccounts.length ? (
               <div className="home-featured-grid">
                 {recommendedAccounts.map((product) => <ProductCard product={product} key={product.id}/>)}
@@ -217,13 +216,13 @@ export default function VaultCoreHomePage() {
               <div className="vc-home-empty">
                 <strong>{error ? "Katalog belum dapat dimuat" : "Belum ada akun yang siap dipesan pada katalog publik."}</strong>
                 <span>{error || "Akun yang dapat dipesan akan muncul setelah status dan stok backend memenuhi syarat."}</span>
-                <a href="/catalog?group=Akun">Lihat kategori akun <b>↗</b></a>
+                <a href={catalogHref({ group: "Akun" })}>Lihat kategori akun <b>↗</b></a>
               </div>
             )}
           </section>
 
           <section className="vc-home-section">
-            <SectionHeading title="Layanan Joki" href="/catalog?group=Jasa%20Joki" action="Lihat Kategori"/>
+            <SectionHeading title="Layanan Joki" href={catalogHref({ group: "Jasa Joki" })} action="Lihat Kategori"/>
             {jokiByGame.length ? (
               <div className="home-joki-grid">
                 {jokiByGame.map((variant) => <JokiCard variant={variant} key={variant.variant_id}/>)}
@@ -239,8 +238,8 @@ export default function VaultCoreHomePage() {
       )}
 
       <section className="vc-home-section">
-        <SectionHeading title="Aktivitas Pesanan" href="/catalog#transactions" action="My Orders"/>
-        <a className="vc-home-activity" href="/catalog#transactions" aria-label="Buka My Orders">
+        <SectionHeading title="Aktivitas Pesanan" href={WEB_ROUTES.orders} action="My Orders"/>
+        <a className="vc-home-activity" href={WEB_ROUTES.orders} aria-label="Buka My Orders">
           <span className="ic">▤</span>
           <div><b>Riwayat pesanan pribadi</b><small>Status dan detail pesanan tampil pada akun pelanggan terverifikasi.</small></div>
           <span className="home-activity-arrow">›</span>

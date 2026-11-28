@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { getInitData } from '../../lib/telegram';
+import { WEB_ROUTES } from '../../lib/routes.js';
 import './page.css';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
@@ -91,7 +92,7 @@ export default function CustomerAccountPage() {
   return (
     <main className="customer-account-page">
       <section className="customer-account-card">
-        <a className="customer-account-brand" href="/" aria-label="VAULT CORE Beranda">
+        <a className="customer-account-brand" href={WEB_ROUTES.home} aria-label="VAULT CORE Beranda">
           <img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/>
         </a>
         <span className="customer-account-kicker">AKUN PELANGGAN</span>
@@ -110,8 +111,8 @@ export default function CustomerAccountPage() {
             </span>
           </div>
           <div className="customer-account-status is-success">Akun Telegram terverifikasi</div>
-          {customer.isOwner && <a className="customer-account-secondary" href="/admin">Buka Dashboard Owner</a>}
-          <a className="customer-account-secondary" href="/catalog#transactions">Lihat Riwayat Pesanan</a>
+          {customer.isOwner && <a className="customer-account-secondary" href={WEB_ROUTES.owner}>Buka Dashboard Owner</a>}
+          <a className="customer-account-secondary" href={WEB_ROUTES.orders}>Lihat Riwayat Pesanan</a>
           <a className="customer-account-primary" href={destination}>Lanjutkan</a>
           <button className="customer-account-logout" type="button" onClick={logout} disabled={busy}>{busy ? 'Memproses…' : 'Keluar dari akun web'}</button>
         </>}
@@ -120,7 +121,7 @@ export default function CustomerAccountPage() {
           <div className="customer-account-status">Anda belum masuk ke akun pelanggan.</div>
           <a className="customer-account-primary" href={loginUrl}>Masuk dengan Telegram</a>
           <small className="customer-account-note">Telegram akan meminta persetujuan untuk membagikan nama dan username. VAULT CORE tidak meminta kata sandi Telegram atau kode OTP.</small>
-          <a className="customer-account-secondary" href="/catalog">Lanjut melihat katalog</a>
+          <a className="customer-account-secondary" href={WEB_ROUTES.catalog}>Lanjut melihat katalog</a>
         </>}
 
         {status === 'unavailable' && <button className="customer-account-primary" type="button" onClick={loadSession}>Coba periksa kembali</button>}

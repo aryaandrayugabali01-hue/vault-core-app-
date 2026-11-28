@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { WEB_ROUTES } from '../lib/routes.js';
 
 function NavigationIcon({ name }) {
   const common = { viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:1.8, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':true };
@@ -22,12 +23,12 @@ export { NavigationIcon };
 
 export function StoreHeader({ searchValue, onSearchChange, searchPlaceholder = 'Cari akun game, hero, skin, bundle...', centerLabel, rightSlot, onSearchSubmit }) {
   return <header className="dashboard-topbar">
-    <a className="dashboard-brand" href="/" aria-label="VAULT CORE Beranda">
+    <a className="dashboard-brand" href={WEB_ROUTES.home} aria-label="VAULT CORE Beranda">
       <img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE Digital Store"/>
     </a>
     {centerLabel
       ? <div className="dashboard-header-label">{centerLabel}</div>
-      : <form className="dashboard-search" action="/catalog" method="get" role="search" onSubmit={onSearchSubmit ? (event) => { event.preventDefault(); onSearchSubmit(); } : undefined}>
+      : <form className="dashboard-search" action={WEB_ROUTES.catalog} method="get" role="search" onSubmit={onSearchSubmit ? (event) => { event.preventDefault(); onSearchSubmit(); } : undefined}>
           <NavigationIcon name="search"/>
           <input type="search" name="q" placeholder={searchPlaceholder} aria-label="Cari produk katalog" value={searchValue} onChange={onSearchChange ? (event) => onSearchChange(event.target.value) : undefined}/>
           <button type="submit" aria-label="Cari"><NavigationIcon name="search"/></button>
@@ -46,16 +47,16 @@ export function StoreBottomNav({ active = 'dashboard', embedded = false }) {
     account: accountView || active === 'account'
   };
   const ownerItems = [
-    { id: 'dashboard', label: 'Beranda', icon: 'home', href: '/' },
-    { id: 'catalog', label: 'Produk', icon: 'catalog', href: '/catalog' },
-    { id: 'help', label: 'Bantuan', icon: 'help', href: 'https://t.me/vaultcore_support' },
-    { id: 'account', label: 'Akun', icon: 'user', href: '/admin' }
+    { id: 'dashboard', label: 'Beranda', icon: 'home', href: WEB_ROUTES.home },
+    { id: 'catalog', label: 'Produk', icon: 'catalog', href: WEB_ROUTES.catalog },
+    { id: 'help', label: 'Bantuan', icon: 'help', href: WEB_ROUTES.support },
+    { id: 'account', label: 'Akun', icon: 'user', href: WEB_ROUTES.owner }
   ];
   const customerItems = [
-    { id: 'dashboard', label: 'Home', icon: 'home', href: '/' },
-    { id: 'catalog', label: 'Store', icon: 'catalog', href: '/catalog' },
-    { id: 'transactions', label: 'My Orders', icon: 'receipt', href: '/catalog#transactions' },
-    { id: 'account', label: 'Profile', icon: 'user', href: '/account' }
+    { id: 'dashboard', label: 'Home', icon: 'home', href: WEB_ROUTES.home },
+    { id: 'catalog', label: 'Store', icon: 'catalog', href: WEB_ROUTES.catalog },
+    { id: 'transactions', label: 'My Orders', icon: 'receipt', href: WEB_ROUTES.orders },
+    { id: 'account', label: 'Profile', icon: 'user', href: WEB_ROUTES.account }
   ];
   const items = accountView ? ownerItems : customerItems;
   return <nav className={'dashboard-bottom-nav' + (embedded ? ' dashboard-bottom-nav-embedded' : '')} aria-label="Navigasi utama">
@@ -67,11 +68,11 @@ export function StoreBottomNav({ active = 'dashboard', embedded = false }) {
 }
 export function StoreFooter() {
   const links = [
-    { label: 'Katalog', href: '/catalog' },
-    { label: 'Kategori', href: '/#categories' },
-    { label: 'Cara Beli', href: '/catalog#catalog-footer-buy-guide' },
-    { label: 'Syarat & Ketentuan', href: '/miniapp/index.html#/terms' },
-    { label: 'Kebijakan Refund', href: '/miniapp/index.html#/refund' }
+    { label: 'Katalog', href: WEB_ROUTES.catalog },
+    { label: 'Kategori', href: WEB_ROUTES.homeCategories },
+    { label: 'Cara Beli', href: WEB_ROUTES.catalogBuyGuide },
+    { label: 'Syarat & Ketentuan', href: WEB_ROUTES.terms },
+    { label: 'Kebijakan Refund', href: WEB_ROUTES.refund }
   ];
   return <footer className="store-global-footer" aria-label="Informasi dan navigasi VAULT CORE">
     <div className="store-global-footer-inner">
@@ -82,7 +83,7 @@ export function StoreFooter() {
       </div>
       <div className="store-footer-columns">
         <section className="store-footer-brand">
-          <a href="/" aria-label="VAULT CORE Beranda"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/></a>
+          <a href={WEB_ROUTES.home} aria-label="VAULT CORE Beranda"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/></a>
           <h2>Lebih Yakin Bersama <span>Vault Core</span></h2>
           <p>Jelajahi katalog melalui website atau Telegram Mini App. Pembayaran digital menggunakan Telegram Stars.</p>
           <div className="store-footer-badges"><span>Single Vendor</span><span>Game &amp; Joki</span></div>

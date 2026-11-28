@@ -1,5 +1,6 @@
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
+import { WEB_ROUTES, catalogHref, customerLoginHref } from '../frontend/src/lib/routes.js';
 import assert from 'node:assert/strict';
 import postcss from 'postcss';
 import crypto from 'node:crypto';
@@ -41,6 +42,39 @@ test('Telegram OIDC transaction creates independent state, nonce and PKCE values
   assert.notEqual(first.nonce, second.nonce);
   assert.notEqual(first.verifier, second.verifier);
   assert.equal(crypto.createHash('sha256').update(first.verifier).digest('base64url'), first.challenge);
+});
+
+
+test('all website and Owner navigation uses the canonical route registry', () => {
+  assert.equal(WEB_ROUTES.home, '/');
+  assert.equal(WEB_ROUTES.catalog, '/catalog');
+  assert.equal(WEB_ROUTES.mlbbAccountCatalog, '/catalog/mlbb-akun');
+  assert.equal(WEB_ROUTES.orders, '/catalog#transactions');
+  assert.equal(WEB_ROUTES.account, '/account');
+  assert.equal(WEB_ROUTES.owner, '/admin');
+  assert.equal(WEB_ROUTES.ownerProducts, '/admin/v4');
+  assert.equal(WEB_ROUTES.ownerCategories, '/admin/categories');
+  assert.equal(WEB_ROUTES.ownerNewProduct, '/admin/products/new');
+  assert.equal(catalogHref(), WEB_ROUTES.catalog);
+  assert.equal(catalogHref({game:'MLBB',group:'Akun',product:12}), '/catalog?game=MLBB&group=Akun&product=12');
+  assert.equal(catalogHref({group:'Jasa Joki'}), '/catalog?group=Jasa+Joki');
+  assert.equal(customerLoginHref(), '/account?next=%2Fcatalog');
+  const nav = readFileSync(new URL('../frontend/src/components/store-navigation.jsx', import.meta.url), 'utf8');
+  const home = readFileSync(new URL('../frontend/src/app/VaultCoreHomePage.jsx', import.meta.url), 'utf8');
+  const account = readFileSync(new URL('../frontend/src/app/account/page.jsx', import.meta.url), 'utf8');
+  const owner = readFileSync(new URL('../frontend/src/app/admin/page.jsx', import.meta.url), 'utf8');
+  assert.ok(nav.includes('WEB_ROUTES.orders') && nav.includes('WEB_ROUTES.account'));
+  assert.ok(home.includes('catalogHref({ game: game.code })') && home.includes('WEB_ROUTES.orders'));
+  assert.ok(account.includes('WEB_ROUTES.owner') && account.includes('WEB_ROUTES.orders'));
+  assert.ok(owner.includes('WEB_ROUTES.ownerProducts'));
+});
+test('Mini App pages use one internal hash-route registry and the same entry URL', () => {
+  const app = readFileSync(new URL('../frontend/public/miniapp/app.js', import.meta.url), 'utf8');
+  for (const route of ['home','catalog','orders','profile','about','terms','privacy','refund','game','variant','product','done']) {
+    assert.match(app, new RegExp(route + ':'));
+  }
+  assert.ok(app.includes("location.origin + MINI_APP_ENTRY + '#' + APP_ROUTES.product(product.id)"));
+  assert.ok(app.includes("go(APP_ROUTES.catalog)"));
 });
 
 test('Customer OIDC return path is restricted to local account and catalog pages', () => {
@@ -160,7 +194,7 @@ test('Public website serves the backend-owned customer catalog and Telegram acco
   assert.match(account, /throw new Error\(data\.message/);
   assert.match(account, /nextPath \? '\?next=' \+ encodeURIComponent\(nextPath\)/);
   assert.match(account, /href=\{destination\}/);
-  assert.match(account, /href="\/catalog#transactions">Lihat Riwayat Pesanan<\/a>/);
+  assert.match(account, /href=\{WEB_ROUTES\.orders\}>Lihat Riwayat Pesanan<\/a>/);
   assert.match(account, /Profil dan riwayat pesanan terhubung ke sistem VAULT CORE yang sama/);
   assert.match(catalog, /api\/customer-auth\/session/);
   assert.match(catalog, /credentials:'include'/);

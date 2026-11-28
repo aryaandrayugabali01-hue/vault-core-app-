@@ -5,6 +5,7 @@ import { getInitData, getTelegramWebApp, openInvoice } from '../../lib/telegram.
 import './page.css';
 import { GAME_ART } from '../../lib/marketplace.js';
 import { getCustomerVisibleProductAttributes } from '../../lib/product-attributes.js';
+import { WEB_ROUTES, customerLoginHref } from '../../lib/routes.js';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const GROUPS = ['Akun','Jasa Joki','Item In-Game','Produk Lainnya'];
@@ -308,7 +309,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
     if (!activeCustomer) activeCustomer = await loadCustomer().catch(() => null);
     if (!activeCustomer) {
       setNotice('Masuk dengan Telegram terlebih dahulu untuk menyimpan pesanan atas nama Anda.');
-      window.location.assign('/account?next=%2Fcatalog');
+      window.location.assign(customerLoginHref());
       return;
     }
     setBuying(true);
@@ -337,7 +338,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   const showOrders = useCallback(async () => {
     const activeCustomer = await loadCustomer().catch(() => null);
     if (!activeCustomer) {
-      window.location.assign('/account?next=%2Fcatalog');
+      window.location.assign(customerLoginHref());
       return;
     }
     setOrdersOpen(true);
@@ -366,7 +367,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
   return (
     <div className="vc4-shell">
       <header className="vc4-nav">
-        <a href="/" className="vc4-brand" aria-label="VAULT CORE Beranda">
+        <a href={WEB_ROUTES.home} className="vc4-brand" aria-label="VAULT CORE Beranda">
           <img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"/>
         </a>
         <nav className="vc4-nav-links" aria-label="Kategori game">
@@ -374,7 +375,7 @@ export default function VaultCoreV4Catalog({ initialCategory = 'ALL' } = {}) {
           {Object.entries(GAME_NAMES).map(([code,label]) => <button type="button" key={code} className={game===code?'active':''} onClick={() => setGame(code)}>{label}</button>)}
         </nav>
         <div className="vc4-nav-actions">
-          <a className="vc4-account-link" href="/account">{customer ? 'Akun' : 'Masuk'}</a>
+          <a className="vc4-account-link" href={WEB_ROUTES.account}>{customer ? 'Akun' : 'Masuk'}</a>
           <button type="button" onClick={showOrders}>Pesanan</button>
           <button type="button" className="vc4-cart-button" onClick={() => setCartOpen(true)}>Keranjang <span>{cart.reduce((n,item)=>n+item.quantity,0)}</span></button>
         </div>

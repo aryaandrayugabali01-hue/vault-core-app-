@@ -43,6 +43,15 @@ const ICONS = {
 const icon = (name) => '<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[name] || ICONS.info) + '</svg></span>';
 const esc = (value) => String(value == null ? '' : value).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (value) => money.format(Number(value || 0));
+const MINI_APP_ENTRY = '/miniapp/index.html';
+const APP_ROUTES = Object.freeze({
+  home:'/home', catalog:'/catalog', orders:'/orders', profile:'/profile',
+  about:'/about', terms:'/terms', privacy:'/privacy', refund:'/refund',
+  game:(code) => '/game/' + encodeURIComponent(code),
+  variant:(id) => '/variant/' + encodeURIComponent(id),
+  product:(id) => '/product/' + encodeURIComponent(id),
+  done:(orderNumber) => '/done/' + encodeURIComponent(orderNumber)
+});
 const go = (path) => { location.hash = '#' + (path.startsWith('/') ? path : '/' + path); };
 const routeParts = () => (location.hash || '#/home').slice(1).split('/').filter(Boolean).map((part) => decodeURIComponent(part));
 const gameOf = (code) => GAMES[code] || {name:String(code || 'Game'),short:'Game',art:'/assets/03-categories/category-other.png'};
@@ -121,7 +130,7 @@ function toggleProductFavorite(id) {
 function shareProduct(id) {
   const product = state.products.find((item) => String(item.id) === String(id));
   if (!product) return;
-  const url = location.origin + '/miniapp/index.html#/product/' + encodeURIComponent(product.id);
+  const url = location.origin + MINI_APP_ENTRY + '#' + APP_ROUTES.product(product.id);
   const text = product.name + ' · ' + fmt(product.sale_price_xtr) + ' XTR di VAULT CORE';
   if (inTelegram && tg.openTelegramLink) {
     tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text));
@@ -168,7 +177,7 @@ function setPage(markup, active, hideNav) {
   window.scrollTo(0,0);
 }
 function headerHome() {
-  return '<header class="topbar"><a class="brand" href="#/home" aria-label="VAULT CORE Home"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"></a><div class="top-actions"><button class="icon-btn" type="button" data-go="/catalog" aria-label="Cari produk">' + icon('search') + '</button><button class="icon-btn" type="button" data-go="/orders" aria-label="Status pesanan">' + icon('bell') + '</button><button class="icon-btn" type="button" data-go="/profile" aria-label="Profil">' + icon('user') + '</button></div></header>';
+  return '<header class="topbar"><a class="brand" href="' + APP_ROUTES.home + '" aria-label="VAULT CORE Home"><img src="/assets/01-brand/vaultcore-horizontal.svg" alt="VAULT CORE"></a><div class="top-actions"><button class="icon-btn" type="button" data-go="/catalog" aria-label="Cari produk">' + icon('search') + '</button><button class="icon-btn" type="button" data-go="/orders" aria-label="Status pesanan">' + icon('bell') + '</button><button class="icon-btn" type="button" data-go="/profile" aria-label="Profil">' + icon('user') + '</button></div></header>';
 }
 function headerPage(title) {
   return '<header class="pagebar"><button class="back-btn" type="button" data-action="back" aria-label="Kembali">' + icon('back') + '</button><h1>' + esc(title) + '</h1><span class="spacer"></span></header>';
@@ -335,7 +344,7 @@ function catalog() {
 }
 function gamePage(code) {
   const game = GAMES[code];
-  if (!game) return go('/catalog');
+  if (!game) return go(APP_ROUTES.catalog);
   const variants = state.variants.filter((variant) => variant.game_code === code && ['Akun','Jasa Joki','Item In-Game','Produk Lainnya'].includes(variant.category));
   const activeCount = state.products.filter((product) => product.game_category === code && isBuyable(product)).length;
   setPage(
@@ -356,7 +365,7 @@ function gamePage(code) {
 }
 function variantPage(id) {
   const variant = state.variants.find((item) => Number(item.variant_id) === Number(id));
-  if (!variant) return go('/catalog');
+  if (!variant) return go(APP_ROUTES.catalog);
   const products = productsOf(variant).filter(isBuyable);
   setPage(
     headerPage(variant.name) +
@@ -487,7 +496,7 @@ async function createOrder(id) {
     const result = await api('/api/orders',{method:'POST',body});
     if (!result.orderNumber || !result.invoiceUrl) throw new Error('Invoice Telegram belum tersedia. Silakan periksa riwayat pesanan.');
     lastInvoice = {number:result.orderNumber,url:result.invoiceUrl};
-    go('/done/' + encodeURIComponent(result.orderNumber));
+    go(APP_ROUTES.done(result.orderNumber));
     openInvoice();
   } catch (error) {
     if (button) {
@@ -647,7 +656,7 @@ function render() {
     case 'game': gamePage(arg); break;
     case 'variant': variantPage(arg); break;
     case 'product': productPage(arg); break;
-    case 'checkout': go('/product/' + encodeURIComponent(arg)); break;
+    case 'checkout': go(APP_ROUTES.product(arg)); break;
     case 'done': renderDone(arg,myRender); break;
     case 'orders': renderOrders(); break;
     case 'profile': renderProfile(); break;
@@ -700,7 +709,7 @@ function handleClick(event) {
     state.catalogGame = storeGame.getAttribute('data-store-game') || 'ALL';
     state.catalogGroup = storeGame.getAttribute('data-store-group') || 'ALL';
     state.search = '';
-    go('/catalog');
+    go(APP_ROUTES.catalog);
     return;
   }
   const storeGroup = event.target.closest('[data-store-group]');
@@ -708,7 +717,7 @@ function handleClick(event) {
     state.catalogGroup = storeGroup.getAttribute('data-store-group') || 'ALL';
     state.catalogGame = 'ALL';
     state.search = '';
-    go('/catalog');
+    go(APP_ROUTES.catalog);
     return;
   }
   const goButton = event.target.closest('[data-go]');
@@ -760,7 +769,7 @@ function handleClick(event) {
   if (!button) return;
   const action = button.getAttribute('data-action');
   if (action === 'retry-catalog') { loadCatalog(true); return; }
-  if (action === 'back') { history.length > 1 ? history.back() : go('/home'); return; }
+  if (action === 'back') { history.length > 1 ? history.back() : go(APP_ROUTES.home); return; }
   if (action === 'share') { shareProduct(button.getAttribute('data-id')); return; }
   if (action === 'favorite') { toggleProductFavorite(button.getAttribute('data-id')); return; }
   if (action === 'buy') { startCheckout(button.getAttribute('data-id')); return; }
@@ -807,7 +816,7 @@ function handleSubmit(event) {
   state.search = input ? input.value || '' : state.search || '';
   state.catalogGroup = 'ALL';
   state.catalogGame = 'ALL';
-  go('/catalog');
+  go(APP_ROUTES.catalog);
 }
 async function loadCatalog(showLoading = false) {
   if (showLoading) {
@@ -834,7 +843,7 @@ function init() {
       tg.expand();
       tg.setHeaderColor('#08080f');
       tg.setBackgroundColor('#08080f');
-      if (tg.BackButton) tg.BackButton.onClick(() => { history.length > 1 ? history.back() : go('/home'); });
+      if (tg.BackButton) tg.BackButton.onClick(() => { history.length > 1 ? history.back() : go(APP_ROUTES.home); });
     } catch (_) {}
   }
   document.addEventListener('click',handleClick);
